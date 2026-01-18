@@ -1,14 +1,340 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useNavigate } from 'react-router-dom';
+import { AnnouncementCard } from '@/components/home/AnnouncementCard';
+import { BirthdayCard } from '@/components/home/BirthdayCard';
+import { DocumentList } from '@/components/home/DocumentList';
+import { UsefulLinks } from '@/components/home/UsefulLinks';
+import { OrgChartSimple } from '@/components/home/OrgChartSimple';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Megaphone, 
+  ArrowRight, 
+  Users, 
+  Building2, 
+  FileText,
+  MessageSquare 
+} from 'lucide-react';
+import type { Announcement, Birthday, Document, UsefulLink, OrgChartNode } from '@/types/portal';
 
-const Index = () => {
+// Mock data for demonstration - will be replaced with real data
+const mockAnnouncements: Announcement[] = [
+  {
+    id: '1',
+    title: 'Bem-vindos ao Portal PreverMed!',
+    content: 'É com grande satisfação que apresentamos o novo Portal PreverMed. Este será o nosso principal canal de comunicação interna, onde você encontrará comunicados, documentos importantes, e poderá interagir com seus colegas de trabalho.\n\nExplore todas as funcionalidades e não deixe de atualizar seu perfil!',
+    author_id: '1',
+    author_name: 'Administração',
+    author_role: 'adm_master',
+    is_pinned: true,
+    published_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Atualização de documentos - Janeiro 2025',
+    content: 'Informamos que os documentos de procedimentos internos foram atualizados. Por favor, verifique a seção de Documentos para as últimas versões.',
+    author_id: '2',
+    author_name: 'Recursos Humanos',
+    author_role: 'rh',
+    is_pinned: false,
+    published_at: new Date(Date.now() - 86400000).toISOString(),
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
+const mockBirthdaysToday: Birthday[] = [
+  {
+    id: '1',
+    user_id: '1',
+    full_name: 'Maria Silva',
+    nickname: 'Mari',
+    birth_date: new Date().toISOString(),
+    department_name: 'RH',
+  },
+];
+
+const mockBirthdaysMonth: Birthday[] = [
+  {
+    id: '1',
+    user_id: '1',
+    full_name: 'Maria Silva',
+    nickname: 'Mari',
+    birth_date: new Date().toISOString(),
+    department_name: 'RH',
+  },
+  {
+    id: '2',
+    user_id: '2',
+    full_name: 'João Santos',
+    birth_date: new Date(Date.now() + 5 * 86400000).toISOString(),
+    department_name: 'Engenharia',
+  },
+  {
+    id: '3',
+    user_id: '3',
+    full_name: 'Ana Costa',
+    nickname: 'Aninha',
+    birth_date: new Date(Date.now() + 10 * 86400000).toISOString(),
+    department_name: 'Comercial',
+  },
+];
+
+const mockDocuments: Document[] = [
+  {
+    id: '1',
+    title: 'Manual do Colaborador 2025',
+    description: 'Versão atualizada',
+    file_url: '#',
+    file_type: 'application/pdf',
+    category: 'RH',
+    uploader_id: '1',
+    download_count: 45,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Política de Home Office',
+    file_url: '#',
+    file_type: 'application/pdf',
+    category: 'Políticas',
+    uploader_id: '1',
+    download_count: 32,
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Calendário de Feriados 2025',
+    file_url: '#',
+    file_type: 'application/pdf',
+    category: 'RH',
+    uploader_id: '1',
+    download_count: 78,
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+  },
+];
+
+const mockLinks: UsefulLink[] = [
+  {
+    id: '1',
+    title: 'Sistema de Ponto',
+    url: 'https://ponto.prevermed.com.br',
+    description: 'Registro de ponto eletrônico',
+    icon: 'briefcase',
+    order: 1,
+    is_active: true,
+  },
+  {
+    id: '2',
+    title: 'Plano de Saúde',
+    url: 'https://plano.prevermed.com.br',
+    description: 'Portal do beneficiário',
+    icon: 'health',
+    order: 2,
+    is_active: true,
+  },
+  {
+    id: '3',
+    title: 'Universidade Corporativa',
+    url: 'https://ead.prevermed.com.br',
+    description: 'Treinamentos e cursos',
+    icon: 'book',
+    order: 3,
+    is_active: true,
+  },
+];
+
+const mockOrgChart: OrgChartNode[] = [
+  {
+    id: '1',
+    user_id: '1',
+    full_name: 'Dr. Carlos Eduardo',
+    position: 'Diretor Geral',
+    hierarchy_position: 'diretor',
+    department_name: 'Diretoria',
+    children: [
+      {
+        id: '2',
+        user_id: '2',
+        full_name: 'Ana Paula Souza',
+        position: 'Gerente de RH',
+        hierarchy_position: 'gerente',
+        department_name: 'RH',
+        children: [
+          {
+            id: '3',
+            user_id: '3',
+            full_name: 'Maria Silva',
+            position: 'Analista de RH',
+            hierarchy_position: 'liderado',
+            department_name: 'RH',
+          },
+        ],
+      },
+      {
+        id: '4',
+        user_id: '4',
+        full_name: 'Roberto Lima',
+        position: 'Gerente Comercial',
+        hierarchy_position: 'gerente',
+        department_name: 'Comercial',
+      },
+    ],
+  },
+];
+
+export default function Index() {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="page-header">
+        <h1 className="page-title">Portal PreverMed</h1>
+        <p className="page-subtitle">
+          Bem-vindo ao portal interno. Confira as últimas atualizações.
+        </p>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="card-elevated">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Megaphone className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="stat-value text-lg">{mockAnnouncements.length}</p>
+                <p className="stat-label text-xs">Comunicados</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="card-elevated">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-success/10">
+                <Users className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="stat-value text-lg">{mockBirthdaysToday.length}</p>
+                <p className="stat-label text-xs">Aniversariantes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="card-elevated">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-accent">
+                <FileText className="h-5 w-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="stat-value text-lg">{mockDocuments.length}</p>
+                <p className="stat-label text-xs">Documentos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="card-elevated">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-warning/10">
+                <MessageSquare className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <p className="stat-value text-lg">0</p>
+                <p className="stat-label text-xs">Mensagens</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Column - Announcements */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-primary" />
+              Comunicados
+            </h2>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/comunicados')}>
+              Ver todos <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          
+          <div className="space-y-4">
+            {mockAnnouncements.map((announcement) => (
+              <AnnouncementCard key={announcement.id} announcement={announcement} />
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column - Sidebar Content */}
+        <div className="space-y-6">
+          <BirthdayCard 
+            birthdays={mockBirthdaysToday} 
+            title="Aniversariantes do Dia" 
+            variant="today"
+          />
+          
+          <BirthdayCard 
+            birthdays={mockBirthdaysMonth} 
+            title="Aniversários do Mês" 
+            variant="month"
+          />
+          
+          <DocumentList 
+            documents={mockDocuments}
+            onViewAll={() => navigate('/documentos')}
+          />
+          
+          <UsefulLinks links={mockLinks} />
+        </div>
+      </div>
+
+      {/* Org Chart Section */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <OrgChartSimple data={mockOrgChart} />
+        
+        <Card className="card-elevated">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-5 w-5 text-primary" />
+              Unidades PreverMed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4">
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Lapa</h3>
+                  <Badge variant="secondary">Matriz</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Rua da Lapa, 123 - São Paulo, SP
+                </p>
+              </div>
+              
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">Osasco</h3>
+                  <Badge variant="outline">Filial</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Av. dos Autonomistas, 456 - Osasco, SP
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default Index;
+}
