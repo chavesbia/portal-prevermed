@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +19,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Auth route - no layout */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Portal routes with layout */}
             <Route element={<PortalLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/comunicados" element={<Index />} />
