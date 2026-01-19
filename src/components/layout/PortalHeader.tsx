@@ -83,7 +83,7 @@ export function PortalHeader({ onMenuClick, showMenuButton = false }: PortalHead
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 px-2">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.photo_url} />
+                    <AvatarImage src={profile?.profile_photo_url || undefined} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {getInitials(profile?.full_name || user.email)}
                     </AvatarFallback>
