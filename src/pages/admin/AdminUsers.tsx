@@ -51,6 +51,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
+type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
+
 interface UserWithDetails {
   id: string;
   user_id: string;
@@ -61,7 +63,7 @@ interface UserWithDetails {
   position: string | null;
   status: 'active' | 'inactive' | null;
   unit: 'lapa' | 'osasco' | null;
-  hierarchy_position: string | null;
+  hierarchy_position: HierarchyPosition | null;
   created_at: string;
   role?: string;
   departments?: { id: string; name: string; is_primary: boolean }[];
@@ -89,7 +91,7 @@ export default function AdminUsers() {
     position: '',
     status: 'active' as 'active' | 'inactive',
     unit: 'lapa' as 'lapa' | 'osasco',
-    hierarchy_position: 'team_member' as string,
+    hierarchy_position: 'team_member' as HierarchyPosition,
   });
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
@@ -556,7 +558,7 @@ export default function AdminUsers() {
               <Label>Posição Hierárquica</Label>
               <Select
                 value={editForm.hierarchy_position}
-                onValueChange={(value) => 
+                onValueChange={(value: HierarchyPosition) => 
                   setEditForm(prev => ({ ...prev, hierarchy_position: value }))
                 }
               >
