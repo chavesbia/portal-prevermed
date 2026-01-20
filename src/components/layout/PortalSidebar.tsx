@@ -69,6 +69,7 @@ const menuSections: MenuSection[] = [
     title: 'Administração',
     items: [
       { label: 'Usuários', icon: Users, path: '/admin/usuarios', adminOnly: true },
+      { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
       { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
       { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
       { label: 'Configurações', icon: Settings, path: '/admin/configuracoes', adminOnly: true },
