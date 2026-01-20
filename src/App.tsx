@@ -8,6 +8,11 @@ import { PortalLayout } from "@/components/layout/PortalLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminDepartments from "./pages/admin/AdminDepartments";
+import AdminPermissions from "./pages/admin/AdminPermissions";
+import AdminAudit from "./pages/admin/AdminAudit";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -33,7 +38,14 @@ const App = () => (
               <Route path="/chat" element={<Index />} />
               <Route path="/notificacoes" element={<Index />} />
               <Route path="/departamentos/*" element={<Index />} />
-              <Route path="/admin/*" element={<Index />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin/usuarios" element={<AdminUsers />} />
+              <Route path="/admin/departamentos" element={<AdminDepartments />} />
+              <Route path="/admin/permissoes" element={<AdminPermissions />} />
+              <Route path="/admin/auditoria" element={<AdminAudit />} />
+              <Route path="/admin/configuracoes" element={<AdminSettings />} />
+              
               <Route path="/perfil" element={<Index />} />
             </Route>
             <Route path="*" element={<NotFound />} />
