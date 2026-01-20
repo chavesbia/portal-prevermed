@@ -8,6 +8,7 @@ import { PortalLayout } from "@/components/layout/PortalLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminPermissions from "./pages/admin/AdminPermissions";
@@ -46,7 +47,7 @@ const App = () => (
               <Route path="/admin/auditoria" element={<AdminAudit />} />
               <Route path="/admin/configuracoes" element={<AdminSettings />} />
               
-              <Route path="/perfil" element={<Index />} />
+              <Route path="/perfil" element={<Profile />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
