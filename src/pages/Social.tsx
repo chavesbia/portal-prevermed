@@ -1,30 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Heart, 
-  MessageCircle, 
-  Send, 
-  Image as ImageIcon,
-  MoreHorizontal,
-  RefreshCw,
-  Trash2,
-  Users
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Card } from '@/components/ui/card';
+import { RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { CreatePostCard } from '@/components/social/CreatePostCard';
+import { PostCard } from '@/components/social/PostCard';
 
 interface PostAuthor {
   full_name: string;
@@ -59,8 +40,6 @@ export default function Social() {
   const { user, profile } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [isPosting, setIsPosting] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
   const [postComments, setPostComments] = useState<Record<string, Comment[]>>({});
   const [newComments, setNewComments] = useState<Record<string, string>>({});
@@ -73,7 +52,6 @@ export default function Social() {
   const fetchPosts = async () => {
     setIsLoading(true);
     try {
-      // Fetch posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*')
@@ -87,10 +65,8 @@ export default function Social() {
         return;
       }
 
-      // Get unique user IDs from posts
       const userIds = [...new Set(postsData.map(p => p.user_id))];
 
-      // Fetch profiles for those users
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, full_name, nickname, profile_photo_url, position')
@@ -106,17 +82,14 @@ export default function Social() {
         };
       });
 
-      // Fetch likes count for each post
       const { data: likesData } = await supabase
         .from('post_likes')
         .select('post_id');
 
-      // Fetch comments count for each post
       const { data: commentsData } = await supabase
         .from('post_comments')
         .select('post_id');
 
-      // Check which posts the current user liked
       const { data: userLikes } = user ? await supabase
         .from('post_likes')
         .select('post_id')
@@ -124,7 +97,6 @@ export default function Social() {
 
       const userLikedPosts = new Set(userLikes?.map(l => l.post_id) || []);
 
-      // Count likes and comments per post
       const likesCount: Record<string, number> = {};
       const commentsCountMap: Record<string, number> = {};
 
@@ -158,28 +130,34 @@ export default function Social() {
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!user || !newPostContent.trim()) return;
+  const handleCreatePost = async (content: string, mentionedUserIds: string[]) => {
+    if (!user) return;
 
-    setIsPosting(true);
     try {
-      const { error } = await supabase
+      const { data: newPost, error } = await supabase
         .from('posts')
-        .insert({
-          user_id: user.id,
-          content: newPostContent.trim(),
-        });
+        .insert({ user_id: user.id, content: content.trim() })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNewPostContent('');
+      // Save mentions
+      if (mentionedUserIds.length > 0 && newPost) {
+        const mentionsToInsert = mentionedUserIds.map(mentionedUserId => ({
+          post_id: newPost.id,
+          mentioned_user_id: mentionedUserId,
+          mentioned_by: user.id,
+        }));
+
+        await supabase.from('mentions').insert(mentionsToInsert);
+      }
+
       toast.success('Publicação criada!');
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error('Erro ao criar publicação');
-    } finally {
-      setIsPosting(false);
     }
   };
 
@@ -202,7 +180,6 @@ export default function Social() {
           .insert({ post_id: postId, user_id: user.id });
       }
 
-      // Update local state
       setPosts(prev => prev.map(post => {
         if (post.id === postId) {
           return {
@@ -245,7 +222,6 @@ export default function Social() {
       newExpanded.delete(postId);
     } else {
       newExpanded.add(postId);
-      // Fetch comments if not already loaded
       if (!postComments[postId]) {
         await fetchComments(postId);
       }
@@ -271,10 +247,8 @@ export default function Social() {
         return;
       }
 
-      // Get unique user IDs from comments
       const userIds = [...new Set(commentsData.map(c => c.user_id))];
 
-      // Fetch profiles for those users
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('user_id, full_name, nickname, profile_photo_url, position')
@@ -314,24 +288,32 @@ export default function Social() {
     }
   };
 
-  const handleAddComment = async (postId: string) => {
+  const handleAddComment = async (postId: string, mentionedUserIds: string[]) => {
     const content = newComments[postId]?.trim();
     if (!user || !content) return;
 
     try {
-      const { error } = await supabase
+      const { data: newComment, error } = await supabase
         .from('post_comments')
-        .insert({
-          post_id: postId,
-          user_id: user.id,
-          content,
-        });
+        .insert({ post_id: postId, user_id: user.id, content })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Save mentions
+      if (mentionedUserIds.length > 0 && newComment) {
+        const mentionsToInsert = mentionedUserIds.map(mentionedUserId => ({
+          comment_id: newComment.id,
+          mentioned_user_id: mentionedUserId,
+          mentioned_by: user.id,
+        }));
+
+        await supabase.from('mentions').insert(mentionsToInsert);
+      }
+
       setNewComments(prev => ({ ...prev, [postId]: '' }));
       
-      // Update comments count locally
       setPosts(prev => prev.map(post => {
         if (post.id === postId) {
           return { ...post, comments_count: post.comments_count + 1 };
@@ -339,24 +321,12 @@ export default function Social() {
         return post;
       }));
 
-      // Refresh comments
       await fetchComments(postId);
       toast.success('Comentário adicionado');
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Erro ao comentar');
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), { 
-      addSuffix: true, 
-      locale: ptBR 
-    });
   };
 
   if (!user) {
@@ -373,6 +343,13 @@ export default function Social() {
     );
   }
 
+  const currentUserProfile = profile ? {
+    full_name: profile.full_name,
+    nickname: profile.nickname,
+    profile_photo_url: profile.profile_photo_url,
+    position: profile.position,
+  } : null;
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div className="page-header">
@@ -381,48 +358,16 @@ export default function Social() {
           Rede Social
         </h1>
         <p className="page-subtitle">
-          Compartilhe e conecte-se com seus colegas.
+          Compartilhe e conecte-se com seus colegas. Use @ para mencionar.
         </p>
       </div>
 
-      {/* Create Post */}
-      <Card className="card-elevated">
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={profile?.profile_photo_url || undefined} />
-              <AvatarFallback>{getInitials(profile?.full_name || 'U')}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 space-y-3">
-              <Textarea
-                placeholder="O que você está pensando?"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                className="min-h-[80px] resize-none"
-              />
-              <div className="flex justify-between items-center">
-                <Button variant="ghost" size="sm" disabled>
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Foto
-                </Button>
-                <Button 
-                  onClick={handleCreatePost} 
-                  disabled={!newPostContent.trim() || isPosting}
-                >
-                  {isPosting ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-2" />
-                  )}
-                  Publicar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <CreatePostCard
+        userPhotoUrl={profile?.profile_photo_url}
+        userName={profile?.full_name || 'U'}
+        onCreatePost={handleCreatePost}
+      />
 
-      {/* Posts Feed */}
       {isLoading ? (
         <div className="flex items-center justify-center h-32">
           <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -436,145 +381,21 @@ export default function Social() {
       ) : (
         <div className="space-y-4">
           {posts.map((post) => (
-            <Card key={post.id} className="card-elevated">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={post.profiles.profile_photo_url || undefined} />
-                      <AvatarFallback>{getInitials(post.profiles.full_name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold">
-                        {post.profiles.nickname || post.profiles.full_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {post.profiles.position} • {formatTimeAgo(post.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                  {post.user_id === user.id && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => handleDeletePost(post.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-4">
-                <p className="whitespace-pre-wrap">{post.content}</p>
-                
-                {post.image_url && (
-                  <img 
-                    src={post.image_url} 
-                    alt="Post image" 
-                    className="rounded-lg max-h-96 w-full object-cover"
-                  />
-                )}
-
-                <Separator />
-
-                {/* Actions */}
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleLike(post.id, post.user_liked)}
-                    className={post.user_liked ? 'text-red-500 hover:text-red-600' : ''}
-                  >
-                    <Heart 
-                      className={`h-4 w-4 mr-1 ${post.user_liked ? 'fill-current' : ''}`} 
-                    />
-                    {post.likes_count > 0 && post.likes_count}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleComments(post.id)}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    {post.comments_count > 0 && post.comments_count}
-                  </Button>
-                </div>
-
-                {/* Comments Section */}
-                {expandedComments.has(post.id) && (
-                  <div className="space-y-4 pt-2">
-                    <Separator />
-                    
-                    {loadingComments.has(post.id) ? (
-                      <div className="flex justify-center py-4">
-                        <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : (
-                      <>
-                        {/* Comments List */}
-                        {postComments[post.id]?.map((comment) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={comment.profiles.profile_photo_url || undefined} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(comment.profiles.full_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 bg-muted rounded-lg p-3">
-                              <p className="font-medium text-sm">
-                                {comment.profiles.nickname || comment.profiles.full_name}
-                              </p>
-                              <p className="text-sm">{comment.content}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatTimeAgo(comment.created_at)}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Add Comment */}
-                        <div className="flex gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={profile?.profile_photo_url || undefined} />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(profile?.full_name || 'U')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 flex gap-2">
-                            <Textarea
-                              placeholder="Escreva um comentário..."
-                              value={newComments[post.id] || ''}
-                              onChange={(e) => setNewComments(prev => ({
-                                ...prev,
-                                [post.id]: e.target.value,
-                              }))}
-                              className="min-h-[40px] resize-none text-sm"
-                              rows={1}
-                            />
-                            <Button
-                              size="icon"
-                              onClick={() => handleAddComment(post.id)}
-                              disabled={!newComments[post.id]?.trim()}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUserId={user.id}
+              currentUserProfile={currentUserProfile}
+              comments={postComments[post.id] || []}
+              isLoadingComments={loadingComments.has(post.id)}
+              isExpanded={expandedComments.has(post.id)}
+              newCommentValue={newComments[post.id] || ''}
+              onLike={() => handleLike(post.id, post.user_liked)}
+              onDelete={() => handleDeletePost(post.id)}
+              onToggleComments={() => toggleComments(post.id)}
+              onCommentChange={(value) => setNewComments(prev => ({ ...prev, [post.id]: value }))}
+              onAddComment={(mentionedUserIds) => handleAddComment(post.id, mentionedUserIds)}
+            />
           ))}
         </div>
       )}
