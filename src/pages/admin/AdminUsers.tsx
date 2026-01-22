@@ -64,6 +64,9 @@ interface UserWithDetails {
   status: 'active' | 'inactive' | null;
   unit: 'lapa' | 'osasco' | null;
   hierarchy_position: HierarchyPosition | null;
+  birth_date: string | null;
+  start_date: string | null;
+  internal_handle: string | null;
   created_at: string;
   role?: string;
   departments?: { id: string; name: string; is_primary: boolean }[];
@@ -88,10 +91,14 @@ export default function AdminUsers() {
   // Edit form states
   const [editForm, setEditForm] = useState({
     full_name: '',
+    email: '',
     position: '',
     status: 'active' as 'active' | 'inactive',
     unit: 'lapa' as 'lapa' | 'osasco',
     hierarchy_position: 'team_member' as HierarchyPosition,
+    birth_date: '',
+    start_date: '',
+    internal_handle: '',
   });
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
@@ -174,10 +181,14 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setEditForm({
       full_name: user.full_name,
+      email: user.email,
       position: user.position || '',
       status: user.status || 'active',
       unit: user.unit || 'lapa',
       hierarchy_position: user.hierarchy_position || 'team_member',
+      birth_date: user.birth_date || '',
+      start_date: user.start_date || '',
+      internal_handle: user.internal_handle || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -190,10 +201,14 @@ export default function AdminUsers() {
         .from('profiles')
         .update({
           full_name: editForm.full_name,
+          email: editForm.email,
           position: editForm.position,
           status: editForm.status,
           unit: editForm.unit,
           hierarchy_position: editForm.hierarchy_position,
+          birth_date: editForm.birth_date || null,
+          start_date: editForm.start_date || null,
+          internal_handle: editForm.internal_handle || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', selectedUser.id);
@@ -503,7 +518,7 @@ export default function AdminUsers() {
               Atualize as informações do usuário.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-2">
             <div className="space-y-2">
               <Label>Nome Completo</Label>
               <Input
@@ -512,11 +527,45 @@ export default function AdminUsers() {
               />
             </div>
             <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>@ Interno (para menções)</Label>
+              <Input
+                value={editForm.internal_handle}
+                onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
+                placeholder="@usuario"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Cargo</Label>
               <Input
                 value={editForm.position}
                 onChange={(e) => setEditForm(prev => ({ ...prev, position: e.target.value }))}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <Input
+                  type="date"
+                  value={editForm.birth_date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data de Admissão</Label>
+                <Input
+                  type="date"
+                  value={editForm.start_date}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, start_date: e.target.value }))}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
