@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import Social from "./pages/Social";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminPermissions from "./pages/admin/AdminPermissions";
@@ -35,7 +36,7 @@ const App = () => (
               <Route path="/documentos" element={<Index />} />
               <Route path="/links" element={<Index />} />
               <Route path="/organograma" element={<Index />} />
-              <Route path="/social" element={<Index />} />
+              <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Index />} />
               <Route path="/notificacoes" element={<Index />} />
               <Route path="/departamentos/*" element={<Index />} />
