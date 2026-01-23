@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Social from "./pages/Social";
+import Comunicados from "./pages/Comunicados";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminPermissions from "./pages/admin/AdminPermissions";
@@ -32,7 +33,7 @@ const App = () => (
             {/* Portal routes with layout */}
             <Route element={<PortalLayout />}>
               <Route path="/" element={<Index />} />
-              <Route path="/comunicados" element={<Index />} />
+              <Route path="/comunicados" element={<Comunicados />} />
               <Route path="/documentos" element={<Index />} />
               <Route path="/links" element={<Index />} />
               <Route path="/organograma" element={<Index />} />
