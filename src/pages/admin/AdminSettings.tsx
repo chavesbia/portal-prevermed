@@ -24,6 +24,13 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Settings, 
   Link as LinkIcon,
@@ -33,9 +40,13 @@ import {
   RefreshCw,
   Shield,
   ExternalLink,
-  LayoutGrid
+  LayoutGrid,
+  Megaphone,
+  Pin
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Module {
   id: string;
@@ -58,10 +69,29 @@ interface UsefulLink {
   is_active: boolean;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  created_by: string | null;
+  department_id: string | null;
+  is_public: boolean;
+  published_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
 export default function AdminSettings() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [modules, setModules] = useState<Module[]>([]);
   const [links, setLinks] = useState<UsefulLink[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('modules');
   
@@ -89,6 +119,17 @@ export default function AdminSettings() {
     is_active: true,
   });
 
+  // Announcement dialog
+  const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [announcementForm, setAnnouncementForm] = useState({
+    title: '',
+    content: '',
+    department_id: '',
+    is_public: true,
+    expires_at: '',
+  });
+
   const isAdmMaster = role === 'adm_master';
 
   useEffect(() => {
@@ -98,16 +139,22 @@ export default function AdminSettings() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [modulesRes, linksRes] = await Promise.all([
+      const [modulesRes, linksRes, announcementsRes, departmentsRes] = await Promise.all([
         supabase.from('modules').select('*').order('name'),
         supabase.from('useful_links').select('*').order('sort_order'),
+        supabase.from('announcements').select('*').order('created_at', { ascending: false }),
+        supabase.from('departments').select('id, name').order('name'),
       ]);
 
       if (modulesRes.error) throw modulesRes.error;
       if (linksRes.error) throw linksRes.error;
+      if (announcementsRes.error) throw announcementsRes.error;
+      if (departmentsRes.error) throw departmentsRes.error;
 
       setModules(modulesRes.data || []);
       setLinks(linksRes.data || []);
+      setAnnouncements(announcementsRes.data || []);
+      setDepartments(departmentsRes.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados');
@@ -332,6 +379,96 @@ export default function AdminSettings() {
     }
   };
 
+  // Announcement handlers
+  const handleOpenAnnouncementDialog = (announcement?: Announcement) => {
+    if (announcement) {
+      setEditingAnnouncement(announcement);
+      setAnnouncementForm({
+        title: announcement.title,
+        content: announcement.content,
+        department_id: announcement.department_id || '',
+        is_public: announcement.is_public ?? true,
+        expires_at: announcement.expires_at ? announcement.expires_at.split('T')[0] : '',
+      });
+    } else {
+      setEditingAnnouncement(null);
+      setAnnouncementForm({
+        title: '',
+        content: '',
+        department_id: '',
+        is_public: true,
+        expires_at: '',
+      });
+    }
+    setIsAnnouncementDialogOpen(true);
+  };
+
+  const handleSaveAnnouncement = async () => {
+    if (!announcementForm.title.trim() || !announcementForm.content.trim()) {
+      toast.error('Título e conteúdo são obrigatórios');
+      return;
+    }
+
+    try {
+      if (editingAnnouncement) {
+        const { error } = await supabase
+          .from('announcements')
+          .update({
+            title: announcementForm.title,
+            content: announcementForm.content,
+            department_id: announcementForm.department_id || null,
+            is_public: announcementForm.is_public,
+            expires_at: announcementForm.expires_at || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingAnnouncement.id);
+
+        if (error) throw error;
+        toast.success('Comunicado atualizado');
+      } else {
+        const { error } = await supabase
+          .from('announcements')
+          .insert({
+            title: announcementForm.title,
+            content: announcementForm.content,
+            department_id: announcementForm.department_id || null,
+            is_public: announcementForm.is_public,
+            expires_at: announcementForm.expires_at || null,
+            created_by: user?.id,
+          });
+
+        if (error) throw error;
+        toast.success('Comunicado criado');
+      }
+
+      setIsAnnouncementDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      toast.error('Erro ao salvar comunicado');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (announcement: Announcement) => {
+    if (!confirm(`Tem certeza que deseja excluir o comunicado "${announcement.title}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .delete()
+        .eq('id', announcement.id);
+
+      if (error) throw error;
+      toast.success('Comunicado excluído');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      toast.error('Erro ao excluir comunicado');
+    }
+  };
+
   if (!isAdmMaster) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -354,7 +491,7 @@ export default function AdminSettings() {
           Configurações
         </h1>
         <p className="page-subtitle">
-          Gerencie módulos e links úteis do sistema.
+          Gerencie módulos, links úteis e comunicados do sistema.
         </p>
       </div>
 
@@ -367,6 +504,10 @@ export default function AdminSettings() {
           <TabsTrigger value="links" className="gap-1">
             <LinkIcon className="h-4 w-4" />
             Links Úteis
+          </TabsTrigger>
+          <TabsTrigger value="announcements" className="gap-1">
+            <Megaphone className="h-4 w-4" />
+            Comunicados
           </TabsTrigger>
         </TabsList>
 
@@ -535,6 +676,90 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Announcements Tab */}
+        <TabsContent value="announcements">
+          <Card className="card-elevated">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle className="text-lg">Comunicados ({announcements.length})</CardTitle>
+                <CardDescription>Gerencie os comunicados internos da empresa.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={fetchData}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button onClick={() => handleOpenAnnouncementDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo Comunicado
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Título</TableHead>
+                      <TableHead>Visibilidade</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead>Expira em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {announcements.map((announcement) => (
+                      <TableRow key={announcement.id}>
+                        <TableCell className="font-medium max-w-[300px]">
+                          <div className="truncate">{announcement.title}</div>
+                        </TableCell>
+                        <TableCell>
+                          {announcement.is_public ? (
+                            <Badge variant="default">Público</Badge>
+                          ) : (
+                            <Badge variant="secondary">
+                              {departments.find(d => d.id === announcement.department_id)?.name || 'Departamento'}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(announcement.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {announcement.expires_at 
+                            ? format(new Date(announcement.expires_at), "dd/MM/yyyy", { locale: ptBR })
+                            : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenAnnouncementDialog(announcement)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteAnnouncement(announcement)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Module Dialog */}
@@ -676,6 +901,96 @@ export default function AdminSettings() {
               </Button>
               <Button onClick={handleSaveLink}>
                 {editingLink ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Announcement Dialog */}
+      <Dialog open={isAnnouncementDialogOpen} onOpenChange={setIsAnnouncementDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAnnouncement ? 'Editar Comunicado' : 'Novo Comunicado'}
+            </DialogTitle>
+            <DialogDescription>
+              Configure as informações do comunicado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Título *</Label>
+              <Input
+                value={announcementForm.title}
+                onChange={(e) => setAnnouncementForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Ex: Atualização de Políticas Internas"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Conteúdo *</Label>
+              <Textarea
+                value={announcementForm.content}
+                onChange={(e) => setAnnouncementForm(prev => ({ ...prev, content: e.target.value }))}
+                placeholder="Digite o conteúdo do comunicado..."
+                rows={6}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Visibilidade</Label>
+                <Select
+                  value={announcementForm.is_public ? 'public' : 'department'}
+                  onValueChange={(value) => setAnnouncementForm(prev => ({ 
+                    ...prev, 
+                    is_public: value === 'public',
+                    department_id: value === 'public' ? '' : prev.department_id
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Público (todos)</SelectItem>
+                    <SelectItem value="department">Por Departamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {!announcementForm.is_public && (
+                <div className="space-y-2">
+                  <Label>Departamento</Label>
+                  <Select
+                    value={announcementForm.department_id}
+                    onValueChange={(value) => setAnnouncementForm(prev => ({ ...prev, department_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Data de expiração (opcional)</Label>
+                <Input
+                  type="date"
+                  value={announcementForm.expires_at}
+                  onChange={(e) => setAnnouncementForm(prev => ({ ...prev, expires_at: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsAnnouncementDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveAnnouncement}>
+                {editingAnnouncement ? 'Salvar' : 'Publicar'}
               </Button>
             </div>
           </div>
