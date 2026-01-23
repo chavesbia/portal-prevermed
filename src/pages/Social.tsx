@@ -130,13 +130,13 @@ export default function Social() {
     }
   };
 
-  const handleCreatePost = async (content: string, mentionedUserIds: string[]) => {
+  const handleCreatePost = async (content: string, mentionedUserIds: string[], imageUrl: string | null) => {
     if (!user) return;
 
     try {
       const { data: newPost, error } = await supabase
         .from('posts')
-        .insert({ user_id: user.id, content: content.trim() })
+        .insert({ user_id: user.id, content: content.trim(), image_url: imageUrl })
         .select()
         .single();
 
@@ -422,6 +422,7 @@ export default function Social() {
       <CreatePostCard
         userPhotoUrl={profile?.profile_photo_url}
         userName={profile?.full_name || 'U'}
+        userId={user.id}
         onCreatePost={handleCreatePost}
       />
 
