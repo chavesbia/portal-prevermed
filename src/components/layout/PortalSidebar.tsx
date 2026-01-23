@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Home,
   Users,
@@ -16,11 +17,13 @@ import {
   X,
   ExternalLink,
   Calculator,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PortalSidebarProps {
   isOpen: boolean;
@@ -40,9 +43,16 @@ interface MenuItem {
 interface MenuSection {
   title: string;
   items: MenuItem[];
+  isDynamic?: boolean;
 }
 
-const menuSections: MenuSection[] = [
+interface Department {
+  id: string;
+  name: string;
+}
+
+// Static menu sections
+const staticMenuSections: MenuSection[] = [
   {
     title: 'Principal',
     items: [
@@ -61,43 +71,79 @@ const menuSections: MenuSection[] = [
       { label: 'Notificações', icon: Bell, path: '/notificacoes', requiresAuth: true },
     ],
   },
-  {
-    title: 'Departamentos',
-    items: [
-      { label: 'RH', icon: Users, path: '/departamentos/rh', requiresAuth: true },
-      { label: 'Engenharia', icon: Building2, path: '/departamentos/engenharia', requiresAuth: true },
-      { 
-        label: 'Comercial', 
-        icon: FileText, 
-        path: '/departamentos/comercial', 
-        requiresAuth: true,
-        subItems: [
-          { 
-            label: 'Precificação', 
-            icon: Calculator, 
-            path: 'https://precificacao-prevermed.lovable.app', 
-            requiresAuth: true,
-            isExternal: true 
-          },
-        ]
-      },
-    ],
-  },
-  {
-    title: 'Administração',
-    items: [
-      { label: 'Usuários', icon: Users, path: '/admin/usuarios', adminOnly: true },
-      { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
-      { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
-      { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
-      { label: 'Configurações', icon: Settings, path: '/admin/configuracoes', adminOnly: true },
-    ],
-  },
 ];
+
+const adminSection: MenuSection = {
+  title: 'Administração',
+  items: [
+    { label: 'Usuários', icon: Users, path: '/admin/usuarios', adminOnly: true },
+    { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
+    { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
+    { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
+    { label: 'Configurações', icon: Settings, path: '/admin/configuracoes', adminOnly: true },
+  ],
+};
+
+// Map of department names to external links
+const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean }[]> = {
+  'Comercial': [
+    { 
+      label: 'Precificação', 
+      icon: Calculator, 
+      path: 'https://precificacao-prevermed.lovable.app', 
+      isExternal: true 
+    },
+  ],
+};
 
 export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  const fetchDepartments = async () => {
+    const { data, error } = await supabase
+      .from('departments')
+      .select('id, name')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching departments:', error);
+      return;
+    }
+
+    setDepartments(data || []);
+  };
+
+  // Build dynamic departments section
+  const departmentsSection: MenuSection = {
+    title: 'Departamentos',
+    items: departments.map(dept => {
+      const externalLinks = departmentExternalLinks[dept.name];
+      return {
+        label: dept.name,
+        icon: Briefcase,
+        path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
+        requiresAuth: true,
+        subItems: externalLinks?.map(link => ({
+          ...link,
+          requiresAuth: true,
+        })),
+      };
+    }),
+    isDynamic: true,
+  };
+
+  // Combine all sections
+  const menuSections: MenuSection[] = [
+    ...staticMenuSections,
+    ...(departments.length > 0 ? [departmentsSection] : []),
+    adminSection,
+  ];
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
