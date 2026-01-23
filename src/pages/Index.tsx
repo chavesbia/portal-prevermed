@@ -19,31 +19,7 @@ import {
 } from 'lucide-react';
 import type { Announcement, Birthday, Document, UsefulLink, OrgChartNode } from '@/types/portal';
 
-// Mock data for demonstration - will be replaced with real data
-const mockAnnouncements: Announcement[] = [
-  {
-    id: '1',
-    title: 'Bem-vindos ao Portal PreverMed!',
-    content: 'É com grande satisfação que apresentamos o novo Portal PreverMed. Este será o nosso principal canal de comunicação interna, onde você encontrará comunicados, documentos importantes, e poderá interagir com seus colegas de trabalho.\n\nExplore todas as funcionalidades e não deixe de atualizar seu perfil!',
-    author_id: '1',
-    author_name: 'Administração',
-    author_role: 'adm_master',
-    is_pinned: true,
-    published_at: new Date().toISOString(),
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Atualização de documentos - Janeiro 2025',
-    content: 'Informamos que os documentos de procedimentos internos foram atualizados. Por favor, verifique a seção de Documentos para as últimas versões.',
-    author_id: '2',
-    author_name: 'Recursos Humanos',
-    author_role: 'rh',
-    is_pinned: false,
-    published_at: new Date(Date.now() - 86400000).toISOString(),
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-];
+// Announcements are now fetched from database
 
 const mockBirthdaysToday: Birthday[] = [
   {
@@ -160,17 +136,19 @@ const mockOrgChart: OrgChartNode[] = [
 export default function Index() {
   const navigate = useNavigate();
   const [usefulLinks, setUsefulLinks] = useState<UsefulLink[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   useEffect(() => {
-    const fetchLinks = async () => {
-      const { data, error } = await supabase
+    const fetchData = async () => {
+      // Fetch useful links
+      const { data: linksData } = await supabase
         .from('useful_links')
         .select('*')
         .eq('is_active', true)
         .order('sort_order');
 
-      if (!error && data) {
-        setUsefulLinks(data.map(link => ({
+      if (linksData) {
+        setUsefulLinks(linksData.map(link => ({
           id: link.id,
           title: link.title,
           url: link.url,
@@ -180,8 +158,30 @@ export default function Index() {
           is_active: link.is_active ?? true,
         })));
       }
+
+      // Fetch announcements
+      const { data: announcementsData } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (announcementsData) {
+        setAnnouncements(announcementsData.map(ann => ({
+          id: ann.id,
+          title: ann.title,
+          content: ann.content,
+          author_id: ann.created_by || '',
+          author_name: 'Administração',
+          author_role: 'adm_master' as const,
+          is_pinned: false,
+          published_at: ann.published_at || ann.created_at,
+          created_at: ann.created_at,
+        })));
+      }
     };
-    fetchLinks();
+    fetchData();
   }, []);
 
   return (
@@ -203,7 +203,7 @@ export default function Index() {
                 <Megaphone className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="stat-value text-lg">{mockAnnouncements.length}</p>
+                <p className="stat-value text-lg">{announcements.length}</p>
                 <p className="stat-label text-xs">Comunicados</p>
               </div>
             </div>
@@ -268,9 +268,15 @@ export default function Index() {
           </div>
           
           <div className="space-y-4">
-            {mockAnnouncements.map((announcement) => (
-              <AnnouncementCard key={announcement.id} announcement={announcement} />
-            ))}
+            {announcements.length > 0 ? (
+              announcements.map((announcement) => (
+                <AnnouncementCard key={announcement.id} announcement={announcement} />
+              ))
+            ) : (
+              <Card className="card-elevated p-6 text-center text-muted-foreground">
+                Nenhum comunicado publicado.
+              </Card>
+            )}
           </div>
         </div>
 
