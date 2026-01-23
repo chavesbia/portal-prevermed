@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { format, isToday, isYesterday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Send, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TypingIndicator } from './TypingIndicator';
+import { OnlineStatus } from './OnlineStatus';
 
 interface Message {
   id: string;
@@ -34,6 +36,9 @@ interface ChatMessagesProps {
   }[];
   currentUserId: string;
   onMessageSent: () => void;
+  onlineUsers: Set<string>;
+  typingUsers: Map<string, string>;
+  setTyping: (chatId: string | null) => void;
 }
 
 export function ChatMessages({
@@ -42,6 +47,9 @@ export function ChatMessages({
   participants,
   currentUserId,
   onMessageSent,
+  onlineUsers,
+  typingUsers,
+  setTyping,
 }: ChatMessagesProps) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -50,6 +58,7 @@ export function ChatMessages({
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const participantsMap = participants.reduce((acc, p) => {
     acc[p.user_id] = p;
@@ -193,27 +202,74 @@ export function ChatMessages({
   };
 
   const isGroup = participants.length > 2;
+  const otherParticipant = participants.find(p => p.user_id !== currentUserId);
+  const isOtherOnline = otherParticipant ? onlineUsers.has(otherParticipant.user_id) : false;
+  
+  // Get typing user for this chat
+  const typingUserId = typingUsers.get(chatId);
+  const typingUser = typingUserId && typingUserId !== currentUserId 
+    ? participantsMap[typingUserId] 
+    : null;
+
+  // Handle typing indicator
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    
+    // Set typing indicator
+    setTyping(chatId);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Clear typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      setTyping(null);
+    }, 2000);
+  }, [chatId, setTyping]);
+
+  // Clear typing on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      setTyping(null);
+    };
+  }, [chatId, setTyping]);
 
   return (
     <div className="flex-1 flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b flex items-center gap-3">
-        <Avatar className="h-10 w-10">
-          {isGroup ? (
-            <AvatarFallback><Users className="h-5 w-5" /></AvatarFallback>
-          ) : (
-            <>
-              <AvatarImage 
-                src={participants.find(p => p.user_id !== currentUserId)?.profile_photo_url || undefined} 
-              />
-              <AvatarFallback>{getInitials(chatName)}</AvatarFallback>
-            </>
+        <div className="relative">
+          <Avatar className="h-10 w-10">
+            {isGroup ? (
+              <AvatarFallback><Users className="h-5 w-5" /></AvatarFallback>
+            ) : (
+              <>
+                <AvatarImage 
+                  src={otherParticipant?.profile_photo_url || undefined} 
+                />
+                <AvatarFallback>{getInitials(chatName)}</AvatarFallback>
+              </>
+            )}
+          </Avatar>
+          {!isGroup && (
+            <OnlineStatus 
+              isOnline={isOtherOnline} 
+              className="absolute bottom-0 right-0"
+            />
           )}
-        </Avatar>
+        </div>
         <div>
           <h2 className="font-semibold">{chatName}</h2>
           <p className="text-xs text-muted-foreground">
-            {participants.length} participante{participants.length > 1 ? 's' : ''}
+            {isGroup 
+              ? `${participants.length} participante${participants.length > 1 ? 's' : ''}`
+              : isOtherOnline ? 'Online' : 'Offline'
+            }
           </p>
         </div>
       </div>
@@ -303,13 +359,20 @@ export function ChatMessages({
         <div ref={scrollRef} />
       </ScrollArea>
 
+      {/* Typing indicator */}
+      {typingUser && (
+        <div className="px-4 py-2 border-t">
+          <TypingIndicator userName={typingUser.nickname || typingUser.full_name.split(' ')[0]} />
+        </div>
+      )}
+
       {/* Input */}
       <form onSubmit={handleSend} className="p-4 border-t">
         <div className="flex gap-2">
           <Input
             ref={inputRef}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Digite sua mensagem..."
             disabled={isSending}
             className="flex-1"

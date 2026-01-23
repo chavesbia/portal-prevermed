@@ -7,7 +7,7 @@ import { NewChatDialog } from '@/components/chat/NewChatDialog';
 import { Button } from '@/components/ui/button';
 import { MessageSquarePlus, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
+import { usePresence } from '@/hooks/use-presence';
 export interface ChatItem {
   id: string;
   name: string | null;
@@ -44,6 +44,10 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewChatOpen, setIsNewChatOpen] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  
+  const { onlineUsers, typingUsers, setTyping } = usePresence({ 
+    userId: user?.id || '' 
+  });
 
   useEffect(() => {
     if (user) {
@@ -262,6 +266,7 @@ export default function Chat() {
             isLoading={isLoading}
             currentUserId={user.id}
             getChatDisplayName={getChatDisplayName}
+            onlineUsers={onlineUsers}
           />
         </div>
 
@@ -274,6 +279,9 @@ export default function Chat() {
               participants={selectedChat.participants}
               currentUserId={user.id}
               onMessageSent={fetchChats}
+              onlineUsers={onlineUsers}
+              typingUsers={typingUsers}
+              setTyping={setTyping}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
