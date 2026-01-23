@@ -65,7 +65,10 @@ export function CreatePostCard({
   };
 
   const uploadImage = async (): Promise<string | null> => {
-    if (!selectedImage) return null;
+    if (!selectedImage || !userId) {
+      console.error('Missing selectedImage or userId for upload');
+      return null;
+    }
 
     setIsUploading(true);
     try {
@@ -97,14 +100,18 @@ export function CreatePostCard({
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && !selectedImage) return;
+    if ((!content.trim() && !selectedImage) || !userId) return;
     
     setIsPosting(true);
     try {
       let imageUrl: string | null = null;
       
-      if (selectedImage) {
+      if (selectedImage && userId) {
         imageUrl = await uploadImage();
+        if (selectedImage && !imageUrl) {
+          // Upload failed, don't proceed
+          return;
+        }
       }
 
       await onCreatePost(content, mentions, imageUrl);
