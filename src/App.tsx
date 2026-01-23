@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Social from "./pages/Social";
+import Chat from "./pages/Chat";
 import Comunicados from "./pages/Comunicados";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
@@ -38,7 +39,7 @@ const App = () => (
               <Route path="/links" element={<Index />} />
               <Route path="/organograma" element={<Index />} />
               <Route path="/social" element={<Social />} />
-              <Route path="/chat" element={<Index />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/notificacoes" element={<Index />} />
               <Route path="/departamentos/*" element={<Index />} />
               
