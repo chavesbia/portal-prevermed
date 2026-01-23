@@ -18,6 +18,17 @@ import {
   ExternalLink,
   Calculator,
   Briefcase,
+  Stethoscope,
+  DollarSign,
+  HeadphonesIcon,
+  FileCode,
+  Megaphone,
+  Scale,
+  Truck,
+  Wrench,
+  GraduationCap,
+  Heart,
+  LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -50,6 +61,41 @@ interface Department {
   id: string;
   name: string;
 }
+
+// Map department names to specific icons
+const departmentIconMap: Record<string, LucideIcon> = {
+  'Comercial': DollarSign,
+  'Financeiro': DollarSign,
+  'RH': Users,
+  'Recursos Humanos': Users,
+  'TI': FileCode,
+  'Tecnologia': FileCode,
+  'Atendimento': HeadphonesIcon,
+  'Marketing': Megaphone,
+  'Jurídico': Scale,
+  'Logística': Truck,
+  'Operações': Wrench,
+  'Manutenção': Wrench,
+  'Treinamento': GraduationCap,
+  'Saúde': Heart,
+  'Médico': Stethoscope,
+  'Administrativo': Briefcase,
+};
+
+const getDepartmentIcon = (deptName: string): LucideIcon => {
+  // Check for exact match first
+  if (departmentIconMap[deptName]) {
+    return departmentIconMap[deptName];
+  }
+  // Check for partial match
+  for (const [key, icon] of Object.entries(departmentIconMap)) {
+    if (deptName.toLowerCase().includes(key.toLowerCase())) {
+      return icon;
+    }
+  }
+  // Default icon
+  return Building2;
+};
 
 // Static menu sections
 const staticMenuSections: MenuSection[] = [
@@ -126,7 +172,7 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
       const externalLinks = departmentExternalLinks[dept.name];
       return {
         label: dept.name,
-        icon: Briefcase,
+        icon: getDepartmentIcon(dept.name),
         path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
         requiresAuth: true,
         subItems: externalLinks?.map(link => ({
