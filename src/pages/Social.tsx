@@ -196,6 +196,29 @@ export default function Social() {
     }
   };
 
+  const handleEditPost = async (postId: string, newContent: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ content: newContent })
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      setPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          return { ...post, content: newContent, updated_at: new Date().toISOString() };
+        }
+        return post;
+      }));
+
+      toast.success('Publicação editada!');
+    } catch (error) {
+      console.error('Error editing post:', error);
+      toast.error('Erro ao editar publicação');
+    }
+  };
+
   const handleDeletePost = async (postId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta publicação?')) return;
 
@@ -392,6 +415,7 @@ export default function Social() {
               newCommentValue={newComments[post.id] || ''}
               onLike={() => handleLike(post.id, post.user_liked)}
               onDelete={() => handleDeletePost(post.id)}
+              onEdit={(newContent) => handleEditPost(post.id, newContent)}
               onToggleComments={() => toggleComments(post.id)}
               onCommentChange={(value) => setNewComments(prev => ({ ...prev, [post.id]: value }))}
               onAddComment={(mentionedUserIds) => handleAddComment(post.id, mentionedUserIds)}
