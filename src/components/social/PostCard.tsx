@@ -9,7 +9,10 @@ import {
   Send, 
   MoreHorizontal,
   RefreshCw,
-  Trash2
+  Trash2,
+  Pencil,
+  X,
+  Check
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -61,6 +64,7 @@ interface PostCardProps {
   newCommentValue: string;
   onLike: () => void;
   onDelete: () => void;
+  onEdit: (newContent: string) => void;
   onToggleComments: () => void;
   onCommentChange: (value: string) => void;
   onAddComment: (mentionedUserIds: string[]) => void;
@@ -76,11 +80,15 @@ export function PostCard({
   newCommentValue,
   onLike,
   onDelete,
+  onEdit,
   onToggleComments,
   onCommentChange,
   onAddComment,
 }: PostCardProps) {
   const [commentMentions, setCommentMentions] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [isSaving, setIsSaving] = useState(false);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -97,6 +105,29 @@ export function PostCard({
     onAddComment(commentMentions);
     setCommentMentions([]);
   };
+
+  const handleStartEdit = () => {
+    setEditContent(post.content);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditContent(post.content);
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    setIsSaving(true);
+    try {
+      await onEdit(editContent.trim());
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const wasEdited = post.created_at !== post.updated_at;
 
   return (
     <Card className="card-elevated">
@@ -116,7 +147,7 @@ export function PostCard({
               </p>
             </div>
           </div>
-          {post.user_id === currentUserId && (
+          {post.user_id === currentUserId && !isEditing && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -124,6 +155,10 @@ export function PostCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleStartEdit}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={onDelete}
                   className="text-destructive"
@@ -137,7 +172,47 @@ export function PostCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
-        <p className="whitespace-pre-wrap">{formatMentionText(post.content)}</p>
+        {isEditing ? (
+          <div className="space-y-3">
+            <MentionTextarea
+              value={editContent}
+              onChange={setEditContent}
+              placeholder="Edite sua publicação..."
+              className="min-h-[80px]"
+              rows={3}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveEdit}
+                disabled={!editContent.trim() || isSaving}
+              >
+                {isSaving ? (
+                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 mr-1" />
+                )}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="whitespace-pre-wrap">{formatMentionText(post.content)}</p>
+            {wasEdited && (
+              <p className="text-xs text-muted-foreground">(editado)</p>
+            )}
+          </>
+        )}
         
         {post.image_url && (
           <img 
