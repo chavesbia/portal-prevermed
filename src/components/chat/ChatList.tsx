@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Users } from 'lucide-react';
 import type { ChatItem } from '@/pages/Chat';
+import { OnlineStatus } from './OnlineStatus';
 
 interface ChatListProps {
   chats: ChatItem[];
@@ -14,6 +15,7 @@ interface ChatListProps {
   isLoading: boolean;
   currentUserId: string;
   getChatDisplayName: (chat: ChatItem) => string;
+  onlineUsers: Set<string>;
 }
 
 export function ChatList({
@@ -23,6 +25,7 @@ export function ChatList({
   isLoading,
   currentUserId,
   getChatDisplayName,
+  onlineUsers,
 }: ChatListProps) {
   const getInitials = (name: string) => {
     return name
@@ -46,6 +49,11 @@ export function ChatList({
       return otherParticipants[0].profile_photo_url;
     }
     return null;
+  };
+
+  const getOtherParticipantId = (chat: ChatItem) => {
+    const otherParticipants = chat.participants.filter(p => p.user_id !== currentUserId);
+    return otherParticipants.length === 1 ? otherParticipants[0].user_id : null;
   };
 
   if (isLoading) {
@@ -79,6 +87,8 @@ export function ChatList({
           const displayName = getChatDisplayName(chat);
           const avatarUrl = getChatAvatar(chat);
           const isGroup = chat.participants.length > 2 || chat.name;
+          const otherUserId = getOtherParticipantId(chat);
+          const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
 
           return (
             <button
@@ -98,6 +108,12 @@ export function ChatList({
                     {isGroup ? <Users className="h-5 w-5" /> : getInitials(displayName)}
                   </AvatarFallback>
                 </Avatar>
+                {!isGroup && (
+                  <OnlineStatus 
+                    isOnline={isOnline} 
+                    className="absolute bottom-0 right-0"
+                  />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
