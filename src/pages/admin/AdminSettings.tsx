@@ -42,11 +42,13 @@ import {
   ExternalLink,
   LayoutGrid,
   Megaphone,
-  Pin
+  Pin,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { UnitsManagement } from '@/components/admin/UnitsManagement';
 
 interface Module {
   id: string;
@@ -605,6 +607,10 @@ export default function AdminSettings() {
             <Megaphone className="h-4 w-4" />
             Comunicados
           </TabsTrigger>
+          <TabsTrigger value="units" className="gap-1">
+            <Building2 className="h-4 w-4" />
+            Unidades
+          </TabsTrigger>
         </TabsList>
 
         {/* Modules Tab */}
@@ -865,6 +871,11 @@ export default function AdminSettings() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Units Tab */}
+        <TabsContent value="units">
+          <UnitsManagement />
         </TabsContent>
       </Tabs>
 

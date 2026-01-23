@@ -676,6 +676,54 @@ export type Database = {
         }
         Relationships: []
       }
+      units: {
+        Row: {
+          additional_info: string | null
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean | null
+          is_headquarters: boolean | null
+          name: string
+          phone: string | null
+          sort_order: number | null
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: string | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_headquarters?: boolean | null
+          name: string
+          phone?: string | null
+          sort_order?: number | null
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: string | null
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_headquarters?: boolean | null
+          name?: string
+          phone?: string | null
+          sort_order?: number | null
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       useful_links: {
         Row: {
           category: string | null

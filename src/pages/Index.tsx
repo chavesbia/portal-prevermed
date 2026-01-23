@@ -6,14 +6,13 @@ import { BirthdayCard } from '@/components/home/BirthdayCard';
 import { DocumentList } from '@/components/home/DocumentList';
 import { UsefulLinks } from '@/components/home/UsefulLinks';
 import { OrgChartSimple } from '@/components/home/OrgChartSimple';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UnitsCard } from '@/components/home/UnitsCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Megaphone, 
   ArrowRight, 
   Users, 
-  Building2, 
   FileText,
   MessageSquare 
 } from 'lucide-react';
@@ -309,37 +308,7 @@ export default function Index() {
       <div className="grid lg:grid-cols-2 gap-6">
         <OrgChartSimple data={mockOrgChart} />
         
-        <Card className="card-elevated">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building2 className="h-5 w-5 text-primary" />
-              Unidades PreverMed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4">
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Lapa</h3>
-                  <Badge variant="secondary">Matriz</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Rua da Lapa, 123 - São Paulo, SP
-                </p>
-              </div>
-              
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">Osasco</h3>
-                  <Badge variant="outline">Filial</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Av. dos Autonomistas, 456 - Osasco, SP
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <UnitsCard />
       </div>
     </div>
   );
