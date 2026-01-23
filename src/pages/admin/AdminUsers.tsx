@@ -87,6 +87,17 @@ export default function AdminUsers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
+  const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
+  
+  // New user form states
+  const [newUserForm, setNewUserForm] = useState({
+    full_name: '',
+    email: '',
+    position: '',
+    unit: 'lapa' as 'lapa' | 'osasco',
+    hierarchy_position: 'team_member' as HierarchyPosition,
+    internal_handle: '',
+  });
   
   // Edit form states
   const [editForm, setEditForm] = useState({
@@ -329,6 +340,63 @@ export default function AdminUsers() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!newUserForm.full_name || !newUserForm.email) {
+      toast.error('Nome e e-mail são obrigatórios');
+      return;
+    }
+
+    try {
+      // Create user via Supabase Auth (this will trigger the handle_new_user function)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserForm.email,
+        password: Math.random().toString(36).slice(-12) + 'A1!', // Temporary password
+        options: {
+          data: {
+            full_name: newUserForm.full_name,
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      // Update the profile with additional info
+      if (authData.user) {
+        // Wait a moment for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            position: newUserForm.position || null,
+            unit: newUserForm.unit,
+            hierarchy_position: newUserForm.hierarchy_position,
+            internal_handle: newUserForm.internal_handle || null,
+          })
+          .eq('user_id', authData.user.id);
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+        }
+      }
+
+      toast.success('Usuário criado com sucesso! Um e-mail de confirmação foi enviado.');
+      setIsNewUserDialogOpen(false);
+      setNewUserForm({
+        full_name: '',
+        email: '',
+        position: '',
+        unit: 'lapa',
+        hierarchy_position: 'team_member',
+        internal_handle: '',
+      });
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast.error(error.message || 'Erro ao criar usuário');
+    }
+  };
+
   const toggleDepartment = (deptId: string) => {
     setSelectedDepartments(prev => 
       prev.includes(deptId) 
@@ -407,6 +475,10 @@ export default function AdminUsers() {
             </div>
             <Button variant="outline" size="icon" onClick={fetchUsers}>
               <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button onClick={() => setIsNewUserDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Novo Usuário
             </Button>
           </div>
         </CardHeader>
@@ -714,6 +786,101 @@ export default function AdminUsers() {
               </Button>
               <Button onClick={handleSaveDepartments}>
                 Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New User Dialog */}
+      <Dialog open={isNewUserDialogOpen} onOpenChange={setIsNewUserDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Usuário</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo usuário no sistema. Um e-mail de confirmação será enviado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-2">
+            <div className="space-y-2">
+              <Label>Nome Completo *</Label>
+              <Input
+                value={newUserForm.full_name}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, full_name: e.target.value }))}
+                placeholder="Nome completo do usuário"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail *</Label>
+              <Input
+                type="email"
+                value={newUserForm.email}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@prevermed.com.br"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>@ Interno (para menções)</Label>
+              <Input
+                value={newUserForm.internal_handle}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, internal_handle: e.target.value }))}
+                placeholder="@usuario"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Input
+                value={newUserForm.position}
+                onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
+                placeholder="Ex: Analista, Coordenador..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select
+                  value={newUserForm.unit}
+                  onValueChange={(value: 'lapa' | 'osasco') => 
+                    setNewUserForm(prev => ({ ...prev, unit: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lapa">Lapa</SelectItem>
+                    <SelectItem value="osasco">Osasco</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Posição Hierárquica</Label>
+                <Select
+                  value={newUserForm.hierarchy_position}
+                  onValueChange={(value: HierarchyPosition) => 
+                    setNewUserForm(prev => ({ ...prev, hierarchy_position: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="director">Diretor</SelectItem>
+                    <SelectItem value="manager">Gerente</SelectItem>
+                    <SelectItem value="coordinator">Coordenador</SelectItem>
+                    <SelectItem value="leader">Líder</SelectItem>
+                    <SelectItem value="team_member">Membro da Equipe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsNewUserDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateUser}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Criar Usuário
               </Button>
             </div>
           </div>
