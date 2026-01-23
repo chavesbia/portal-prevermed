@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { AnnouncementCard } from '@/components/home/AnnouncementCard';
 import { BirthdayCard } from '@/components/home/BirthdayCard';
 import { DocumentList } from '@/components/home/DocumentList';
@@ -114,35 +116,7 @@ const mockDocuments: Document[] = [
   },
 ];
 
-const mockLinks: UsefulLink[] = [
-  {
-    id: '1',
-    title: 'Sistema de Ponto',
-    url: 'https://ponto.prevermed.com.br',
-    description: 'Registro de ponto eletrônico',
-    icon: 'briefcase',
-    order: 1,
-    is_active: true,
-  },
-  {
-    id: '2',
-    title: 'Plano de Saúde',
-    url: 'https://plano.prevermed.com.br',
-    description: 'Portal do beneficiário',
-    icon: 'health',
-    order: 2,
-    is_active: true,
-  },
-  {
-    id: '3',
-    title: 'Universidade Corporativa',
-    url: 'https://ead.prevermed.com.br',
-    description: 'Treinamentos e cursos',
-    icon: 'book',
-    order: 3,
-    is_active: true,
-  },
-];
+// Links are now fetched from database
 
 const mockOrgChart: OrgChartNode[] = [
   {
@@ -185,6 +159,30 @@ const mockOrgChart: OrgChartNode[] = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const [usefulLinks, setUsefulLinks] = useState<UsefulLink[]>([]);
+
+  useEffect(() => {
+    const fetchLinks = async () => {
+      const { data, error } = await supabase
+        .from('useful_links')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (!error && data) {
+        setUsefulLinks(data.map(link => ({
+          id: link.id,
+          title: link.title,
+          url: link.url,
+          description: link.description,
+          icon: link.icon,
+          order: link.sort_order ?? 0,
+          is_active: link.is_active ?? true,
+        })));
+      }
+    };
+    fetchLinks();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -295,7 +293,7 @@ export default function Index() {
             onViewAll={() => navigate('/documentos')}
           />
           
-          <UsefulLinks links={mockLinks} />
+          <UsefulLinks links={usefulLinks} />
         </div>
       </div>
 
