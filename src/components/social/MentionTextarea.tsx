@@ -12,6 +12,11 @@ interface UserSuggestion {
   position: string | null;
 }
 
+interface MentionData {
+  userId: string;
+  displayName: string;
+}
+
 interface MentionTextareaProps {
   value: string;
   onChange: (value: string) => void;
@@ -34,22 +39,12 @@ export function MentionTextarea({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mentionQuery, setMentionQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [mentionsMap, setMentionsMap] = useState<Map<string, MentionData>>(new Map());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
-
-  // Extract all mentioned user_ids from text
-  const extractMentions = (text: string): string[] => {
-    const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
-    const mentions: string[] = [];
-    let match;
-    while ((match = mentionRegex.exec(text)) !== null) {
-      mentions.push(match[2]); // user_id
-    }
-    return mentions;
   };
 
   // Search for users when typing @
@@ -94,6 +89,28 @@ export function MentionTextarea({
       setShowSuggestions(false);
       setMentionQuery('');
     }
+
+    // Update mentions list based on current @mentions in text
+    updateMentionsFromText(newValue);
+  };
+
+  const updateMentionsFromText = (text: string) => {
+    // Find all @Name patterns and check against our mentionsMap
+    const mentionRegex = /@(\w+)/g;
+    const foundMentions: string[] = [];
+    let match;
+    
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const mentionName = match[1];
+      // Find in our map by display name
+      mentionsMap.forEach((data, key) => {
+        if (data.displayName.toLowerCase() === mentionName.toLowerCase()) {
+          foundMentions.push(data.userId);
+        }
+      });
+    }
+    
+    onMentionsChange?.(foundMentions);
   };
 
   const insertMention = (user: UserSuggestion) => {
@@ -104,16 +121,21 @@ export function MentionTextarea({
     const mentionStartIndex = textBeforeCursor.lastIndexOf('@');
     const textBeforeMention = value.slice(0, mentionStartIndex);
     
-    // Create mention markup: @[Name](user_id)
-    const displayName = user.nickname || user.full_name;
-    const mentionMarkup = `@[${displayName}](${user.user_id})`;
+    // Use display name (nickname or full name)
+    const displayName = user.nickname || user.full_name.split(' ')[0];
     
-    const newValue = textBeforeMention + mentionMarkup + ' ' + textAfterCursor;
+    // Just show @Name in the textarea
+    const newValue = textBeforeMention + '@' + displayName + ' ' + textAfterCursor;
     onChange(newValue);
     
-    // Update mentions
-    const mentions = extractMentions(newValue);
-    onMentionsChange?.(mentions);
+    // Store the mapping of displayName -> userId
+    const newMap = new Map(mentionsMap);
+    newMap.set(displayName.toLowerCase(), { userId: user.user_id, displayName });
+    setMentionsMap(newMap);
+    
+    // Update mentions list
+    const allMentions = Array.from(newMap.values()).map(m => m.userId);
+    onMentionsChange?.(allMentions);
     
     setShowSuggestions(false);
     setMentionQuery('');
@@ -217,10 +239,11 @@ export function MentionTextarea({
   );
 }
 
-// Utility to convert mention markup to display text
+// Utility to highlight @mentions in displayed text
 export function formatMentionText(text: string): React.ReactNode {
+  // Match @Name patterns (simple format)
   const parts: React.ReactNode[] = [];
-  const regex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+  const regex = /@(\w+)/g;
   let lastIndex = 0;
   let match;
 
@@ -235,7 +258,7 @@ export function formatMentionText(text: string): React.ReactNode {
     parts.push(
       <span
         key={match.index}
-        className="text-primary font-medium cursor-pointer hover:underline"
+        className="text-primary font-medium"
       >
         @{displayName}
       </span>
@@ -250,15 +273,4 @@ export function formatMentionText(text: string): React.ReactNode {
   }
 
   return parts.length > 0 ? parts : text;
-}
-
-// Extract mentioned user IDs from text
-export function extractMentionIds(text: string): string[] {
-  const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
-  const mentions: string[] = [];
-  let match;
-  while ((match = mentionRegex.exec(text)) !== null) {
-    mentions.push(match[2]);
-  }
-  return mentions;
 }
