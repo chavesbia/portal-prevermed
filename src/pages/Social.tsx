@@ -142,7 +142,7 @@ export default function Social() {
 
       if (error) throw error;
 
-      // Save mentions
+      // Save mentions and create notifications
       if (mentionedUserIds.length > 0 && newPost) {
         const mentionsToInsert = mentionedUserIds.map(mentionedUserId => ({
           post_id: newPost.id,
@@ -151,6 +151,23 @@ export default function Social() {
         }));
 
         await supabase.from('mentions').insert(mentionsToInsert);
+
+        // Create notifications for mentioned users
+        const authorName = profile?.nickname || profile?.full_name || 'Alguém';
+        const notificationsToInsert = mentionedUserIds
+          .filter(id => id !== user.id) // Don't notify self
+          .map(mentionedUserId => ({
+            user_id: mentionedUserId,
+            title: 'Você foi mencionado',
+            content: `${authorName} mencionou você em uma publicação.`,
+            notification_type: 'mention' as const,
+            related_id: newPost.id,
+            related_type: 'post',
+          }));
+
+        if (notificationsToInsert.length > 0) {
+          await supabase.from('notifications').insert(notificationsToInsert);
+        }
       }
 
       toast.success('Publicação criada!');
@@ -324,7 +341,7 @@ export default function Social() {
 
       if (error) throw error;
 
-      // Save mentions
+      // Save mentions and create notifications
       if (mentionedUserIds.length > 0 && newComment) {
         const mentionsToInsert = mentionedUserIds.map(mentionedUserId => ({
           comment_id: newComment.id,
@@ -333,6 +350,23 @@ export default function Social() {
         }));
 
         await supabase.from('mentions').insert(mentionsToInsert);
+
+        // Create notifications for mentioned users
+        const authorName = profile?.nickname || profile?.full_name || 'Alguém';
+        const notificationsToInsert = mentionedUserIds
+          .filter(id => id !== user.id) // Don't notify self
+          .map(mentionedUserId => ({
+            user_id: mentionedUserId,
+            title: 'Você foi mencionado',
+            content: `${authorName} mencionou você em um comentário.`,
+            notification_type: 'mention' as const,
+            related_id: newComment.id,
+            related_type: 'comment',
+          }));
+
+        if (notificationsToInsert.length > 0) {
+          await supabase.from('notifications').insert(notificationsToInsert);
+        }
       }
 
       setNewComments(prev => ({ ...prev, [postId]: '' }));
