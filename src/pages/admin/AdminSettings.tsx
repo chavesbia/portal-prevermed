@@ -76,6 +76,8 @@ interface Announcement {
   created_by: string | null;
   department_id: string | null;
   is_public: boolean;
+  is_pinned: boolean;
+  image_url: string | null;
   published_at: string | null;
   expires_at: string | null;
   created_at: string;
@@ -127,8 +129,13 @@ export default function AdminSettings() {
     content: '',
     department_id: '',
     is_public: true,
+    is_pinned: false,
+    image_url: '',
     expires_at: '',
   });
+  const [selectedAnnouncementImage, setSelectedAnnouncementImage] = useState<File | null>(null);
+  const [announcementImagePreview, setAnnouncementImagePreview] = useState<string | null>(null);
+  const [isUploadingAnnouncementImage, setIsUploadingAnnouncementImage] = useState(false);
 
   const isAdmMaster = role === 'adm_master';
 
@@ -388,8 +395,11 @@ export default function AdminSettings() {
         content: announcement.content,
         department_id: announcement.department_id || '',
         is_public: announcement.is_public ?? true,
+        is_pinned: announcement.is_pinned ?? false,
+        image_url: announcement.image_url || '',
         expires_at: announcement.expires_at ? announcement.expires_at.split('T')[0] : '',
       });
+      setAnnouncementImagePreview(announcement.image_url || null);
     } else {
       setEditingAnnouncement(null);
       setAnnouncementForm({
@@ -397,10 +407,81 @@ export default function AdminSettings() {
         content: '',
         department_id: '',
         is_public: true,
+        is_pinned: false,
+        image_url: '',
         expires_at: '',
       });
+      setAnnouncementImagePreview(null);
     }
+    setSelectedAnnouncementImage(null);
     setIsAnnouncementDialogOpen(true);
+  };
+
+  const handleAnnouncementImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Formato inválido. Use JPG, PNG, GIF ou WEBP');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setSelectedAnnouncementImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAnnouncementImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadAnnouncementImage = async (): Promise<string | null> => {
+    if (!selectedAnnouncementImage || !user?.id) return announcementForm.image_url || null;
+
+    setIsUploadingAnnouncementImage(true);
+    try {
+      const fileExt = selectedAnnouncementImage.name.split('.').pop();
+      const fileName = `announcements/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('posts')
+        .upload(fileName, selectedAnnouncementImage);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('posts')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Erro ao enviar imagem');
+      return null;
+    } finally {
+      setIsUploadingAnnouncementImage(false);
+    }
+  };
+
+  const handleTogglePinned = async (announcement: Announcement) => {
+    try {
+      const { error } = await supabase
+        .from('announcements')
+        .update({ is_pinned: !announcement.is_pinned })
+        .eq('id', announcement.id);
+
+      if (error) throw error;
+      toast.success(announcement.is_pinned ? 'Comunicado desfixado' : 'Comunicado fixado');
+      fetchData();
+    } catch (error) {
+      console.error('Error toggling pinned:', error);
+      toast.error('Erro ao fixar/desfixar comunicado');
+    }
   };
 
   const handleSaveAnnouncement = async () => {
@@ -410,6 +491,15 @@ export default function AdminSettings() {
     }
 
     try {
+      let imageUrl = announcementForm.image_url;
+      
+      if (selectedAnnouncementImage) {
+        const uploadedUrl = await uploadAnnouncementImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       if (editingAnnouncement) {
         const { error } = await supabase
           .from('announcements')
@@ -418,6 +508,8 @@ export default function AdminSettings() {
             content: announcementForm.content,
             department_id: announcementForm.department_id || null,
             is_public: announcementForm.is_public,
+            is_pinned: announcementForm.is_pinned,
+            image_url: imageUrl || null,
             expires_at: announcementForm.expires_at || null,
             updated_at: new Date().toISOString(),
           })
@@ -433,6 +525,8 @@ export default function AdminSettings() {
             content: announcementForm.content,
             department_id: announcementForm.department_id || null,
             is_public: announcementForm.is_public,
+            is_pinned: announcementForm.is_pinned,
+            image_url: imageUrl || null,
             expires_at: announcementForm.expires_at || null,
             created_by: user?.id,
           });
@@ -442,6 +536,8 @@ export default function AdminSettings() {
       }
 
       setIsAnnouncementDialogOpen(false);
+      setSelectedAnnouncementImage(null);
+      setAnnouncementImagePreview(null);
       fetchData();
     } catch (error) {
       console.error('Error saving announcement:', error);
@@ -705,17 +801,32 @@ export default function AdminSettings() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Título</TableHead>
+                      <TableHead>Fixado</TableHead>
                       <TableHead>Visibilidade</TableHead>
                       <TableHead>Criado em</TableHead>
-                      <TableHead>Expira em</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {announcements.map((announcement) => (
                       <TableRow key={announcement.id}>
-                        <TableCell className="font-medium max-w-[300px]">
-                          <div className="truncate">{announcement.title}</div>
+                        <TableCell className="font-medium max-w-[250px]">
+                          <div className="flex items-center gap-2">
+                            {announcement.image_url && (
+                              <img 
+                                src={announcement.image_url} 
+                                alt="" 
+                                className="h-8 w-8 rounded object-cover"
+                              />
+                            )}
+                            <div className="truncate">{announcement.title}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={announcement.is_pinned}
+                            onCheckedChange={() => handleTogglePinned(announcement)}
+                          />
                         </TableCell>
                         <TableCell>
                           {announcement.is_public ? (
@@ -728,11 +839,6 @@ export default function AdminSettings() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {format(new Date(announcement.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {announcement.expires_at 
-                            ? format(new Date(announcement.expires_at), "dd/MM/yyyy", { locale: ptBR })
-                            : '-'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -936,6 +1042,24 @@ export default function AdminSettings() {
                 rows={6}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Imagem (opcional)</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleAnnouncementImageSelect}
+                  className="flex-1"
+                />
+                {announcementImagePreview && (
+                  <img 
+                    src={announcementImagePreview} 
+                    alt="Preview" 
+                    className="h-16 w-16 rounded object-cover border"
+                  />
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Visibilidade</Label>
@@ -985,12 +1109,22 @@ export default function AdminSettings() {
                 />
               </div>
             </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="announcement-pinned"
+                checked={announcementForm.is_pinned}
+                onCheckedChange={(checked) => 
+                  setAnnouncementForm(prev => ({ ...prev, is_pinned: checked }))
+                }
+              />
+              <label htmlFor="announcement-pinned">Fixar comunicado no topo</label>
+            </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsAnnouncementDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleSaveAnnouncement}>
-                {editingAnnouncement ? 'Salvar' : 'Publicar'}
+              <Button onClick={handleSaveAnnouncement} disabled={isUploadingAnnouncementImage}>
+                {isUploadingAnnouncementImage ? 'Enviando...' : (editingAnnouncement ? 'Salvar' : 'Publicar')}
               </Button>
             </div>
           </div>

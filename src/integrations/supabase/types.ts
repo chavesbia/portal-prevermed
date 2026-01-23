@@ -22,6 +22,8 @@ export type Database = {
           department_id: string | null
           expires_at: string | null
           id: string
+          image_url: string | null
+          is_pinned: boolean | null
           is_public: boolean | null
           published_at: string | null
           title: string
@@ -34,6 +36,8 @@ export type Database = {
           department_id?: string | null
           expires_at?: string | null
           id?: string
+          image_url?: string | null
+          is_pinned?: boolean | null
           is_public?: boolean | null
           published_at?: string | null
           title: string
@@ -46,6 +50,8 @@ export type Database = {
           department_id?: string | null
           expires_at?: string | null
           id?: string
+          image_url?: string | null
+          is_pinned?: boolean | null
           is_public?: boolean | null
           published_at?: string | null
           title?: string

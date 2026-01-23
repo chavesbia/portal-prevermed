@@ -159,11 +159,12 @@ export default function Index() {
         })));
       }
 
-      // Fetch announcements
+      // Fetch announcements (pinned first, then by date)
       const { data: announcementsData } = await supabase
         .from('announcements')
         .select('*')
         .eq('is_public', true)
+        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -175,7 +176,8 @@ export default function Index() {
           author_id: ann.created_by || '',
           author_name: 'Administração',
           author_role: 'adm_master' as const,
-          is_pinned: false,
+          is_pinned: ann.is_pinned ?? false,
+          image_url: ann.image_url,
           published_at: ann.published_at || ann.created_at,
           created_at: ann.created_at,
         })));

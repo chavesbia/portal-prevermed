@@ -54,6 +54,7 @@ export interface Announcement {
   author_name?: string;
   author_role: 'adm_master' | 'rh';
   is_pinned: boolean;
+  image_url?: string;
   published_at: string;
   created_at: string;
 }
