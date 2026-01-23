@@ -14,6 +14,8 @@ import {
   Network,
   ClipboardList,
   X,
+  ExternalLink,
+  Calculator,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,8 @@ interface MenuItem {
   path: string;
   requiresAuth?: boolean;
   adminOnly?: boolean;
+  isExternal?: boolean;
+  subItems?: MenuItem[];
 }
 
 interface MenuSection {
@@ -62,7 +66,21 @@ const menuSections: MenuSection[] = [
     items: [
       { label: 'RH', icon: Users, path: '/departamentos/rh', requiresAuth: true },
       { label: 'Engenharia', icon: Building2, path: '/departamentos/engenharia', requiresAuth: true },
-      { label: 'Comercial', icon: FileText, path: '/departamentos/comercial', requiresAuth: true },
+      { 
+        label: 'Comercial', 
+        icon: FileText, 
+        path: '/departamentos/comercial', 
+        requiresAuth: true,
+        subItems: [
+          { 
+            label: 'Precificação', 
+            icon: Calculator, 
+            path: 'https://precificacao-prevermed.lovable.app', 
+            requiresAuth: true,
+            isExternal: true 
+          },
+        ]
+      },
     ],
   },
   {
@@ -136,18 +154,70 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
                   <div className="space-y-1">
                     {section.items.map((item) => (
                       shouldShowItem(item) && (
-                        <NavLink
-                          key={item.path}
-                          to={item.path}
-                          onClick={onClose}
-                          className={cn(
-                            'menu-item',
-                            isActive(item.path) && 'menu-item-active'
+                        <div key={item.path}>
+                          {item.isExternal ? (
+                            <a
+                              href={item.path}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="menu-item flex items-center justify-between"
+                            >
+                              <div className="flex items-center gap-3">
+                                <item.icon className="h-5 w-5 flex-shrink-0" />
+                                <span>{item.label}</span>
+                              </div>
+                              <ExternalLink className="h-4 w-4 opacity-50" />
+                            </a>
+                          ) : (
+                            <NavLink
+                              to={item.path}
+                              onClick={onClose}
+                              className={cn(
+                                'menu-item',
+                                isActive(item.path) && 'menu-item-active'
+                              )}
+                            >
+                              <item.icon className="h-5 w-5 flex-shrink-0" />
+                              <span>{item.label}</span>
+                            </NavLink>
                           )}
-                        >
-                          <item.icon className="h-5 w-5 flex-shrink-0" />
-                          <span>{item.label}</span>
-                        </NavLink>
+                          {item.subItems && item.subItems.length > 0 && (
+                            <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-3">
+                              {item.subItems.map((subItem) => (
+                                shouldShowItem(subItem) && (
+                                  subItem.isExternal ? (
+                                    <a
+                                      key={subItem.path}
+                                      href={subItem.path}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="menu-item flex items-center justify-between text-sm"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                                        <span>{subItem.label}</span>
+                                      </div>
+                                      <ExternalLink className="h-3 w-3 opacity-50" />
+                                    </a>
+                                  ) : (
+                                    <NavLink
+                                      key={subItem.path}
+                                      to={subItem.path}
+                                      onClick={onClose}
+                                      className={cn(
+                                        'menu-item text-sm',
+                                        isActive(subItem.path) && 'menu-item-active'
+                                      )}
+                                    >
+                                      <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                                      <span>{subItem.label}</span>
+                                    </NavLink>
+                                  )
+                                )
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )
                     ))}
                   </div>
