@@ -97,6 +97,9 @@ export default function AdminUsers() {
     unit: 'lapa' as 'lapa' | 'osasco',
     hierarchy_position: 'team_member' as HierarchyPosition,
     internal_handle: '',
+    role: '' as string,
+    departments: [] as string[],
+    primary_department: '' as string,
   });
   
   // Edit form states
@@ -378,6 +381,37 @@ export default function AdminUsers() {
         if (updateError) {
           console.error('Error updating profile:', updateError);
         }
+
+        // Add role if selected
+        if (newUserForm.role) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: authData.user.id,
+              role: newUserForm.role as 'adm_master' | 'adm_user' | 'tech_user',
+            });
+
+          if (roleError) {
+            console.error('Error adding role:', roleError);
+          }
+        }
+
+        // Add departments if selected
+        if (newUserForm.departments.length > 0) {
+          const deptInserts = newUserForm.departments.map(deptId => ({
+            user_id: authData.user!.id,
+            department_id: deptId,
+            is_primary: deptId === newUserForm.primary_department,
+          }));
+
+          const { error: deptError } = await supabase
+            .from('user_departments')
+            .insert(deptInserts);
+
+          if (deptError) {
+            console.error('Error adding departments:', deptError);
+          }
+        }
       }
 
       toast.success('Usuário criado com sucesso! Um e-mail de confirmação foi enviado.');
@@ -389,12 +423,24 @@ export default function AdminUsers() {
         unit: 'lapa',
         hierarchy_position: 'team_member',
         internal_handle: '',
+        role: '',
+        departments: [],
+        primary_department: '',
       });
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(error.message || 'Erro ao criar usuário');
     }
+  };
+
+  const toggleNewUserDepartment = (deptId: string) => {
+    setNewUserForm(prev => ({
+      ...prev,
+      departments: prev.departments.includes(deptId)
+        ? prev.departments.filter(id => id !== deptId)
+        : [...prev.departments, deptId],
+    }));
   };
 
   const toggleDepartment = (deptId: string) => {
@@ -794,7 +840,7 @@ export default function AdminUsers() {
 
       {/* New User Dialog */}
       <Dialog open={isNewUserDialogOpen} onOpenChange={setIsNewUserDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Novo Usuário</DialogTitle>
             <DialogDescription>
@@ -874,6 +920,61 @@ export default function AdminUsers() {
                 </Select>
               </div>
             </div>
+
+            {/* Perfil de Acesso */}
+            <div className="space-y-2">
+              <Label>Perfil de Acesso</Label>
+              <Select
+                value={newUserForm.role}
+                onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adm_master">ADM Master</SelectItem>
+                  <SelectItem value="adm_user">Usuário Administrativo</SelectItem>
+                  <SelectItem value="tech_user">Usuário Técnico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Departamentos */}
+            <div className="space-y-2">
+              <Label>Departamentos</Label>
+              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-auto">
+                {departments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum departamento cadastrado</p>
+                ) : (
+                  departments.map(dept => (
+                    <div key={dept.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={`new-${dept.id}`}
+                        checked={newUserForm.departments.includes(dept.id)}
+                        onChange={() => toggleNewUserDepartment(dept.id)}
+                        className="rounded"
+                      />
+                      <label htmlFor={`new-${dept.id}`} className="flex-1 cursor-pointer text-sm">
+                        {dept.name}
+                      </label>
+                      {newUserForm.departments.includes(dept.id) && (
+                        <Button
+                          type="button"
+                          variant={newUserForm.primary_department === dept.id ? "default" : "outline"}
+                          size="sm"
+                          className="text-xs h-7"
+                          onClick={() => setNewUserForm(prev => ({ ...prev, primary_department: dept.id }))}
+                        >
+                          {newUserForm.primary_department === dept.id ? 'Principal' : 'Definir'}
+                        </Button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={() => setIsNewUserDialogOpen(false)}>
                 Cancelar
