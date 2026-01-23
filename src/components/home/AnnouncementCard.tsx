@@ -1,17 +1,21 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Megaphone, Pin } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Megaphone, Pin, X } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Announcement } from '@/types/portal';
 
 interface AnnouncementCardProps {
-  announcement: Announcement;
+  announcement: Announcement & { image_url?: string };
   compact?: boolean;
 }
 
 export function AnnouncementCard({ announcement, compact = false }: AnnouncementCardProps) {
+  const [isImageOpen, setIsImageOpen] = useState(false);
+  
   const timeAgo = formatDistanceToNow(new Date(announcement.published_at), {
     addSuffix: true,
     locale: ptBR,
@@ -37,41 +41,71 @@ export function AnnouncementCard({ announcement, compact = false }: Announcement
   }
 
   return (
-    <Card className="card-elevated animate-fade-in">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src="" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                {announcement.author_role === 'rh' ? 'RH' : 'ADM'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-base">{announcement.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                {announcement.author_name || (announcement.author_role === 'rh' ? 'Recursos Humanos' : 'Administração')}
-                <span className="mx-1">•</span>
-                {timeAgo}
-              </p>
+    <>
+      <Card className="card-elevated animate-fade-in">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src="" />
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  {announcement.author_role === 'rh' ? 'RH' : 'ADM'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-base">{announcement.title}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {announcement.author_name || (announcement.author_role === 'rh' ? 'Recursos Humanos' : 'Administração')}
+                  <span className="mx-1">•</span>
+                  {timeAgo}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {announcement.is_pinned && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Pin className="h-3 w-3" />
+                  Fixado
+                </Badge>
+              )}
+              <Badge className="badge-department">
+                {announcement.author_role === 'rh' ? 'RH' : 'ADM Master'}
+              </Badge>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {announcement.is_pinned && (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Pin className="h-3 w-3" />
-                Fixado
-              </Badge>
-            )}
-            <Badge className="badge-department">
-              {announcement.author_role === 'rh' ? 'RH' : 'ADM Master'}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-foreground/90 whitespace-pre-wrap">{announcement.content}</p>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-foreground/90 whitespace-pre-wrap">{announcement.content}</p>
+          
+          {announcement.image_url && (
+            <img 
+              src={announcement.image_url} 
+              alt="Imagem do comunicado" 
+              className="rounded-lg max-h-80 w-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => setIsImageOpen(true)}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Image Lightbox Dialog */}
+      <Dialog open={isImageOpen} onOpenChange={setIsImageOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+          <button
+            onClick={() => setIsImageOpen(false)}
+            className="absolute top-2 right-2 z-50 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {announcement.image_url && (
+            <img 
+              src={announcement.image_url} 
+              alt="Imagem do comunicado ampliada" 
+              className="rounded-lg w-full max-h-[90vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
