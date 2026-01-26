@@ -139,17 +139,41 @@ export function ChatMessages({
 
     setIsSending(true);
     try {
-      const { error } = await supabase
+      const { data: messageData, error } = await supabase
         .from('chat_messages')
         .insert({
           chat_id: chatId,
           content: newMessage.trim(),
           sender_id: currentUserId,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      // Get sender's name for notification
+      const senderName = participantsMap[currentUserId]?.nickname || 
+                         participantsMap[currentUserId]?.full_name || 
+                         'Alguém';
+
+      // Create notifications for other participants
+      const otherParticipants = participants.filter(p => p.user_id !== currentUserId);
+      
+      if (otherParticipants.length > 0) {
+        const notifications = otherParticipants.map(p => ({
+          user_id: p.user_id,
+          title: `Nova mensagem de ${senderName}`,
+          content: newMessage.trim().substring(0, 100) + (newMessage.trim().length > 100 ? '...' : ''),
+          notification_type: 'chat_message' as const,
+          related_id: messageData.id,
+          related_type: 'chat_message',
+        }));
+
+        await supabase.from('notifications').insert(notifications);
+      }
+
       setNewMessage('');
+      setTyping(null);
       onMessageSent();
       inputRef.current?.focus();
     } catch (error) {
