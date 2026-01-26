@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -20,7 +22,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -39,7 +40,12 @@ import {
   Edit,
   Trash2,
   MoreHorizontal,
-  RefreshCw
+  RefreshCw,
+  Calendar,
+  AtSign,
+  Briefcase,
+  MapPin,
+  User
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -85,9 +91,8 @@ export default function AdminUsers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
-  const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
   const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   // New user form states
   const [newUserForm, setNewUserForm] = useState({
@@ -102,10 +107,11 @@ export default function AdminUsers() {
     primary_department: '' as string,
   });
   
-  // Edit form states
+  // Unified edit form states (includes profile, role, and departments)
   const [editForm, setEditForm] = useState({
     full_name: '',
     email: '',
+    nickname: '',
     position: '',
     status: 'active' as 'active' | 'inactive',
     unit: 'lapa' as 'lapa' | 'osasco',
@@ -113,10 +119,10 @@ export default function AdminUsers() {
     birth_date: '',
     start_date: '',
     internal_handle: '',
+    role: '' as string,
+    departments: [] as string[],
+    primary_department: '' as string,
   });
-  const [selectedRole, setSelectedRole] = useState<string>('');
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [primaryDepartment, setPrimaryDepartment] = useState<string>('');
 
   const isAdmMaster = role === 'adm_master';
 
@@ -196,6 +202,7 @@ export default function AdminUsers() {
     setEditForm({
       full_name: user.full_name,
       email: user.email,
+      nickname: user.nickname || '',
       position: user.position || '',
       status: user.status || 'active',
       unit: user.unit || 'lapa',
@@ -203,6 +210,9 @@ export default function AdminUsers() {
       birth_date: user.birth_date || '',
       start_date: user.start_date || '',
       internal_handle: user.internal_handle || '',
+      role: user.role || '',
+      departments: user.departments?.map(d => d.id) || [],
+      primary_department: user.departments?.find(d => d.is_primary)?.id || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -210,13 +220,17 @@ export default function AdminUsers() {
   const handleSaveUser = async () => {
     if (!selectedUser) return;
 
+    setIsSaving(true);
+
     try {
-      const { error } = await supabase
+      // 1. Update profile
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: editForm.full_name,
           email: editForm.email,
-          position: editForm.position,
+          nickname: editForm.nickname || null,
+          position: editForm.position || null,
           status: editForm.status,
           unit: editForm.unit,
           hierarchy_position: editForm.hierarchy_position,
@@ -227,98 +241,77 @@ export default function AdminUsers() {
         })
         .eq('id', selectedUser.id);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      toast.success('Usuário atualizado com sucesso');
-      setIsEditDialogOpen(false);
-      fetchUsers();
-    } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error('Erro ao atualizar usuário');
-    }
-  };
-
-  const handleManageRole = (user: UserWithDetails) => {
-    setSelectedUser(user);
-    setSelectedRole(user.role || '');
-    setIsRoleDialogOpen(true);
-  };
-
-  const handleSaveRole = async () => {
-    if (!selectedUser || !selectedRole) return;
-
-    try {
-      // Check if user already has a role
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('id')
-        .eq('user_id', selectedUser.user_id)
-        .maybeSingle();
-
-      if (existingRole) {
-      // Update existing role
-        const { error } = await supabase
+      // 2. Update role
+      if (editForm.role) {
+        const { data: existingRole } = await supabase
           .from('user_roles')
-          .update({ role: selectedRole as 'adm_master' | 'adm_user' | 'tech_user' })
-          .eq('user_id', selectedUser.user_id);
+          .select('id')
+          .eq('user_id', selectedUser.user_id)
+          .maybeSingle();
 
-        if (error) throw error;
+        if (existingRole) {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .update({ role: editForm.role as 'adm_master' | 'adm_user' | 'tech_user' })
+            .eq('user_id', selectedUser.user_id);
+
+          if (roleError) {
+            console.error('Error updating role:', roleError);
+            toast.error('Erro ao atualizar perfil de acesso');
+          }
+        } else {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({ user_id: selectedUser.user_id, role: editForm.role as any });
+
+          if (roleError) {
+            console.error('Error inserting role:', roleError);
+            toast.error('Erro ao adicionar perfil de acesso');
+          }
+        }
       } else {
-        // Insert new role
-        const { error } = await supabase
+        // Remove role if cleared
+        await supabase
           .from('user_roles')
-          .insert({ user_id: selectedUser.user_id, role: selectedRole as any });
-
-        if (error) throw error;
+          .delete()
+          .eq('user_id', selectedUser.user_id);
       }
 
-      toast.success('Perfil de acesso atualizado');
-      setIsRoleDialogOpen(false);
-      fetchUsers();
-    } catch (error) {
-      console.error('Error updating role:', error);
-      toast.error('Erro ao atualizar perfil de acesso');
-    }
-  };
-
-  const handleManageDepartments = (user: UserWithDetails) => {
-    setSelectedUser(user);
-    setSelectedDepartments(user.departments?.map(d => d.id) || []);
-    setPrimaryDepartment(user.departments?.find(d => d.is_primary)?.id || '');
-    setIsDeptDialogOpen(true);
-  };
-
-  const handleSaveDepartments = async () => {
-    if (!selectedUser) return;
-
-    try {
-      // Remove all existing departments
+      // 3. Update departments
+      // First, remove all existing departments
       await supabase
         .from('user_departments')
         .delete()
         .eq('user_id', selectedUser.user_id);
 
-      // Insert new departments
-      if (selectedDepartments.length > 0) {
-        const deptInserts = selectedDepartments.map(deptId => ({
+      // Then, insert new departments
+      if (editForm.departments.length > 0) {
+        const deptInserts = editForm.departments.map(deptId => ({
           user_id: selectedUser.user_id,
           department_id: deptId,
-          is_primary: deptId === primaryDepartment,
+          is_primary: deptId === editForm.primary_department,
         }));
 
-        const { error } = await supabase
+        const { error: deptError } = await supabase
           .from('user_departments')
           .insert(deptInserts);
 
-        if (error) throw error;
+        if (deptError) {
+          console.error('Error updating departments:', deptError);
+          toast.error('Erro ao atualizar departamentos');
+        }
       }
 
-      toast.success('Departamentos atualizados');
-      setIsDeptDialogOpen(false);
+      toast.success('Usuário atualizado com sucesso!');
+      setIsEditDialogOpen(false);
       fetchUsers();
     } catch (error) {
-      console.error('Error updating departments:', error);
-      toast.error('Erro ao atualizar departamentos');
+      console.error('Error updating user:', error);
+      toast.error('Erro ao atualizar usuário');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -348,6 +341,8 @@ export default function AdminUsers() {
       toast.error('Nome e e-mail são obrigatórios');
       return;
     }
+
+    setIsSaving(true);
 
     try {
       // Create user via Supabase Auth (this will trigger the handle_new_user function)
@@ -431,6 +426,8 @@ export default function AdminUsers() {
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast.error(error.message || 'Erro ao criar usuário');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -443,12 +440,13 @@ export default function AdminUsers() {
     }));
   };
 
-  const toggleDepartment = (deptId: string) => {
-    setSelectedDepartments(prev => 
-      prev.includes(deptId) 
-        ? prev.filter(id => id !== deptId)
-        : [...prev, deptId]
-    );
+  const toggleEditDepartment = (deptId: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      departments: prev.departments.includes(deptId)
+        ? prev.departments.filter(id => id !== deptId)
+        : [...prev.departments, deptId],
+    }));
   };
 
   const filteredUsers = users.filter(user =>
@@ -598,15 +596,7 @@ export default function AdminUsers() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Edit className="h-4 w-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleManageRole(user)}>
-                            <Shield className="h-4 w-4 mr-2" />
-                            Perfil de Acesso
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleManageDepartments(user)}>
-                            <Building2 className="h-4 w-4 mr-2" />
-                            Departamentos
+                            Editar Usuário
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
@@ -627,335 +617,430 @@ export default function AdminUsers() {
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
+      {/* Edit User Dialog - Unified with all fields */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Editar Usuário
+            </DialogTitle>
             <DialogDescription>
-              Atualize as informações do usuário.
+              Atualize todas as informações do usuário {selectedUser?.full_name}.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-2">
-            <div className="space-y-2">
-              <Label>Nome Completo</Label>
-              <Input
-                value={editForm.full_name}
-                onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <Input
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>@ Interno (para menções)</Label>
-              <Input
-                value={editForm.internal_handle}
-                onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
-                placeholder="@usuario"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cargo</Label>
-              <Input
-                value={editForm.position}
-                onChange={(e) => setEditForm(prev => ({ ...prev, position: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Data de Nascimento</Label>
-                <Input
-                  type="date"
-                  value={editForm.birth_date}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))}
-                />
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {/* Section: Personal Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <User className="h-4 w-4" />
+                Informações Pessoais
               </div>
-              <div className="space-y-2">
-                <Label>Data de Admissão</Label>
-                <Input
-                  type="date"
-                  value={editForm.start_date}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, start_date: e.target.value }))}
-                />
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo *</Label>
+                  <Input
+                    value={editForm.full_name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Apelido</Label>
+                  <Input
+                    value={editForm.nickname}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="Como prefere ser chamado"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>E-mail *</Label>
+                  <Input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <AtSign className="h-3 w-3" />
+                    @ Interno (menções)
+                  </Label>
+                  <Input
+                    value={editForm.internal_handle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
+                    placeholder="@usuario"
+                  />
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+
+            {/* Section: Dates */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                Datas
+              </div>
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data de Nascimento</Label>
+                  <Input
+                    type="date"
+                    value={editForm.birth_date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data de Admissão</Label>
+                  <Input
+                    type="date"
+                    value={editForm.start_date}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, start_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Position Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Briefcase className="h-4 w-4" />
+                Cargo e Posição
+              </div>
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Input
+                    value={editForm.position}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, position: e.target.value }))}
+                    placeholder="Ex: Analista, Coordenador..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Posição Hierárquica</Label>
+                  <Select
+                    value={editForm.hierarchy_position}
+                    onValueChange={(value: HierarchyPosition) => 
+                      setEditForm(prev => ({ ...prev, hierarchy_position: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="director">Diretor</SelectItem>
+                      <SelectItem value="manager">Gerente</SelectItem>
+                      <SelectItem value="coordinator">Coordenador</SelectItem>
+                      <SelectItem value="leader">Líder</SelectItem>
+                      <SelectItem value="team_member">Membro da Equipe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={editForm.status}
+                    onValueChange={(value: 'active' | 'inactive') => 
+                      setEditForm(prev => ({ ...prev, status: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Unidade
+                  </Label>
+                  <Select
+                    value={editForm.unit}
+                    onValueChange={(value: 'lapa' | 'osasco') => 
+                      setEditForm(prev => ({ ...prev, unit: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lapa">Lapa</SelectItem>
+                      <SelectItem value="osasco">Osasco</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Access Profile */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                Perfil de Acesso
+              </div>
+              <Separator />
+              
               <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={editForm.status}
-                  onValueChange={(value: 'active' | 'inactive') => 
-                    setEditForm(prev => ({ ...prev, status: value }))
-                  }
+                <Label>Perfil</Label>
+                <Select 
+                  value={editForm.role} 
+                  onValueChange={(value) => setEditForm(prev => ({ ...prev, role: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione um perfil" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="adm_master">ADM Master</SelectItem>
+                    <SelectItem value="adm_user">Usuário Administrativo</SelectItem>
+                    <SelectItem value="tech_user">Usuário Técnico</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  O perfil define as permissões de acesso do usuário no sistema.
+                </p>
               </div>
+            </div>
+
+            {/* Section: Departments */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Building2 className="h-4 w-4" />
+                Departamentos
+              </div>
+              <Separator />
+              
               <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Select
-                  value={editForm.unit}
-                  onValueChange={(value: 'lapa' | 'osasco') => 
-                    setEditForm(prev => ({ ...prev, unit: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lapa">Lapa</SelectItem>
-                    <SelectItem value="osasco">Osasco</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Posição Hierárquica</Label>
-              <Select
-                value={editForm.hierarchy_position}
-                onValueChange={(value: HierarchyPosition) => 
-                  setEditForm(prev => ({ ...prev, hierarchy_position: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="director">Diretor</SelectItem>
-                  <SelectItem value="manager">Gerente</SelectItem>
-                  <SelectItem value="coordinator">Coordenador</SelectItem>
-                  <SelectItem value="leader">Líder</SelectItem>
-                  <SelectItem value="team_member">Membro da Equipe</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveUser}>
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Role Management Dialog */}
-      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Perfil de Acesso</DialogTitle>
-            <DialogDescription>
-              Defina o perfil de acesso do usuário {selectedUser?.full_name}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Perfil</Label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adm_master">ADM Master</SelectItem>
-                  <SelectItem value="adm_user">Usuário Administrativo</SelectItem>
-                  <SelectItem value="tech_user">Usuário Técnico</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveRole}>
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Department Management Dialog */}
-      <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Departamentos</DialogTitle>
-            <DialogDescription>
-              Defina os departamentos do usuário {selectedUser?.full_name}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Selecione os departamentos</Label>
-              <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-auto">
-                {departments.map(dept => (
-                  <div key={dept.id} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={dept.id}
-                      checked={selectedDepartments.includes(dept.id)}
-                      onChange={() => toggleDepartment(dept.id)}
-                      className="rounded"
-                    />
-                    <label htmlFor={dept.id} className="flex-1 cursor-pointer">
-                      {dept.name}
-                    </label>
-                    {selectedDepartments.includes(dept.id) && (
-                      <Button
-                        variant={primaryDepartment === dept.id ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setPrimaryDepartment(dept.id)}
+                <Label>Selecione os departamentos</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-auto">
+                  {departments.map(dept => (
+                    <div key={dept.id} className="flex items-center gap-3">
+                      <Checkbox
+                        id={`edit-dept-${dept.id}`}
+                        checked={editForm.departments.includes(dept.id)}
+                        onCheckedChange={() => toggleEditDepartment(dept.id)}
+                      />
+                      <label 
+                        htmlFor={`edit-dept-${dept.id}`} 
+                        className="flex-1 cursor-pointer text-sm"
                       >
-                        {primaryDepartment === dept.id ? 'Principal' : 'Definir Principal'}
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                        {dept.name}
+                      </label>
+                      {editForm.departments.includes(dept.id) && (
+                        <Button
+                          type="button"
+                          variant={editForm.primary_department === dept.id ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setEditForm(prev => ({ ...prev, primary_department: dept.id }))}
+                        >
+                          {editForm.primary_department === dept.id ? 'Principal' : 'Definir Principal'}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  O departamento principal aparecerá em destaque no perfil do usuário.
+                </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsDeptDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveDepartments}>
-                Salvar
-              </Button>
-            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveUser} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Alterações'
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* New User Dialog */}
       <Dialog open={isNewUserDialogOpen} onOpenChange={setIsNewUserDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Novo Usuário</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Novo Usuário
+            </DialogTitle>
             <DialogDescription>
               Cadastre um novo usuário no sistema. Um e-mail de confirmação será enviado.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4 max-h-[70vh] overflow-y-auto pr-2">
-            <div className="space-y-2">
-              <Label>Nome Completo *</Label>
-              <Input
-                value={newUserForm.full_name}
-                onChange={(e) => setNewUserForm(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Nome completo do usuário"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>E-mail *</Label>
-              <Input
-                type="email"
-                value={newUserForm.email}
-                onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@prevermed.com.br"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>@ Interno (para menções)</Label>
-              <Input
-                value={newUserForm.internal_handle}
-                onChange={(e) => setNewUserForm(prev => ({ ...prev, internal_handle: e.target.value }))}
-                placeholder="@usuario"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Cargo</Label>
-              <Input
-                value={newUserForm.position}
-                onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
-                placeholder="Ex: Analista, Coordenador..."
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Select
-                  value={newUserForm.unit}
-                  onValueChange={(value: 'lapa' | 'osasco') => 
-                    setNewUserForm(prev => ({ ...prev, unit: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lapa">Lapa</SelectItem>
-                    <SelectItem value="osasco">Osasco</SelectItem>
-                  </SelectContent>
-                </Select>
+          
+          <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {/* Section: Basic Info */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <User className="h-4 w-4" />
+                Informações Básicas
               </div>
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo *</Label>
+                  <Input
+                    value={newUserForm.full_name}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, full_name: e.target.value }))}
+                    placeholder="Nome completo do usuário"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail *</Label>
+                  <Input
+                    type="email"
+                    value={newUserForm.email}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="email@prevermed.com.br"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <AtSign className="h-3 w-3" />
+                    @ Interno (menções)
+                  </Label>
+                  <Input
+                    value={newUserForm.internal_handle}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, internal_handle: e.target.value }))}
+                    placeholder="@usuario"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Input
+                    value={newUserForm.position}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
+                    placeholder="Ex: Analista, Coordenador..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Position */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Briefcase className="h-4 w-4" />
+                Cargo e Localização
+              </div>
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Unidade</Label>
+                  <Select
+                    value={newUserForm.unit}
+                    onValueChange={(value: 'lapa' | 'osasco') => 
+                      setNewUserForm(prev => ({ ...prev, unit: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lapa">Lapa</SelectItem>
+                      <SelectItem value="osasco">Osasco</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Posição Hierárquica</Label>
+                  <Select
+                    value={newUserForm.hierarchy_position}
+                    onValueChange={(value: HierarchyPosition) => 
+                      setNewUserForm(prev => ({ ...prev, hierarchy_position: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="director">Diretor</SelectItem>
+                      <SelectItem value="manager">Gerente</SelectItem>
+                      <SelectItem value="coordinator">Coordenador</SelectItem>
+                      <SelectItem value="leader">Líder</SelectItem>
+                      <SelectItem value="team_member">Membro da Equipe</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Access Profile */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                Perfil de Acesso
+              </div>
+              <Separator />
+              
               <div className="space-y-2">
-                <Label>Posição Hierárquica</Label>
-                <Select
-                  value={newUserForm.hierarchy_position}
-                  onValueChange={(value: HierarchyPosition) => 
-                    setNewUserForm(prev => ({ ...prev, hierarchy_position: value }))
-                  }
+                <Label>Perfil</Label>
+                <Select 
+                  value={newUserForm.role} 
+                  onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Selecione um perfil" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="director">Diretor</SelectItem>
-                    <SelectItem value="manager">Gerente</SelectItem>
-                    <SelectItem value="coordinator">Coordenador</SelectItem>
-                    <SelectItem value="leader">Líder</SelectItem>
-                    <SelectItem value="team_member">Membro da Equipe</SelectItem>
+                    <SelectItem value="adm_master">ADM Master</SelectItem>
+                    <SelectItem value="adm_user">Usuário Administrativo</SelectItem>
+                    <SelectItem value="tech_user">Usuário Técnico</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Perfil de Acesso */}
-            <div className="space-y-2">
-              <Label>Perfil de Acesso</Label>
-              <Select
-                value={newUserForm.role}
-                onValueChange={(value) => setNewUserForm(prev => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um perfil" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adm_master">ADM Master</SelectItem>
-                  <SelectItem value="adm_user">Usuário Administrativo</SelectItem>
-                  <SelectItem value="tech_user">Usuário Técnico</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Departamentos */}
-            <div className="space-y-2">
-              <Label>Departamentos</Label>
-              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-auto">
-                {departments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum departamento cadastrado</p>
-                ) : (
-                  departments.map(dept => (
-                    <div key={dept.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id={`new-${dept.id}`}
+            {/* Section: Departments */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Building2 className="h-4 w-4" />
+                Departamentos
+              </div>
+              <Separator />
+              
+              <div className="space-y-2">
+                <Label>Selecione os departamentos</Label>
+                <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-auto">
+                  {departments.map(dept => (
+                    <div key={dept.id} className="flex items-center gap-3">
+                      <Checkbox
+                        id={`new-dept-${dept.id}`}
                         checked={newUserForm.departments.includes(dept.id)}
-                        onChange={() => toggleNewUserDepartment(dept.id)}
-                        className="rounded"
+                        onCheckedChange={() => toggleNewUserDepartment(dept.id)}
                       />
-                      <label htmlFor={`new-${dept.id}`} className="flex-1 cursor-pointer text-sm">
+                      <label 
+                        htmlFor={`new-dept-${dept.id}`} 
+                        className="flex-1 cursor-pointer text-sm"
+                      >
                         {dept.name}
                       </label>
                       {newUserForm.departments.includes(dept.id) && (
@@ -963,27 +1048,32 @@ export default function AdminUsers() {
                           type="button"
                           variant={newUserForm.primary_department === dept.id ? "default" : "outline"}
                           size="sm"
-                          className="text-xs h-7"
                           onClick={() => setNewUserForm(prev => ({ ...prev, primary_department: dept.id }))}
                         >
-                          {newUserForm.primary_department === dept.id ? 'Principal' : 'Definir'}
+                          {newUserForm.primary_department === dept.id ? 'Principal' : 'Definir Principal'}
                         </Button>
                       )}
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsNewUserDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreateUser}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Criar Usuário
-              </Button>
-            </div>
+          <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => setIsNewUserDialogOpen(false)} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateUser} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                'Criar Usuário'
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
