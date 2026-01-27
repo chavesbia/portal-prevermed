@@ -49,7 +49,9 @@ export default function Profile() {
     nickname: profile?.nickname || '',
     about: profile?.about || '',
     instagram: profile?.instagram || '',
-    whatsapp: profile?.whatsapp || ''
+    whatsapp: profile?.whatsapp || '',
+    contact_email: (profile as any)?.contact_email || '',
+    phone_extension: (profile as any)?.phone_extension || ''
   });
 
   const getInitials = (name: string) => {
@@ -138,7 +140,9 @@ export default function Profile() {
           nickname: editForm.nickname || null,
           about: editForm.about || null,
           instagram: editForm.instagram || null,
-          whatsapp: editForm.whatsapp || null
+          whatsapp: editForm.whatsapp || null,
+          contact_email: editForm.contact_email || null,
+          phone_extension: editForm.phone_extension || null
         })
         .eq('user_id', user.id);
 
@@ -160,7 +164,9 @@ export default function Profile() {
       nickname: profile?.nickname || '',
       about: profile?.about || '',
       instagram: profile?.instagram || '',
-      whatsapp: profile?.whatsapp || ''
+      whatsapp: profile?.whatsapp || '',
+      contact_email: (profile as any)?.contact_email || '',
+      phone_extension: (profile as any)?.phone_extension || ''
     });
     setIsEditing(false);
   };
@@ -368,6 +374,32 @@ export default function Profile() {
                   />
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="contact_email" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    E-mail de Contato
+                  </Label>
+                  <Input
+                    id="contact_email"
+                    type="email"
+                    value={editForm.contact_email}
+                    onChange={(e) => setEditForm({ ...editForm, contact_email: e.target.value })}
+                    placeholder="seu@email.com"
+                    maxLength={100}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone_extension">Ramal</Label>
+                  <Input
+                    id="phone_extension"
+                    value={editForm.phone_extension}
+                    onChange={(e) => setEditForm({ ...editForm, phone_extension: e.target.value })}
+                    placeholder="Ex: 1234"
+                    maxLength={10}
+                  />
+                </div>
+                
                 <div className="flex gap-2 pt-2">
                   <Button 
                     onClick={handleSaveProfile} 
@@ -419,6 +451,26 @@ export default function Profile() {
                   <div>
                     <p className="text-sm text-muted-foreground">WhatsApp</p>
                     <p className="font-medium">{profile.whatsapp || 'Não informado'}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">E-mail de Contato</p>
+                    <p className="font-medium">{(profile as any).contact_email || 'Não informado'}</p>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ramal</p>
+                    <p className="font-medium">{(profile as any).phone_extension || 'Não informado'}</p>
                   </div>
                 </div>
               </>

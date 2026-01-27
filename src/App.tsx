@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ChangePassword from "./pages/ChangePassword";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Social from "./pages/Social";
@@ -28,8 +29,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Auth route - no layout */}
+            {/* Auth routes - no layout */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/alterar-senha" element={<ChangePassword />} />
             
             {/* Portal routes with layout */}
             <Route element={<PortalLayout />}>

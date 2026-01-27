@@ -65,6 +65,7 @@ interface UserWithDetails {
   full_name: string;
   nickname: string | null;
   email: string;
+  login: string | null;
   profile_photo_url: string | null;
   position: string | null;
   status: 'active' | 'inactive' | null;
@@ -73,6 +74,8 @@ interface UserWithDetails {
   birth_date: string | null;
   start_date: string | null;
   internal_handle: string | null;
+  contact_email: string | null;
+  phone_extension: string | null;
   created_at: string;
   role?: string;
   departments?: { id: string; name: string; is_primary: boolean }[];
@@ -97,7 +100,7 @@ export default function AdminUsers() {
   // New user form states
   const [newUserForm, setNewUserForm] = useState({
     full_name: '',
-    email: '',
+    login: '',
     position: '',
     unit: 'lapa' as 'lapa' | 'osasco',
     hierarchy_position: 'team_member' as HierarchyPosition,
@@ -105,6 +108,8 @@ export default function AdminUsers() {
     role: '' as string,
     departments: [] as string[],
     primary_department: '' as string,
+    birth_date: '',
+    start_date: '',
   });
   
   // Unified edit form states (includes profile, role, and departments)
@@ -337,18 +342,37 @@ export default function AdminUsers() {
   };
 
   const handleCreateUser = async () => {
-    if (!newUserForm.full_name || !newUserForm.email) {
-      toast.error('Nome e e-mail são obrigatórios');
+    if (!newUserForm.full_name || !newUserForm.login) {
+      toast.error('Nome e login são obrigatórios');
+      return;
+    }
+
+    // Validate login format (no spaces, lowercase)
+    const loginFormatted = newUserForm.login.trim().toLowerCase().replace(/\s+/g, '.');
+    
+    // Check if login already exists
+    const { data: existingLogin } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('login', loginFormatted)
+      .maybeSingle();
+      
+    if (existingLogin) {
+      toast.error('Este login já está em uso');
       return;
     }
 
     setIsSaving(true);
 
     try {
-      // Create user via Supabase Auth (this will trigger the handle_new_user function)
+      // Create a fake email for Supabase Auth (internal use only)
+      const fakeEmail = `${loginFormatted}@prevermed.internal`;
+      const defaultPassword = 'prevermed';
+      
+      // Create user via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserForm.email,
-        password: Math.random().toString(36).slice(-12) + 'A1!', // Temporary password
+        email: fakeEmail,
+        password: defaultPassword,
         options: {
           data: {
             full_name: newUserForm.full_name,
@@ -366,10 +390,14 @@ export default function AdminUsers() {
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
+            login: loginFormatted,
             position: newUserForm.position || null,
             unit: newUserForm.unit,
             hierarchy_position: newUserForm.hierarchy_position,
-            internal_handle: newUserForm.internal_handle || null,
+            internal_handle: newUserForm.internal_handle || loginFormatted,
+            birth_date: newUserForm.birth_date || null,
+            start_date: newUserForm.start_date || null,
+            must_change_password: true,
           })
           .eq('user_id', authData.user.id);
 
@@ -409,11 +437,11 @@ export default function AdminUsers() {
         }
       }
 
-      toast.success('Usuário criado com sucesso! Um e-mail de confirmação foi enviado.');
+      toast.success(`Usuário criado! Login: ${loginFormatted} | Senha: prevermed`);
       setIsNewUserDialogOpen(false);
       setNewUserForm({
         full_name: '',
-        email: '',
+        login: '',
         position: '',
         unit: 'lapa',
         hierarchy_position: 'team_member',
@@ -421,6 +449,8 @@ export default function AdminUsers() {
         role: '',
         departments: [],
         primary_department: '',
+        birth_date: '',
+        start_date: '',
       });
       fetchUsers();
     } catch (error: any) {
@@ -911,13 +941,15 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>E-mail *</Label>
+                  <Label>Login *</Label>
                   <Input
-                    type="email"
-                    value={newUserForm.email}
-                    onChange={(e) => setNewUserForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="email@prevermed.com.br"
+                    value={newUserForm.login}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, login: e.target.value.toLowerCase().replace(/\s+/g, '.') }))}
+                    placeholder="nome.sobrenome"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Senha padrão: prevermed
+                  </p>
                 </div>
               </div>
               
@@ -939,6 +971,34 @@ export default function AdminUsers() {
                     value={newUserForm.position}
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
                     placeholder="Ex: Analista, Coordenador..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Dates */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                Datas
+              </div>
+              <Separator />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Data de Nascimento</Label>
+                  <Input
+                    type="date"
+                    value={newUserForm.birth_date}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, birth_date: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data de Admissão</Label>
+                  <Input
+                    type="date"
+                    value={newUserForm.start_date}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, start_date: e.target.value }))}
                   />
                 </div>
               </div>

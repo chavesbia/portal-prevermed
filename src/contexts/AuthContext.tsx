@@ -11,6 +11,7 @@ interface DBProfile {
   nickname: string | null;
   profile_photo_url: string | null;
   internal_handle: string | null;
+  login: string | null;
   birth_date: string | null;
   email: string;
   position: string | null;
@@ -21,6 +22,9 @@ interface DBProfile {
   about: string | null;
   instagram: string | null;
   whatsapp: string | null;
+  contact_email: string | null;
+  phone_extension: string | null;
+  must_change_password: boolean | null;
   created_at: string;
   updated_at: string;
 }
