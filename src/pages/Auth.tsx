@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Lock, User, AlertCircle } from 'lucide-react';
+import { Loader2, Lock, User, AlertCircle, Mail } from 'lucide-react';
 import logoPrevermed from '@/assets/logo-prevermed.png';
 import { z } from 'zod';
 
@@ -17,12 +17,18 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória').max(72, 'Senha muito longa'),
 });
 
+const recoverySchema = z.object({
+  login: z.string().trim().min(1, 'Informe seu login para recuperar a senha').max(100, 'Login muito longo'),
+});
+
 export default function Auth() {
   const navigate = useNavigate();
   const { signIn, user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecoveryLoading, setIsRecoveryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   
   // Login form state
   const [loginField, setLoginField] = useState('');
@@ -54,6 +60,7 @@ export default function Auth() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setInfo(null);
     
     // Validate input
     const validation = loginSchema.safeParse({
@@ -108,6 +115,49 @@ export default function Auth() {
     }
   };
 
+  const handlePasswordRecovery = async () => {
+    setError(null);
+    setInfo(null);
+
+    const validation = recoverySchema.safeParse({ login: loginField });
+    if (!validation.success) {
+      setError(validation.error.errors[0].message);
+      return;
+    }
+
+    setIsRecoveryLoading(true);
+
+    try {
+      const login = loginField.trim().toLowerCase();
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('login', login)
+        .maybeSingle();
+
+      if (profileError || !profile?.email) {
+        setError('Usuário não encontrado');
+        return;
+      }
+
+      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/alterar-senha`,
+      });
+
+      if (recoveryError) {
+        setError('Não foi possível enviar o link de recuperação. Tente novamente.');
+        return;
+      }
+
+      setInfo('Enviamos um link para redefinição de senha para o e-mail cadastrado.');
+    } catch {
+      setError('Erro inesperado. Tente novamente.');
+    } finally {
+      setIsRecoveryLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -140,6 +190,13 @@ export default function Auth() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              {info && (
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>{info}</AlertDescription>
+                </Alert>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="login">Login</Label>
@@ -153,7 +210,7 @@ export default function Auth() {
                     onChange={(e) => setLoginField(e.target.value)}
                     className="pl-10"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isRecoveryLoading}
                     autoComplete="username"
                   />
                 </div>
@@ -173,17 +230,36 @@ export default function Auth() {
                     onChange={(e) => setLoginPassword(e.target.value)}
                     className="pl-10"
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || isRecoveryLoading}
                     autoComplete="current-password"
                   />
                 </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto p-0 text-sm"
+                  onClick={handlePasswordRecovery}
+                  disabled={isLoading || isRecoveryLoading}
+                >
+                  {isRecoveryLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Enviando link...
+                    </span>
+                  ) : (
+                    'Primeiro acesso / Esqueci minha senha'
+                  )}
+                </Button>
               </div>
             </CardContent>
             <CardFooter>
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isLoading}
+                disabled={isLoading || isRecoveryLoading}
               >
                 {isLoading ? (
                   <>
