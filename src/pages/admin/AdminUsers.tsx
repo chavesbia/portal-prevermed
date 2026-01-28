@@ -45,7 +45,8 @@ import {
   AtSign,
   Briefcase,
   MapPin,
-  User
+  User,
+  KeyRound
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -341,6 +342,29 @@ export default function AdminUsers() {
     }
   };
 
+  const handleResetPassword = async (user: UserWithDetails) => {
+    if (!confirm(`Resetar a senha de ${user.full_name} para "prevermed"?\n\nO usuário deverá alterar a senha no próximo acesso.`)) {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        body: { targetUserId: user.user_id },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Senha de ${user.full_name} resetada para "prevermed"`);
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido');
+      }
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast.error(error.message || 'Erro ao resetar senha');
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!newUserForm.full_name || !newUserForm.login) {
       toast.error('Nome e login são obrigatórios');
@@ -627,6 +651,10 @@ export default function AdminUsers() {
                           <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Edit className="h-4 w-4 mr-2" />
                             Editar Usuário
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleResetPassword(user)}>
+                            <KeyRound className="h-4 w-4 mr-2" />
+                            Resetar Senha
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
