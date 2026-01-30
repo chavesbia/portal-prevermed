@@ -140,6 +140,14 @@ const departmentExternalLinks: Record<string, { label: string; icon: React.Eleme
       isExternal: true 
     },
   ],
+  'Engenharia': [
+    { 
+      label: 'Gestão de O.S', 
+      icon: ClipboardList, 
+      path: 'https://os-prevermed.lovable.app', 
+      isExternal: true 
+    },
+  ],
 };
 
 export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
