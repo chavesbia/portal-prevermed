@@ -46,7 +46,8 @@ import {
   Briefcase,
   MapPin,
   User,
-  KeyRound
+  KeyRound,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -57,6 +58,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import BulkImportDialog from '@/components/admin/BulkImportDialog';
 
 type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
 
@@ -96,6 +98,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // New user form states
@@ -573,6 +576,10 @@ export default function AdminUsers() {
             </div>
             <Button variant="outline" size="icon" onClick={fetchUsers}>
               <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Importar
             </Button>
             <Button onClick={() => setIsNewUserDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
@@ -1165,6 +1172,13 @@ export default function AdminUsers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <BulkImportDialog
+        open={isBulkImportOpen}
+        onOpenChange={setIsBulkImportOpen}
+        onComplete={fetchUsers}
+      />
     </div>
   );
 }
