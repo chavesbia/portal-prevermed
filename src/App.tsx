@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import Social from "./pages/Social";
 import Chat from "./pages/Chat";
 import Comunicados from "./pages/Comunicados";
+import Calendario from "./pages/Calendario";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminPermissions from "./pages/admin/AdminPermissions";
@@ -37,6 +38,7 @@ const App = () => (
             <Route element={<PortalLayout />}>
               <Route path="/" element={<Index />} />
               <Route path="/comunicados" element={<Comunicados />} />
+              <Route path="/calendario" element={<Calendario />} />
               <Route path="/documentos" element={<Index />} />
               <Route path="/links" element={<Index />} />
               <Route path="/organograma" element={<Index />} />

@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
+  CalendarDays,
   Home,
   Users,
   Building2,
@@ -107,6 +108,7 @@ const staticMenuSections: MenuSection[] = [
       { label: 'Documentos', icon: FolderOpen, path: '/documentos' },
       { label: 'Links Úteis', icon: LinkIcon, path: '/links' },
       { label: 'Organograma', icon: Network, path: '/organograma' },
+      { label: 'Calendário', icon: CalendarDays, path: '/calendario' },
     ],
   },
   {
