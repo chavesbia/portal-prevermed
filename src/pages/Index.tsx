@@ -18,45 +18,6 @@ import {
 } from 'lucide-react';
 import type { Announcement, Birthday, Document, UsefulLink, OrgChartNode } from '@/types/portal';
 
-// Announcements are now fetched from database
-
-const mockBirthdaysToday: Birthday[] = [
-  {
-    id: '1',
-    user_id: '1',
-    full_name: 'Maria Silva',
-    nickname: 'Mari',
-    birth_date: new Date().toISOString(),
-    department_name: 'RH',
-  },
-];
-
-const mockBirthdaysMonth: Birthday[] = [
-  {
-    id: '1',
-    user_id: '1',
-    full_name: 'Maria Silva',
-    nickname: 'Mari',
-    birth_date: new Date().toISOString(),
-    department_name: 'RH',
-  },
-  {
-    id: '2',
-    user_id: '2',
-    full_name: 'João Santos',
-    birth_date: new Date(Date.now() + 5 * 86400000).toISOString(),
-    department_name: 'Engenharia',
-  },
-  {
-    id: '3',
-    user_id: '3',
-    full_name: 'Ana Costa',
-    nickname: 'Aninha',
-    birth_date: new Date(Date.now() + 10 * 86400000).toISOString(),
-    department_name: 'Comercial',
-  },
-];
-
 const mockDocuments: Document[] = [
   {
     id: '1',
@@ -90,8 +51,6 @@ const mockDocuments: Document[] = [
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
   },
 ];
-
-// Links are now fetched from database
 
 const mockOrgChart: OrgChartNode[] = [
   {
@@ -136,6 +95,8 @@ export default function Index() {
   const navigate = useNavigate();
   const [usefulLinks, setUsefulLinks] = useState<UsefulLink[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [birthdaysToday, setBirthdaysToday] = useState<Birthday[]>([]);
+  const [birthdaysMonth, setBirthdaysMonth] = useState<Birthday[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,7 +119,7 @@ export default function Index() {
         })));
       }
 
-      // Fetch announcements (pinned first, then by date)
+      // Fetch announcements
       const { data: announcementsData } = await supabase
         .from('announcements')
         .select('*')
@@ -181,10 +142,62 @@ export default function Index() {
           created_at: ann.created_at,
         })));
       }
+
+      // Fetch birthdays from profiles
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentDay = now.getDate();
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, user_id, full_name, nickname, profile_photo_url, birth_date')
+        .eq('status', 'active')
+        .not('birth_date', 'is', null);
+
+      if (profilesData) {
+        // Get department names for each user
+        const userIds = profilesData.map(p => p.user_id);
+        const { data: userDepts } = await supabase
+          .from('user_departments')
+          .select('user_id, department_id')
+          .in('user_id', userIds)
+          .eq('is_primary', true);
+
+        const { data: depts } = await supabase
+          .from('departments')
+          .select('id, name');
+
+        const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
+        const userDeptMap = new Map((userDepts || []).map(ud => [ud.user_id, deptMap.get(ud.department_id) || '']));
+
+        const allBirthdays: Birthday[] = profilesData
+          .filter(p => p.birth_date)
+          .map(p => {
+            const bd = new Date(p.birth_date + 'T00:00:00');
+            return {
+              id: p.id,
+              user_id: p.user_id,
+              full_name: p.full_name,
+              nickname: p.nickname || undefined,
+              photo_url: p.profile_photo_url || undefined,
+              birth_date: p.birth_date!,
+              department_name: userDeptMap.get(p.user_id) || undefined,
+              _month: bd.getMonth() + 1,
+              _day: bd.getDate(),
+            };
+          });
+
+        const todayBirthdays = allBirthdays.filter(b => (b as any)._month === currentMonth && (b as any)._day === currentDay);
+        const monthBirthdays = allBirthdays
+          .filter(b => (b as any)._month === currentMonth)
+          .sort((a, b) => (a as any)._day - (b as any)._day);
+
+        setBirthdaysToday(todayBirthdays);
+        setBirthdaysMonth(monthBirthdays);
+      }
     };
     fetchData();
   }, []);
-
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -218,7 +231,7 @@ export default function Index() {
                 <Users className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="stat-value text-lg">{mockBirthdaysToday.length}</p>
+                <p className="stat-value text-lg">{birthdaysToday.length}</p>
                 <p className="stat-label text-xs">Aniversariantes</p>
               </div>
             </div>
@@ -284,13 +297,13 @@ export default function Index() {
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
           <BirthdayCard 
-            birthdays={mockBirthdaysToday} 
+            birthdays={birthdaysToday} 
             title="Aniversariantes do Dia" 
             variant="today"
           />
           
           <BirthdayCard 
-            birthdays={mockBirthdaysMonth} 
+            birthdays={birthdaysMonth} 
             title="Aniversários do Mês" 
             variant="month"
           />
