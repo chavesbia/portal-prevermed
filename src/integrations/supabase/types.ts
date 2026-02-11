@@ -113,6 +113,7 @@ export type Database = {
       }
       calendar_events: {
         Row: {
+          attachment_url: string | null
           color: string | null
           created_at: string
           created_by: string | null
@@ -123,11 +124,15 @@ export type Database = {
           event_type: string
           id: string
           is_all_day: boolean | null
+          location: string | null
+          time_end: string | null
+          time_start: string | null
           title: string
           unit_id: string | null
           updated_at: string
         }
         Insert: {
+          attachment_url?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -138,11 +143,15 @@ export type Database = {
           event_type?: string
           id?: string
           is_all_day?: boolean | null
+          location?: string | null
+          time_end?: string | null
+          time_start?: string | null
           title: string
           unit_id?: string | null
           updated_at?: string
         }
         Update: {
+          attachment_url?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -153,6 +162,9 @@ export type Database = {
           event_type?: string
           id?: string
           is_all_day?: boolean | null
+          location?: string | null
+          time_end?: string | null
+          time_start?: string | null
           title?: string
           unit_id?: string | null
           updated_at?: string
