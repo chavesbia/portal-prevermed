@@ -9,7 +9,7 @@ import { ptBR } from 'date-fns/locale';
 import type { Announcement } from '@/types/portal';
 
 interface AnnouncementCardProps {
-  announcement: Announcement & { image_url?: string };
+  announcement: Announcement & { image_url?: string; author_photo?: string };
   compact?: boolean;
 }
 
@@ -47,9 +47,9 @@ export function AnnouncementCard({ announcement, compact = false }: Announcement
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src="" />
+                <AvatarImage src={announcement.author_photo || ''} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  {announcement.author_role === 'rh' ? 'RH' : 'ADM'}
+                  {announcement.author_name ? announcement.author_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'ADM'}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -69,7 +69,7 @@ export function AnnouncementCard({ announcement, compact = false }: Announcement
                 </Badge>
               )}
               <Badge className="badge-department">
-                {announcement.author_role === 'rh' ? 'RH' : 'ADM Master'}
+                {announcement.author_name || 'Administração'}
               </Badge>
             </div>
           </div>
