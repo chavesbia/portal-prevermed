@@ -7,6 +7,8 @@ import { DocumentList } from '@/components/home/DocumentList';
 import { UsefulLinks } from '@/components/home/UsefulLinks';
 import { OrgChartSimple } from '@/components/home/OrgChartSimple';
 import { UnitsCard } from '@/components/home/UnitsCard';
+import { CalendarPreviewCard } from '@/components/home/CalendarPreviewCard';
+import { DirectoryCard } from '@/components/home/DirectoryCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -18,186 +20,219 @@ import {
 } from 'lucide-react';
 import type { Announcement, Birthday, Document, UsefulLink, OrgChartNode } from '@/types/portal';
 
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    title: 'Manual do Colaborador 2025',
-    description: 'Versão atualizada',
-    file_url: '#',
-    file_type: 'application/pdf',
-    category: 'RH',
-    uploader_id: '1',
-    download_count: 45,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Política de Home Office',
-    file_url: '#',
-    file_type: 'application/pdf',
-    category: 'Políticas',
-    uploader_id: '1',
-    download_count: 32,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Calendário de Feriados 2025',
-    file_url: '#',
-    file_type: 'application/pdf',
-    category: 'RH',
-    uploader_id: '1',
-    download_count: 78,
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-];
-
-const mockOrgChart: OrgChartNode[] = [
-  {
-    id: '1',
-    user_id: '1',
-    full_name: 'Dr. Carlos Eduardo',
-    position: 'Diretor Geral',
-    hierarchy_position: 'diretor',
-    department_name: 'Diretoria',
-    children: [
-      {
-        id: '2',
-        user_id: '2',
-        full_name: 'Ana Paula Souza',
-        position: 'Gerente de RH',
-        hierarchy_position: 'gerente',
-        department_name: 'RH',
-        children: [
-          {
-            id: '3',
-            user_id: '3',
-            full_name: 'Maria Silva',
-            position: 'Analista de RH',
-            hierarchy_position: 'liderado',
-            department_name: 'RH',
-          },
-        ],
-      },
-      {
-        id: '4',
-        user_id: '4',
-        full_name: 'Roberto Lima',
-        position: 'Gerente Comercial',
-        hierarchy_position: 'gerente',
-        department_name: 'Comercial',
-      },
-    ],
-  },
-];
-
 export default function Index() {
   const navigate = useNavigate();
   const [usefulLinks, setUsefulLinks] = useState<UsefulLink[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [birthdaysToday, setBirthdaysToday] = useState<Birthday[]>([]);
-  const [birthdaysMonth, setBirthdaysMonth] = useState<Birthday[]>([]);
+  const [allBirthdays, setAllBirthdays] = useState<Birthday[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [orgChart, setOrgChart] = useState<OrgChartNode[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // Fetch useful links
-      const { data: linksData } = await supabase
-        .from('useful_links')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
+    fetchLinks();
+    fetchAnnouncements();
+    fetchBirthdays();
+    fetchDocuments();
+    fetchOrgChart();
+  }, []);
 
-      if (linksData) {
-        setUsefulLinks(linksData.map(link => ({
-          id: link.id,
-          title: link.title,
-          url: link.url,
-          description: link.description,
-          icon: link.icon,
-          order: link.sort_order ?? 0,
-          is_active: link.is_active ?? true,
-        })));
+  const fetchLinks = async () => {
+    const { data } = await supabase
+      .from('useful_links')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order');
+
+    if (data) {
+      setUsefulLinks(data.map(link => ({
+        id: link.id,
+        title: link.title,
+        url: link.url,
+        description: link.description,
+        icon: link.icon,
+        order: link.sort_order ?? 0,
+        is_active: link.is_active ?? true,
+      })));
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    const { data: announcementsData } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('is_public', true)
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (announcementsData) {
+      // Get author profiles
+      const authorIds = [...new Set(announcementsData.map(a => a.created_by).filter(Boolean))];
+      let authorMap = new Map<string, { full_name: string; profile_photo_url: string | null }>();
+
+      if (authorIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, profile_photo_url')
+          .in('user_id', authorIds);
+
+        if (profiles) {
+          profiles.forEach(p => authorMap.set(p.user_id, p));
+        }
       }
 
-      // Fetch announcements
-      const { data: announcementsData } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('is_public', true)
-        .order('is_pinned', { ascending: false })
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (announcementsData) {
-        setAnnouncements(announcementsData.map(ann => ({
+      setAnnouncements(announcementsData.map(ann => {
+        const author = ann.created_by ? authorMap.get(ann.created_by) : null;
+        return {
           id: ann.id,
           title: ann.title,
           content: ann.content,
           author_id: ann.created_by || '',
-          author_name: 'Administração',
+          author_name: author?.full_name || 'Administração',
+          author_photo: author?.profile_photo_url || undefined,
           author_role: 'adm_master' as const,
           is_pinned: ann.is_pinned ?? false,
           image_url: ann.image_url,
           published_at: ann.published_at || ann.created_at,
           created_at: ann.created_at,
-        })));
-      }
+        };
+      }));
+    }
+  };
 
-      // Fetch birthdays from profiles
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentDay = now.getDate();
+  const fetchBirthdays = async () => {
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, user_id, full_name, nickname, profile_photo_url, birth_date')
+      .eq('status', 'active')
+      .not('birth_date', 'is', null);
 
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, user_id, full_name, nickname, profile_photo_url, birth_date')
-        .eq('status', 'active')
-        .not('birth_date', 'is', null);
+    if (profilesData) {
+      const userIds = profilesData.map(p => p.user_id);
+      const { data: userDepts } = await supabase
+        .from('user_departments')
+        .select('user_id, department_id')
+        .in('user_id', userIds)
+        .eq('is_primary', true);
 
-      if (profilesData) {
-        // Get department names for each user
-        const userIds = profilesData.map(p => p.user_id);
-        const { data: userDepts } = await supabase
-          .from('user_departments')
-          .select('user_id, department_id')
-          .in('user_id', userIds)
-          .eq('is_primary', true);
+      const { data: depts } = await supabase
+        .from('departments')
+        .select('id, name');
 
-        const { data: depts } = await supabase
-          .from('departments')
-          .select('id, name');
+      const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
+      const userDeptMap = new Map((userDepts || []).map(ud => [ud.user_id, deptMap.get(ud.department_id) || '']));
 
-        const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
-        const userDeptMap = new Map((userDepts || []).map(ud => [ud.user_id, deptMap.get(ud.department_id) || '']));
+      const birthdays: Birthday[] = profilesData
+        .filter(p => p.birth_date)
+        .map(p => ({
+          id: p.id,
+          user_id: p.user_id,
+          full_name: p.full_name,
+          nickname: p.nickname || undefined,
+          photo_url: p.profile_photo_url || undefined,
+          birth_date: p.birth_date!,
+          department_name: userDeptMap.get(p.user_id) || undefined,
+        }));
 
-        const allBirthdays: Birthday[] = profilesData
-          .filter(p => p.birth_date)
-          .map(p => {
-            const bd = new Date(p.birth_date + 'T00:00:00');
-            return {
-              id: p.id,
-              user_id: p.user_id,
-              full_name: p.full_name,
-              nickname: p.nickname || undefined,
-              photo_url: p.profile_photo_url || undefined,
-              birth_date: p.birth_date!,
-              department_name: userDeptMap.get(p.user_id) || undefined,
-              _month: bd.getMonth() + 1,
-              _day: bd.getDate(),
-            };
-          });
+      setAllBirthdays(birthdays);
+    }
+  };
 
-        const todayBirthdays = allBirthdays.filter(b => (b as any)._month === currentMonth && (b as any)._day === currentDay);
-        const monthBirthdays = allBirthdays
-          .filter(b => (b as any)._month === currentMonth)
-          .sort((a, b) => (a as any)._day - (b as any)._day);
+  const fetchDocuments = async () => {
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-        setBirthdaysToday(todayBirthdays);
-        setBirthdaysMonth(monthBirthdays);
-      }
+    if (data) {
+      setDocuments(data.map(doc => ({
+        id: doc.id,
+        title: doc.name,
+        description: doc.description || undefined,
+        file_url: doc.file_url,
+        file_type: doc.file_type || 'application/pdf',
+        category: 'Documento',
+        uploader_id: doc.uploaded_by || '',
+        download_count: 0,
+        created_at: doc.created_at,
+      })));
+    }
+  };
+
+  const fetchOrgChart = async () => {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, user_id, full_name, position, hierarchy_position, profile_photo_url')
+      .eq('status', 'active')
+      .not('hierarchy_position', 'is', null);
+
+    if (!profiles || profiles.length === 0) return;
+
+    const userIds = profiles.map(p => p.user_id);
+    const { data: userDepts } = await supabase
+      .from('user_departments')
+      .select('user_id, department_id')
+      .in('user_id', userIds)
+      .eq('is_primary', true);
+
+    const { data: depts } = await supabase
+      .from('departments')
+      .select('id, name');
+
+    const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
+    const userDeptMap = new Map((userDepts || []).map(ud => [ud.user_id, deptMap.get(ud.department_id) || '']));
+
+    const hierarchyOrder: Record<string, number> = {
+      director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
     };
-    fetchData();
-  }, []);
+
+    const nodes: OrgChartNode[] = profiles
+      .sort((a, b) => (hierarchyOrder[a.hierarchy_position || 'team_member'] || 4) - (hierarchyOrder[b.hierarchy_position || 'team_member'] || 4))
+      .map(p => ({
+        id: p.id,
+        user_id: p.user_id,
+        full_name: p.full_name,
+        position: p.position || p.hierarchy_position || '',
+        hierarchy_position: (p.hierarchy_position as any) || 'liderado',
+        photo_url: p.profile_photo_url || undefined,
+        department_name: userDeptMap.get(p.user_id) || '',
+      }));
+
+    // Build tree: directors at top, managers as children, etc.
+    const directors = nodes.filter(n => ['director', 'diretor'].includes(n.hierarchy_position));
+    const managers = nodes.filter(n => ['manager', 'gerente'].includes(n.hierarchy_position));
+    const others = nodes.filter(n => !directors.includes(n) && !managers.includes(n));
+
+    // Group by department
+    const deptGroups = new Map<string, OrgChartNode[]>();
+    others.forEach(n => {
+      const dept = n.department_name || 'Sem departamento';
+      if (!deptGroups.has(dept)) deptGroups.set(dept, []);
+      deptGroups.get(dept)!.push(n);
+    });
+
+    managers.forEach(m => {
+      m.children = deptGroups.get(m.department_name) || [];
+    });
+
+    if (directors.length > 0) {
+      directors[0].children = managers.length > 0 ? managers : others;
+      setOrgChart(directors);
+    } else if (managers.length > 0) {
+      setOrgChart(managers);
+    } else {
+      setOrgChart(nodes.slice(0, 10));
+    }
+  };
+
+  const todayCount = allBirthdays.filter(b => {
+    const now = new Date();
+    const bd = new Date(b.birth_date + 'T00:00:00');
+    return bd.getDate() === now.getDate() && bd.getMonth() === now.getMonth();
+  }).length;
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -231,7 +266,7 @@ export default function Index() {
                 <Users className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="stat-value text-lg">{birthdaysToday.length}</p>
+                <p className="stat-value text-lg">{todayCount}</p>
                 <p className="stat-label text-xs">Aniversariantes</p>
               </div>
             </div>
@@ -245,7 +280,7 @@ export default function Index() {
                 <FileText className="h-5 w-5 text-accent-foreground" />
               </div>
               <div>
-                <p className="stat-value text-lg">{mockDocuments.length}</p>
+                <p className="stat-value text-lg">{documents.length}</p>
                 <p className="stat-label text-xs">Documentos</p>
               </div>
             </div>
@@ -296,20 +331,12 @@ export default function Index() {
 
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
-          <BirthdayCard 
-            birthdays={birthdaysToday} 
-            title="Aniversariantes do Dia" 
-            variant="today"
-          />
+          <BirthdayCard allBirthdays={allBirthdays} />
           
-          <BirthdayCard 
-            birthdays={birthdaysMonth} 
-            title="Aniversários do Mês" 
-            variant="month"
-          />
+          <CalendarPreviewCard />
           
           <DocumentList 
-            documents={mockDocuments}
+            documents={documents}
             onViewAll={() => navigate('/documentos')}
           />
           
@@ -317,10 +344,13 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Org Chart Section */}
+      {/* Bottom Section */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <OrgChartSimple data={mockOrgChart} />
-        
+        <OrgChartSimple data={orgChart} />
+        <DirectoryCard />
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6">
         <UnitsCard />
       </div>
     </div>
