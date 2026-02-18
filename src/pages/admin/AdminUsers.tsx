@@ -47,7 +47,8 @@ import {
   MapPin,
   User,
   KeyRound,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Phone
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -114,6 +115,8 @@ export default function AdminUsers() {
     primary_department: '' as string,
     birth_date: '',
     start_date: '',
+    phone_extension: '',
+    contact_email: '',
   });
   
   // Unified edit form states (includes profile, role, and departments)
@@ -131,6 +134,8 @@ export default function AdminUsers() {
     role: '' as string,
     departments: [] as string[],
     primary_department: '' as string,
+    phone_extension: '',
+    contact_email: '',
   });
 
   const isAdmMaster = role === 'adm_master';
@@ -222,6 +227,8 @@ export default function AdminUsers() {
       role: user.role || '',
       departments: user.departments?.map(d => d.id) || [],
       primary_department: user.departments?.find(d => d.is_primary)?.id || '',
+      phone_extension: user.phone_extension || '',
+      contact_email: user.contact_email || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -246,6 +253,8 @@ export default function AdminUsers() {
           birth_date: editForm.birth_date || null,
           start_date: editForm.start_date || null,
           internal_handle: editForm.internal_handle || null,
+          phone_extension: editForm.phone_extension || null,
+          contact_email: editForm.contact_email || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', selectedUser.id);
@@ -424,6 +433,8 @@ export default function AdminUsers() {
             internal_handle: newUserForm.internal_handle || loginFormatted,
             birth_date: newUserForm.birth_date || null,
             start_date: newUserForm.start_date || null,
+            phone_extension: newUserForm.phone_extension || null,
+            contact_email: newUserForm.contact_email || null,
             must_change_password: true,
           })
           .eq('user_id', authData.user.id);
@@ -478,6 +489,8 @@ export default function AdminUsers() {
         primary_department: '',
         birth_date: '',
         start_date: '',
+        phone_extension: '',
+        contact_email: '',
       });
       fetchUsers();
     } catch (error: any) {
@@ -851,6 +864,29 @@ export default function AdminUsers() {
                   </Select>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    Ramal
+                  </Label>
+                  <Input
+                    value={editForm.phone_extension}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, phone_extension: e.target.value }))}
+                    placeholder="Ex: 201"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail de Contato</Label>
+                  <Input
+                    type="email"
+                    value={editForm.contact_email}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, contact_email: e.target.value }))}
+                    placeholder="email@prevermed.com.br"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Section: Access Profile */}
@@ -1084,6 +1120,29 @@ export default function AdminUsers() {
                       <SelectItem value="team_member">Membro da Equipe</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    Ramal
+                  </Label>
+                  <Input
+                    value={newUserForm.phone_extension}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, phone_extension: e.target.value }))}
+                    placeholder="Ex: 201"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail de Contato</Label>
+                  <Input
+                    type="email"
+                    value={newUserForm.contact_email}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, contact_email: e.target.value }))}
+                    placeholder="email@prevermed.com.br"
+                  />
                 </div>
               </div>
             </div>

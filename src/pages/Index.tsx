@@ -171,18 +171,27 @@ export default function Index() {
     if (!profiles || profiles.length === 0) return;
 
     const userIds = profiles.map(p => p.user_id);
+    
+    // Fetch ALL user departments (not just primary) so we can fallback
     const { data: userDepts } = await supabase
       .from('user_departments')
-      .select('user_id, department_id')
-      .in('user_id', userIds)
-      .eq('is_primary', true);
+      .select('user_id, department_id, is_primary')
+      .in('user_id', userIds);
 
     const { data: depts } = await supabase
       .from('departments')
       .select('id, name');
 
     const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
-    const userDeptMap = new Map((userDepts || []).map(ud => [ud.user_id, deptMap.get(ud.department_id) || '']));
+    
+    // Build user->department map: prefer primary, fallback to first department
+    const userDeptMap = new Map<string, string>();
+    (userDepts || []).forEach(ud => {
+      const deptName = deptMap.get(ud.department_id) || '';
+      if (ud.is_primary || !userDeptMap.has(ud.user_id)) {
+        userDeptMap.set(ud.user_id, deptName);
+      }
+    });
 
     const hierarchyOrder: Record<string, number> = {
       director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
@@ -203,27 +212,31 @@ export default function Index() {
     // Build tree: directors at top, managers as children, etc.
     const directors = nodes.filter(n => ['director', 'diretor'].includes(n.hierarchy_position));
     const managers = nodes.filter(n => ['manager', 'gerente'].includes(n.hierarchy_position));
-    const others = nodes.filter(n => !directors.includes(n) && !managers.includes(n));
+    const coordinators = nodes.filter(n => ['coordinator', 'coordenador'].includes(n.hierarchy_position));
+    const leaders = nodes.filter(n => ['leader', 'lider', 'líder'].includes(n.hierarchy_position));
+    const teamMembers = nodes.filter(n => ['team_member', 'liderado'].includes(n.hierarchy_position));
 
-    // Group by department
+    // Group team members by department
     const deptGroups = new Map<string, OrgChartNode[]>();
-    others.forEach(n => {
+    [...teamMembers, ...leaders, ...coordinators].forEach(n => {
       const dept = n.department_name || 'Sem departamento';
       if (!deptGroups.has(dept)) deptGroups.set(dept, []);
       deptGroups.get(dept)!.push(n);
     });
 
+    // Assign children to managers based on department
     managers.forEach(m => {
       m.children = deptGroups.get(m.department_name) || [];
     });
 
+    // Managers without children get all ungrouped members
     if (directors.length > 0) {
-      directors[0].children = managers.length > 0 ? managers : others;
+      directors[0].children = managers.length > 0 ? managers : [...coordinators, ...leaders, ...teamMembers];
       setOrgChart(directors);
     } else if (managers.length > 0) {
       setOrgChart(managers);
     } else {
-      setOrgChart(nodes.slice(0, 10));
+      setOrgChart(nodes.slice(0, 20));
     }
   };
 
