@@ -53,7 +53,7 @@ function OrgNode({ node, level = 0 }: OrgNodeProps) {
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{node.full_name}</p>
           <p className="text-xs text-muted-foreground truncate">
-            {node.position} • {node.department_name}
+            {node.position || ''}{node.position && node.department_name ? ' • ' : ''}{node.department_name}
           </p>
         </div>
       </div>

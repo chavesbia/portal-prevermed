@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import Index from "./pages/Index";
+import Organograma from "./pages/Organograma";
 import Auth from "./pages/Auth";
 import ChangePassword from "./pages/ChangePassword";
 import NotFound from "./pages/NotFound";
@@ -43,7 +44,7 @@ const App = () => (
               <Route path="/documentos" element={<Index />} />
               <Route path="/admin/documentos" element={<AdminDocuments />} />
               <Route path="/links" element={<Index />} />
-              <Route path="/organograma" element={<Index />} />
+              <Route path="/organograma" element={<Organograma />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/notificacoes" element={<Index />} />

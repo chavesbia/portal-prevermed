@@ -737,14 +737,6 @@ export default function AdminUsers() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>E-mail *</Label>
-                  <Input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label className="flex items-center gap-1">
                     <AtSign className="h-3 w-3" />
                     @ Interno (menções)
@@ -753,6 +745,15 @@ export default function AdminUsers() {
                     value={editForm.internal_handle}
                     onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
                     placeholder="@usuario"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail de Contato</Label>
+                  <Input
+                    type="email"
+                    value={editForm.contact_email}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, contact_email: e.target.value }))}
+                    placeholder="email@prevermed.com.br"
                   />
                 </div>
               </div>
@@ -984,12 +985,12 @@ export default function AdminUsers() {
       <Dialog open={isNewUserDialogOpen} onOpenChange={setIsNewUserDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
               Novo Usuário
             </DialogTitle>
             <DialogDescription>
-              Cadastre um novo usuário no sistema. Um e-mail de confirmação será enviado.
+              Cadastre um novo usuário no sistema. Login obrigatório, senha padrão: prevermed.
             </DialogDescription>
           </DialogHeader>
           
