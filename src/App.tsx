@@ -19,6 +19,7 @@ import AdminDepartments from "./pages/admin/AdminDepartments";
 import AdminPermissions from "./pages/admin/AdminPermissions";
 import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminDocuments from "./pages/admin/AdminDocuments";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
               <Route path="/comunicados" element={<Comunicados />} />
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/documentos" element={<Index />} />
+              <Route path="/admin/documentos" element={<AdminDocuments />} />
               <Route path="/links" element={<Index />} />
               <Route path="/organograma" element={<Index />} />
               <Route path="/social" element={<Social />} />
