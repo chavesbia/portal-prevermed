@@ -350,6 +350,71 @@ export type Database = {
         }
         Relationships: []
       }
+      document_departments: {
+        Row: {
+          created_at: string
+          department_id: string
+          document_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          document_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          document_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_departments_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_departments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_users: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_users_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string
@@ -358,6 +423,7 @@ export type Database = {
           file_size: number | null
           file_type: string | null
           file_url: string
+          folder: string | null
           id: string
           is_public: boolean | null
           name: string
@@ -371,6 +437,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           file_url: string
+          folder?: string | null
           id?: string
           is_public?: boolean | null
           name: string
@@ -384,6 +451,7 @@ export type Database = {
           file_size?: number | null
           file_type?: string | null
           file_url?: string
+          folder?: string | null
           id?: string
           is_public?: boolean | null
           name?: string
