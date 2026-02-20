@@ -756,6 +756,8 @@ export type Database = {
           birth_date: string | null
           contact_email: string | null
           created_at: string
+          direct_leader_id: string | null
+          direct_manager_id: string | null
           email: string
           full_name: string
           hierarchy_position:
@@ -782,6 +784,8 @@ export type Database = {
           birth_date?: string | null
           contact_email?: string | null
           created_at?: string
+          direct_leader_id?: string | null
+          direct_manager_id?: string | null
           email: string
           full_name: string
           hierarchy_position?:
@@ -808,6 +812,8 @@ export type Database = {
           birth_date?: string | null
           contact_email?: string | null
           created_at?: string
+          direct_leader_id?: string | null
+          direct_manager_id?: string | null
           email?: string
           full_name?: string
           hierarchy_position?:
@@ -829,7 +835,22 @@ export type Database = {
           user_id?: string
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_direct_leader_id_fkey"
+            columns: ["direct_leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_manager_id_fkey"
+            columns: ["direct_manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       units: {
         Row: {

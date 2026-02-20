@@ -13,8 +13,10 @@ interface OrgNode {
   position: string;
   hierarchy_position: string;
   photo_url?: string;
-  department_name: string;
-  children?: OrgNode[];
+  department_names: string[];
+  direct_leader_id: string | null;
+  direct_manager_id: string | null;
+  children: OrgNode[];
 }
 
 const hierarchyLabels: Record<string, string> = {
@@ -38,15 +40,13 @@ function getInitials(name: string) {
 }
 
 function OrgNodeCard({ node, isRoot = false }: { node: OrgNode; isRoot?: boolean }) {
-  const hasChildren = node.children && node.children.length > 0;
+  const hasChildren = node.children.length > 0;
   const label = hierarchyLabels[node.hierarchy_position] || '';
-  const showCard = node.hierarchy_position !== 'team_member';
 
   return (
     <div className="flex flex-col items-center">
-      {/* Node card */}
       <div className={cn(
-        'flex flex-col items-center p-3 rounded-xl border shadow-sm bg-card min-w-[160px] max-w-[200px] text-center transition-all hover:shadow-md',
+        'flex flex-col items-center p-3 rounded-xl border shadow-sm bg-card min-w-[160px] max-w-[220px] text-center transition-all hover:shadow-md',
         isRoot && 'ring-2 ring-primary/30 shadow-lg'
       )}>
         <Avatar className={cn('mb-2', isRoot ? 'h-14 w-14' : 'h-10 w-10')}>
@@ -56,10 +56,12 @@ function OrgNodeCard({ node, isRoot = false }: { node: OrgNode; isRoot?: boolean
           </AvatarFallback>
         </Avatar>
         <p className="font-semibold text-sm leading-tight">{node.full_name}</p>
-        {node.position && node.position !== node.hierarchy_position && (
+        {node.position && (
           <p className="text-xs text-muted-foreground mt-0.5">{node.position}</p>
         )}
-        <p className="text-xs text-muted-foreground">{node.department_name}</p>
+        {node.department_names.length > 0 && (
+          <p className="text-xs text-muted-foreground">{node.department_names.join(', ')}</p>
+        )}
         {label && (
           <Badge variant="outline" className={cn('mt-1 text-[10px] px-1.5 py-0', hierarchyColors[node.hierarchy_position])}>
             {label}
@@ -67,23 +69,21 @@ function OrgNodeCard({ node, isRoot = false }: { node: OrgNode; isRoot?: boolean
         )}
       </div>
 
-      {/* Connector line down */}
       {hasChildren && (
         <>
           <div className="w-px h-6 bg-border" />
-          {/* Horizontal connector for multiple children */}
-          {node.children!.length > 1 && (
+          {node.children.length > 1 && (
             <div className="relative w-full flex justify-center">
               <div className="absolute top-0 h-px bg-border"
                 style={{
-                  left: `${100 / (node.children!.length * 2)}%`,
-                  right: `${100 / (node.children!.length * 2)}%`,
+                  left: `${100 / (node.children.length * 2)}%`,
+                  right: `${100 / (node.children.length * 2)}%`,
                 }}
               />
             </div>
           )}
           <div className="flex gap-4 flex-wrap justify-center">
-            {node.children!.map(child => (
+            {node.children.map(child => (
               <div key={child.id} className="flex flex-col items-center">
                 <div className="w-px h-4 bg-border" />
                 <OrgNodeCard node={child} />
@@ -109,9 +109,8 @@ export default function Organograma() {
 
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, user_id, full_name, position, hierarchy_position, profile_photo_url')
-      .eq('status', 'active')
-      .not('hierarchy_position', 'is', null);
+      .select('id, user_id, full_name, position, hierarchy_position, profile_photo_url, direct_leader_id, direct_manager_id')
+      .eq('status', 'active');
 
     if (!profiles || profiles.length === 0) {
       setIsLoading(false);
@@ -122,7 +121,7 @@ export default function Organograma() {
 
     const { data: userDepts } = await supabase
       .from('user_departments')
-      .select('user_id, department_id, is_primary')
+      .select('user_id, department_id')
       .in('user_id', userIds);
 
     const { data: depts } = await supabase
@@ -131,66 +130,71 @@ export default function Organograma() {
 
     const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
 
-    const userDeptMap = new Map<string, string>();
+    // Build user -> all department names
+    const userDeptNames = new Map<string, string[]>();
     (userDepts || []).forEach(ud => {
-      const deptName = deptMap.get(ud.department_id) || '';
-      if (ud.is_primary || !userDeptMap.has(ud.user_id)) {
-        userDeptMap.set(ud.user_id, deptName);
+      const name = deptMap.get(ud.department_id);
+      if (name) {
+        if (!userDeptNames.has(ud.user_id)) userDeptNames.set(ud.user_id, []);
+        userDeptNames.get(ud.user_id)!.push(name);
       }
     });
 
-    // Build user -> departments map for grouping
-    const userDeptGroupMap = new Map<string, string[]>();
-    (userDepts || []).forEach(ud => {
-      const deptName = deptMap.get(ud.department_id) || '';
-      if (!userDeptGroupMap.has(ud.user_id)) userDeptGroupMap.set(ud.user_id, []);
-      userDeptGroupMap.get(ud.user_id)!.push(deptName);
-    });
-
-    const hierarchyOrder: Record<string, number> = {
-      director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
-    };
-
-    const nodes: OrgNode[] = profiles
-      .sort((a, b) => (hierarchyOrder[a.hierarchy_position || 'team_member'] || 4) - (hierarchyOrder[b.hierarchy_position || 'team_member'] || 4))
-      .map(p => ({
+    // Create node map
+    const nodeMap = new Map<string, OrgNode>();
+    profiles.forEach(p => {
+      nodeMap.set(p.user_id, {
         id: p.id,
         user_id: p.user_id,
         full_name: p.full_name,
         position: p.position || '',
         hierarchy_position: p.hierarchy_position || 'team_member',
         photo_url: p.profile_photo_url || undefined,
-        department_name: userDeptMap.get(p.user_id) || '',
-      }));
-
-    const directors = nodes.filter(n => n.hierarchy_position === 'director');
-    const managers = nodes.filter(n => n.hierarchy_position === 'manager');
-    const coordinators = nodes.filter(n => n.hierarchy_position === 'coordinator');
-    const leaders = nodes.filter(n => n.hierarchy_position === 'leader');
-    const teamMembers = nodes.filter(n => n.hierarchy_position === 'team_member');
-
-    // Group by department for assignment
-    const deptGroups = new Map<string, OrgNode[]>();
-    [...teamMembers, ...leaders, ...coordinators].forEach(n => {
-      const dept = n.department_name || 'Sem departamento';
-      if (!deptGroups.has(dept)) deptGroups.set(dept, []);
-      deptGroups.get(dept)!.push(n);
+        department_names: userDeptNames.get(p.user_id) || [],
+        direct_leader_id: p.direct_leader_id,
+        direct_manager_id: p.direct_manager_id,
+        children: [],
+      });
     });
 
-    // Assign children to managers based on department
-    managers.forEach(m => {
-      m.children = deptGroups.get(m.department_name) || [];
+    // Build tree using direct relationships
+    const rootNodes: OrgNode[] = [];
+    const assignedIds = new Set<string>();
+
+    nodeMap.forEach(node => {
+      // Try to attach to direct_leader_id first, then direct_manager_id
+      const parentId = node.direct_leader_id || node.direct_manager_id;
+      if (parentId && nodeMap.has(parentId)) {
+        nodeMap.get(parentId)!.children.push(node);
+        assignedIds.add(node.user_id);
+      }
     });
 
-    if (directors.length > 0) {
-      directors[0].children = managers.length > 0 ? managers : [...coordinators, ...leaders, ...teamMembers];
-      setOrgTree(directors);
-    } else if (managers.length > 0) {
-      setOrgTree(managers);
-    } else {
-      setOrgTree(nodes.slice(0, 20));
-    }
+    // Nodes not assigned to anyone are root candidates
+    nodeMap.forEach(node => {
+      if (!assignedIds.has(node.user_id)) {
+        rootNodes.push(node);
+      }
+    });
 
+    // Sort children by hierarchy
+    const hierarchyOrder: Record<string, number> = {
+      director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
+    };
+
+    const sortChildren = (node: OrgNode) => {
+      node.children.sort((a, b) =>
+        (hierarchyOrder[a.hierarchy_position] ?? 4) - (hierarchyOrder[b.hierarchy_position] ?? 4)
+      );
+      node.children.forEach(sortChildren);
+    };
+
+    rootNodes.sort((a, b) =>
+      (hierarchyOrder[a.hierarchy_position] ?? 4) - (hierarchyOrder[b.hierarchy_position] ?? 4)
+    );
+    rootNodes.forEach(sortChildren);
+
+    setOrgTree(rootNodes);
     setIsLoading(false);
   };
 
@@ -222,7 +226,7 @@ export default function Organograma() {
             <div className="text-center py-12">
               <Users className="h-16 w-16 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground">
-                Organograma não configurado. Configure as posições hierárquicas dos colaboradores.
+                Organograma não configurado. Configure os vínculos de líder/gestor direto nos cadastros dos colaboradores.
               </p>
             </div>
           ) : (

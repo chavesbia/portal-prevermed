@@ -80,6 +80,8 @@ interface UserWithDetails {
   internal_handle: string | null;
   contact_email: string | null;
   phone_extension: string | null;
+  direct_leader_id: string | null;
+  direct_manager_id: string | null;
   created_at: string;
   role?: string;
   departments?: { id: string; name: string; is_primary: boolean }[];
@@ -117,12 +119,14 @@ export default function AdminUsers() {
     start_date: '',
     phone_extension: '',
     contact_email: '',
+    direct_leader_id: '',
+    direct_manager_id: '',
   });
   
   // Unified edit form states (includes profile, role, and departments)
   const [editForm, setEditForm] = useState({
     full_name: '',
-    email: '',
+    login: '',
     nickname: '',
     position: '',
     status: 'active' as 'active' | 'inactive',
@@ -136,6 +140,8 @@ export default function AdminUsers() {
     primary_department: '' as string,
     phone_extension: '',
     contact_email: '',
+    direct_leader_id: '',
+    direct_manager_id: '',
   });
 
   const isAdmMaster = role === 'adm_master';
@@ -215,7 +221,7 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setEditForm({
       full_name: user.full_name,
-      email: user.email,
+      login: user.login || '',
       nickname: user.nickname || '',
       position: user.position || '',
       status: user.status || 'active',
@@ -229,6 +235,8 @@ export default function AdminUsers() {
       primary_department: user.departments?.find(d => d.is_primary)?.id || '',
       phone_extension: user.phone_extension || '',
       contact_email: user.contact_email || '',
+      direct_leader_id: user.direct_leader_id || '',
+      direct_manager_id: user.direct_manager_id || '',
     });
     setIsEditDialogOpen(true);
   };
@@ -244,7 +252,7 @@ export default function AdminUsers() {
         .from('profiles')
         .update({
           full_name: editForm.full_name,
-          email: editForm.email,
+          login: editForm.login || null,
           nickname: editForm.nickname || null,
           position: editForm.position || null,
           status: editForm.status,
@@ -255,6 +263,8 @@ export default function AdminUsers() {
           internal_handle: editForm.internal_handle || null,
           phone_extension: editForm.phone_extension || null,
           contact_email: editForm.contact_email || null,
+          direct_leader_id: editForm.direct_leader_id || null,
+          direct_manager_id: editForm.direct_manager_id || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', selectedUser.id);
@@ -435,6 +445,8 @@ export default function AdminUsers() {
             start_date: newUserForm.start_date || null,
             phone_extension: newUserForm.phone_extension || null,
             contact_email: newUserForm.contact_email || null,
+            direct_leader_id: newUserForm.direct_leader_id || null,
+            direct_manager_id: newUserForm.direct_manager_id || null,
             must_change_password: true,
           })
           .eq('user_id', authData.user.id);
@@ -491,6 +503,8 @@ export default function AdminUsers() {
         start_date: '',
         phone_extension: '',
         contact_email: '',
+        direct_leader_id: '',
+        direct_manager_id: '',
       });
       fetchUsers();
     } catch (error: any) {
@@ -739,12 +753,12 @@ export default function AdminUsers() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
                     <AtSign className="h-3 w-3" />
-                    @ Interno (menções)
+                    Login
                   </Label>
                   <Input
-                    value={editForm.internal_handle}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
-                    placeholder="@usuario"
+                    value={editForm.login}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, login: e.target.value.toLowerCase().replace(/\s+/g, '.') }))}
+                    placeholder="nome.sobrenome"
                   />
                 </div>
                 <div className="space-y-2">
@@ -879,13 +893,58 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>E-mail de Contato</Label>
+                  <Label>@ Interno (menções)</Label>
                   <Input
-                    type="email"
-                    value={editForm.contact_email}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, contact_email: e.target.value }))}
-                    placeholder="email@prevermed.com.br"
+                    value={editForm.internal_handle}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, internal_handle: e.target.value }))}
+                    placeholder="@usuario"
                   />
+                </div>
+              </div>
+
+              {/* Direct Leader / Manager */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Líder Direto</Label>
+                  <Select
+                    value={editForm.direct_leader_id || '__none__'}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, direct_leader_id: value === '__none__' ? '' : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {users
+                        .filter(u => u.user_id !== selectedUser?.user_id && ['leader', 'coordinator', 'manager', 'director'].includes(u.hierarchy_position || ''))
+                        .map(u => (
+                          <SelectItem key={u.user_id} value={u.user_id}>
+                            {u.full_name} {u.position ? `— ${u.position}` : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gestor Direto</Label>
+                  <Select
+                    value={editForm.direct_manager_id || '__none__'}
+                    onValueChange={(value) => setEditForm(prev => ({ ...prev, direct_manager_id: value === '__none__' ? '' : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {users
+                        .filter(u => u.user_id !== selectedUser?.user_id && ['manager', 'director'].includes(u.hierarchy_position || ''))
+                        .map(u => (
+                          <SelectItem key={u.user_id} value={u.user_id}>
+                            {u.full_name} {u.position ? `— ${u.position}` : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -1144,6 +1203,52 @@ export default function AdminUsers() {
                     onChange={(e) => setNewUserForm(prev => ({ ...prev, contact_email: e.target.value }))}
                     placeholder="email@prevermed.com.br"
                   />
+                </div>
+              </div>
+
+              {/* Direct Leader / Manager */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Líder Direto</Label>
+                  <Select
+                    value={newUserForm.direct_leader_id || '__none__'}
+                    onValueChange={(value) => setNewUserForm(prev => ({ ...prev, direct_leader_id: value === '__none__' ? '' : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {users
+                        .filter(u => ['leader', 'coordinator', 'manager', 'director'].includes(u.hierarchy_position || ''))
+                        .map(u => (
+                          <SelectItem key={u.user_id} value={u.user_id}>
+                            {u.full_name} {u.position ? `— ${u.position}` : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Gestor Direto</Label>
+                  <Select
+                    value={newUserForm.direct_manager_id || '__none__'}
+                    onValueChange={(value) => setNewUserForm(prev => ({ ...prev, direct_manager_id: value === '__none__' ? '' : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Nenhum</SelectItem>
+                      {users
+                        .filter(u => ['manager', 'director'].includes(u.hierarchy_position || ''))
+                        .map(u => (
+                          <SelectItem key={u.user_id} value={u.user_id}>
+                            {u.full_name} {u.position ? `— ${u.position}` : ''}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
