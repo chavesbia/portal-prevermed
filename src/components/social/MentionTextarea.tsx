@@ -121,8 +121,9 @@ export function MentionTextarea({
     const mentionStartIndex = textBeforeCursor.lastIndexOf('@');
     const textBeforeMention = value.slice(0, mentionStartIndex);
     
-    // Use display name (nickname or full name)
-    const displayName = user.nickname || user.full_name.split(' ')[0];
+    // Use display name (nickname or full name), strip leading @ if present
+    const rawName = user.nickname || user.full_name.split(' ')[0];
+    const displayName = rawName.replace(/^@+/, '');
     
     // Just show @Name in the textarea
     const newValue = textBeforeMention + '@' + displayName + ' ' + textAfterCursor;
