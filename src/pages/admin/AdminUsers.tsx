@@ -664,7 +664,7 @@ export default function AdminUsers() {
                         </Avatar>
                         <div>
                           <p className="font-medium">{user.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          <p className="text-sm text-muted-foreground">{user.contact_email || user.email}</p>
                         </div>
                       </div>
                     </TableCell>
