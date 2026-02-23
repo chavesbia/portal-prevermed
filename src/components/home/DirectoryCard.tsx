@@ -78,8 +78,11 @@ export function DirectoryCard() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
-                    {entry.nickname || entry.full_name.split(' ')[0]} {entry.full_name.split(' ').slice(-1)[0]}
+                  <p className="text-sm truncate">
+                    <span className="font-medium">{entry.full_name}</span>
+                    {entry.nickname && (
+                      <span className="text-muted-foreground font-normal"> ({entry.nickname})</span>
+                    )}
                   </p>
                   {entry.position && (
                     <p className="text-xs text-muted-foreground truncate">{entry.position}</p>

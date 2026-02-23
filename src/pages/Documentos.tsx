@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, Search, Download, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight
+  FileText, Search, Download, Eye, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -198,16 +198,28 @@ export default function Documentos() {
                           </span>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        asChild
-                      >
-                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-4 w-4" />
-                        </a>
-                      </Button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          title="Visualizar"
+                        >
+                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          asChild
+                          title="Baixar"
+                        >
+                          <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}

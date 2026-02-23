@@ -135,7 +135,10 @@ function BirthdayRow({ birthday, isToday, getInitials, formatBirthday }: {
       </Avatar>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">
-          {birthday.nickname || birthday.full_name.split(' ')[0]}
+          {birthday.full_name}
+          {birthday.nickname && (
+            <span className="font-normal text-muted-foreground"> ({birthday.nickname})</span>
+          )}
         </p>
         {birthday.department_name && (
           <p className="text-xs text-muted-foreground truncate">

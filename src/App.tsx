@@ -22,6 +22,8 @@ import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminDocuments from "./pages/admin/AdminDocuments";
 import Documentos from "./pages/Documentos";
+import LinksUteis from "./pages/LinksUteis";
+import Diretorio from "./pages/Diretorio";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +46,8 @@ const App = () => (
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/documentos" element={<Documentos />} />
               <Route path="/admin/documentos" element={<AdminDocuments />} />
-              <Route path="/links" element={<Index />} />
+              <Route path="/links" element={<LinksUteis />} />
+              <Route path="/diretorio" element={<Diretorio />} />
               <Route path="/organograma" element={<Organograma />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
