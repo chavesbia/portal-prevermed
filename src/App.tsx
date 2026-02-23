@@ -24,6 +24,7 @@ import AdminDocuments from "./pages/admin/AdminDocuments";
 import Documentos from "./pages/Documentos";
 import LinksUteis from "./pages/LinksUteis";
 import Diretorio from "./pages/Diretorio";
+import Notificacoes from "./pages/Notificacoes";
 
 const queryClient = new QueryClient();
 
@@ -51,7 +52,7 @@ const App = () => (
               <Route path="/organograma" element={<Organograma />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
-              <Route path="/notificacoes" element={<Index />} />
+              <Route path="/notificacoes" element={<Notificacoes />} />
               <Route path="/departamentos/*" element={<Index />} />
               
               {/* Admin routes */}
