@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Search, Menu, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,42 @@ export function PortalHeader({ onMenuClick, showMenuButton = false }: PortalHead
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const prevCountRef = useRef(0);
+
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.3);
+      // Second tone
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.frequency.value = 1320;
+      osc2.type = 'sine';
+      gain2.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.15);
+      gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+      osc2.start(audioCtx.currentTime + 0.15);
+      osc2.stop(audioCtx.currentTime + 0.45);
+    } catch (e) {
+      console.log('Audio not supported');
+    }
+  }, []);
+
+  const vibrate = useCallback(() => {
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100]);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -35,15 +71,22 @@ export function PortalHeader({ onMenuClick, showMenuButton = false }: PortalHead
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('is_read', false);
-      setUnreadCount(count || 0);
+      const newCount = count || 0;
+      if (newCount > prevCountRef.current && prevCountRef.current >= 0) {
+        playNotificationSound();
+        vibrate();
+      }
+      prevCountRef.current = newCount;
+      setUnreadCount(newCount);
     };
     fetchUnread();
     const channel = supabase
       .channel('header-notif-count')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => fetchUnread())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => fetchUnread())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, () => fetchUnread())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, playNotificationSound, vibrate]);
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
