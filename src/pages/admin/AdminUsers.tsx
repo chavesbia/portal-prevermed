@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,7 +48,8 @@ import {
   User,
   KeyRound,
   FileSpreadsheet,
-  Phone
+  Phone,
+  Camera
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -103,6 +104,8 @@ export default function AdminUsers() {
   const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   
   // New user form states
   const [newUserForm, setNewUserForm] = useState({
@@ -387,16 +390,61 @@ export default function AdminUsers() {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione uma imagem');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${selectedUser.user_id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('id', selectedUser.id);
+
+      if (updateError) throw updateError;
+
+      setSelectedUser(prev => prev ? { ...prev, profile_photo_url: publicUrl } : null);
+      toast.success('Foto atualizada!');
+      fetchUsers();
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error('Erro ao enviar foto');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!newUserForm.full_name || !newUserForm.login) {
       toast.error('Nome e login são obrigatórios');
       return;
     }
 
-    // Validate login format (no spaces, lowercase)
     const loginFormatted = newUserForm.login.trim().toLowerCase().replace(/\s+/g, '.');
     
-    // Check if login already exists
     const { data: existingLogin } = await supabase
       .from('profiles')
       .select('id')
@@ -411,83 +459,56 @@ export default function AdminUsers() {
     setIsSaving(true);
 
     try {
-      // Create a fake email for Supabase Auth (internal use only)
-      const fakeEmail = `${loginFormatted}@prevermed.internal`;
-      const defaultPassword = 'prevermed';
-      
-      // Create user via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: fakeEmail,
-        password: defaultPassword,
-        options: {
-          data: {
+      // Use edge function to create user without switching session
+      const { data, error } = await supabase.functions.invoke('bulk-create-users', {
+        body: {
+          users: [{
             full_name: newUserForm.full_name,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-
-      // Update the profile with additional info
-      if (authData.user) {
-        // Wait a moment for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
             login: loginFormatted,
-            position: newUserForm.position || null,
+            position: newUserForm.position || undefined,
             unit: newUserForm.unit,
             hierarchy_position: newUserForm.hierarchy_position,
             internal_handle: newUserForm.internal_handle || loginFormatted,
-            birth_date: newUserForm.birth_date || null,
-            start_date: newUserForm.start_date || null,
-            phone_extension: newUserForm.phone_extension || null,
-            contact_email: newUserForm.contact_email || null,
-            direct_leader_id: newUserForm.direct_leader_id || null,
-            direct_manager_id: newUserForm.direct_manager_id || null,
-            must_change_password: true,
-          })
-          .eq('user_id', authData.user.id);
+            birth_date: newUserForm.birth_date || undefined,
+            start_date: newUserForm.start_date || undefined,
+            phone_extension: newUserForm.phone_extension || undefined,
+            contact_email: newUserForm.contact_email || undefined,
+            role: newUserForm.role || undefined,
+            departments: newUserForm.departments.length > 0 
+              ? newUserForm.departments.map(deptId => {
+                  const dept = departments.find(d => d.id === deptId);
+                  return dept?.name || '';
+                }).filter(Boolean)
+              : undefined,
+            primary_department: newUserForm.primary_department 
+              ? departments.find(d => d.id === newUserForm.primary_department)?.name 
+              : undefined,
+          }],
+        },
+      });
 
-        if (updateError) {
-          console.error('Error updating profile:', updateError);
-        }
+      if (error) throw error;
 
-        // Add role if selected
-        if (newUserForm.role) {
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: authData.user.id,
-              role: newUserForm.role as 'adm_master' | 'adm_user' | 'tech_user',
-            });
-
-          if (roleError) {
-            console.error('Error adding role:', roleError);
-          }
-        }
-
-        // Add departments if selected
-        if (newUserForm.departments.length > 0) {
-          const deptInserts = newUserForm.departments.map(deptId => ({
-            user_id: authData.user!.id,
-            department_id: deptId,
-            is_primary: deptId === newUserForm.primary_department,
-          }));
-
-          const { error: deptError } = await supabase
-            .from('user_departments')
-            .insert(deptInserts);
-
-          if (deptError) {
-            console.error('Error adding departments:', deptError);
-          }
+      // After user is created, update direct_leader_id and direct_manager_id
+      if (data?.results?.[0]?.success && (newUserForm.direct_leader_id || newUserForm.direct_manager_id)) {
+        const createdUserId = data.results[0].user_id;
+        if (createdUserId) {
+          await supabase
+            .from('profiles')
+            .update({
+              direct_leader_id: newUserForm.direct_leader_id || null,
+              direct_manager_id: newUserForm.direct_manager_id || null,
+            })
+            .eq('user_id', createdUserId);
         }
       }
 
-      toast.success(`Usuário criado! Login: ${loginFormatted} | Senha: prevermed`);
+      if (data?.results?.[0]?.success) {
+        toast.success(`Usuário criado! Login: ${loginFormatted} | Senha: prevermed`);
+      } else {
+        toast.error(data?.results?.[0]?.error || 'Erro ao criar usuário');
+      }
+
       setIsNewUserDialogOpen(false);
       setNewUserForm({
         full_name: '',
@@ -723,6 +744,36 @@ export default function AdminUsers() {
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser?.profile_photo_url || undefined} />
+                  <AvatarFallback className="text-lg">{selectedUser ? getInitials(selectedUser.full_name) : ''}</AvatarFallback>
+                </Avatar>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                >
+                  {isUploadingPhoto ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+                </Button>
+              </div>
+              <div>
+                <p className="font-medium">{selectedUser?.full_name}</p>
+                <p className="text-sm text-muted-foreground">Clique no ícone para alterar a foto</p>
+              </div>
+            </div>
+
             {/* Section: Personal Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">

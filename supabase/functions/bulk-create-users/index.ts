@@ -17,6 +17,8 @@ interface UserToCreate {
   primary_department?: string // department name
   birth_date?: string
   start_date?: string
+  phone_extension?: string
+  contact_email?: string
 }
 
 Deno.serve(async (req) => {
@@ -104,7 +106,7 @@ Deno.serve(async (req) => {
 
     const existingLogins = new Set(existingProfiles?.map(p => p.login) || [])
 
-    const results: { login: string; success: boolean; error?: string }[] = []
+    const results: { login: string; success: boolean; error?: string; user_id?: string }[] = []
     const defaultPassword = 'prevermed'
 
     for (const user of users) {
@@ -152,6 +154,8 @@ Deno.serve(async (req) => {
             internal_handle: user.internal_handle || login,
             birth_date: user.birth_date || null,
             start_date: user.start_date || null,
+            phone_extension: user.phone_extension || null,
+            contact_email: user.contact_email || null,
             must_change_password: true,
           })
           .eq('user_id', userId)
@@ -183,7 +187,7 @@ Deno.serve(async (req) => {
         }
 
         existingLogins.add(login)
-        results.push({ login, success: true })
+        results.push({ login, success: true, user_id: userId })
       } catch (err: any) {
         results.push({ login, success: false, error: err.message || 'Erro desconhecido' })
       }
