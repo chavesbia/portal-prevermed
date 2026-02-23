@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Network, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Network, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OrgNode {
@@ -13,84 +12,59 @@ interface OrgNode {
   position: string;
   hierarchy_position: string;
   photo_url?: string;
-  department_names: string[];
-  direct_leader_id: string | null;
-  direct_manager_id: string | null;
+  department_name: string;
   children: OrgNode[];
 }
-
-const hierarchyLabels: Record<string, string> = {
-  director: 'Diretor',
-  manager: 'Gerente',
-  coordinator: 'Coordenador',
-  leader: 'Líder',
-  team_member: '',
-};
-
-const hierarchyColors: Record<string, string> = {
-  director: 'bg-primary text-primary-foreground',
-  manager: 'bg-primary/80 text-primary-foreground',
-  coordinator: 'bg-accent text-accent-foreground',
-  leader: 'bg-muted text-muted-foreground',
-  team_member: 'bg-muted/50 text-muted-foreground',
-};
 
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function OrgNodeCard({ node, isRoot = false }: { node: OrgNode; isRoot?: boolean }) {
+function OrgNodeRow({ node, level = 0 }: { node: OrgNode; level?: number }) {
+  const [isExpanded, setIsExpanded] = useState(true);
   const hasChildren = node.children.length > 0;
-  const label = hierarchyLabels[node.hierarchy_position] || '';
 
   return (
-    <div className="flex flex-col items-center">
-      <div className={cn(
-        'flex flex-col items-center p-3 rounded-xl border shadow-sm bg-card min-w-[160px] max-w-[220px] text-center transition-all hover:shadow-md',
-        isRoot && 'ring-2 ring-primary/30 shadow-lg'
-      )}>
-        <Avatar className={cn('mb-2', isRoot ? 'h-14 w-14' : 'h-10 w-10')}>
+    <div className="animate-fade-in">
+      <div
+        className={cn(
+          'flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors',
+          hasChildren && 'cursor-pointer'
+        )}
+        style={{ paddingLeft: `${level * 24 + 8}px` }}
+        onClick={() => hasChildren && setIsExpanded(!isExpanded)}
+      >
+        {hasChildren ? (
+          isExpanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          )
+        ) : (
+          <div className="w-4" />
+        )}
+
+        <Avatar className="h-8 w-8">
           <AvatarImage src={node.photo_url} />
-          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
             {getInitials(node.full_name)}
           </AvatarFallback>
         </Avatar>
-        <p className="font-semibold text-sm leading-tight">{node.full_name}</p>
-        {node.position && (
-          <p className="text-xs text-muted-foreground mt-0.5">{node.position}</p>
-        )}
-        {node.department_names.length > 0 && (
-          <p className="text-xs text-muted-foreground">{node.department_names.join(', ')}</p>
-        )}
-        {label && (
-          <Badge variant="outline" className={cn('mt-1 text-[10px] px-1.5 py-0', hierarchyColors[node.hierarchy_position])}>
-            {label}
-          </Badge>
-        )}
+
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm truncate">{node.full_name}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {node.position || ''}{node.position && node.department_name ? ' • ' : ''}{node.department_name}
+          </p>
+        </div>
       </div>
 
-      {hasChildren && (
-        <>
-          <div className="w-px h-6 bg-border" />
-          {node.children.length > 1 && (
-            <div className="relative w-full flex justify-center">
-              <div className="absolute top-0 h-px bg-border"
-                style={{
-                  left: `${100 / (node.children.length * 2)}%`,
-                  right: `${100 / (node.children.length * 2)}%`,
-                }}
-              />
-            </div>
-          )}
-          <div className="flex gap-4 flex-wrap justify-center">
-            {node.children.map(child => (
-              <div key={child.id} className="flex flex-col items-center">
-                <div className="w-px h-4 bg-border" />
-                <OrgNodeCard node={child} />
-              </div>
-            ))}
-          </div>
-        </>
+      {hasChildren && isExpanded && (
+        <div className="border-l border-border ml-6">
+          {node.children.map((child) => (
+            <OrgNodeRow key={child.id} node={child} level={level + 1} />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -121,7 +95,7 @@ export default function Organograma() {
 
     const { data: userDepts } = await supabase
       .from('user_departments')
-      .select('user_id, department_id')
+      .select('user_id, department_id, is_primary')
       .in('user_id', userIds);
 
     const { data: depts } = await supabase
@@ -130,17 +104,14 @@ export default function Organograma() {
 
     const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
 
-    // Build user -> all department names
-    const userDeptNames = new Map<string, string[]>();
+    const userDeptMap = new Map<string, string>();
     (userDepts || []).forEach(ud => {
-      const name = deptMap.get(ud.department_id);
-      if (name) {
-        if (!userDeptNames.has(ud.user_id)) userDeptNames.set(ud.user_id, []);
-        userDeptNames.get(ud.user_id)!.push(name);
+      const deptName = deptMap.get(ud.department_id) || '';
+      if (ud.is_primary || !userDeptMap.has(ud.user_id)) {
+        userDeptMap.set(ud.user_id, deptName);
       }
     });
 
-    // Create node map
     const nodeMap = new Map<string, OrgNode>();
     profiles.forEach(p => {
       nodeMap.set(p.user_id, {
@@ -150,34 +121,21 @@ export default function Organograma() {
         position: p.position || '',
         hierarchy_position: p.hierarchy_position || 'team_member',
         photo_url: p.profile_photo_url || undefined,
-        department_names: userDeptNames.get(p.user_id) || [],
-        direct_leader_id: p.direct_leader_id,
-        direct_manager_id: p.direct_manager_id,
+        department_name: userDeptMap.get(p.user_id) || '',
         children: [],
       });
     });
 
-    // Build tree using direct relationships
-    const rootNodes: OrgNode[] = [];
     const assignedIds = new Set<string>();
-
     nodeMap.forEach(node => {
-      // Try to attach to direct_leader_id first, then direct_manager_id
-      const parentId = node.direct_leader_id || node.direct_manager_id;
+      const parentId = profiles.find(p => p.user_id === node.user_id)?.direct_leader_id
+        || profiles.find(p => p.user_id === node.user_id)?.direct_manager_id;
       if (parentId && nodeMap.has(parentId)) {
         nodeMap.get(parentId)!.children.push(node);
         assignedIds.add(node.user_id);
       }
     });
 
-    // Nodes not assigned to anyone are root candidates
-    nodeMap.forEach(node => {
-      if (!assignedIds.has(node.user_id)) {
-        rootNodes.push(node);
-      }
-    });
-
-    // Sort children by hierarchy
     const hierarchyOrder: Record<string, number> = {
       director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
     };
@@ -188,6 +146,13 @@ export default function Organograma() {
       );
       node.children.forEach(sortChildren);
     };
+
+    const rootNodes: OrgNode[] = [];
+    nodeMap.forEach(node => {
+      if (!assignedIds.has(node.user_id)) {
+        rootNodes.push(node);
+      }
+    });
 
     rootNodes.sort((a, b) =>
       (hierarchyOrder[a.hierarchy_position] ?? 4) - (hierarchyOrder[b.hierarchy_position] ?? 4)
@@ -230,12 +195,10 @@ export default function Organograma() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto pb-4">
-              <div className="flex flex-col items-center gap-2 min-w-max px-8 py-4">
-                {orgTree.map(node => (
-                  <OrgNodeCard key={node.id} node={node} isRoot />
-                ))}
-              </div>
+            <div className="space-y-1">
+              {orgTree.map(node => (
+                <OrgNodeRow key={node.id} node={node} />
+              ))}
             </div>
           )}
         </CardContent>
