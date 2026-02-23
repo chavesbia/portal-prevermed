@@ -107,6 +107,7 @@ const staticMenuSections: MenuSection[] = [
       { label: 'Comunicados', icon: Newspaper, path: '/comunicados' },
       { label: 'Documentos', icon: FolderOpen, path: '/documentos' },
       { label: 'Links Úteis', icon: LinkIcon, path: '/links' },
+      { label: 'Diretório de Contatos', icon: Users, path: '/diretorio' },
       { label: 'Organograma', icon: Network, path: '/organograma' },
       { label: 'Calendário', icon: CalendarDays, path: '/calendario' },
     ],
