@@ -164,15 +164,13 @@ export default function Index() {
   const fetchOrgChart = async () => {
     const { data: profiles } = await supabase
       .from('profiles')
-      .select('id, user_id, full_name, position, hierarchy_position, profile_photo_url')
-      .eq('status', 'active')
-      .not('hierarchy_position', 'is', null);
+      .select('id, user_id, full_name, position, hierarchy_position, profile_photo_url, direct_leader_id, direct_manager_id')
+      .eq('status', 'active');
 
     if (!profiles || profiles.length === 0) return;
 
     const userIds = profiles.map(p => p.user_id);
-    
-    // Fetch ALL user departments (not just primary) so we can fallback
+
     const { data: userDepts } = await supabase
       .from('user_departments')
       .select('user_id, department_id, is_primary')
@@ -183,8 +181,7 @@ export default function Index() {
       .select('id, name');
 
     const deptMap = new Map((depts || []).map(d => [d.id, d.name]));
-    
-    // Build user->department map: prefer primary, fallback to first department
+
     const userDeptMap = new Map<string, string>();
     (userDepts || []).forEach(ud => {
       const deptName = deptMap.get(ud.department_id) || '';
@@ -193,51 +190,56 @@ export default function Index() {
       }
     });
 
+    // Build node map keyed by user_id
+    const nodeMap = new Map<string, OrgChartNode>();
+    profiles.forEach(p => {
+      nodeMap.set(p.user_id, {
+        id: p.id,
+        user_id: p.user_id,
+        full_name: p.full_name,
+        position: p.position || '',
+        hierarchy_position: (p.hierarchy_position as any) || 'team_member',
+        photo_url: p.profile_photo_url || undefined,
+        department_name: userDeptMap.get(p.user_id) || '',
+        reports_to: p.direct_leader_id || p.direct_manager_id || undefined,
+        children: [],
+      });
+    });
+
+    // Build tree using direct relationships
+    const assignedIds = new Set<string>();
+    nodeMap.forEach(node => {
+      const parentId = node.reports_to;
+      if (parentId && nodeMap.has(parentId)) {
+        nodeMap.get(parentId)!.children!.push(node);
+        assignedIds.add(node.user_id);
+      }
+    });
+
     const hierarchyOrder: Record<string, number> = {
       director: 0, manager: 1, coordinator: 2, leader: 3, team_member: 4,
     };
 
-    const nodes: OrgChartNode[] = profiles
-      .sort((a, b) => (hierarchyOrder[a.hierarchy_position || 'team_member'] || 4) - (hierarchyOrder[b.hierarchy_position || 'team_member'] || 4))
-      .map(p => ({
-        id: p.id,
-        user_id: p.user_id,
-        full_name: p.full_name,
-        position: p.position || p.hierarchy_position || '',
-        hierarchy_position: (p.hierarchy_position as any) || 'liderado',
-        photo_url: p.profile_photo_url || undefined,
-        department_name: userDeptMap.get(p.user_id) || '',
-      }));
+    const sortChildren = (node: OrgChartNode) => {
+      node.children?.sort((a, b) =>
+        (hierarchyOrder[a.hierarchy_position] ?? 4) - (hierarchyOrder[b.hierarchy_position] ?? 4)
+      );
+      node.children?.forEach(sortChildren);
+    };
 
-    // Build tree: directors at top, managers as children, etc.
-    const directors = nodes.filter(n => ['director', 'diretor'].includes(n.hierarchy_position));
-    const managers = nodes.filter(n => ['manager', 'gerente'].includes(n.hierarchy_position));
-    const coordinators = nodes.filter(n => ['coordinator', 'coordenador'].includes(n.hierarchy_position));
-    const leaders = nodes.filter(n => ['leader', 'lider', 'líder'].includes(n.hierarchy_position));
-    const teamMembers = nodes.filter(n => ['team_member', 'liderado'].includes(n.hierarchy_position));
-
-    // Group team members by department
-    const deptGroups = new Map<string, OrgChartNode[]>();
-    [...teamMembers, ...leaders, ...coordinators].forEach(n => {
-      const dept = n.department_name || 'Sem departamento';
-      if (!deptGroups.has(dept)) deptGroups.set(dept, []);
-      deptGroups.get(dept)!.push(n);
+    const rootNodes: OrgChartNode[] = [];
+    nodeMap.forEach(node => {
+      if (!assignedIds.has(node.user_id)) {
+        rootNodes.push(node);
+      }
     });
 
-    // Assign children to managers based on department
-    managers.forEach(m => {
-      m.children = deptGroups.get(m.department_name) || [];
-    });
+    rootNodes.sort((a, b) =>
+      (hierarchyOrder[a.hierarchy_position] ?? 4) - (hierarchyOrder[b.hierarchy_position] ?? 4)
+    );
+    rootNodes.forEach(sortChildren);
 
-    // Managers without children get all ungrouped members
-    if (directors.length > 0) {
-      directors[0].children = managers.length > 0 ? managers : [...coordinators, ...leaders, ...teamMembers];
-      setOrgChart(directors);
-    } else if (managers.length > 0) {
-      setOrgChart(managers);
-    } else {
-      setOrgChart(nodes.slice(0, 20));
-    }
+    setOrgChart(rootNodes);
   };
 
   const todayCount = allBirthdays.filter(b => {
