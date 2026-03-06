@@ -520,35 +520,85 @@ export type Database = {
           },
         ]
       }
+      module_sessions: {
+        Row: {
+          id: string
+          ip_address: string | null
+          module_id: string
+          started_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          module_id: string
+          started_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          module_id?: string
+          started_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_sessions_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
+          app_type: Database["public"]["Enums"]["module_app_type"] | null
+          base_url: string | null
           created_at: string
           description: string | null
           icon: string | null
           id: string
           is_active: boolean | null
+          logo_url: string | null
           name: string
+          requires_permission: boolean | null
           route: string | null
+          sort_order: number | null
           updated_at: string
         }
         Insert: {
+          app_type?: Database["public"]["Enums"]["module_app_type"] | null
+          base_url?: string | null
           created_at?: string
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name: string
+          requires_permission?: boolean | null
           route?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Update: {
+          app_type?: Database["public"]["Enums"]["module_app_type"] | null
+          base_url?: string | null
           created_at?: string
           description?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
+          logo_url?: string | null
           name?: string
+          requires_permission?: boolean | null
           route?: string | null
+          sort_order?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -971,6 +1021,47 @@ export type Database = {
           },
         ]
       }
+      user_module_access: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          is_active: boolean
+          module_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          module_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean
+          module_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_module_access_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1014,6 +1105,10 @@ export type Database = {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
+      user_has_module_access: {
+        Args: { _module_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       chat_type: "direct" | "department"
@@ -1023,6 +1118,7 @@ export type Database = {
         | "coordinator"
         | "leader"
         | "team_member"
+      module_app_type: "internal" | "external" | "iframe"
       notification_type:
         | "mention"
         | "new_post"
@@ -1169,6 +1265,7 @@ export const Constants = {
         "leader",
         "team_member",
       ],
+      module_app_type: ["internal", "external", "iframe"],
       notification_type: [
         "mention",
         "new_post",
