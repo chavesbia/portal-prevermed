@@ -15,6 +15,7 @@ import {
   Link as LinkIcon,
   Network,
   ClipboardList,
+  Boxes,
   X,
   ExternalLink,
   Calculator,
