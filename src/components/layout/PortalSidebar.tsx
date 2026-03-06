@@ -15,6 +15,7 @@ import {
   Link as LinkIcon,
   Network,
   ClipboardList,
+  Boxes,
   X,
   ExternalLink,
   Calculator,
@@ -127,6 +128,7 @@ const adminSection: MenuSection = {
   items: [
     { label: 'Usuários', icon: Users, path: '/admin/usuarios', adminOnly: true },
     { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
+    { label: 'Módulos', icon: Boxes, path: '/admin/modulos', adminOnly: true },
     { label: 'Documentos', icon: FolderOpen, path: '/admin/documentos', adminOnly: true },
     { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
