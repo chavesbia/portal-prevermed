@@ -37,6 +37,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { launchExternalModule } from '@/lib/module-launcher';
+import { toast } from '@/hooks/use-toast';
 
 interface PortalSidebarProps {
   isOpen: boolean;
@@ -105,6 +107,7 @@ const staticMenuSections: MenuSection[] = [
     title: 'Principal',
     items: [
       { label: 'Início', icon: Home, path: '/' },
+      { label: 'Módulos', icon: Boxes, path: '/modulos', requiresAuth: true },
       { label: 'Comunicados', icon: Newspaper, path: '/comunicados' },
       { label: 'Documentos', icon: FolderOpen, path: '/documentos' },
       { label: 'Links Úteis', icon: LinkIcon, path: '/links' },
@@ -136,14 +139,15 @@ const adminSection: MenuSection = {
   ],
 };
 
-// Map of department names to external links
-const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean }[]> = {
+// Map of department names to external links with module IDs
+const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean; moduleSlug: string }[]> = {
   'Comercial': [
     { 
       label: 'Precificação', 
       icon: Calculator, 
       path: 'https://precificacao-prevermed.lovable.app', 
-      isExternal: true 
+      isExternal: true,
+      moduleSlug: 'Precificação',
     },
   ],
   'Engenharia': [
@@ -151,7 +155,8 @@ const departmentExternalLinks: Record<string, { label: string; icon: React.Eleme
       label: 'Gestão de O.S', 
       icon: ClipboardList, 
       path: 'https://os-prevermed.lovable.app', 
-      isExternal: true 
+      isExternal: true,
+      moduleSlug: 'Gestão de O.S',
     },
   ],
 };
@@ -160,10 +165,35 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [moduleMap, setModuleMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchDepartments();
+    fetchModuleIds();
   }, []);
+
+  const fetchModuleIds = async () => {
+    const { data } = await supabase
+      .from('modules')
+      .select('id, name')
+      .eq('is_active', true);
+    if (data) {
+      setModuleMap(new Map(data.map(m => [m.name, m.id])));
+    }
+  };
+
+  const handleExternalClick = async (e: React.MouseEvent, path: string, moduleSlug: string) => {
+    e.preventDefault();
+    const moduleId = moduleMap.get(moduleSlug);
+    if (!moduleId) {
+      window.open(path, '_blank');
+      return;
+    }
+    const result = await launchExternalModule(path, moduleId);
+    if (!result.success) {
+      toast({ title: 'Acesso negado', description: result.error, variant: 'destructive' });
+    }
+  };
 
   const fetchDepartments = async () => {
     const { data, error } = await supabase
@@ -295,9 +325,8 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
                                     <a
                                       key={subItem.path}
                                       href={subItem.path}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="menu-item flex items-center justify-between text-sm"
+                                      onClick={(e) => handleExternalClick(e, subItem.path, (subItem as any).moduleSlug || subItem.label)}
+                                      className="menu-item flex items-center justify-between text-sm cursor-pointer"
                                     >
                                       <div className="flex items-center gap-2">
                                         <subItem.icon className="h-4 w-4 flex-shrink-0" />
