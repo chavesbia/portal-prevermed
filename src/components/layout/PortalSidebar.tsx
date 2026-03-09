@@ -37,6 +37,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { launchExternalModule } from '@/lib/module-launcher';
+import { toast } from '@/hooks/use-toast';
 
 interface PortalSidebarProps {
   isOpen: boolean;
