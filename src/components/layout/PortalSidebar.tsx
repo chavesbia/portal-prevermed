@@ -325,9 +325,8 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
                                     <a
                                       key={subItem.path}
                                       href={subItem.path}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="menu-item flex items-center justify-between text-sm"
+                                      onClick={(e) => handleExternalClick(e, subItem.path, (subItem as any).moduleSlug || subItem.label)}
+                                      className="menu-item flex items-center justify-between text-sm cursor-pointer"
                                     >
                                       <div className="flex items-center gap-2">
                                         <subItem.icon className="h-4 w-4 flex-shrink-0" />
