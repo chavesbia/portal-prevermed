@@ -139,14 +139,15 @@ const adminSection: MenuSection = {
   ],
 };
 
-// Map of department names to external links
-const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean }[]> = {
+// Map of department names to external links with module IDs
+const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean; moduleSlug: string }[]> = {
   'Comercial': [
     { 
       label: 'Precificação', 
       icon: Calculator, 
       path: 'https://precificacao-prevermed.lovable.app', 
-      isExternal: true 
+      isExternal: true,
+      moduleSlug: 'Precificação',
     },
   ],
   'Engenharia': [
@@ -154,7 +155,8 @@ const departmentExternalLinks: Record<string, { label: string; icon: React.Eleme
       label: 'Gestão de O.S', 
       icon: ClipboardList, 
       path: 'https://os-prevermed.lovable.app', 
-      isExternal: true 
+      isExternal: true,
+      moduleSlug: 'Gestão de O.S',
     },
   ],
 };
