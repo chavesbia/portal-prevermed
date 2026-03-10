@@ -137,16 +137,13 @@ const adminSection: MenuSection = {
   ],
 };
 
-// Map of department names to external links with module IDs
-const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean; moduleSlug: string }[]> = {
+// Map of department names to internal sub-items
+const departmentSubItems: Record<string, { label: string; icon: React.ElementType; path: string }[]> = {
   'Comercial': [
-    { 
-      label: 'Precificação', 
-      icon: Calculator, 
-      path: '/precificacao', 
-      isExternal: false,
-      moduleSlug: 'Precificação',
-    },
+    { label: 'Precificação', icon: Calculator, path: '/precificacao' },
+  ],
+  'Credenciamento': [
+    { label: 'Gestão de Guias', icon: ClipboardList, path: '/gestao-guias' },
   ],
 };
 
