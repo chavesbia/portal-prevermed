@@ -17,7 +17,7 @@ import {
   ClipboardList,
   Boxes,
   X,
-  ExternalLink,
+  
   Calculator,
   Briefcase,
   Stethoscope,
