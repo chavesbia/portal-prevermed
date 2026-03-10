@@ -27,6 +27,7 @@ import LinksUteis from "./pages/LinksUteis";
 import Diretorio from "./pages/Diretorio";
 import Notificacoes from "./pages/Notificacoes";
 import Modulos from "./pages/Modulos";
+import Precificacao from "./pages/Precificacao";
 
 const queryClient = new QueryClient();
 
