@@ -902,6 +902,191 @@ export type Database = {
           },
         ]
       }
+      quotation_versions: {
+        Row: {
+          client_name: string
+          created_at: string
+          created_by: string
+          custos_adicionais: Json
+          discount_percent: number | null
+          discount_value: number | null
+          id: string
+          items: Json
+          margin_percent: number
+          notes: string | null
+          quotation_id: string
+          rejection_reason: string | null
+          status: string | null
+          total_cost: number
+          total_result: number
+          total_value: number
+          version_number: number
+        }
+        Insert: {
+          client_name: string
+          created_at?: string
+          created_by: string
+          custos_adicionais?: Json
+          discount_percent?: number | null
+          discount_value?: number | null
+          id?: string
+          items?: Json
+          margin_percent: number
+          notes?: string | null
+          quotation_id: string
+          rejection_reason?: string | null
+          status?: string | null
+          total_cost: number
+          total_result: number
+          total_value: number
+          version_number: number
+        }
+        Update: {
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          custos_adicionais?: Json
+          discount_percent?: number | null
+          discount_value?: number | null
+          id?: string
+          items?: Json
+          margin_percent?: number
+          notes?: string | null
+          quotation_id?: string
+          rejection_reason?: string | null
+          status?: string | null
+          total_cost?: number
+          total_result?: number
+          total_value?: number
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_versions_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          custos_adicionais: Json
+          discount_percent: number | null
+          discount_value: number | null
+          id: string
+          items: Json
+          margin_percent: number
+          notes: string | null
+          quotation_number: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["quotation_status"]
+          total_cost: number
+          total_result: number
+          total_value: number
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          custos_adicionais?: Json
+          discount_percent?: number | null
+          discount_value?: number | null
+          id?: string
+          items?: Json
+          margin_percent: number
+          notes?: string | null
+          quotation_number?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          total_cost: number
+          total_result: number
+          total_value: number
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          custos_adicionais?: Json
+          discount_percent?: number | null
+          discount_value?: number | null
+          id?: string
+          items?: Json
+          margin_percent?: number
+          notes?: string | null
+          quotation_number?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["quotation_status"]
+          total_cost?: number
+          total_result?: number
+          total_value?: number
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string
+          code: string
+          cost_value: number
+          created_at: string
+          default_markup: number | null
+          description: string
+          id: string
+          info_text: string | null
+          is_active: boolean
+          min_quantity: number | null
+          unit: string
+          unit_value: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          cost_value?: number
+          created_at?: string
+          default_markup?: number | null
+          description: string
+          id?: string
+          info_text?: string | null
+          is_active?: boolean
+          min_quantity?: number | null
+          unit?: string
+          unit_value?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          cost_value?: number
+          created_at?: string
+          default_markup?: number | null
+          description?: string
+          id?: string
+          info_text?: string | null
+          is_active?: boolean
+          min_quantity?: number | null
+          unit?: string
+          unit_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       units: {
         Row: {
           additional_info: string | null
@@ -1127,6 +1312,11 @@ export type Database = {
         | "chat_message"
         | "like"
         | "comment"
+      quotation_status:
+        | "rascunho"
+        | "aguardando_aprovacao"
+        | "aprovado"
+        | "rejeitado"
       unit_type: "lapa" | "osasco"
       user_role: "adm_master" | "adm_user" | "tech_user"
       user_status: "active" | "inactive"
@@ -1274,6 +1464,12 @@ export const Constants = {
         "chat_message",
         "like",
         "comment",
+      ],
+      quotation_status: [
+        "rascunho",
+        "aguardando_aprovacao",
+        "aprovado",
+        "rejeitado",
       ],
       unit_type: ["lapa", "osasco"],
       user_role: ["adm_master", "adm_user", "tech_user"],
