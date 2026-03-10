@@ -108,7 +108,6 @@ const staticMenuSections: MenuSection[] = [
     items: [
       { label: 'Início', icon: Home, path: '/' },
       { label: 'Módulos', icon: Boxes, path: '/modulos', requiresAuth: true },
-      { label: 'Precificação', icon: Calculator, path: '/precificacao', requiresAuth: true },
       { label: 'Comunicados', icon: Newspaper, path: '/comunicados' },
       { label: 'Documentos', icon: FolderOpen, path: '/documentos' },
       { label: 'Links Úteis', icon: LinkIcon, path: '/links' },
