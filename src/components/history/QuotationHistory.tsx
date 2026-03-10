@@ -43,7 +43,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { jsPDF } from "jspdf";
 import { useServices } from "@/hooks/useServices";
-import { EditingQuotation } from "@/pages/Index";
+import { EditingQuotation } from "@/types/quotation-editing";
 import { CustosAdicionaisData } from "@/components/pricing/CustosAdicionaisTab";
 import { QuotationItem as QuotationItemType } from "@/types/pricing";
 import { RejectDialog } from "./RejectDialog";
