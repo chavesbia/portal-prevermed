@@ -145,8 +145,8 @@ const departmentExternalLinks: Record<string, { label: string; icon: React.Eleme
     { 
       label: 'Precificação', 
       icon: Calculator, 
-      path: 'https://precificacao-prevermed.lovable.app', 
-      isExternal: true,
+      path: '/precificacao', 
+      isExternal: false,
       moduleSlug: 'Precificação',
     },
   ],
