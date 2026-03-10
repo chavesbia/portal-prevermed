@@ -148,15 +148,6 @@ const departmentExternalLinks: Record<string, { label: string; icon: React.Eleme
       moduleSlug: 'Precificação',
     },
   ],
-  'Engenharia': [
-    { 
-      label: 'Gestão de O.S', 
-      icon: ClipboardList, 
-      path: 'https://os-prevermed.lovable.app', 
-      isExternal: true,
-      moduleSlug: 'Gestão de O.S',
-    },
-  ],
 };
 
 export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
