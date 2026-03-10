@@ -17,7 +17,7 @@ import {
   ClipboardList,
   Boxes,
   X,
-  ExternalLink,
+  
   Calculator,
   Briefcase,
   Stethoscope,
@@ -37,8 +37,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { launchExternalModule } from '@/lib/module-launcher';
-import { toast } from '@/hooks/use-toast';
 
 interface PortalSidebarProps {
   isOpen: boolean;
@@ -51,7 +49,6 @@ interface MenuItem {
   path: string;
   requiresAuth?: boolean;
   adminOnly?: boolean;
-  isExternal?: boolean;
   subItems?: MenuItem[];
 }
 
@@ -137,16 +134,13 @@ const adminSection: MenuSection = {
   ],
 };
 
-// Map of department names to external links with module IDs
-const departmentExternalLinks: Record<string, { label: string; icon: React.ElementType; path: string; isExternal: boolean; moduleSlug: string }[]> = {
+// Map of department names to internal sub-items
+const departmentSubItems: Record<string, { label: string; icon: React.ElementType; path: string }[]> = {
   'Comercial': [
-    { 
-      label: 'Precificação', 
-      icon: Calculator, 
-      path: '/precificacao', 
-      isExternal: false,
-      moduleSlug: 'Precificação',
-    },
+    { label: 'Precificação', icon: Calculator, path: '/precificacao' },
+  ],
+  'Credenciamento': [
+    { label: 'Gestão de Guias', icon: ClipboardList, path: '/gestao-guias' },
   ],
 };
 
@@ -154,35 +148,10 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [moduleMap, setModuleMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchDepartments();
-    fetchModuleIds();
   }, []);
-
-  const fetchModuleIds = async () => {
-    const { data } = await supabase
-      .from('modules')
-      .select('id, name')
-      .eq('is_active', true);
-    if (data) {
-      setModuleMap(new Map(data.map(m => [m.name, m.id])));
-    }
-  };
-
-  const handleExternalClick = async (e: React.MouseEvent, path: string, moduleSlug: string) => {
-    e.preventDefault();
-    const moduleId = moduleMap.get(moduleSlug);
-    if (!moduleId) {
-      window.open(path, '_blank');
-      return;
-    }
-    const result = await launchExternalModule(path, moduleId);
-    if (!result.success) {
-      toast({ title: 'Acesso negado', description: result.error, variant: 'destructive' });
-    }
-  };
 
   const fetchDepartments = async () => {
     const { data, error } = await supabase
@@ -202,13 +171,13 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const departmentsSection: MenuSection = {
     title: 'Departamentos',
     items: departments.map(dept => {
-      const externalLinks = departmentExternalLinks[dept.name];
+      const subLinks = departmentSubItems[dept.name];
       return {
         label: dept.name,
         icon: getDepartmentIcon(dept.name),
         path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
         requiresAuth: true,
-        subItems: externalLinks?.map(link => ({
+        subItems: subLinks?.map(link => ({
           ...link,
           requiresAuth: true,
         })),
@@ -280,63 +249,33 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
                     {section.items.map((item) => (
                       shouldShowItem(item) && (
                         <div key={item.path}>
-                          {item.isExternal ? (
-                            <a
-                              href={item.path}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="menu-item flex items-center justify-between"
-                            >
-                              <div className="flex items-center gap-3">
-                                <item.icon className="h-5 w-5 flex-shrink-0" />
-                                <span>{item.label}</span>
-                              </div>
-                              <ExternalLink className="h-4 w-4 opacity-50" />
-                            </a>
-                          ) : (
-                            <NavLink
-                              to={item.path}
-                              onClick={onClose}
-                              className={cn(
-                                'menu-item',
-                                isActive(item.path) && 'menu-item-active'
-                              )}
-                            >
-                              <item.icon className="h-5 w-5 flex-shrink-0" />
-                              <span>{item.label}</span>
-                            </NavLink>
-                          )}
+                          <NavLink
+                            to={item.path}
+                            onClick={onClose}
+                            className={cn(
+                              'menu-item',
+                              isActive(item.path) && 'menu-item-active'
+                            )}
+                          >
+                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                            <span>{item.label}</span>
+                          </NavLink>
                           {item.subItems && item.subItems.length > 0 && (
                             <div className="ml-4 mt-1 space-y-1 border-l border-sidebar-border pl-3">
                               {item.subItems.map((subItem) => (
                                 shouldShowItem(subItem) && (
-                                  subItem.isExternal ? (
-                                    <a
-                                      key={subItem.path}
-                                      href={subItem.path}
-                                      onClick={(e) => handleExternalClick(e, subItem.path, (subItem as any).moduleSlug || subItem.label)}
-                                      className="menu-item flex items-center justify-between text-sm cursor-pointer"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                                        <span>{subItem.label}</span>
-                                      </div>
-                                      <ExternalLink className="h-3 w-3 opacity-50" />
-                                    </a>
-                                  ) : (
-                                    <NavLink
-                                      key={subItem.path}
-                                      to={subItem.path}
-                                      onClick={onClose}
-                                      className={cn(
-                                        'menu-item text-sm',
-                                        isActive(subItem.path) && 'menu-item-active'
-                                      )}
-                                    >
-                                      <subItem.icon className="h-4 w-4 flex-shrink-0" />
-                                      <span>{subItem.label}</span>
-                                    </NavLink>
-                                  )
+                                  <NavLink
+                                    key={subItem.path}
+                                    to={subItem.path}
+                                    onClick={onClose}
+                                    className={cn(
+                                      'menu-item text-sm',
+                                      isActive(subItem.path) && 'menu-item-active'
+                                    )}
+                                  >
+                                    <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                                    <span>{subItem.label}</span>
+                                  </NavLink>
                                 )
                               ))}
                             </div>

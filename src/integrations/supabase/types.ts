@@ -468,6 +468,283 @@ export type Database = {
           },
         ]
       }
+      feriados: {
+        Row: {
+          created_at: string
+          data: string
+          descricao: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          descricao?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          descricao?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      guia_audit_log: {
+        Row: {
+          campo: string
+          created_at: string
+          guia_codigo: string | null
+          id: string
+          user_id: string | null
+          user_name: string | null
+          valor_antigo: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo: string
+          created_at?: string
+          guia_codigo?: string | null
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo?: string
+          created_at?: string
+          guia_codigo?: string | null
+          id?: string
+          user_id?: string | null
+          user_name?: string | null
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: []
+      }
+      guia_exames: {
+        Row: {
+          created_at: string
+          exame_codigo: string | null
+          exame_nome: string | null
+          guia_codigo: string
+          guia_id: string
+          id: string
+          last_seen_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          exame_codigo?: string | null
+          exame_nome?: string | null
+          guia_codigo: string
+          guia_id: string
+          id?: string
+          last_seen_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          exame_codigo?: string | null
+          exame_nome?: string | null
+          guia_codigo?: string
+          guia_id?: string
+          id?: string
+          last_seen_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guia_exames_guia_id_fkey"
+            columns: ["guia_id"]
+            isOneToOne: false
+            referencedRelation: "guias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guia_gestao: {
+        Row: {
+          aso_anexado: Database["public"]["Enums"]["sim_nao_status"]
+          atendimento_lancado: Database["public"]["Enums"]["sim_nao_status"]
+          compareceu_status: Database["public"]["Enums"]["compareceu_status"]
+          guia_codigo: string
+          guia_id: string
+          id: string
+          observacoes: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          aso_anexado?: Database["public"]["Enums"]["sim_nao_status"]
+          atendimento_lancado?: Database["public"]["Enums"]["sim_nao_status"]
+          compareceu_status?: Database["public"]["Enums"]["compareceu_status"]
+          guia_codigo: string
+          guia_id: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          aso_anexado?: Database["public"]["Enums"]["sim_nao_status"]
+          atendimento_lancado?: Database["public"]["Enums"]["sim_nao_status"]
+          compareceu_status?: Database["public"]["Enums"]["compareceu_status"]
+          guia_codigo?: string
+          guia_id?: string
+          id?: string
+          observacoes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guia_gestao_guia_id_fkey"
+            columns: ["guia_id"]
+            isOneToOne: true
+            referencedRelation: "guias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guia_imports: {
+        Row: {
+          file_name: string | null
+          file_size: number | null
+          id: string
+          imported_at: string
+          imported_by: string | null
+          imported_by_name: string | null
+          total_exames_atualizados: number | null
+          total_exames_criados: number | null
+          total_guias_atualizadas: number | null
+          total_guias_criadas: number | null
+          total_rows_lidas: number | null
+        }
+        Insert: {
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_by_name?: string | null
+          total_exames_atualizados?: number | null
+          total_exames_criados?: number | null
+          total_guias_atualizadas?: number | null
+          total_guias_criadas?: number | null
+          total_rows_lidas?: number | null
+        }
+        Update: {
+          file_name?: string | null
+          file_size?: number | null
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_by_name?: string | null
+          total_exames_atualizados?: number | null
+          total_exames_criados?: number | null
+          total_guias_atualizadas?: number | null
+          total_guias_criadas?: number | null
+          total_rows_lidas?: number | null
+        }
+        Relationships: []
+      }
+      guias: {
+        Row: {
+          atendido_texto: string | null
+          created_at: string
+          data_agendamento: string | null
+          data_guia: string | null
+          empresa_codigo: string | null
+          empresa_nome: string | null
+          funcionario_codigo: string | null
+          funcionario_cpf: string | null
+          funcionario_nome: string | null
+          guia_codigo: string
+          hora_agendamento: string | null
+          id: string
+          last_import_at: string | null
+          last_import_by: string | null
+          last_seen_at: string | null
+          medico_codigo: string | null
+          medico_nome: string | null
+          pedido_codigo_sequencial: string | null
+          prestador_codigo: string | null
+          prestador_email: string | null
+          prestador_nome: string | null
+          prestador_socnet_codigo: string | null
+          prestador_socnet_nome: string | null
+          prestador_telefone: string | null
+          situacao: string | null
+          solicitante_nome: string | null
+          tipo_exame: string | null
+          unidade_nome: string | null
+          updated_at: string
+        }
+        Insert: {
+          atendido_texto?: string | null
+          created_at?: string
+          data_agendamento?: string | null
+          data_guia?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          funcionario_codigo?: string | null
+          funcionario_cpf?: string | null
+          funcionario_nome?: string | null
+          guia_codigo: string
+          hora_agendamento?: string | null
+          id?: string
+          last_import_at?: string | null
+          last_import_by?: string | null
+          last_seen_at?: string | null
+          medico_codigo?: string | null
+          medico_nome?: string | null
+          pedido_codigo_sequencial?: string | null
+          prestador_codigo?: string | null
+          prestador_email?: string | null
+          prestador_nome?: string | null
+          prestador_socnet_codigo?: string | null
+          prestador_socnet_nome?: string | null
+          prestador_telefone?: string | null
+          situacao?: string | null
+          solicitante_nome?: string | null
+          tipo_exame?: string | null
+          unidade_nome?: string | null
+          updated_at?: string
+        }
+        Update: {
+          atendido_texto?: string | null
+          created_at?: string
+          data_agendamento?: string | null
+          data_guia?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          funcionario_codigo?: string | null
+          funcionario_cpf?: string | null
+          funcionario_nome?: string | null
+          guia_codigo?: string
+          hora_agendamento?: string | null
+          id?: string
+          last_import_at?: string | null
+          last_import_by?: string | null
+          last_seen_at?: string | null
+          medico_codigo?: string | null
+          medico_nome?: string | null
+          pedido_codigo_sequencial?: string | null
+          prestador_codigo?: string | null
+          prestador_email?: string | null
+          prestador_nome?: string | null
+          prestador_socnet_codigo?: string | null
+          prestador_socnet_nome?: string | null
+          prestador_telefone?: string | null
+          situacao?: string | null
+          solicitante_nome?: string | null
+          tipo_exame?: string | null
+          unidade_nome?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mentions: {
         Row: {
           chat_message_id: string | null
@@ -1297,6 +1574,12 @@ export type Database = {
     }
     Enums: {
       chat_type: "direct" | "department"
+      compareceu_status:
+        | "NAO_INFORMADO"
+        | "COMPARECEU"
+        | "NAO_COMPARECEU"
+        | "REMARCADO"
+        | "PARCIAL"
       hierarchy_position:
         | "director"
         | "manager"
@@ -1317,6 +1600,7 @@ export type Database = {
         | "aguardando_aprovacao"
         | "aprovado"
         | "rejeitado"
+      sim_nao_status: "NAO_INFORMADO" | "SIM" | "NAO"
       unit_type: "lapa" | "osasco"
       user_role: "adm_master" | "adm_user" | "tech_user"
       user_status: "active" | "inactive"
@@ -1448,6 +1732,13 @@ export const Constants = {
   public: {
     Enums: {
       chat_type: ["direct", "department"],
+      compareceu_status: [
+        "NAO_INFORMADO",
+        "COMPARECEU",
+        "NAO_COMPARECEU",
+        "REMARCADO",
+        "PARCIAL",
+      ],
       hierarchy_position: [
         "director",
         "manager",
@@ -1471,6 +1762,7 @@ export const Constants = {
         "aprovado",
         "rejeitado",
       ],
+      sim_nao_status: ["NAO_INFORMADO", "SIM", "NAO"],
       unit_type: ["lapa", "osasco"],
       user_role: ["adm_master", "adm_user", "tech_user"],
       user_status: ["active", "inactive"],

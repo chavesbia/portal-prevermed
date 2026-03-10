@@ -27,6 +27,8 @@ import LinksUteis from "./pages/LinksUteis";
 import Diretorio from "./pages/Diretorio";
 import Notificacoes from "./pages/Notificacoes";
 import Precificacao from "./pages/Precificacao";
+import GestaoGuias from "./pages/GestaoGuias";
+import GuiaDetalhe from "./pages/guias/GuiaDetalhe";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +55,8 @@ const App = () => (
               <Route path="/diretorio" element={<Diretorio />} />
               <Route path="/organograma" element={<Organograma />} />
               <Route path="/precificacao" element={<Precificacao />} />
+              <Route path="/gestao-guias" element={<GestaoGuias />} />
+              <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/notificacoes" element={<Notificacoes />} />
