@@ -52,7 +52,6 @@ const App = () => (
               <Route path="/links" element={<LinksUteis />} />
               <Route path="/diretorio" element={<Diretorio />} />
               <Route path="/organograma" element={<Organograma />} />
-              <Route path="/modulos" element={<Modulos />} />
               <Route path="/precificacao" element={<Precificacao />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
