@@ -7,10 +7,38 @@ import { TrainingsTab } from "@/components/pricing/TrainingsTab";
 import { QuotationHistory } from "@/components/history/QuotationHistory";
 import { AdminTab } from "@/components/admin/AdminTab";
 import { useAuth } from "@/contexts/AuthContext";
+import { useServices } from "@/hooks/useServices";
+import { mapToPricingRole } from "@/lib/pricing-roles";
+import { CustosAdicionaisData, initialCustosAdicionais } from "@/components/pricing/CustosAdicionaisTab";
+import { EditingQuotation } from "@/types/quotation-editing";
+import { Loader2 } from "lucide-react";
 
 export default function Precificacao() {
   const [activeTab, setActiveTab] = useState("inloco");
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile, role } = useAuth();
+  const { services, isLoading } = useServices();
+
+  const [custosAdicionais, setCustosAdicionais] = useState<CustosAdicionaisData>(initialCustosAdicionais);
+  const [editingQuotation, setEditingQuotation] = useState<EditingQuotation | null>(null);
+
+  const userRole = mapToPricingRole(
+    profile?.hierarchy_position as any,
+    role as any
+  );
+
+  const handleEditQuotation = (q: EditingQuotation) => {
+    setEditingQuotation(q);
+    setCustosAdicionais(q.custosAdicionais);
+    setActiveTab("inloco");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -48,7 +76,14 @@ export default function Precificacao() {
         </TabsList>
 
         <TabsContent value="inloco" className="mt-6">
-          <InLocoTab />
+          <InLocoTab
+            services={services}
+            userRole={userRole}
+            custosAdicionais={custosAdicionais}
+            onCustosChange={setCustosAdicionais}
+            editingQuotation={editingQuotation}
+            onClearEdit={() => setEditingQuotation(null)}
+          />
         </TabsContent>
         <TabsContent value="planos" className="mt-6">
           <PlansTab />
@@ -57,7 +92,7 @@ export default function Precificacao() {
           <TrainingsTab />
         </TabsContent>
         <TabsContent value="historico" className="mt-6">
-          <QuotationHistory />
+          <QuotationHistory onEditQuotation={handleEditQuotation} />
         </TabsContent>
         {isAdmin && (
           <TabsContent value="admin" className="mt-6">
