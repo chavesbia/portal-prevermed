@@ -49,7 +49,6 @@ interface MenuItem {
   path: string;
   requiresAuth?: boolean;
   adminOnly?: boolean;
-  isExternal?: boolean;
   subItems?: MenuItem[];
 }
 
