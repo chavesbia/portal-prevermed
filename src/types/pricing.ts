@@ -71,6 +71,8 @@ export interface ApprovalLevel {
 
 // Roles específicas do módulo de precificação, mapeadas da hierarquia do Portal
 export type PricingRole = 'vendedor' | 'coordenador' | 'gerente' | 'diretor' | 'admin';
+// Alias para compatibilidade com componentes migrados
+export type UserRole = PricingRole;
 
 export const APPROVAL_LEVELS: ApprovalLevel[] = [
   { level: 1, name: 'Vendedor', minMargin: 30, maxDiscount: 5, approverRole: 'vendedor' },
