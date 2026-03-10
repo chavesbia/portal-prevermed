@@ -151,35 +151,10 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [moduleMap, setModuleMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     fetchDepartments();
-    fetchModuleIds();
   }, []);
-
-  const fetchModuleIds = async () => {
-    const { data } = await supabase
-      .from('modules')
-      .select('id, name')
-      .eq('is_active', true);
-    if (data) {
-      setModuleMap(new Map(data.map(m => [m.name, m.id])));
-    }
-  };
-
-  const handleExternalClick = async (e: React.MouseEvent, path: string, moduleSlug: string) => {
-    e.preventDefault();
-    const moduleId = moduleMap.get(moduleSlug);
-    if (!moduleId) {
-      window.open(path, '_blank');
-      return;
-    }
-    const result = await launchExternalModule(path, moduleId);
-    if (!result.success) {
-      toast({ title: 'Acesso negado', description: result.error, variant: 'destructive' });
-    }
-  };
 
   const fetchDepartments = async () => {
     const { data, error } = await supabase
@@ -199,13 +174,13 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const departmentsSection: MenuSection = {
     title: 'Departamentos',
     items: departments.map(dept => {
-      const externalLinks = departmentExternalLinks[dept.name];
+      const subLinks = departmentSubItems[dept.name];
       return {
         label: dept.name,
         icon: getDepartmentIcon(dept.name),
         path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
         requiresAuth: true,
-        subItems: externalLinks?.map(link => ({
+        subItems: subLinks?.map(link => ({
           ...link,
           requiresAuth: true,
         })),
