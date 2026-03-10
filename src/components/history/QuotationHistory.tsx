@@ -113,7 +113,8 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
   const [versionCompareOpen, setVersionCompareOpen] = useState(false);
   const [versionCompareQuotation, setVersionCompareQuotation] = useState<Quotation | null>(null);
   const [previousRejections, setPreviousRejections] = useState<Map<string, { reason: string; version: number }>>(new Map());
-  const { user, isApprover, isAdmin } = useAuth();
+  const { user, role, profile, isAdmin } = useAuth();
+  const isApprover = isAdmin || ["director", "manager", "coordinator"].includes(profile?.hierarchy_position || "");
   const { services } = useServices();
 
   // Mapa de serviços para lookup rápido por ID

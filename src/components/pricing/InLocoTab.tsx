@@ -5,7 +5,7 @@ import { ServiceItem, QuotationItem, UserRole, DeslocamentoItem } from "@/types/
 import { CustosAdicionaisData, initialCustosAdicionais } from "./CustosAdicionaisTab";
 import { useQuotations } from "@/hooks/useQuotations";
 import { toast } from "sonner";
-import { EditingQuotation } from "@/pages/Index";
+import { EditingQuotation } from "@/types/quotation-editing";
 import { Button } from "@/components/ui/button";
 import { X, RotateCcw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
