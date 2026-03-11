@@ -35,14 +35,18 @@ type GuiaWithGestao = {
   } | null;
 };
 
-export default function GuiasList() {
-  const { user, profile, isAdmin } = useAuth();
+interface GuiasListProps {
+  readOnly?: boolean;
+}
+
+export default function GuiasList({ readOnly = false }: GuiasListProps) {
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<GuiaFiltersState>({ ...emptyFilters });
 
-  const canEdit = isAdmin;
+  const canEdit = !readOnly && isAdmin;
 
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
