@@ -1,5 +1,4 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 import {
   CalendarDays,
   Home,
@@ -15,9 +14,7 @@ import {
   Link as LinkIcon,
   Network,
   ClipboardList,
-  Boxes,
   X,
-  
   Calculator,
   Briefcase,
   Stethoscope,
@@ -31,12 +28,15 @@ import {
   GraduationCap,
   Heart,
   LucideIcon,
+  LayoutDashboard,
+  Cog,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 interface PortalSidebarProps {
   isOpen: boolean;
@@ -55,18 +55,13 @@ interface MenuItem {
 interface MenuSection {
   title: string;
   items: MenuItem[];
-  isDynamic?: boolean;
 }
 
-interface Department {
-  id: string;
-  name: string;
-}
-
-// Map department names to specific icons
+// Map department names to icons
 const departmentIconMap: Record<string, LucideIcon> = {
   'Comercial': DollarSign,
   'Financeiro': DollarSign,
+  'Faturamento': DollarSign,
   'RH': Users,
   'Recursos Humanos': Users,
   'TI': FileCode,
@@ -75,30 +70,60 @@ const departmentIconMap: Record<string, LucideIcon> = {
   'Marketing': Megaphone,
   'Jurídico': Scale,
   'Logística': Truck,
-  'Operações': Wrench,
+  'Operacional': Wrench,
   'Manutenção': Wrench,
   'Treinamento': GraduationCap,
   'Saúde': Heart,
   'Médico': Stethoscope,
   'Administrativo': Briefcase,
+  'Credenciamento': ClipboardList,
+  'Engenharia': Cog,
+  'Agendamento': CalendarDays,
+  'Relacionamento': Users,
+  'Liberação de Exames': FileText,
+  'e-Social': FileCode,
+  'Laboratório': Stethoscope,
+  'Enfermagem': Heart,
 };
 
-const getDepartmentIcon = (deptName: string): LucideIcon => {
-  // Check for exact match first
-  if (departmentIconMap[deptName]) {
-    return departmentIconMap[deptName];
-  }
-  // Check for partial match
+// Map module icon strings (from DB) to lucide components
+const moduleIconMap: Record<string, LucideIcon> = {
+  'Calculator': Calculator,
+  'ClipboardList': ClipboardList,
+  'DollarSign': DollarSign,
+  'LayoutDashboard': LayoutDashboard,
+  'FileText': FileText,
+  'Users': Users,
+  'Cog': Cog,
+  'Settings': Settings,
+  'Package': Package,
+  'Stethoscope': Stethoscope,
+  'CalendarDays': CalendarDays,
+  'Heart': Heart,
+  'Wrench': Wrench,
+  'HeadphonesIcon': HeadphonesIcon,
+  'Megaphone': Megaphone,
+  'Scale': Scale,
+  'Truck': Truck,
+  'GraduationCap': GraduationCap,
+  'FileCode': FileCode,
+  'Building2': Building2,
+};
+
+const getDepartmentIcon = (name: string): LucideIcon => {
+  if (departmentIconMap[name]) return departmentIconMap[name];
   for (const [key, icon] of Object.entries(departmentIconMap)) {
-    if (deptName.toLowerCase().includes(key.toLowerCase())) {
-      return icon;
-    }
+    if (name.toLowerCase().includes(key.toLowerCase())) return icon;
   }
-  // Default icon
   return Building2;
 };
 
-// Static menu sections
+const getModuleIcon = (iconName: string | null): LucideIcon => {
+  if (iconName && moduleIconMap[iconName]) return moduleIconMap[iconName];
+  return Package;
+};
+
+// Static sections
 const staticMenuSections: MenuSection[] = [
   {
     title: 'Principal',
@@ -134,62 +159,35 @@ const adminSection: MenuSection = {
   ],
 };
 
-// Map of department names to internal sub-items
-const departmentSubItems: Record<string, { label: string; icon: React.ElementType; path: string }[]> = {
-  'Comercial': [
-    { label: 'Precificação', icon: Calculator, path: '/precificacao' },
-  ],
-  'Credenciamento': [
-    { label: 'Gestão de Guias', icon: ClipboardList, path: '/gestao-guias' },
-  ],
-};
-
 export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const { departmentsWithModules } = useModulePermissions();
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  const fetchDepartments = async () => {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('id, name')
-      .order('name');
-
-    if (error) {
-      console.error('Error fetching departments:', error);
-      return;
-    }
-
-    setDepartments(data || []);
-  };
-
-  // Build dynamic departments section
-  const departmentsSection: MenuSection = {
-    title: 'Departamentos',
-    items: departments.map(dept => {
-      const subLinks = departmentSubItems[dept.name];
-      return {
-        label: dept.name,
-        icon: getDepartmentIcon(dept.name),
-        path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
-        requiresAuth: true,
-        subItems: subLinks?.map(link => ({
-          ...link,
+  // Build dynamic departments section from permissions
+  const departmentsSection: MenuSection | null = departmentsWithModules.length > 0
+    ? {
+        title: 'Departamentos',
+        items: departmentsWithModules.map(dept => ({
+          label: dept.name,
+          icon: getDepartmentIcon(dept.name),
+          path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
           requiresAuth: true,
+          subItems: dept.modules
+            .filter(m => m.module_route)
+            .map(m => ({
+              label: m.module_name,
+              icon: getModuleIcon(m.module_icon),
+              path: m.module_route,
+              requiresAuth: true,
+            })),
         })),
-      };
-    }),
-    isDynamic: true,
-  };
+      }
+    : null;
 
-  // Combine all sections
   const menuSections: MenuSection[] = [
     ...staticMenuSections,
-    ...(departments.length > 0 ? [departmentsSection] : []),
+    ...(departmentsSection ? [departmentsSection] : []),
     adminSection,
   ];
 
@@ -210,7 +208,6 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
 
   return (
     <>
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
@@ -218,7 +215,6 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           'fixed lg:sticky top-0 left-0 z-50 lg:z-30 h-screen w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200',
