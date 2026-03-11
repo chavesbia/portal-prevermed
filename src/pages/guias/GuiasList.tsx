@@ -40,7 +40,7 @@ interface GuiasListProps {
 }
 
 export default function GuiasList({ readOnly = false }: GuiasListProps) {
-  const { isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
