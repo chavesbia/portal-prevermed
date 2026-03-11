@@ -326,6 +326,42 @@ export type Database = {
           },
         ]
       }
+      department_modules: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          module_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          module_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          module_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_modules_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "department_modules_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       departments: {
         Row: {
           created_at: string
@@ -1550,6 +1586,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_accessible_modules: {
+        Args: { _user_id: string }
+        Returns: {
+          can_approve: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_view: boolean
+          department_id: string
+          department_name: string
+          module_icon: string
+          module_id: string
+          module_name: string
+          module_route: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
