@@ -1,15 +1,16 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseFile, ParsedRow } from "@/lib/guias/importParser";
-import { executeImport, ImportResult } from "@/lib/guias/importService";
+import { analyzeImport, executeImport, type ImportAnalysis, type ImportResult } from "@/lib/guias/importService";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Upload, FileSpreadsheet, CheckCircle, Clock } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle, Clock, AlertTriangle, Ban, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -17,6 +18,8 @@ export default function GuiasImportacao() {
   const { user, profile, isAdmin } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
+  const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -41,6 +44,7 @@ export default function GuiasImportacao() {
   const handleFile = useCallback(async (f: File) => {
     setFile(f);
     setResult(null);
+    setAnalysis(null);
     try {
       const rows = await parseFile(f);
       setParsedRows(rows);
@@ -58,14 +62,38 @@ export default function GuiasImportacao() {
     if (f) handleFile(f);
   }, [handleFile]);
 
+  const handleAnalyze = async () => {
+    if (parsedRows.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const result = await analyzeImport(parsedRows);
+      setAnalysis(result);
+      toast({ title: "Análise concluída", description: `${result.items.length} guias analisadas, ${result.filteredCount} filtradas (prestadores internos)` });
+    } catch (err: any) {
+      toast({ title: "Erro na análise", description: err.message, variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const toggleDivergent = (code: string) => {
+    if (!analysis) return;
+    setAnalysis({
+      ...analysis,
+      items: analysis.items.map((item) =>
+        item.guiaCodigo === code ? { ...item, selected: !item.selected } : item
+      ),
+    });
+  };
+
   const handleImport = async () => {
-    if (!file || !user) return;
+    if (!file || !user || !analysis) return;
     setImporting(true);
     try {
-      const res = await executeImport(parsedRows, user.id, displayName, file.name, file.size);
+      const res = await executeImport(analysis, user.id, displayName, file.name, file.size);
       setResult(res);
       refetchImports();
-      toast({ title: "Importação concluída!", description: `${res.guiasCriadas} guias criadas, ${res.guiasAtualizadas} atualizadas` });
+      toast({ title: "Importação concluída!", description: `${res.guiasCriadas} criadas, ${res.guiasAtualizadas} atualizadas, ${res.guiasIgnoradas} ignoradas` });
     } catch (err: any) {
       toast({ title: "Erro na importação", description: err.message, variant: "destructive" });
     } finally {
@@ -73,8 +101,9 @@ export default function GuiasImportacao() {
     }
   };
 
-  const previewRows = parsedRows.slice(0, 20);
-  const uniqueGuias = new Set(parsedRows.map((r) => r.guia_codigo)).size;
+  const novas = analysis?.items.filter((i) => i.status === "nova").length ?? 0;
+  const identicas = analysis?.items.filter((i) => i.status === "identica").length ?? 0;
+  const divergentes = analysis?.items.filter((i) => i.status === "divergente") ?? [];
 
   return (
     <div className="space-y-6">
@@ -98,6 +127,7 @@ export default function GuiasImportacao() {
         </Card>
       ) : (
         <>
+          {/* Upload area */}
           <Card>
             <CardContent className="pt-6">
               <div
@@ -122,64 +152,112 @@ export default function GuiasImportacao() {
               </div>
 
               {file && (
-                <div className="mt-4 flex items-center gap-3">
-                  <FileSpreadsheet className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {parsedRows.length} linhas · {uniqueGuias} guias únicas
-                    </p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FileSpreadsheet className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {parsedRows.length} linhas lidas
+                      </p>
+                    </div>
                   </div>
+                  {!analysis && (
+                    <Button onClick={handleAnalyze} disabled={analyzing || parsedRows.length === 0}>
+                      {analyzing ? "Analisando..." : "Analisar Arquivo"}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {previewRows.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Prévia ({Math.min(20, parsedRows.length)} de {parsedRows.length} linhas)</CardTitle>
-                <CardDescription>{uniqueGuias} guias únicas identificadas</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-auto max-h-96">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Data Guia</TableHead>
-                        <TableHead>Empresa</TableHead>
-                        <TableHead>Funcionário</TableHead>
-                        <TableHead>Prestador</TableHead>
-                        <TableHead>Exame</TableHead>
-                        <TableHead>Tipo</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {previewRows.map((row, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-mono text-xs">{row.guia_codigo}</TableCell>
-                          <TableCell className="text-xs">{row.data_guia ?? "—"}</TableCell>
-                          <TableCell className="text-xs max-w-32 truncate">{row.empresa_nome ?? "—"}</TableCell>
-                          <TableCell className="text-xs max-w-32 truncate">{row.funcionario_nome ?? "—"}</TableCell>
-                          <TableCell className="text-xs max-w-32 truncate">{row.prestador_nome ?? "—"}</TableCell>
-                          <TableCell className="text-xs max-w-32 truncate">{row.exame_nome ?? "—"}</TableCell>
-                          <TableCell className="text-xs">{row.tipo_exame ?? "—"}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+          {/* Analysis results */}
+          {analysis && !result && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-green-600">{novas}</p>
+                    <p className="text-xs text-muted-foreground">Guias Novas</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-muted-foreground">{identicas}</p>
+                    <p className="text-xs text-muted-foreground">Idênticas (ignoradas)</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-yellow-600">{divergentes.length}</p>
+                    <p className="text-xs text-muted-foreground">Com Divergências</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-red-500">{analysis.filteredCount}</p>
+                    <p className="text-xs text-muted-foreground">Prestadores Internos</p>
+                  </CardContent>
+                </Card>
+              </div>
 
-                <div className="mt-4 flex justify-end">
-                  <Button onClick={handleImport} disabled={importing} size="lg">
-                    {importing ? "Importando..." : "Confirmar Importação"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Divergent items */}
+              {divergentes.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      Guias com Divergências ({divergentes.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Marque as guias que deseja atualizar com os novos dados. Desmarcadas serão ignoradas.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3 max-h-96 overflow-auto">
+                      {divergentes.map((item) => (
+                        <div key={item.guiaCodigo} className="border rounded-lg p-3">
+                          <div className="flex items-center gap-3 mb-2">
+                            <Checkbox
+                              checked={item.selected}
+                              onCheckedChange={() => toggleDivergent(item.guiaCodigo)}
+                            />
+                            <span className="font-mono text-sm font-medium">{item.guiaCodigo}</span>
+                            <Badge variant={item.selected ? "default" : "secondary"} className="text-xs">
+                              {item.selected ? "Atualizar" : "Ignorar"}
+                            </Badge>
+                          </div>
+                          <div className="ml-8 space-y-1">
+                            {item.diffs.map((d, i) => (
+                              <div key={i} className="text-xs flex items-center gap-2">
+                                <span className="text-muted-foreground w-32 shrink-0">{d.campo}:</span>
+                                <span className="line-through text-red-500">{d.antigo || "(vazio)"}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="text-green-600 font-medium">{d.novo || "(vazio)"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => { setAnalysis(null); setFile(null); setParsedRows([]); }}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleImport} disabled={importing} size="lg">
+                  {importing ? "Importando..." : "Confirmar Importação"}
+                </Button>
+              </div>
+            </>
           )}
 
+          {/* Result */}
           {result && (
             <Card className="border-green-500/30 bg-green-500/5">
               <CardContent className="pt-6">
@@ -187,10 +265,11 @@ export default function GuiasImportacao() {
                   <CheckCircle className="h-6 w-6 text-green-500" />
                   <h3 className="font-semibold text-lg">Importação Concluída</h3>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-                  <div><p className="text-2xl font-bold">{result.totalRows}</p><p className="text-xs text-muted-foreground">Linhas lidas</p></div>
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+                  <div><p className="text-2xl font-bold">{result.totalRows}</p><p className="text-xs text-muted-foreground">Linhas processadas</p></div>
                   <div><p className="text-2xl font-bold">{result.guiasCriadas}</p><p className="text-xs text-muted-foreground">Guias criadas</p></div>
                   <div><p className="text-2xl font-bold">{result.guiasAtualizadas}</p><p className="text-xs text-muted-foreground">Guias atualizadas</p></div>
+                  <div><p className="text-2xl font-bold">{result.guiasIgnoradas}</p><p className="text-xs text-muted-foreground">Guias ignoradas</p></div>
                   <div><p className="text-2xl font-bold">{result.examesCriados}</p><p className="text-xs text-muted-foreground">Exames criados</p></div>
                   <div><p className="text-2xl font-bold">{result.examesAtualizados}</p><p className="text-xs text-muted-foreground">Exames atualizados</p></div>
                 </div>
@@ -200,6 +279,7 @@ export default function GuiasImportacao() {
         </>
       )}
 
+      {/* Import history */}
       {imports && imports.length > 0 && (
         <Card>
           <CardHeader>

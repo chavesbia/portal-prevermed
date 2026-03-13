@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getSlaStatus, type SlaStatus } from "@/lib/guias/sla";
+import { isPrestadorInterno } from "@/lib/guias/blocklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -47,7 +47,8 @@ export default function GuiasDashboard() {
         .from("guias")
         .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)");
       if (error) throw error;
-      return data as unknown as GuiaDash[];
+      // Filter out internal providers
+      return (data as unknown as GuiaDash[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
     },
   });
 
@@ -69,6 +70,7 @@ export default function GuiasDashboard() {
     );
   }
 
+  // Use guia_gestao data (which reflects manual edits) for SLA calculation
   const guiasWithSla = guias.map((g) => {
     const gestao = g.guia_gestao?.[0];
     const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";

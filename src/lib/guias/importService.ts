@@ -1,5 +1,25 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ParsedRow } from "./importParser";
+import { isPrestadorInterno } from "./blocklist";
+
+export interface DiffField {
+  campo: string;
+  antigo: string | null;
+  novo: string | null;
+}
+
+export interface GuiaImportItem {
+  guiaCodigo: string;
+  status: "nova" | "identica" | "divergente";
+  diffs: DiffField[];
+  rows: ParsedRow[];
+  selected: boolean; // user decision for divergent
+}
+
+export interface ImportAnalysis {
+  items: GuiaImportItem[];
+  filteredCount: number; // prestadores internos removidos
+}
 
 export interface ImportResult {
   totalRows: number;
@@ -7,10 +27,80 @@ export interface ImportResult {
   guiasAtualizadas: number;
   examesCriados: number;
   examesAtualizados: number;
+  guiasIgnoradas: number;
+}
+
+const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
+  { key: "data_guia", label: "Data Guia" },
+  { key: "medico_nome", label: "Médico" },
+  { key: "tipo_exame", label: "Tipo Exame" },
+  { key: "situacao", label: "Situação" },
+  { key: "atendido_texto", label: "Atendido" },
+  { key: "funcionario_nome", label: "Funcionário" },
+  { key: "funcionario_cpf", label: "CPF" },
+  { key: "prestador_nome", label: "Prestador" },
+  { key: "empresa_nome", label: "Empresa" },
+  { key: "data_agendamento", label: "Data Agendamento" },
+  { key: "hora_agendamento", label: "Hora Agendamento" },
+];
+
+export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> {
+  // 1. Filter out internal providers
+  const externalRows = rows.filter((r) => !isPrestadorInterno(r.prestador_nome));
+  const filteredCount = rows.length - externalRows.length;
+
+  // 2. Group by guia_codigo
+  const guiaMap = new Map<string, ParsedRow[]>();
+  for (const row of externalRows) {
+    const existing = guiaMap.get(row.guia_codigo) ?? [];
+    existing.push(row);
+    guiaMap.set(row.guia_codigo, existing);
+  }
+
+  // 3. Compare with DB
+  const codes = Array.from(guiaMap.keys());
+  const items: GuiaImportItem[] = [];
+
+  // Fetch existing guias in batches
+  const existingMap = new Map<string, any>();
+  for (let i = 0; i < codes.length; i += 50) {
+    const batch = codes.slice(i, i + 50);
+    const { data } = await supabase
+      .from("guias")
+      .select("guia_codigo, data_guia, medico_nome, tipo_exame, situacao, atendido_texto, funcionario_nome, funcionario_cpf, prestador_nome, empresa_nome, data_agendamento, hora_agendamento")
+      .in("guia_codigo", batch);
+    data?.forEach((g: any) => existingMap.set(g.guia_codigo, g));
+  }
+
+  for (const [code, guiaRows] of guiaMap) {
+    const existing = existingMap.get(code);
+    if (!existing) {
+      items.push({ guiaCodigo: code, status: "nova", diffs: [], rows: guiaRows, selected: true });
+      continue;
+    }
+
+    const firstRow = guiaRows[0];
+    const diffs: DiffField[] = [];
+    for (const f of COMPARE_FIELDS) {
+      const oldVal = String(existing[f.key] ?? "");
+      const newVal = String(firstRow[f.key] ?? "");
+      if (oldVal !== newVal) {
+        diffs.push({ campo: f.label, antigo: existing[f.key], novo: firstRow[f.key] });
+      }
+    }
+
+    if (diffs.length === 0) {
+      items.push({ guiaCodigo: code, status: "identica", diffs: [], rows: guiaRows, selected: false });
+    } else {
+      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: false });
+    }
+  }
+
+  return { items, filteredCount };
 }
 
 export async function executeImport(
-  rows: ParsedRow[],
+  analysis: ImportAnalysis,
   userId: string,
   userName: string,
   fileName: string,
@@ -18,31 +108,29 @@ export async function executeImport(
 ): Promise<ImportResult> {
   const now = new Date().toISOString();
   const result: ImportResult = {
-    totalRows: rows.length,
+    totalRows: 0,
     guiasCriadas: 0,
     guiasAtualizadas: 0,
     examesCriados: 0,
     examesAtualizados: 0,
+    guiasIgnoradas: 0,
   };
 
-  const guiaMap = new Map<string, ParsedRow[]>();
-  for (const row of rows) {
-    const existing = guiaMap.get(row.guia_codigo) ?? [];
-    existing.push(row);
-    guiaMap.set(row.guia_codigo, existing);
-  }
+  for (const item of analysis.items) {
+    if (item.status === "identica") {
+      result.guiasIgnoradas++;
+      continue;
+    }
+    if (item.status === "divergente" && !item.selected) {
+      result.guiasIgnoradas++;
+      continue;
+    }
 
-  for (const [guiaCodigo, guiaRows] of guiaMap) {
-    const firstRow = guiaRows[0];
-
-    const { data: existingGuia } = await supabase
-      .from("guias")
-      .select("id")
-      .eq("guia_codigo", guiaCodigo)
-      .maybeSingle();
+    const firstRow = item.rows[0];
+    result.totalRows += item.rows.length;
 
     const guiaData = {
-      guia_codigo: guiaCodigo,
+      guia_codigo: item.guiaCodigo,
       data_guia: firstRow.data_guia,
       medico_codigo: firstRow.medico_codigo,
       medico_nome: firstRow.medico_nome,
@@ -72,15 +160,7 @@ export async function executeImport(
 
     let guiaId: string;
 
-    if (existingGuia) {
-      const { error } = await supabase
-        .from("guias")
-        .update(guiaData)
-        .eq("id", existingGuia.id);
-      if (error) throw error;
-      guiaId = existingGuia.id;
-      result.guiasAtualizadas++;
-    } else {
+    if (item.status === "nova") {
       const { data, error } = await supabase
         .from("guias")
         .insert(guiaData)
@@ -92,17 +172,34 @@ export async function executeImport(
 
       await supabase.from("guia_gestao").insert({
         guia_id: guiaId,
-        guia_codigo: guiaCodigo,
+        guia_codigo: item.guiaCodigo,
       });
+    } else {
+      // divergente + selected = user chose to update
+      const { data: existingGuia } = await supabase
+        .from("guias")
+        .select("id")
+        .eq("guia_codigo", item.guiaCodigo)
+        .single();
+      if (!existingGuia) continue;
+
+      const { error } = await supabase
+        .from("guias")
+        .update(guiaData)
+        .eq("id", existingGuia.id);
+      if (error) throw error;
+      guiaId = existingGuia.id;
+      result.guiasAtualizadas++;
     }
 
-    for (const row of guiaRows) {
+    // Upsert exames
+    for (const row of item.rows) {
       if (!row.exame_codigo && !row.exame_nome) continue;
 
       const { data: existingExame } = await supabase
         .from("guia_exames")
         .select("id")
-        .eq("guia_codigo", guiaCodigo)
+        .eq("guia_codigo", item.guiaCodigo)
         .eq("exame_codigo", row.exame_codigo ?? "")
         .eq("exame_nome", row.exame_nome ?? "")
         .maybeSingle();
@@ -116,7 +213,7 @@ export async function executeImport(
       } else {
         await supabase.from("guia_exames").insert({
           guia_id: guiaId,
-          guia_codigo: guiaCodigo,
+          guia_codigo: item.guiaCodigo,
           exame_codigo: row.exame_codigo,
           exame_nome: row.exame_nome,
           last_seen_at: now,
