@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
+import { isPrestadorInterno } from "@/lib/guias/blocklist";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +73,16 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as unknown as GuiaWithGestao[];
+      // Filter out internal providers
+      return (data as unknown as GuiaWithGestao[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
+    },
+  });
+
+  const { data: examesList } = useQuery({
+    queryKey: ["exames-list"],
+    queryFn: async () => {
+      const { data } = await supabase.from("guia_exames").select("exame_nome");
+      return [...new Set(data?.map((e: any) => e.exame_nome).filter(Boolean) as string[])].sort();
     },
   });
 
@@ -89,8 +99,8 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
       if (f.dataGuiaFim && g.data_guia && new Date(g.data_guia + "T00:00:00") > f.dataGuiaFim) return false;
       if (f.dataAgendamentoInicio && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") < f.dataAgendamentoInicio) return false;
       if (f.dataAgendamentoFim && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") > f.dataAgendamentoFim) return false;
-      if (f.empresa && g.empresa_nome !== f.empresa) return false;
-      if (f.prestador && g.prestador_nome !== f.prestador) return false;
+      if (f.empresas.length > 0 && !f.empresas.includes(g.empresa_nome ?? "")) return false;
+      if (f.prestadores.length > 0 && !f.prestadores.includes(g.prestador_nome ?? "")) return false;
       if (f.tipoExame && g.tipo_exame !== f.tipoExame) return false;
       if (f.situacao && g.situacao !== f.situacao) return false;
       if (f.atendido) {
@@ -138,6 +148,7 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guias"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
       setSelected(new Set());
       toast({ title: "Atualizado!", description: `${selected.size} guias atualizadas.` });
     },
@@ -182,7 +193,9 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Guias</h1>
-          <p className="text-muted-foreground">Lista de guias importadas</p>
+          <p className="text-muted-foreground">
+            {guias ? `${guias.length} guias` : "Lista de guias importadas"}
+          </p>
         </div>
       </div>
 
@@ -196,7 +209,15 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
             className="pl-9"
           />
         </div>
-        <GuiaFilters filters={filters} onChange={setFilters} empresas={empresas} prestadores={prestadores} tiposExame={tiposExame} situacoes={situacoes} />
+        <GuiaFilters
+          filters={filters}
+          onChange={setFilters}
+          empresas={empresas}
+          prestadores={prestadores}
+          tiposExame={tiposExame}
+          situacoes={situacoes}
+          exames={examesList}
+        />
 
         {canEdit && selected.size > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
@@ -228,27 +249,27 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Carregando...</div>
           ) : (
-            <div className="overflow-auto">
+            <div className="overflow-auto max-h-[calc(100vh-300px)] relative">
               <Table>
-                <TableHeader>
+                <TableHeader className="sticky top-0 z-10 bg-background">
                   <TableRow>
                     {canEdit && (
-                      <TableHead className="w-10">
+                      <TableHead className="w-10 sticky left-0 bg-background z-20">
                         <Checkbox checked={guias?.length ? selected.size === guias.length : false} onCheckedChange={toggleAll} />
                       </TableHead>
                     )}
-                    <TableHead>Data</TableHead>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Empresa</TableHead>
-                    <TableHead>Prestador</TableHead>
-                    <TableHead>Funcionário</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Atendido</TableHead>
-                    <TableHead>Agendamento</TableHead>
-                    <TableHead>SLA</TableHead>
-                    <TableHead>Compareceu</TableHead>
-                    <TableHead>Atend. Lançado</TableHead>
-                    <TableHead>ASO</TableHead>
+                    <TableHead className={`whitespace-nowrap ${canEdit ? "" : "sticky left-0 bg-background z-20"}`}>Data</TableHead>
+                    <TableHead className="whitespace-nowrap">Código</TableHead>
+                    <TableHead className="whitespace-nowrap min-w-[160px]">Empresa</TableHead>
+                    <TableHead className="whitespace-nowrap min-w-[160px]">Prestador</TableHead>
+                    <TableHead className="whitespace-nowrap min-w-[140px]">Funcionário</TableHead>
+                    <TableHead className="whitespace-nowrap">Tipo</TableHead>
+                    <TableHead className="whitespace-nowrap">Atendido</TableHead>
+                    <TableHead className="whitespace-nowrap">Agendamento</TableHead>
+                    <TableHead className="whitespace-nowrap">SLA</TableHead>
+                    <TableHead className="whitespace-nowrap">Compareceu</TableHead>
+                    <TableHead className="whitespace-nowrap">Atend. Lançado</TableHead>
+                    <TableHead className="whitespace-nowrap">ASO</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -261,7 +282,7 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
                     return (
                       <TableRow key={guia.id} className="hover:bg-muted/50">
                         {canEdit && (
-                          <TableCell>
+                          <TableCell className="sticky left-0 bg-background">
                             <Checkbox
                               checked={selected.has(guia.guia_codigo)}
                               onCheckedChange={() => toggleSelect(guia.guia_codigo)}
@@ -276,10 +297,10 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
                             {guia.guia_codigo}
                           </Link>
                         </TableCell>
-                        <TableCell className="text-xs max-w-28 truncate">{guia.empresa_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs max-w-28 truncate">{guia.prestador_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs max-w-28 truncate">{guia.funcionario_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs">{guia.tipo_exame ?? "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate" title={guia.empresa_nome ?? ""}>{guia.empresa_nome ?? "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate" title={guia.prestador_nome ?? ""}>{guia.prestador_nome ?? "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[180px] truncate" title={guia.funcionario_nome ?? ""}>{guia.funcionario_nome ?? "—"}</TableCell>
+                        <TableCell className="text-xs whitespace-nowrap">{guia.tipo_exame ?? "—"}</TableCell>
                         <TableCell className="text-xs">{guia.atendido_texto ?? "—"}</TableCell>
                         <TableCell className="text-xs whitespace-nowrap">
                           {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}

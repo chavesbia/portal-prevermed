@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Filter, X, CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Filter, X, CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -14,8 +17,8 @@ export interface GuiaFiltersState {
   dataGuiaFim: Date | undefined;
   dataAgendamentoInicio: Date | undefined;
   dataAgendamentoFim: Date | undefined;
-  empresa: string;
-  prestador: string;
+  empresas: string[];
+  prestadores: string[];
   tipoExame: string;
   situacao: string;
   atendido: string;
@@ -23,6 +26,7 @@ export interface GuiaFiltersState {
   compareceu: string;
   atendimentoLancado: string;
   asoAnexado: string;
+  exame: string;
 }
 
 export const emptyFilters: GuiaFiltersState = {
@@ -30,8 +34,8 @@ export const emptyFilters: GuiaFiltersState = {
   dataGuiaFim: undefined,
   dataAgendamentoInicio: undefined,
   dataAgendamentoFim: undefined,
-  empresa: "",
-  prestador: "",
+  empresas: [],
+  prestadores: [],
   tipoExame: "",
   situacao: "",
   atendido: "",
@@ -39,6 +43,7 @@ export const emptyFilters: GuiaFiltersState = {
   compareceu: "",
   atendimentoLancado: "",
   asoAnexado: "",
+  exame: "",
 };
 
 interface Props {
@@ -48,6 +53,7 @@ interface Props {
   prestadores: string[];
   tiposExame: string[];
   situacoes: string[];
+  exames?: string[];
 }
 
 function DatePickerField({ label, value, onChange }: { label: string; value: Date | undefined; onChange: (d: Date | undefined) => void }) {
@@ -88,15 +94,84 @@ function SelectField({ label, value, onChange, options }: { label: string; value
   );
 }
 
-export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExame, situacoes }: Props) {
+function MultiSelectField({ label, selected, onChange, options }: { label: string; selected: string[]; onChange: (v: string[]) => void; options: string[] }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const filtered = options.filter((o) => o.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const toggle = (value: string) => {
+    if (selected.includes(value)) {
+      onChange(selected.filter((s) => s !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label} {selected.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] px-1">{selected.length}</Badge>}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full justify-start text-left text-xs font-normal truncate">
+            {selected.length === 0 ? "Todos" : selected.length === 1 ? selected[0].substring(0, 25) : `${selected.length} selecionados`}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64 p-2" align="start">
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-7 text-xs pl-7"
+            />
+          </div>
+          {selected.length > 0 && (
+            <Button variant="ghost" size="sm" className="w-full h-6 text-xs mb-1" onClick={() => onChange([])}>
+              Limpar seleção
+            </Button>
+          )}
+          <ScrollArea className="h-48">
+            <div className="space-y-0.5">
+              {filtered.map((option) => (
+                <label key={option} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-xs">
+                  <Checkbox checked={selected.includes(option)} onCheckedChange={() => toggle(option)} className="h-3.5 w-3.5" />
+                  <span className="truncate">{option}</span>
+                </label>
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">Nenhum resultado</p>
+              )}
+            </div>
+          </ScrollArea>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExame, situacoes, exames = [] }: Props) {
   const [open, setOpen] = useState(false);
 
-  const activeCount = Object.entries(filters).filter(([_, v]) => v !== undefined && v !== "").length;
+  const activeCount = [
+    filters.dataGuiaInicio, filters.dataGuiaFim,
+    filters.dataAgendamentoInicio, filters.dataAgendamentoFim,
+    filters.empresas.length > 0 ? true : undefined,
+    filters.prestadores.length > 0 ? true : undefined,
+    filters.tipoExame || undefined,
+    filters.situacao || undefined,
+    filters.atendido || undefined,
+    filters.sla || undefined,
+    filters.compareceu || undefined,
+    filters.atendimentoLancado || undefined,
+    filters.asoAnexado || undefined,
+    filters.exame || undefined,
+  ].filter(Boolean).length;
 
   const update = (patch: Partial<GuiaFiltersState>) => {
     const next = { ...filters, ...patch };
+    // Clean __all__ values
     for (const key of Object.keys(next) as (keyof GuiaFiltersState)[]) {
-      if (next[key] === "__all__") (next as any)[key] = "";
+      if ((next as any)[key] === "__all__") (next as any)[key] = "";
     }
     onChange(next);
   };
@@ -116,7 +191,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[420px] p-4" align="start">
+      <PopoverContent className="w-[460px] p-4" align="start">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-semibold">Filtros Avançados</h4>
           {activeCount > 0 && (
@@ -132,10 +207,15 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
           <DatePickerField label="Agendamento (de)" value={filters.dataAgendamentoInicio} onChange={(d) => update({ dataAgendamentoInicio: d })} />
           <DatePickerField label="Agendamento (até)" value={filters.dataAgendamentoFim} onChange={(d) => update({ dataAgendamentoFim: d })} />
 
-          <SelectField label="Empresa" value={filters.empresa || "__all__"} onChange={(v) => update({ empresa: v })} options={empresas.map((e) => ({ value: e, label: e }))} />
-          <SelectField label="Prestador" value={filters.prestador || "__all__"} onChange={(v) => update({ prestador: v })} options={prestadores.map((p) => ({ value: p, label: p }))} />
+          <MultiSelectField label="Empresa" selected={filters.empresas} onChange={(v) => update({ empresas: v })} options={empresas} />
+          <MultiSelectField label="Prestador" selected={filters.prestadores} onChange={(v) => update({ prestadores: v })} options={prestadores} />
+
           <SelectField label="Tipo Exame" value={filters.tipoExame || "__all__"} onChange={(v) => update({ tipoExame: v })} options={tiposExame.map((t) => ({ value: t, label: t }))} />
           <SelectField label="Situação" value={filters.situacao || "__all__"} onChange={(v) => update({ situacao: v })} options={situacoes.map((s) => ({ value: s, label: s }))} />
+
+          {exames.length > 0 && (
+            <SelectField label="Exame" value={filters.exame || "__all__"} onChange={(v) => update({ exame: v })} options={exames.map((e) => ({ value: e, label: e }))} />
+          )}
 
           <SelectField
             label="Atendido"
