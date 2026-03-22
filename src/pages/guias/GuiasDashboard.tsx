@@ -8,7 +8,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { AlertTriangle, CheckCircle, Clock, FileText, XCircle, Activity, Users, Building } from "lucide-react";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays, startOfDay, isWeekend } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type GuiaDash = {
@@ -32,12 +32,34 @@ const COLORS = {
   ATRASADO: "hsl(0, 72%, 51%)",
 };
 
-export default function GuiasDashboard() {
+/** Get the previous business day (Mon-Fri), optionally skipping feriados */
+function getPreviousBusinessDay(referenceDate: Date, feriados: string[] = []): Date {
+  let d = new Date(referenceDate);
+  d.setHours(0, 0, 0, 0);
+  do {
+    d = subDays(d, 1);
+  } while (isWeekend(d) || feriados.includes(format(d, "yyyy-MM-dd")));
+  return d;
+}
+
+interface GuiasDashboardProps {
+  onNavigateToList?: (filters: Record<string, any>) => void;
+}
+
+export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps) {
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
     queryFn: async () => {
       const { data } = await supabase.from("feriados").select("data");
       return data?.map((f: any) => f.data) ?? [];
+    },
+  });
+
+  const { data: lastImport } = useQuery({
+    queryKey: ["last-import"],
+    queryFn: async () => {
+      const { data } = await supabase.from("guia_imports").select("imported_at").order("imported_at", { ascending: false }).limit(1);
+      return data?.[0]?.imported_at ?? null;
     },
   });
 
@@ -84,13 +106,18 @@ export default function GuiasDashboard() {
   const thisWeekStart = subDays(today, 7);
   const thisMonthStart = subDays(today, 30);
 
-  const guiasHoje = guiasWithSla.filter((g) => g.data_guia && startOfDay(new Date(g.data_guia + "T00:00:00")).getTime() === today.getTime()).length;
+  // "Últimas guias" = last business day before last import date
+  const lastImportDate = lastImport ? startOfDay(new Date(lastImport)) : today;
+  const lastBusinessDay = getPreviousBusinessDay(lastImportDate, feriados ?? []);
+  const lastBusinessDayStr = format(lastBusinessDay, "yyyy-MM-dd");
+
+  const guiasUltimas = guiasWithSla.filter((g) => g.data_guia === lastBusinessDayStr).length;
   const guiasSemana = guiasWithSla.filter((g) => g.data_guia && new Date(g.data_guia + "T00:00:00") >= thisWeekStart).length;
   const guiasMes = guiasWithSla.filter((g) => g.data_guia && new Date(g.data_guia + "T00:00:00") >= thisMonthStart).length;
   const atrasadas = guiasWithSla.filter((g) => g.sla === "ATRASADO").length;
   const emAtencao = guiasWithSla.filter((g) => g.sla === "ATENCAO").length;
-  const semAtendimento = guiasWithSla.filter((g) => (g.gestao?.atendimento_lancado ?? "NAO_INFORMADO") !== "SIM").length;
-  const asoPendente = guiasWithSla.filter((g) => (g.gestao?.aso_anexado ?? "NAO_INFORMADO") !== "SIM").length;
+  const semAtendimento = guiasWithSla.filter((g) => (g.gestao?.atendimento_lancado ?? "NAO_INFORMADO") === "NAO_INFORMADO").length;
+  const asoPendente = guiasWithSla.filter((g) => (g.gestao?.aso_anexado ?? "NAO_INFORMADO") === "NAO_INFORMADO").length;
   const semPrestador = guiasWithSla.filter((g) => g.statusPrest === "SEM PRESTADOR").length;
   const origemCliente = guiasWithSla.filter((g) => g.origem === "CLIENTE").length;
   const origemPreverMed = guiasWithSla.filter((g) => g.origem === "PREVERMED").length;
@@ -131,15 +158,29 @@ export default function GuiasDashboard() {
     { name: "PreverMed", value: origemPreverMed, color: "hsl(160, 60%, 45%)" },
   ].filter((d) => d.value > 0);
 
+  const handleCardClick = (filterOverrides: Record<string, any>) => {
+    if (onNavigateToList) {
+      onNavigateToList(filterOverrides);
+    }
+  };
+
   const cards = [
-    { label: "Guias Hoje", value: guiasHoje, icon: FileText, color: "text-primary" },
-    { label: "Últimos 7 dias", value: guiasSemana, icon: Activity, color: "text-primary" },
-    { label: "Últimos 30 dias", value: guiasMes, icon: FileText, color: "text-primary" },
-    { label: "Atrasadas", value: atrasadas, icon: XCircle, color: "text-destructive" },
-    { label: "Em Atenção", value: emAtencao, icon: AlertTriangle, color: "text-yellow-500" },
-    { label: "Sem Atendimento", value: semAtendimento, icon: Clock, color: "text-muted-foreground" },
-    { label: "ASO Pendente", value: asoPendente, icon: Clock, color: "text-muted-foreground" },
-    { label: "Sem Prestador", value: semPrestador, icon: Users, color: "text-orange-500" },
+    { label: `Últimas guias (${format(lastBusinessDay, "dd/MM")})`, value: guiasUltimas, icon: FileText, color: "text-primary",
+      onClick: () => handleCardClick({ dataGuiaInicio: lastBusinessDay, dataGuiaFim: lastBusinessDay }) },
+    { label: "Últimos 7 dias", value: guiasSemana, icon: Activity, color: "text-primary",
+      onClick: () => handleCardClick({ dataGuiaInicio: thisWeekStart, dataGuiaFim: today }) },
+    { label: "Últimos 30 dias", value: guiasMes, icon: FileText, color: "text-primary",
+      onClick: () => handleCardClick({ dataGuiaInicio: thisMonthStart, dataGuiaFim: today }) },
+    { label: "Atrasadas", value: atrasadas, icon: XCircle, color: "text-destructive",
+      onClick: () => handleCardClick({ sla: "ATRASADO" }) },
+    { label: "Em Atenção", value: emAtencao, icon: AlertTriangle, color: "text-yellow-500",
+      onClick: () => handleCardClick({ sla: "ATENCAO" }) },
+    { label: "Sem Atendimento", value: semAtendimento, icon: Clock, color: "text-muted-foreground",
+      onClick: () => handleCardClick({ atendimentoLancado: "NAO_INFORMADO" }) },
+    { label: "ASO Pendente", value: asoPendente, icon: Clock, color: "text-muted-foreground",
+      onClick: () => handleCardClick({ asoAnexado: "NAO_INFORMADO" }) },
+    { label: "Sem prestador", value: semPrestador, icon: Users, color: "text-orange-500",
+      onClick: () => handleCardClick({ statusPrestador: "SEM PRESTADOR" }) },
   ];
 
   return (
@@ -151,7 +192,7 @@ export default function GuiasDashboard() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         {cards.map((c) => (
-          <Card key={c.label}>
+          <Card key={c.label} className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={c.onClick}>
             <CardContent className="p-3">
               <div className="flex items-center gap-1.5 mb-1">
                 <c.icon className={`h-3.5 w-3.5 ${c.color}`} />
@@ -165,7 +206,7 @@ export default function GuiasDashboard() {
 
       {/* Origem agendamento summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
+        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ origemAgendamento: "CLIENTE" })}>
           <CardContent className="p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Building className="h-3.5 w-3.5 text-blue-500" />
@@ -175,7 +216,7 @@ export default function GuiasDashboard() {
             <p className="text-[10px] text-muted-foreground">{guias.length > 0 ? ((origemCliente / guias.length) * 100).toFixed(1) : 0}%</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ origemAgendamento: "PREVERMED" })}>
           <CardContent className="p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <CheckCircle className="h-3.5 w-3.5 text-green-500" />
@@ -185,7 +226,7 @@ export default function GuiasDashboard() {
             <p className="text-[10px] text-muted-foreground">{guias.length > 0 ? ((origemPreverMed / guias.length) * 100).toFixed(1) : 0}%</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ compareceu: "COMPARECEU" })}>
           <CardContent className="p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <CheckCircle className="h-3.5 w-3.5 text-green-500" />
@@ -194,7 +235,7 @@ export default function GuiasDashboard() {
             <p className="text-xl font-bold">{guiasWithSla.filter((g) => g.gestao?.compareceu_status === "COMPARECEU").length}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ compareceu: "NAO_COMPARECEU" })}>
           <CardContent className="p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <XCircle className="h-3.5 w-3.5 text-destructive" />

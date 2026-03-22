@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +39,8 @@ type GuiaWithGestao = {
 
 interface GuiasListProps {
   readOnly?: boolean;
+  injectedFilters?: Partial<GuiaFiltersState> | null;
+  onFiltersConsumed?: () => void;
 }
 
 const PAGE_SIZE = 50;
@@ -70,7 +72,7 @@ function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; 
   );
 }
 
-export default function GuiasList({ readOnly = false }: GuiasListProps) {
+export default function GuiasList({ readOnly = false, injectedFilters, onFiltersConsumed }: GuiasListProps) {
   const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -82,6 +84,15 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
   const [drawerGuia, setDrawerGuia] = useState<GuiaWithGestao | null>(null);
 
   const canEdit = !readOnly && isAdmin;
+
+  // Apply filters injected from dashboard cards
+  useEffect(() => {
+    if (injectedFilters) {
+      setFilters({ ...emptyFilters, ...injectedFilters });
+      setPage(0);
+      onFiltersConsumed?.();
+    }
+  }, [injectedFilters, onFiltersConsumed]);
 
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
@@ -423,7 +434,7 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
            <Field label="Empresa" value={toTitleCase(guia.empresa_nome)} />
            <Field label="Unidade" value={toTitleCase(guia.unidade_nome)} />
            <Field label="Prestador" value={toTitleCase(guia.prestador_nome)} />
-           <Field label="Status Prestador" value={statusPrest} />
+           <Field label="Status Prestador" value={statusPrest === "SEM PRESTADOR" ? "Sem prestador" : "Com prestador"} />
            <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
            <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
            <Field label="Solicitante" value={toTitleCase(guia.solicitante_nome)} />

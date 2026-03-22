@@ -41,9 +41,21 @@ function hasRealDiff(oldVal: unknown, newVal: unknown): boolean {
   return normalizeForCompare(oldVal) !== normalizeForCompare(newVal);
 }
 
+/** Fields that auto-update without user confirmation */
+const AUTO_UPDATE_FIELDS = new Set(["atendido_texto"]);
+
+/** Returns true if a field value change represents a positive progression (e.g. "Não" -> "Sim") */
+function isPositiveProgression(field: string, oldVal: unknown, newVal: unknown): boolean {
+  if (field === "atendido_texto") {
+    const oldNorm = normalizeForCompare(oldVal);
+    const newNorm = normalizeForCompare(newVal);
+    return oldNorm !== "sim" && newNorm === "sim";
+  }
+  return false;
+}
+
 const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
   { key: "data_guia", label: "Data Guia" },
-  { key: "medico_nome", label: "Médico" },
   { key: "tipo_exame", label: "Tipo Exame" },
   { key: "situacao", label: "Situação" },
   { key: "atendido_texto", label: "Atendido" },
@@ -92,15 +104,28 @@ export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> 
 
     const firstRow = guiaRows[0];
     const diffs: DiffField[] = [];
+    let allAutoUpdate = true;
+
     for (const f of COMPARE_FIELDS) {
       const oldRaw = existing[f.key];
       const newRaw = firstRow[f.key];
       if (!hasRealDiff(oldRaw, newRaw)) continue;
+
+      // Check if this is an auto-updatable positive progression
+      if (AUTO_UPDATE_FIELDS.has(f.key) && isPositiveProgression(f.key, oldRaw, newRaw)) {
+        diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
+        continue; // Don't mark allAutoUpdate as false
+      }
+
       diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
+      allAutoUpdate = false;
     }
 
     if (diffs.length === 0) {
       items.push({ guiaCodigo: code, status: "identica", diffs: [], rows: guiaRows, selected: false });
+    } else if (allAutoUpdate) {
+      // All diffs are auto-updatable → mark as selected automatically
+      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: true });
     } else {
       items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: false });
     }
