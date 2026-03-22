@@ -423,7 +423,7 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
            <Field label="Empresa" value={toTitleCase(guia.empresa_nome)} />
            <Field label="Unidade" value={toTitleCase(guia.unidade_nome)} />
            <Field label="Prestador" value={toTitleCase(guia.prestador_nome)} />
-           <Field label="Status Prestador" value={statusPrest} />
+           <Field label="Status Prestador" value={statusPrest === "SEM PRESTADOR" ? "Sem prestador" : "Com prestador"} />
            <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
            <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
            <Field label="Solicitante" value={toTitleCase(guia.solicitante_nome)} />

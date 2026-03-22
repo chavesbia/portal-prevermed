@@ -41,9 +41,21 @@ function hasRealDiff(oldVal: unknown, newVal: unknown): boolean {
   return normalizeForCompare(oldVal) !== normalizeForCompare(newVal);
 }
 
+/** Fields that auto-update without user confirmation */
+const AUTO_UPDATE_FIELDS = new Set(["atendido_texto"]);
+
+/** Returns true if a field value change represents a positive progression (e.g. "Não" -> "Sim") */
+function isPositiveProgression(field: string, oldVal: unknown, newVal: unknown): boolean {
+  if (field === "atendido_texto") {
+    const oldNorm = normalizeForCompare(oldVal);
+    const newNorm = normalizeForCompare(newVal);
+    return oldNorm !== "sim" && newNorm === "sim";
+  }
+  return false;
+}
+
 const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
   { key: "data_guia", label: "Data Guia" },
-  { key: "medico_nome", label: "Médico" },
   { key: "tipo_exame", label: "Tipo Exame" },
   { key: "situacao", label: "Situação" },
   { key: "atendido_texto", label: "Atendido" },

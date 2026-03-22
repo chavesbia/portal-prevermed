@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, List, LayoutDashboard } from "lucide-react";
 import GuiasImportacao from "./guias/GuiasImportacao";
@@ -6,6 +7,7 @@ import GuiasDashboard from "./guias/GuiasDashboard";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import { useSearchParams } from "react-router-dom";
+import { emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
 
 const MODULE_ROUTE = '/gestao-guias';
 
@@ -16,9 +18,17 @@ export default function GestaoGuias() {
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "dashboard";
 
+  // Filters injected from dashboard card clicks
+  const [injectedFilters, setInjectedFilters] = useState<Partial<GuiaFiltersState> | null>(null);
+
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
   };
+
+  const handleDashboardNavigate = useCallback((filterOverrides: Record<string, any>) => {
+    setInjectedFilters({ ...emptyFilters, ...filterOverrides });
+    setSearchParams({ tab: "guias" }, { replace: true });
+  }, [setSearchParams]);
 
   return (
     <ProtectedModuleRoute route={MODULE_ROUTE}>
@@ -47,11 +57,11 @@ export default function GestaoGuias() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <GuiasDashboard />
+            <GuiasDashboard onNavigateToList={handleDashboardNavigate} />
           </TabsContent>
 
           <TabsContent value="guias">
-            <GuiasList readOnly={readOnly} />
+            <GuiasList readOnly={readOnly} injectedFilters={injectedFilters} onFiltersConsumed={() => setInjectedFilters(null)} />
           </TabsContent>
 
           {canImport && (
