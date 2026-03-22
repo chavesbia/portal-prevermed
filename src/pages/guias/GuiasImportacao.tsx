@@ -253,6 +253,30 @@ export default function GuiasImportacao() {
                 </Card>
               )}
 
+              {/* Auto-update items - informational only */}
+              {autoUpdates.length > 0 && (
+                <Card className="border-blue-500/30 bg-blue-500/5">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-500" />
+                      Atualização Automática ({autoUpdates.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Estas guias serão atualizadas automaticamente (progressão positiva de status).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {autoUpdates.map((item) => (
+                        <Badge key={item.guiaCodigo} variant="secondary" className="text-xs font-mono">
+                          {item.guiaCodigo} — {item.diffs.map(d => `${d.campo}: ${d.antigo || "(vazio)"} → ${d.novo}`).join(", ")}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => { setAnalysis(null); setFile(null); setParsedRows([]); }}>
                   Cancelar
