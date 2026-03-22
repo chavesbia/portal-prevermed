@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
+import { toTitleCase } from "@/lib/guias/blocklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -164,7 +165,7 @@ export default function GuiaDetalhe() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Link to="/gestao-guias">
+        <Link to="/gestao-guias?tab=guias">
           <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div>
@@ -181,19 +182,18 @@ export default function GuiaDetalhe() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {formatField("Data da Guia", guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null)}
-            {formatField("Tipo de Exame", guia.tipo_exame)}
-            {formatField("Situação", guia.situacao)}
+            {formatField("Tipo de Exame", toTitleCase(guia.tipo_exame))}
+            {formatField("Situação", toTitleCase(guia.situacao))}
             {formatField("Atendido", guia.atendido_texto)}
-            {formatField("Funcionário", guia.funcionario_nome)}
+            {formatField("Funcionário", toTitleCase(guia.funcionario_nome))}
             {formatField("CPF", guia.funcionario_cpf)}
-            {formatField("Empresa", guia.empresa_nome)}
-            {formatField("Unidade", guia.unidade_nome)}
-            {formatField("Prestador", guia.prestador_nome)}
-            {formatField("Email Prestador", guia.prestador_email)}
+            {formatField("Empresa", toTitleCase(guia.empresa_nome))}
+            {formatField("Unidade", toTitleCase(guia.unidade_nome))}
+            {formatField("Prestador", toTitleCase(guia.prestador_nome))}
+            {formatField("Email Prestador", guia.prestador_email && guia.prestador_email.includes("@") ? guia.prestador_email : null)}
             {formatField("Telefone Prestador", guia.prestador_telefone)}
-            {formatField("Médico", guia.medico_nome)}
             {formatField("Agendamento", guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null)}
-            {formatField("Solicitante", guia.solicitante_nome)}
+            {formatField("Solicitante", toTitleCase(guia.solicitante_nome))}
           </div>
         </CardContent>
       </Card>

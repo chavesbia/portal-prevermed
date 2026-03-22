@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
-import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
+import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -333,15 +333,15 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
                         </Link>
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={guia.empresa_nome} maxW="max-w-[140px]" />
+                        <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={guia.prestador_nome} maxW="max-w-[140px]" />
+                        <TruncatedCell text={toTitleCase(guia.prestador_nome)} maxW="max-w-[140px]" />
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2">
-                        <TruncatedCell text={guia.funcionario_nome} maxW="max-w-[130px]" />
+                        <TruncatedCell text={toTitleCase(guia.funcionario_nome)} maxW="max-w-[130px]" />
                       </td>
-                      <td className="px-3 py-2 text-xs whitespace-nowrap">{guia.tipo_exame ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">{toTitleCase(guia.tipo_exame) ?? "—"}</td>
                       <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
                       <td className="px-3 py-2 text-xs whitespace-nowrap">
                         {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
@@ -413,20 +413,20 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
         </SheetTitle>
       </SheetHeader>
       <div className="mt-4 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Data da Guia" value={guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null} />
-          <Field label="Tipo de Exame" value={guia.tipo_exame} />
-          <Field label="Situação" value={guia.situacao} />
-          <Field label="Atendido" value={guia.atendido_texto} />
-          <Field label="Funcionário" value={guia.funcionario_nome} />
-          <Field label="CPF" value={guia.funcionario_cpf} />
-          <Field label="Empresa" value={guia.empresa_nome} />
-          <Field label="Unidade" value={guia.unidade_nome} />
-          <Field label="Prestador" value={guia.prestador_nome} />
-          <Field label="Status Prestador" value={statusPrest} />
-          <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
-          <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
-          <Field label="Solicitante" value={guia.solicitante_nome} />
+         <div className="grid grid-cols-2 gap-3">
+           <Field label="Data da Guia" value={guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null} />
+           <Field label="Tipo de Exame" value={toTitleCase(guia.tipo_exame)} />
+           <Field label="Situação" value={toTitleCase(guia.situacao)} />
+           <Field label="Atendido" value={guia.atendido_texto} />
+           <Field label="Funcionário" value={toTitleCase(guia.funcionario_nome)} />
+           <Field label="CPF" value={guia.funcionario_cpf} />
+           <Field label="Empresa" value={toTitleCase(guia.empresa_nome)} />
+           <Field label="Unidade" value={toTitleCase(guia.unidade_nome)} />
+           <Field label="Prestador" value={toTitleCase(guia.prestador_nome)} />
+           <Field label="Status Prestador" value={statusPrest} />
+           <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
+           <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
+           <Field label="Solicitante" value={toTitleCase(guia.solicitante_nome)} />
         </div>
 
         <div className="border-t border-border pt-3">

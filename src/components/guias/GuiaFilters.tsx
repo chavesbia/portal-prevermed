@@ -258,10 +258,11 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
                 { value: "NAO_COMPARECEU", label: "Não" },
                 { value: "REMARCADO", label: "Remarcado" },
                 { value: "PARCIAL", label: "Parcial" },
+                { value: "NAO_INFORMADO", label: "Sem Preenchimento" },
               ]}
             />
-            <SelectField label="Atend. Lançado" value={filters.atendimentoLancado || "__all__"} onChange={(v) => update({ atendimentoLancado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }]} />
-            <SelectField label="ASO Anexado" value={filters.asoAnexado || "__all__"} onChange={(v) => update({ asoAnexado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }]} />
+            <SelectField label="Atend. Lançado" value={filters.atendimentoLancado || "__all__"} onChange={(v) => update({ atendimentoLancado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }, { value: "NAO_INFORMADO", label: "Sem Preenchimento" }]} />
+            <SelectField label="ASO Anexado" value={filters.asoAnexado || "__all__"} onChange={(v) => update({ asoAnexado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }, { value: "NAO_INFORMADO", label: "Sem Preenchimento" }]} />
             <SelectField
               label="Origem Agendamento"
               value={filters.origemAgendamento || "__all__"}
