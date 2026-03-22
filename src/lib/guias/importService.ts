@@ -14,6 +14,7 @@ export interface GuiaImportItem {
   diffs: DiffField[];
   rows: ParsedRow[];
   selected: boolean; // user decision for divergent
+  autoUpdate?: boolean; // true when all diffs are auto-updatable progressions
 }
 
 export interface ImportAnalysis {
@@ -124,10 +125,10 @@ export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> 
     if (diffs.length === 0) {
       items.push({ guiaCodigo: code, status: "identica", diffs: [], rows: guiaRows, selected: false });
     } else if (allAutoUpdate) {
-      // All diffs are auto-updatable → mark as selected automatically
-      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: true });
+      // All diffs are auto-updatable → mark as selected automatically, no user intervention needed
+      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: true, autoUpdate: true });
     } else {
-      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: false });
+      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: false, autoUpdate: false });
     }
   }
 

@@ -103,7 +103,8 @@ export default function GuiasImportacao() {
 
   const novas = analysis?.items.filter((i) => i.status === "nova").length ?? 0;
   const identicas = analysis?.items.filter((i) => i.status === "identica").length ?? 0;
-  const divergentes = analysis?.items.filter((i) => i.status === "divergente") ?? [];
+  const autoUpdates = analysis?.items.filter((i) => i.status === "divergente" && i.autoUpdate) ?? [];
+  const divergentes = analysis?.items.filter((i) => i.status === "divergente" && !i.autoUpdate) ?? [];
 
   return (
     <div className="space-y-6">
@@ -176,7 +177,7 @@ export default function GuiasImportacao() {
           {/* Analysis results */}
           {analysis && !result && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <Card>
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-green-600">{novas}</p>
@@ -193,6 +194,12 @@ export default function GuiasImportacao() {
                   <CardContent className="p-4 text-center">
                     <p className="text-2xl font-bold text-yellow-600">{divergentes.length}</p>
                     <p className="text-xs text-muted-foreground">Com Divergências</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-2xl font-bold text-blue-500">{autoUpdates.length}</p>
+                    <p className="text-xs text-muted-foreground">Atualização Automática</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -240,6 +247,30 @@ export default function GuiasImportacao() {
                             ))}
                           </div>
                         </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Auto-update items - informational only */}
+              {autoUpdates.length > 0 && (
+                <Card className="border-blue-500/30 bg-blue-500/5">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CheckCircle className="h-5 w-5 text-blue-500" />
+                      Atualização Automática ({autoUpdates.length})
+                    </CardTitle>
+                    <CardDescription>
+                      Estas guias serão atualizadas automaticamente (progressão positiva de status).
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {autoUpdates.map((item) => (
+                        <Badge key={item.guiaCodigo} variant="secondary" className="text-xs font-mono">
+                          {item.guiaCodigo} — {item.diffs.map(d => `${d.campo}: ${d.antigo || "(vazio)"} → ${d.novo}`).join(", ")}
+                        </Badge>
                       ))}
                     </div>
                   </CardContent>
