@@ -135,6 +135,7 @@ export default function GuiaDetalhe() {
       queryClient.invalidateQueries({ queryKey: ["guia_gestao", codigo] });
       queryClient.invalidateQueries({ queryKey: ["guia_audit_log", codigo] });
       queryClient.invalidateQueries({ queryKey: ["guias"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
       toast({ title: "Salvo!" });
     },
     onError: (err: any) => {

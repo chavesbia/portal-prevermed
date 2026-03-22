@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 import { getSlaStatus, type SlaStatus } from "@/lib/guias/sla";
 import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +48,7 @@ interface GuiasDashboardProps {
 }
 
 export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps) {
+  const queryClient = useQueryClient();
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
     queryFn: async () => {
@@ -66,22 +68,52 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   const { data: guias, isLoading } = useQuery({
     queryKey: ["dashboard-guias"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("guias")
-        .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)");
-      if (error) throw error;
-      return (data as unknown as GuiaDash[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
+      const allData: GuiaDash[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("guias")
+          .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)")
+          .range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData.push(...(data as unknown as GuiaDash[]));
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+      return allData.filter((g) => !isPrestadorInterno(g.prestador_nome));
     },
   });
 
   const { data: exames } = useQuery({
     queryKey: ["dashboard-exames"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("guia_exames").select("guia_codigo, exame_nome");
-      if (error) throw error;
-      return data as ExameDash[];
+      const allData: ExameDash[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase.from("guia_exames").select("guia_codigo, exame_nome").range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData.push(...(data as ExameDash[]));
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+      return allData;
     },
   });
+
+  // Realtime: refresh dashboard when guia_gestao changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-gestao-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "guia_gestao" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   if (isLoading || !guias) {
     return (
