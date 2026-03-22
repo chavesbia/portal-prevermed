@@ -5,6 +5,7 @@ import GuiasList from "./guias/GuiasList";
 import GuiasDashboard from "./guias/GuiasDashboard";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
+import { useSearchParams } from "react-router-dom";
 
 const MODULE_ROUTE = '/gestao-guias';
 
@@ -12,6 +13,12 @@ export default function GestaoGuias() {
   const { hasPermission, isReadOnly } = useModulePermissions();
   const canImport = hasPermission(MODULE_ROUTE, 'create');
   const readOnly = isReadOnly(MODULE_ROUTE);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "dashboard";
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   return (
     <ProtectedModuleRoute route={MODULE_ROUTE}>
@@ -21,7 +28,7 @@ export default function GestaoGuias() {
           <p className="text-muted-foreground">Controle operacional de guias do SOC</p>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-4">
+        <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="dashboard" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
