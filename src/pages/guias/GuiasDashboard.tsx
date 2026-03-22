@@ -116,8 +116,8 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   const guiasMes = guiasWithSla.filter((g) => g.data_guia && new Date(g.data_guia + "T00:00:00") >= thisMonthStart).length;
   const atrasadas = guiasWithSla.filter((g) => g.sla === "ATRASADO").length;
   const emAtencao = guiasWithSla.filter((g) => g.sla === "ATENCAO").length;
-  const semAtendimento = guiasWithSla.filter((g) => (g.gestao?.atendimento_lancado ?? "NAO_INFORMADO") !== "SIM").length;
-  const asoPendente = guiasWithSla.filter((g) => (g.gestao?.aso_anexado ?? "NAO_INFORMADO") !== "SIM").length;
+  const semAtendimento = guiasWithSla.filter((g) => (g.gestao?.atendimento_lancado ?? "NAO_INFORMADO") === "NAO_INFORMADO").length;
+  const asoPendente = guiasWithSla.filter((g) => (g.gestao?.aso_anexado ?? "NAO_INFORMADO") === "NAO_INFORMADO").length;
   const semPrestador = guiasWithSla.filter((g) => g.statusPrest === "SEM PRESTADOR").length;
   const origemCliente = guiasWithSla.filter((g) => g.origem === "CLIENTE").length;
   const origemPreverMed = guiasWithSla.filter((g) => g.origem === "PREVERMED").length;
