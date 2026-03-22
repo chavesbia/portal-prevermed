@@ -104,15 +104,28 @@ export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> 
 
     const firstRow = guiaRows[0];
     const diffs: DiffField[] = [];
+    let allAutoUpdate = true;
+
     for (const f of COMPARE_FIELDS) {
       const oldRaw = existing[f.key];
       const newRaw = firstRow[f.key];
       if (!hasRealDiff(oldRaw, newRaw)) continue;
+
+      // Check if this is an auto-updatable positive progression
+      if (AUTO_UPDATE_FIELDS.has(f.key) && isPositiveProgression(f.key, oldRaw, newRaw)) {
+        diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
+        continue; // Don't mark allAutoUpdate as false
+      }
+
       diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
+      allAutoUpdate = false;
     }
 
     if (diffs.length === 0) {
       items.push({ guiaCodigo: code, status: "identica", diffs: [], rows: guiaRows, selected: false });
+    } else if (allAutoUpdate) {
+      // All diffs are auto-updatable → mark as selected automatically
+      items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: true });
     } else {
       items.push({ guiaCodigo: code, status: "divergente", diffs, rows: guiaRows, selected: false });
     }
