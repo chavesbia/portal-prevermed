@@ -14,6 +14,7 @@ export interface GuiaImportItem {
   diffs: DiffField[];
   rows: ParsedRow[];
   selected: boolean; // user decision for divergent
+  autoUpdate?: boolean; // true when all diffs are auto-updatable progressions
 }
 
 export interface ImportAnalysis {
