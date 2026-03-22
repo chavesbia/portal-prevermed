@@ -72,7 +72,7 @@ function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; 
   );
 }
 
-export default function GuiasList({ readOnly = false }: GuiasListProps) {
+export default function GuiasList({ readOnly = false, injectedFilters, onFiltersConsumed }: GuiasListProps) {
   const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -84,6 +84,15 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
   const [drawerGuia, setDrawerGuia] = useState<GuiaWithGestao | null>(null);
 
   const canEdit = !readOnly && isAdmin;
+
+  // Apply filters injected from dashboard cards
+  useEffect(() => {
+    if (injectedFilters) {
+      setFilters({ ...emptyFilters, ...injectedFilters });
+      setPage(0);
+      onFiltersConsumed?.();
+    }
+  }, [injectedFilters, onFiltersConsumed]);
 
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
