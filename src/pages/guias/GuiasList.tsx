@@ -356,7 +356,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                       <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
                       <td className="px-3 py-2 text-xs whitespace-nowrap">
                         {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
-                        {guia.hora_agendamento ? ` ${guia.hora_agendamento}` : ""}
+                        {guia.hora_agendamento && guia.hora_agendamento !== "00:00" ? ` ${guia.hora_agendamento}` : ""}
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={origem === "CLIENTE" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
