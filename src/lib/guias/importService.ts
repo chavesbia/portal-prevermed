@@ -30,6 +30,17 @@ export interface ImportResult {
   guiasIgnoradas: number;
 }
 
+/** Normalize a value for comparison: trim, collapse spaces, lowercase, treat null/undefined/"" as empty */
+function normalizeForCompare(val: unknown): string {
+  if (val == null) return "";
+  return String(val).trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Returns true only when the semantic content actually changed */
+function hasRealDiff(oldVal: unknown, newVal: unknown): boolean {
+  return normalizeForCompare(oldVal) !== normalizeForCompare(newVal);
+}
+
 const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
   { key: "data_guia", label: "Data Guia" },
   { key: "medico_nome", label: "Médico" },
