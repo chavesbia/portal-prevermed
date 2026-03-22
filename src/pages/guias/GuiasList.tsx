@@ -413,20 +413,20 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
         </SheetTitle>
       </SheetHeader>
       <div className="mt-4 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Data da Guia" value={guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null} />
-          <Field label="Tipo de Exame" value={guia.tipo_exame} />
-          <Field label="Situação" value={guia.situacao} />
-          <Field label="Atendido" value={guia.atendido_texto} />
-          <Field label="Funcionário" value={guia.funcionario_nome} />
-          <Field label="CPF" value={guia.funcionario_cpf} />
-          <Field label="Empresa" value={guia.empresa_nome} />
-          <Field label="Unidade" value={guia.unidade_nome} />
-          <Field label="Prestador" value={guia.prestador_nome} />
-          <Field label="Status Prestador" value={statusPrest} />
-          <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
-          <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
-          <Field label="Solicitante" value={guia.solicitante_nome} />
+         <div className="grid grid-cols-2 gap-3">
+           <Field label="Data da Guia" value={guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null} />
+           <Field label="Tipo de Exame" value={toTitleCase(guia.tipo_exame)} />
+           <Field label="Situação" value={toTitleCase(guia.situacao)} />
+           <Field label="Atendido" value={guia.atendido_texto} />
+           <Field label="Funcionário" value={toTitleCase(guia.funcionario_nome)} />
+           <Field label="CPF" value={guia.funcionario_cpf} />
+           <Field label="Empresa" value={toTitleCase(guia.empresa_nome)} />
+           <Field label="Unidade" value={toTitleCase(guia.unidade_nome)} />
+           <Field label="Prestador" value={toTitleCase(guia.prestador_nome)} />
+           <Field label="Status Prestador" value={statusPrest} />
+           <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
+           <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
+           <Field label="Solicitante" value={toTitleCase(guia.solicitante_nome)} />
         </div>
 
         <div className="border-t border-border pt-3">
