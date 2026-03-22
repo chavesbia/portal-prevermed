@@ -82,11 +82,10 @@ export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> 
     const firstRow = guiaRows[0];
     const diffs: DiffField[] = [];
     for (const f of COMPARE_FIELDS) {
-      const oldVal = String(existing[f.key] ?? "");
-      const newVal = String(firstRow[f.key] ?? "");
-      if (oldVal !== newVal) {
-        diffs.push({ campo: f.label, antigo: existing[f.key], novo: firstRow[f.key] });
-      }
+      const oldRaw = existing[f.key];
+      const newRaw = firstRow[f.key];
+      if (!hasRealDiff(oldRaw, newRaw)) continue;
+      diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
     }
 
     if (diffs.length === 0) {
