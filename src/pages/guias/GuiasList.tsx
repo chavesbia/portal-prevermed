@@ -39,6 +39,8 @@ type GuiaWithGestao = {
 
 interface GuiasListProps {
   readOnly?: boolean;
+  injectedFilters?: Partial<GuiaFiltersState> | null;
+  onFiltersConsumed?: () => void;
 }
 
 const PAGE_SIZE = 50;
