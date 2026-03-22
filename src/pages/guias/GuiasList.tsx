@@ -333,15 +333,15 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
                         </Link>
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={guia.empresa_nome} maxW="max-w-[140px]" />
+                        <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={guia.prestador_nome} maxW="max-w-[140px]" />
+                        <TruncatedCell text={toTitleCase(guia.prestador_nome)} maxW="max-w-[140px]" />
                       </td>
                       <td className="sticky z-10 bg-background px-3 py-2">
-                        <TruncatedCell text={guia.funcionario_nome} maxW="max-w-[130px]" />
+                        <TruncatedCell text={toTitleCase(guia.funcionario_nome)} maxW="max-w-[130px]" />
                       </td>
-                      <td className="px-3 py-2 text-xs whitespace-nowrap">{guia.tipo_exame ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">{toTitleCase(guia.tipo_exame) ?? "—"}</td>
                       <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
                       <td className="px-3 py-2 text-xs whitespace-nowrap">
                         {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
