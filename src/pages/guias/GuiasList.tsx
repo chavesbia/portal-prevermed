@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
-import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
+import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
