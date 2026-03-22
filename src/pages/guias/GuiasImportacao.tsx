@@ -103,7 +103,8 @@ export default function GuiasImportacao() {
 
   const novas = analysis?.items.filter((i) => i.status === "nova").length ?? 0;
   const identicas = analysis?.items.filter((i) => i.status === "identica").length ?? 0;
-  const divergentes = analysis?.items.filter((i) => i.status === "divergente") ?? [];
+  const autoUpdates = analysis?.items.filter((i) => i.status === "divergente" && i.autoUpdate) ?? [];
+  const divergentes = analysis?.items.filter((i) => i.status === "divergente" && !i.autoUpdate) ?? [];
 
   return (
     <div className="space-y-6">
