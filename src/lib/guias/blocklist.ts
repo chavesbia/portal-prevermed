@@ -33,6 +33,7 @@ export const PRESTADORES_INTERNOS: string[] = [
   "Psicóloga - Aline Almeida Silva",
   "Psicóloga - Beatriz Vasconcelos da Silva",
   "Psicóloga - Roberta Mantovani",
+  "ATENDIMENTO IN LOCO - PREVERMED",
 ];
 
 const normalizedSet = new Set(PRESTADORES_INTERNOS.map((p) => p.trim().toLowerCase()));
@@ -40,4 +41,22 @@ const normalizedSet = new Set(PRESTADORES_INTERNOS.map((p) => p.trim().toLowerCa
 export function isPrestadorInterno(nome: string | null | undefined): boolean {
   if (!nome) return false;
   return normalizedSet.has(nome.trim().toLowerCase());
+}
+
+/** Derive origem_agendamento from solicitante_nome */
+export function getOrigemAgendamento(solicitanteNome: string | null | undefined): "CLIENTE" | "PREVERMED" {
+  if (!solicitanteNome) return "PREVERMED";
+  return solicitanteNome.trim().toUpperCase().startsWith("EMPRESA:") ? "CLIENTE" : "PREVERMED";
+}
+
+/** Derive status_prestador from prestador_nome */
+export function getStatusPrestador(prestadorNome: string | null | undefined): "SEM PRESTADOR" | "COM PRESTADOR" {
+  if (!prestadorNome || prestadorNome.trim() === "") return "SEM PRESTADOR";
+  return "COM PRESTADOR";
+}
+
+/** Normalize text to uppercase for display fields (not emails/codes) */
+export function normalizeUpperCase(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return value.trim().toUpperCase();
 }
