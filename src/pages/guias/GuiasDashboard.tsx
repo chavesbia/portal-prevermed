@@ -68,11 +68,21 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   const { data: guias, isLoading } = useQuery({
     queryKey: ["dashboard-guias"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("guias")
-        .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)");
-      if (error) throw error;
-      return (data as unknown as GuiaDash[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
+      const allData: GuiaDash[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("guias")
+          .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)")
+          .range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData.push(...(data as unknown as GuiaDash[]));
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+      return allData.filter((g) => !isPrestadorInterno(g.prestador_nome));
     },
   });
 
