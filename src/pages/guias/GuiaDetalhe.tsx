@@ -189,9 +189,8 @@ export default function GuiaDetalhe() {
             {formatField("Empresa", guia.empresa_nome)}
             {formatField("Unidade", guia.unidade_nome)}
             {formatField("Prestador", guia.prestador_nome)}
-            {formatField("Email Prestador", guia.prestador_email)}
+            {formatField("Email Prestador", guia.prestador_email && guia.prestador_email.includes("@") ? guia.prestador_email : null)}
             {formatField("Telefone Prestador", guia.prestador_telefone)}
-            {formatField("Médico", guia.medico_nome)}
             {formatField("Agendamento", guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null)}
             {formatField("Solicitante", guia.solicitante_nome)}
           </div>
