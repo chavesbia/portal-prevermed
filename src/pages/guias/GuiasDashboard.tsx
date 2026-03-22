@@ -89,11 +89,31 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   const { data: exames } = useQuery({
     queryKey: ["dashboard-exames"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("guia_exames").select("guia_codigo, exame_nome");
-      if (error) throw error;
-      return data as ExameDash[];
+      const allData: ExameDash[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase.from("guia_exames").select("guia_codigo, exame_nome").range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData.push(...(data as ExameDash[]));
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+      return allData;
     },
   });
+
+  // Realtime: refresh dashboard when guia_gestao changes
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-gestao-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "guia_gestao" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   if (isLoading || !guias) {
     return (
