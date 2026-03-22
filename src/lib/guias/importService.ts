@@ -30,6 +30,17 @@ export interface ImportResult {
   guiasIgnoradas: number;
 }
 
+/** Normalize a value for comparison: trim, collapse spaces, lowercase, treat null/undefined/"" as empty */
+function normalizeForCompare(val: unknown): string {
+  if (val == null) return "";
+  return String(val).trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Returns true only when the semantic content actually changed */
+function hasRealDiff(oldVal: unknown, newVal: unknown): boolean {
+  return normalizeForCompare(oldVal) !== normalizeForCompare(newVal);
+}
+
 const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
   { key: "data_guia", label: "Data Guia" },
   { key: "medico_nome", label: "Médico" },
@@ -82,11 +93,10 @@ export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> 
     const firstRow = guiaRows[0];
     const diffs: DiffField[] = [];
     for (const f of COMPARE_FIELDS) {
-      const oldVal = String(existing[f.key] ?? "");
-      const newVal = String(firstRow[f.key] ?? "");
-      if (oldVal !== newVal) {
-        diffs.push({ campo: f.label, antigo: existing[f.key], novo: firstRow[f.key] });
-      }
+      const oldRaw = existing[f.key];
+      const newRaw = firstRow[f.key];
+      if (!hasRealDiff(oldRaw, newRaw)) continue;
+      diffs.push({ campo: f.label, antigo: oldRaw, novo: newRaw });
     }
 
     if (diffs.length === 0) {
