@@ -48,6 +48,7 @@ interface GuiasDashboardProps {
 }
 
 export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps) {
+  const queryClient = useQueryClient();
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
     queryFn: async () => {
