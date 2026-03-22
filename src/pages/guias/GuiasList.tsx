@@ -144,6 +144,11 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       if (f.dataGuiaFim && g.data_guia && new Date(g.data_guia + "T00:00:00") > f.dataGuiaFim) return false;
       if (f.dataAgendamentoInicio && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") < f.dataAgendamentoInicio) return false;
       if (f.dataAgendamentoFim && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") > f.dataAgendamentoFim) return false;
+      if (f.semAgendamento) {
+        const semData = !g.data_agendamento;
+        const semHora = !g.hora_agendamento || g.hora_agendamento === "00:00";
+        if (!(semData && semHora)) return false;
+      }
       if (f.empresas.length > 0 && !f.empresas.includes(g.empresa_nome ?? "")) return false;
       if (f.prestadores.length > 0 && !f.prestadores.includes(g.prestador_nome ?? "")) return false;
       if (f.tipoExame && g.tipo_exame !== f.tipoExame) return false;

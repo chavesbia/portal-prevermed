@@ -30,6 +30,7 @@ export interface GuiaFiltersState {
   origemAgendamento: string;
   statusPrestador: string;
   unidade: string;
+  semAgendamento: boolean;
 }
 
 export const emptyFilters: GuiaFiltersState = {
@@ -50,6 +51,7 @@ export const emptyFilters: GuiaFiltersState = {
   origemAgendamento: "",
   statusPrestador: "",
   unidade: "",
+  semAgendamento: false,
 };
 
 interface Props {
@@ -168,6 +170,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
     filters.origemAgendamento || undefined,
     filters.statusPrestador || undefined,
     filters.unidade || undefined,
+    filters.semAgendamento ? true : undefined,
   ].filter(Boolean).length;
 
   const update = (patch: Partial<GuiaFiltersState>) => {
@@ -226,6 +229,16 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
             <DatePickerField label="Data Guia (até)" value={filters.dataGuiaFim} onChange={(d) => update({ dataGuiaFim: d })} />
             <DatePickerField label="Agendamento (de)" value={filters.dataAgendamentoInicio} onChange={(d) => update({ dataAgendamentoInicio: d })} />
             <DatePickerField label="Agendamento (até)" value={filters.dataAgendamentoFim} onChange={(d) => update({ dataAgendamentoFim: d })} />
+            <div className="space-y-1 flex flex-col justify-end">
+              <label className="flex items-center gap-2 cursor-pointer text-xs h-8">
+                <Checkbox
+                  checked={filters.semAgendamento}
+                  onCheckedChange={(checked) => update({ semAgendamento: !!checked })}
+                  className="h-3.5 w-3.5"
+                />
+                Sem data e horário
+              </label>
+            </div>
 
             <MultiSelectField label="Empresa" selected={filters.empresas} onChange={(v) => update({ empresas: v })} options={empresas} />
             <MultiSelectField label="Prestador" selected={filters.prestadores} onChange={(v) => update({ prestadores: v })} options={prestadores} />
