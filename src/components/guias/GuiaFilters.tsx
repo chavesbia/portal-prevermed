@@ -30,6 +30,7 @@ export interface GuiaFiltersState {
   origemAgendamento: string;
   statusPrestador: string;
   unidade: string;
+  semAgendamento: boolean;
 }
 
 export const emptyFilters: GuiaFiltersState = {
@@ -50,6 +51,7 @@ export const emptyFilters: GuiaFiltersState = {
   origemAgendamento: "",
   statusPrestador: "",
   unidade: "",
+  semAgendamento: false,
 };
 
 interface Props {
