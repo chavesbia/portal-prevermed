@@ -170,6 +170,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
     filters.origemAgendamento || undefined,
     filters.statusPrestador || undefined,
     filters.unidade || undefined,
+    filters.semAgendamento ? true : undefined,
   ].filter(Boolean).length;
 
   const update = (patch: Partial<GuiaFiltersState>) => {
