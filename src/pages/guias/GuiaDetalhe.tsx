@@ -182,18 +182,18 @@ export default function GuiaDetalhe() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {formatField("Data da Guia", guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null)}
-            {formatField("Tipo de Exame", guia.tipo_exame)}
-            {formatField("Situação", guia.situacao)}
+            {formatField("Tipo de Exame", toTitleCase(guia.tipo_exame))}
+            {formatField("Situação", toTitleCase(guia.situacao))}
             {formatField("Atendido", guia.atendido_texto)}
-            {formatField("Funcionário", guia.funcionario_nome)}
+            {formatField("Funcionário", toTitleCase(guia.funcionario_nome))}
             {formatField("CPF", guia.funcionario_cpf)}
-            {formatField("Empresa", guia.empresa_nome)}
-            {formatField("Unidade", guia.unidade_nome)}
-            {formatField("Prestador", guia.prestador_nome)}
+            {formatField("Empresa", toTitleCase(guia.empresa_nome))}
+            {formatField("Unidade", toTitleCase(guia.unidade_nome))}
+            {formatField("Prestador", toTitleCase(guia.prestador_nome))}
             {formatField("Email Prestador", guia.prestador_email && guia.prestador_email.includes("@") ? guia.prestador_email : null)}
             {formatField("Telefone Prestador", guia.prestador_telefone)}
             {formatField("Agendamento", guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null)}
-            {formatField("Solicitante", guia.solicitante_nome)}
+            {formatField("Solicitante", toTitleCase(guia.solicitante_nome))}
           </div>
         </CardContent>
       </Card>
