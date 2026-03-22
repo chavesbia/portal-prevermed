@@ -1,20 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
-import { isPrestadorInterno } from "@/lib/guias/blocklist";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Search, CheckSquare } from "lucide-react";
+import { CheckSquare, ChevronLeft, ChevronRight, ArrowUpDown, Eye, Check, X as XIcon, Minus } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { GuiaFilters, emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 type GuiaWithGestao = {
   id: string;
@@ -29,15 +28,46 @@ type GuiaWithGestao = {
   data_agendamento: string | null;
   hora_agendamento: string | null;
   situacao: string | null;
+  solicitante_nome: string | null;
+  unidade_nome: string | null;
   guia_gestao: {
     compareceu_status: string;
     atendimento_lancado: string;
     aso_anexado: string;
-  } | null;
+  }[];
 };
 
 interface GuiasListProps {
   readOnly?: boolean;
+}
+
+const PAGE_SIZE = 50;
+
+type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla";
+type SortDir = "asc" | "desc";
+
+function StatusIcon({ status }: { status: string }) {
+  if (status === "SIM" || status === "COMPARECEU") return <Check className="h-4 w-4 text-green-600" />;
+  if (status === "NAO" || status === "NAO_COMPARECEU") return <XIcon className="h-4 w-4 text-destructive" />;
+  if (status === "REMARCADO") return <span className="text-xs text-yellow-600 font-medium">REM</span>;
+  if (status === "PARCIAL") return <span className="text-xs text-orange-500 font-medium">PAR</span>;
+  return <Minus className="h-4 w-4 text-muted-foreground" />;
+}
+
+function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; maxW?: string }) {
+  const display = text || "—";
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className={`block truncate ${maxW} text-xs`}>{display}</span>
+        </TooltipTrigger>
+        {text && text.length > 20 && (
+          <TooltipContent side="top" className="max-w-xs text-xs">{text}</TooltipContent>
+        )}
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export default function GuiasList({ readOnly = false }: GuiasListProps) {
@@ -46,6 +76,10 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<GuiaFiltersState>({ ...emptyFilters });
+  const [page, setPage] = useState(0);
+  const [sortField, setSortField] = useState<SortField>("data_guia");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [drawerGuia, setDrawerGuia] = useState<GuiaWithGestao | null>(null);
 
   const canEdit = !readOnly && isAdmin;
 
@@ -62,7 +96,7 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
     queryFn: async () => {
       let query = supabase
         .from("guias")
-        .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)")
+        .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado)")
         .order("data_guia", { ascending: false });
 
       if (search) {
@@ -73,7 +107,6 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
 
       const { data, error } = await query;
       if (error) throw error;
-      // Filter out internal providers
       return (data as unknown as GuiaWithGestao[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
     },
   });
@@ -90,10 +123,11 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
   const prestadores = useMemo(() => [...new Set(guiasRaw?.map((g) => g.prestador_nome).filter(Boolean) as string[])].sort(), [guiasRaw]);
   const tiposExame = useMemo(() => [...new Set(guiasRaw?.map((g) => g.tipo_exame).filter(Boolean) as string[])].sort(), [guiasRaw]);
   const situacoes = useMemo(() => [...new Set(guiasRaw?.map((g) => g.situacao).filter(Boolean) as string[])].sort(), [guiasRaw]);
+  const unidades = useMemo(() => [...new Set(guiasRaw?.map((g) => g.unidade_nome).filter(Boolean) as string[])].sort(), [guiasRaw]);
 
   const guias = useMemo(() => {
     if (!guiasRaw) return [];
-    return guiasRaw.filter((g) => {
+    let result = guiasRaw.filter((g) => {
       const f = filters;
       if (f.dataGuiaInicio && g.data_guia && new Date(g.data_guia + "T00:00:00") < f.dataGuiaInicio) return false;
       if (f.dataGuiaFim && g.data_guia && new Date(g.data_guia + "T00:00:00") > f.dataGuiaFim) return false;
@@ -103,12 +137,13 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
       if (f.prestadores.length > 0 && !f.prestadores.includes(g.prestador_nome ?? "")) return false;
       if (f.tipoExame && g.tipo_exame !== f.tipoExame) return false;
       if (f.situacao && g.situacao !== f.situacao) return false;
+      if (f.unidade && g.unidade_nome !== f.unidade) return false;
       if (f.atendido) {
-        const isAtendido = g.atendido_texto?.toLowerCase() === "sim";
+        const isAtendido = g.atendido_texto?.toUpperCase() === "SIM";
         if (f.atendido === "SIM" && !isAtendido) return false;
         if (f.atendido === "NAO" && isAtendido) return false;
       }
-      const gestao = g.guia_gestao;
+      const gestao = Array.isArray(g.guia_gestao) ? g.guia_gestao[0] : null;
       if (f.compareceu && (gestao?.compareceu_status ?? "NAO_INFORMADO") !== f.compareceu) return false;
       if (f.atendimentoLancado && (gestao?.atendimento_lancado ?? "NAO_INFORMADO") !== f.atendimentoLancado) return false;
       if (f.asoAnexado && (gestao?.aso_anexado ?? "NAO_INFORMADO") !== f.asoAnexado) return false;
@@ -117,9 +152,39 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
         const sla = getSlaStatus(dataBase, gestao?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? []);
         if (sla !== f.sla) return false;
       }
+      if (f.origemAgendamento) {
+        const origem = getOrigemAgendamento(g.solicitante_nome);
+        if (origem !== f.origemAgendamento) return false;
+      }
+      if (f.statusPrestador) {
+        const sp = getStatusPrestador(g.prestador_nome);
+        if (sp !== f.statusPrestador) return false;
+      }
       return true;
     });
-  }, [guiasRaw, filters, feriados]);
+
+    // Sort
+    result.sort((a, b) => {
+      let valA: any, valB: any;
+      if (sortField === "sla") {
+        const gA = Array.isArray(a.guia_gestao) ? a.guia_gestao[0] : null;
+        const gB = Array.isArray(b.guia_gestao) ? b.guia_gestao[0] : null;
+        const slaOrder = { EM_DIA: 0, ATENCAO: 1, ATRASADO: 2 };
+        valA = slaOrder[getSlaStatus(a.data_agendamento ?? a.data_guia, gA?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [])] ?? 0;
+        valB = slaOrder[getSlaStatus(b.data_agendamento ?? b.data_guia, gB?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [])] ?? 0;
+      } else {
+        valA = (a as any)[sortField] ?? "";
+        valB = (b as any)[sortField] ?? "";
+      }
+      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [guiasRaw, filters, feriados, sortField, sortDir]);
+
+  const totalPages = Math.ceil((guias?.length ?? 0) / PAGE_SIZE);
+  const pagedGuias = guias.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const displayName = profile?.full_name ?? user?.email ?? "";
 
@@ -128,22 +193,10 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
       const codes = Array.from(selected);
       for (const code of codes) {
         const guia = guias?.find((g) => g.guia_codigo === code);
-        const gestao = guia?.guia_gestao;
+        const gestao = Array.isArray(guia?.guia_gestao) ? guia?.guia_gestao[0] : null;
         const oldValue = gestao?.[field] ?? "NAO_INFORMADO";
-
-        await supabase
-          .from("guia_gestao")
-          .update({ [field]: value, updated_by: user?.id })
-          .eq("guia_codigo", code);
-
-        await supabase.from("guia_audit_log").insert({
-          user_id: user?.id,
-          user_name: displayName,
-          guia_codigo: code,
-          campo: field,
-          valor_antigo: oldValue,
-          valor_novo: value,
-        });
+        await supabase.from("guia_gestao").update({ [field]: value, updated_by: user?.id }).eq("guia_codigo", code);
+        await supabase.from("guia_audit_log").insert({ user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field, valor_antigo: oldValue, valor_novo: value });
       }
     },
     onSuccess: () => {
@@ -152,182 +205,254 @@ export default function GuiasList({ readOnly = false }: GuiasListProps) {
       setSelected(new Set());
       toast({ title: "Atualizado!", description: `${selected.size} guias atualizadas.` });
     },
-    onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    },
+    onError: (err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }),
   });
 
   const toggleSelect = (code: string) => {
     const next = new Set(selected);
-    if (next.has(code)) next.delete(code);
-    else next.add(code);
+    next.has(code) ? next.delete(code) : next.add(code);
     setSelected(next);
   };
 
   const toggleAll = () => {
-    if (guias && selected.size === guias.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(guias?.map((g) => g.guia_codigo) ?? []));
-    }
+    if (pagedGuias && selected.size === pagedGuias.length) setSelected(new Set());
+    else setSelected(new Set(pagedGuias?.map((g) => g.guia_codigo) ?? []));
   };
 
-  const formatCompareceu = (s: string) => {
-    const map: Record<string, string> = {
-      NAO_INFORMADO: "—",
-      COMPARECEU: "Sim",
-      NAO_COMPARECEU: "Não",
-      REMARCADO: "Remarcado",
-      PARCIAL: "Parcial",
-    };
-    return map[s] ?? s;
-  };
+  const handleSort = useCallback((field: SortField) => {
+    if (sortField === field) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortField(field); setSortDir("asc"); }
+    setPage(0);
+  }, [sortField, sortDir]);
 
-  const formatSimNao = (s: string) => {
-    const map: Record<string, string> = { NAO_INFORMADO: "—", SIM: "Sim", NAO: "Não" };
-    return map[s] ?? s;
-  };
+  const SortHeader = ({ field, children, className = "" }: { field: SortField; children: React.ReactNode; className?: string }) => (
+    <th
+      className={`h-10 px-3 text-left align-middle font-medium text-muted-foreground text-xs whitespace-nowrap cursor-pointer select-none hover:text-foreground ${className}`}
+      onClick={() => handleSort(field)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        <ArrowUpDown className={`h-3 w-3 ${sortField === field ? "text-foreground" : "text-muted-foreground/40"}`} />
+      </span>
+    </th>
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Guias</h1>
-          <p className="text-muted-foreground">
-            {guias ? `${guias.length} guias` : "Lista de guias importadas"}
-          </p>
+    <div className="flex flex-col h-full">
+      {/* Sticky filters */}
+      <GuiaFilters
+        filters={filters}
+        onChange={(f) => { setFilters(f); setPage(0); }}
+        empresas={empresas}
+        prestadores={prestadores}
+        tiposExame={tiposExame}
+        situacoes={situacoes}
+        unidades={unidades}
+        exames={examesList}
+        search={search}
+        onSearchChange={(v) => { setSearch(v); setPage(0); }}
+      />
+
+      {/* Bulk actions */}
+      {canEdit && selected.size > 0 && (
+        <div className="flex items-center gap-2 flex-wrap py-2">
+          <Badge variant="secondary">{selected.size} selecionadas</Badge>
+          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Marcar como Compareceu para ${selected.size} guias?`)) bulkUpdate.mutate({ field: "compareceu_status", value: "COMPARECEU" }); }}>
+            <CheckSquare className="h-4 w-4 mr-1" /> Compareceu
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Marcar atendimento lançado para ${selected.size} guias?`)) bulkUpdate.mutate({ field: "atendimento_lancado", value: "SIM" }); }}>
+            <CheckSquare className="h-4 w-4 mr-1" /> Atendimento
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Marcar ASO anexado para ${selected.size} guias?`)) bulkUpdate.mutate({ field: "aso_anexado", value: "SIM" }); }}>
+            <CheckSquare className="h-4 w-4 mr-1" /> ASO
+          </Button>
+        </div>
+      )}
+
+      {/* Summary bar */}
+      <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
+        <span>{guias.length} guias encontradas</span>
+        <div className="flex items-center gap-2">
+          <span>Página {totalPages > 0 ? page + 1 : 0} de {totalPages}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-md min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por código, funcionário, CPF, empresa, prestador..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <GuiaFilters
-          filters={filters}
-          onChange={setFilters}
-          empresas={empresas}
-          prestadores={prestadores}
-          tiposExame={tiposExame}
-          situacoes={situacoes}
-          exames={examesList}
-        />
-
-        {canEdit && selected.size > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="secondary">{selected.size} selecionadas</Badge>
-            <Button size="sm" variant="outline" onClick={() => {
-              if (confirm(`Marcar como Compareceu para ${selected.size} guias?`))
-                bulkUpdate.mutate({ field: "compareceu_status", value: "COMPARECEU" });
-            }}>
-              <CheckSquare className="h-4 w-4 mr-1" /> Compareceu ✓
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => {
-              if (confirm(`Marcar atendimento lançado para ${selected.size} guias?`))
-                bulkUpdate.mutate({ field: "atendimento_lancado", value: "SIM" });
-            }}>
-              <CheckSquare className="h-4 w-4 mr-1" /> Atendimento ✓
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => {
-              if (confirm(`Marcar ASO anexado para ${selected.size} guias?`))
-                bulkUpdate.mutate({ field: "aso_anexado", value: "SIM" });
-            }}>
-              <CheckSquare className="h-4 w-4 mr-1" /> ASO ✓
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 text-center text-muted-foreground">Carregando...</div>
-          ) : (
-            <div className="overflow-auto max-h-[calc(100vh-300px)] relative">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-background">
-                  <TableRow>
-                    {canEdit && (
-                      <TableHead className="w-10 sticky left-0 bg-background z-20">
-                        <Checkbox checked={guias?.length ? selected.size === guias.length : false} onCheckedChange={toggleAll} />
-                      </TableHead>
-                    )}
-                    <TableHead className={`whitespace-nowrap ${canEdit ? "" : "sticky left-0 bg-background z-20"}`}>Data</TableHead>
-                    <TableHead className="whitespace-nowrap">Código</TableHead>
-                    <TableHead className="whitespace-nowrap min-w-[160px]">Empresa</TableHead>
-                    <TableHead className="whitespace-nowrap min-w-[160px]">Prestador</TableHead>
-                    <TableHead className="whitespace-nowrap min-w-[140px]">Funcionário</TableHead>
-                    <TableHead className="whitespace-nowrap">Tipo</TableHead>
-                    <TableHead className="whitespace-nowrap">Atendido</TableHead>
-                    <TableHead className="whitespace-nowrap">Agendamento</TableHead>
-                    <TableHead className="whitespace-nowrap">SLA</TableHead>
-                    <TableHead className="whitespace-nowrap">Compareceu</TableHead>
-                    <TableHead className="whitespace-nowrap">Atend. Lançado</TableHead>
-                    <TableHead className="whitespace-nowrap">ASO</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {guias?.map((guia) => {
-                    const gestao = guia.guia_gestao;
-                    const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
-                    const dataBase = guia.data_agendamento ?? guia.data_guia;
-                    const sla = getSlaStatus(dataBase, atendLancado, feriados ?? []);
-
-                    return (
-                      <TableRow key={guia.id} className="hover:bg-muted/50">
-                        {canEdit && (
-                          <TableCell className="sticky left-0 bg-background">
-                            <Checkbox
-                              checked={selected.has(guia.guia_codigo)}
-                              onCheckedChange={() => toggleSelect(guia.guia_codigo)}
-                            />
-                          </TableCell>
-                        )}
-                        <TableCell className="text-xs whitespace-nowrap">
-                          {guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yy") : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Link to={`/guias/${guia.guia_codigo}`} className="text-primary hover:underline font-mono text-xs">
-                            {guia.guia_codigo}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate" title={guia.empresa_nome ?? ""}>{guia.empresa_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate" title={guia.prestador_nome ?? ""}>{guia.prestador_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs max-w-[180px] truncate" title={guia.funcionario_nome ?? ""}>{guia.funcionario_nome ?? "—"}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">{guia.tipo_exame ?? "—"}</TableCell>
-                        <TableCell className="text-xs">{guia.atendido_texto ?? "—"}</TableCell>
-                        <TableCell className="text-xs whitespace-nowrap">
-                          {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
-                          {guia.hora_agendamento ? ` ${guia.hora_agendamento}` : ""}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`text-xs ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">{formatCompareceu(gestao?.compareceu_status ?? "NAO_INFORMADO")}</TableCell>
-                        <TableCell className="text-xs">{formatSimNao(atendLancado)}</TableCell>
-                        <TableCell className="text-xs">{formatSimNao(gestao?.aso_anexado ?? "NAO_INFORMADO")}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {guias?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
-                        Nenhuma guia encontrada. Faça uma importação primeiro.
-                      </TableCell>
-                    </TableRow>
+      {/* Table with frozen columns */}
+      {isLoading ? (
+        <div className="p-8 text-center text-muted-foreground">Carregando...</div>
+      ) : (
+        <div className="border border-border rounded-lg overflow-hidden flex-1 relative">
+          <div className="overflow-auto max-h-[calc(100vh-340px)]" style={{ overscrollBehaviorX: "contain" }}>
+            <table className="w-full text-sm border-collapse">
+              <thead className="sticky top-0 z-20 bg-muted/80 backdrop-blur-sm">
+                <tr className="border-b border-border">
+                  {canEdit && (
+                    <th className="sticky left-0 z-30 bg-muted/95 w-10 px-3 py-2 border-r border-border">
+                      <Checkbox checked={pagedGuias?.length ? selected.size === pagedGuias.length : false} onCheckedChange={toggleAll} />
+                    </th>
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <SortHeader field="data_guia" className={`sticky ${canEdit ? "left-10" : "left-0"} z-30 bg-muted/95 border-r border-border min-w-[80px]`}>Data</SortHeader>
+                  <SortHeader field="guia_codigo" className="sticky z-30 bg-muted/95 border-r border-border min-w-[90px]" style-left>Código</SortHeader>
+                  <SortHeader field="empresa_nome" className="sticky z-30 bg-muted/95 border-r border-border min-w-[140px]">Empresa</SortHeader>
+                  <SortHeader field="prestador_nome" className="sticky z-30 bg-muted/95 border-r border-border min-w-[140px]">Prestador</SortHeader>
+                  <SortHeader field="funcionario_nome" className="sticky z-30 bg-muted/95 min-w-[130px]">Funcionário</SortHeader>
+                  <th className="h-10 px-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[80px]">Tipo</th>
+                  <th className="h-10 px-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[70px]">Atendido</th>
+                  <SortHeader field="data_agendamento" className="min-w-[110px]">Agendamento</SortHeader>
+                  <th className="h-10 px-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[70px]">Origem</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[60px]">SLA</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Comp.</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Atend.</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">ASO</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {pagedGuias.map((guia) => {
+                  const gestao = Array.isArray(guia.guia_gestao) ? guia.guia_gestao[0] : null;
+                  const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
+                  const dataBase = guia.data_agendamento ?? guia.data_guia;
+                  const sla = getSlaStatus(dataBase, atendLancado, feriados ?? []);
+                  const origem = getOrigemAgendamento(guia.solicitante_nome);
+
+                  return (
+                    <tr key={guia.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                      {canEdit && (
+                        <td className="sticky left-0 z-10 bg-background px-3 py-2 border-r border-border">
+                          <Checkbox checked={selected.has(guia.guia_codigo)} onCheckedChange={() => toggleSelect(guia.guia_codigo)} />
+                        </td>
+                      )}
+                      <td className={`sticky ${canEdit ? "left-10" : "left-0"} z-10 bg-background px-3 py-2 text-xs whitespace-nowrap border-r border-border`}>
+                        {guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yy") : "—"}
+                      </td>
+                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                        <Link to={`/guias/${guia.guia_codigo}`} className="text-primary hover:underline font-mono text-xs font-medium">
+                          {guia.guia_codigo}
+                        </Link>
+                      </td>
+                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                        <TruncatedCell text={guia.empresa_nome} maxW="max-w-[140px]" />
+                      </td>
+                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                        <TruncatedCell text={guia.prestador_nome} maxW="max-w-[140px]" />
+                      </td>
+                      <td className="sticky z-10 bg-background px-3 py-2">
+                        <TruncatedCell text={guia.funcionario_nome} maxW="max-w-[130px]" />
+                      </td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">{guia.tipo_exame ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
+                      <td className="px-3 py-2 text-xs whitespace-nowrap">
+                        {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
+                        {guia.hora_agendamento ? ` ${guia.hora_agendamento}` : ""}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant={origem === "CLIENTE" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                          {origem === "CLIENTE" ? "Cliente" : "PreverMed"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
+                      </td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.compareceu_status ?? "NAO_INFORMADO"} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} /></td>
+                      <td className="px-3 py-2 text-center">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {pagedGuias.length === 0 && (
+                  <tr>
+                    <td colSpan={15} className="text-center py-12 text-muted-foreground">
+                      Nenhuma guia encontrada.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Right shadow indicator */}
+          <div className="absolute top-0 right-0 bottom-0 w-4 pointer-events-none bg-gradient-to-l from-background/60 to-transparent" />
+        </div>
+      )}
+
+      {/* Drawer for quick detail */}
+      <Sheet open={!!drawerGuia} onOpenChange={(open) => !open && setDrawerGuia(null)}>
+        <SheetContent className="sm:max-w-lg overflow-y-auto">
+          {drawerGuia && <GuiaDrawerContent guia={drawerGuia} feriados={feriados ?? []} />}
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
+  const gestao = Array.isArray(guia.guia_gestao) ? guia.guia_gestao[0] : null;
+  const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, gestao?.atendimento_lancado ?? "NAO_INFORMADO", feriados);
+  const origem = getOrigemAgendamento(guia.solicitante_nome);
+  const statusPrest = getStatusPrestador(guia.prestador_nome);
+
+  const Field = ({ label, value }: { label: string; value: string | null }) => (
+    <div>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium">{value || "—"}</p>
+    </div>
+  );
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle className="flex items-center gap-2">
+          Guia {guia.guia_codigo}
+          <Badge className={`text-xs ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
+        </SheetTitle>
+      </SheetHeader>
+      <div className="mt-4 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Data da Guia" value={guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yyyy") : null} />
+          <Field label="Tipo de Exame" value={guia.tipo_exame} />
+          <Field label="Situação" value={guia.situacao} />
+          <Field label="Atendido" value={guia.atendido_texto} />
+          <Field label="Funcionário" value={guia.funcionario_nome} />
+          <Field label="CPF" value={guia.funcionario_cpf} />
+          <Field label="Empresa" value={guia.empresa_nome} />
+          <Field label="Unidade" value={guia.unidade_nome} />
+          <Field label="Prestador" value={guia.prestador_nome} />
+          <Field label="Status Prestador" value={statusPrest} />
+          <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
+          <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
+          <Field label="Solicitante" value={guia.solicitante_nome} />
+        </div>
+
+        <div className="border-t border-border pt-3">
+          <h4 className="text-sm font-semibold mb-2">Gestão Operacional</h4>
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
+              <StatusIcon status={gestao?.compareceu_status ?? "NAO_INFORMADO"} />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
+              <StatusIcon status={gestao?.atendimento_lancado ?? "NAO_INFORMADO"} />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-1">ASO</p>
+              <StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <Link to={`/guias/${guia.guia_codigo}`}>
+            <Button className="w-full">Ver detalhes completos</Button>
+          </Link>
+        </div>
+      </div>
+    </>
   );
 }

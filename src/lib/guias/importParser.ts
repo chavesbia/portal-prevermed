@@ -56,6 +56,21 @@ const COLUMN_MAP: Record<string, keyof ParsedRow> = {
   "Nome do Solicitante": "solicitante_nome",
 };
 
+// Fields that should be uppercased on import
+const UPPERCASE_FIELDS: (keyof ParsedRow)[] = [
+  "empresa_nome",
+  "prestador_nome",
+  "funcionario_nome",
+  "tipo_exame",
+  "solicitante_nome",
+  "medico_nome",
+  "unidade_nome",
+  "prestador_socnet_nome",
+  "exame_nome",
+  "situacao",
+  "atendido_texto",
+];
+
 function parseExcelDate(value: any): string | null {
   if (!value) return null;
   if (typeof value === "number") {
@@ -122,6 +137,14 @@ export function parseFile(file: File): Promise<ParsedRow[]> {
             }
           }
           if (!row.guia_codigo) continue;
+
+          // Apply uppercase normalization to text fields
+          for (const field of UPPERCASE_FIELDS) {
+            if (row[field] && typeof row[field] === "string") {
+              row[field] = row[field].toUpperCase();
+            }
+          }
+
           rows.push(row as ParsedRow);
         }
 
