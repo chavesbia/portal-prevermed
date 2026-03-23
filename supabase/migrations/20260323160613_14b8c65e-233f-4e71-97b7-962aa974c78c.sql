@@ -1,0 +1,3 @@
+-- Backfill sla_final for guias where atendimento was lançado before sla_final field existed
+UPDATE guia_gestao SET sla_final = 'EM_DIA' WHERE guia_codigo IN ('20675150') AND atendimento_lancado = 'SIM' AND sla_final IS NULL;
+UPDATE guia_gestao SET sla_final = 'ATRASADO' WHERE guia_codigo IN ('20178530', '20167851', '20167398', '20593186', '20189227', '20603448', '20184180', '20468830', '20470797', '20469009', '20465177', '20473151', '20474582', '20458305', '20474098', '20473812', '20460964', '20469112') AND atendimento_lancado = 'SIM' AND sla_final IS NULL;
