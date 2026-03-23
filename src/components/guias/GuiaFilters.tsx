@@ -31,6 +31,7 @@ export interface GuiaFiltersState {
   statusPrestador: string;
   unidade: string;
   semAgendamento: boolean;
+  statusGuia: string;
 }
 
 export const emptyFilters: GuiaFiltersState = {
@@ -52,6 +53,7 @@ export const emptyFilters: GuiaFiltersState = {
   statusPrestador: "",
   unidade: "",
   semAgendamento: false,
+  statusGuia: "",
 };
 
 interface Props {
@@ -171,6 +173,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
     filters.statusPrestador || undefined,
     filters.unidade || undefined,
     filters.semAgendamento ? true : undefined,
+    filters.statusGuia || undefined,
   ].filter(Boolean).length;
 
   const update = (patch: Partial<GuiaFiltersState>) => {
@@ -188,7 +191,6 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
 
   return (
     <div className="sticky top-0 z-30 bg-background border-b border-border pb-3 space-y-3">
-      {/* Search bar + toggle */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[250px] max-w-lg">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -221,7 +223,6 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
         )}
       </div>
 
-      {/* Expandable filter panel */}
       {expanded && (
         <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -263,13 +264,23 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
               ]}
             />
             <SelectField
+              label="Status da Guia"
+              value={filters.statusGuia || "__all__"}
+              onChange={(v) => update({ statusGuia: v })}
+              options={[
+                { value: "PENDENTE", label: "Pendente" },
+                { value: "INICIADA", label: "Iniciada" },
+                { value: "EM_ANDAMENTO", label: "Em Andamento" },
+                { value: "FINALIZADA", label: "Finalizada" },
+              ]}
+            />
+            <SelectField
               label="Compareceu"
               value={filters.compareceu || "__all__"}
               onChange={(v) => update({ compareceu: v })}
               options={[
                 { value: "COMPARECEU", label: "Sim" },
                 { value: "NAO_COMPARECEU", label: "Não" },
-                { value: "REMARCADO", label: "Remarcado" },
                 { value: "PARCIAL", label: "Parcial" },
                 { value: "NAO_INFORMADO", label: "Sem Preenchimento" },
               ]}

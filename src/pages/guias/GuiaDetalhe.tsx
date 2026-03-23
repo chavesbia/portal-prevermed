@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSlaStatus, getSlaColor, getSlaLabel } from "@/lib/guias/sla";
+import { getSlaStatus, getSlaColor, getSlaLabel, calcSlaToFreeze, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel } from "@/lib/guias/sla";
 import { toTitleCase } from "@/lib/guias/blocklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState, useEffect } from "react";
 
-type CompareceuStatus = "NAO_INFORMADO" | "COMPARECEU" | "NAO_COMPARECEU" | "REMARCADO" | "PARCIAL";
+type CompareceuStatus = "NAO_INFORMADO" | "COMPARECEU" | "NAO_COMPARECEU" | "PARCIAL";
 type SimNaoStatus = "NAO_INFORMADO" | "SIM" | "NAO";
 
 export default function GuiaDetalhe() {
@@ -26,6 +26,14 @@ export default function GuiaDetalhe() {
   const queryClient = useQueryClient();
   const canEdit = isAdmin;
   const displayName = profile?.full_name ?? user?.email ?? "";
+
+  const { data: feriados } = useQuery({
+    queryKey: ["feriados"],
+    queryFn: async () => {
+      const { data } = await supabase.from("feriados").select("data");
+      return data?.map((f: any) => f.data) ?? [];
+    },
+  });
 
   const { data: guia, isLoading } = useQuery({
     queryKey: ["guia", codigo],
@@ -90,24 +98,72 @@ export default function GuiaDetalhe() {
 
   useEffect(() => {
     if (gestao) {
-      setCompareceu(gestao.compareceu_status as CompareceuStatus);
+      // Map legacy REMARCADO to NAO_INFORMADO
+      const comp = gestao.compareceu_status as string;
+      setCompareceu(comp === "REMARCADO" ? "NAO_INFORMADO" : comp as CompareceuStatus);
       setAtendLancado(gestao.atendimento_lancado as SimNaoStatus);
       setAsoAnexado(gestao.aso_anexado as SimNaoStatus);
       setObservacoes(gestao.observacoes ?? "");
     }
   }, [gestao]);
 
+  // Consistency validations
+  const handleCompareceuChange = (v: CompareceuStatus) => {
+    setCompareceu(v);
+    if (v === "NAO_COMPARECEU") {
+      setAtendLancado("NAO");
+      setAsoAnexado("NAO");
+    }
+  };
+
+  const handleAtendLancadoChange = (v: SimNaoStatus) => {
+    if (v === "SIM" && compareceu === "NAO_INFORMADO") {
+      toast({ title: "Atenção", description: "Preencha o campo 'Compareceu' antes de lançar o atendimento.", variant: "destructive" });
+      return;
+    }
+    if (v === "SIM" && compareceu === "NAO_COMPARECEU") {
+      toast({ title: "Atenção", description: "Não é possível lançar atendimento se o funcionário não compareceu.", variant: "destructive" });
+      return;
+    }
+    setAtendLancado(v);
+    if (v !== "SIM") {
+      setAsoAnexado("NAO_INFORMADO");
+    }
+  };
+
+  const handleAsoAnexadoChange = (v: SimNaoStatus) => {
+    if (v === "SIM" && atendLancado !== "SIM") {
+      toast({ title: "Atenção", description: "O atendimento precisa estar lançado antes de anexar o ASO.", variant: "destructive" });
+      return;
+    }
+    setAsoAnexado(v);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!gestao || !user) return;
 
       const changes: { campo: string; antigo: string; novo: string }[] = [];
-      if (compareceu !== gestao.compareceu_status) changes.push({ campo: "compareceu_status", antigo: gestao.compareceu_status, novo: compareceu });
+      const oldComp = gestao.compareceu_status === "REMARCADO" ? "NAO_INFORMADO" : gestao.compareceu_status;
+      if (compareceu !== oldComp) changes.push({ campo: "compareceu_status", antigo: oldComp, novo: compareceu });
       if (atendLancado !== gestao.atendimento_lancado) changes.push({ campo: "atendimento_lancado", antigo: gestao.atendimento_lancado, novo: atendLancado });
       if (asoAnexado !== gestao.aso_anexado) changes.push({ campo: "aso_anexado", antigo: gestao.aso_anexado, novo: asoAnexado });
       if (observacoes !== (gestao.observacoes ?? "")) changes.push({ campo: "observacoes", antigo: gestao.observacoes ?? "", novo: observacoes });
 
       if (changes.length === 0) return;
+
+      // Calculate SLA to freeze if atendimento is being set to SIM
+      const dataBase = guia?.data_agendamento ?? guia?.data_guia ?? null;
+      let slaFinalValue = (gestao as any).sla_final ?? null;
+
+      if (atendLancado === "SIM" && gestao.atendimento_lancado !== "SIM") {
+        // Freezing SLA at this moment
+        slaFinalValue = calcSlaToFreeze(dataBase, feriados ?? []);
+        changes.push({ campo: "sla_final", antigo: (gestao as any).sla_final ?? "N/A", novo: slaFinalValue });
+      } else if (atendLancado !== "SIM" && gestao.atendimento_lancado === "SIM") {
+        // Unfreezing - keep the worst SLA (can't go back to better)
+        // SLA is historical, don't clear it
+      }
 
       await supabase
         .from("guia_gestao")
@@ -117,7 +173,8 @@ export default function GuiaDetalhe() {
           aso_anexado: asoAnexado,
           observacoes,
           updated_by: user.id,
-        })
+          ...(atendLancado === "SIM" && gestao.atendimento_lancado !== "SIM" ? { sla_final: slaFinalValue } : {}),
+        } as any)
         .eq("guia_codigo", codigo!);
 
       for (const change of changes) {
@@ -147,7 +204,8 @@ export default function GuiaDetalhe() {
   if (!guia) return <div className="p-8 text-center text-muted-foreground">Guia não encontrada.</div>;
 
   const dataBase = guia.data_agendamento ?? guia.data_guia;
-  const sla = getSlaStatus(dataBase, atendLancado, []);
+  const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], (gestao as any)?.sla_final);
+  const guiaStatus = getGuiaStatus(compareceu, atendLancado, asoAnexado);
 
   const formatField = (label: string, value: string | null) => (
     <div>
@@ -161,6 +219,7 @@ export default function GuiaDetalhe() {
     atendimento_lancado: "Atendimento Lançado",
     aso_anexado: "ASO Anexado",
     observacoes: "Observações",
+    sla_final: "SLA Final",
   };
 
   return (
@@ -172,7 +231,8 @@ export default function GuiaDetalhe() {
         <div>
           <h1 className="text-2xl font-bold">Guia {guia.guia_codigo}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge className={getSlaColor(sla)}>{getSlaLabel(sla)}</Badge>
+            <Badge className={getSlaColor(sla)}>SLA: {getSlaLabel(sla)}</Badge>
+            <Badge className={getGuiaStatusColor(guiaStatus)}>{getGuiaStatusLabel(guiaStatus)}</Badge>
             <span className="text-sm text-muted-foreground">{guia.situacao}</span>
           </div>
         </div>
@@ -223,26 +283,46 @@ export default function GuiaDetalhe() {
         </Card>
       )}
 
+      {/* SLA + Status Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-lg">SLA — Prazo da Ação</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <Badge className={`text-sm px-3 py-1 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
+              <span className="text-sm text-muted-foreground">
+                {(gestao as any)?.sla_final ? "Congelado no lançamento" : "Calculado em tempo real"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-lg">Status da Guia</CardTitle></CardHeader>
+          <CardContent>
+            <Badge className={`text-sm px-3 py-1 ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader><CardTitle className="text-lg">Gestão Operacional</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Compareceu</Label>
-              <Select value={compareceu} onValueChange={(v) => setCompareceu(v as CompareceuStatus)} disabled={!canEdit}>
+              <Select value={compareceu} onValueChange={(v) => handleCompareceuChange(v as CompareceuStatus)} disabled={!canEdit}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
                   <SelectItem value="COMPARECEU">Compareceu</SelectItem>
                   <SelectItem value="NAO_COMPARECEU">Não Compareceu</SelectItem>
-                  <SelectItem value="REMARCADO">Remarcado</SelectItem>
                   <SelectItem value="PARCIAL">Parcial</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Atendimento Lançado</Label>
-              <Select value={atendLancado} onValueChange={(v) => setAtendLancado(v as SimNaoStatus)} disabled={!canEdit}>
+              <Select value={atendLancado} onValueChange={(v) => handleAtendLancadoChange(v as SimNaoStatus)} disabled={!canEdit}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
@@ -253,7 +333,7 @@ export default function GuiaDetalhe() {
             </div>
             <div className="space-y-2">
               <Label>ASO Anexado</Label>
-              <Select value={asoAnexado} onValueChange={(v) => setAsoAnexado(v as SimNaoStatus)} disabled={!canEdit}>
+              <Select value={asoAnexado} onValueChange={(v) => handleAsoAnexadoChange(v as SimNaoStatus)} disabled={!canEdit}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
