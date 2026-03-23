@@ -75,13 +75,40 @@ function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; 
 export default function GuiasList({ readOnly = false, injectedFilters, onFiltersConsumed }: GuiasListProps) {
   const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
+  // Restore persisted state from sessionStorage
+  const persistedState = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem("guias-list-state");
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return null;
+  }, []);
+
+  const [search, setSearch] = useState(persistedState?.search ?? "");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filters, setFilters] = useState<GuiaFiltersState>({ ...emptyFilters });
-  const [page, setPage] = useState(0);
-  const [sortField, setSortField] = useState<SortField>("data_guia");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [filters, setFilters] = useState<GuiaFiltersState>(() => {
+    if (persistedState?.filters) {
+      const f = persistedState.filters;
+      return {
+        ...f,
+        dataGuiaInicio: f.dataGuiaInicio ? new Date(f.dataGuiaInicio) : undefined,
+        dataGuiaFim: f.dataGuiaFim ? new Date(f.dataGuiaFim) : undefined,
+        dataAgendamentoInicio: f.dataAgendamentoInicio ? new Date(f.dataAgendamentoInicio) : undefined,
+        dataAgendamentoFim: f.dataAgendamentoFim ? new Date(f.dataAgendamentoFim) : undefined,
+      };
+    }
+    return { ...emptyFilters };
+  });
+  const [page, setPage] = useState(persistedState?.page ?? 0);
+  const [sortField, setSortField] = useState<SortField>(persistedState?.sortField ?? "data_guia");
+  const [sortDir, setSortDir] = useState<SortDir>(persistedState?.sortDir ?? "desc");
   const [drawerGuia, setDrawerGuia] = useState<GuiaWithGestao | null>(null);
+
+  // Persist state to sessionStorage on changes
+  useEffect(() => {
+    const state = { search, filters, page, sortField, sortDir };
+    sessionStorage.setItem("guias-list-state", JSON.stringify(state));
+  }, [search, filters, page, sortField, sortDir]);
 
   const canEdit = !readOnly && isAdmin;
 
@@ -104,20 +131,32 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
   const { data: guiasRaw, isLoading } = useQuery({
     queryKey: ["guias", search],
     queryFn: async () => {
-      let query = supabase
-        .from("guias")
-        .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
-        .order("data_guia", { ascending: false });
+      const BATCH = 1000;
+      let allData: GuiaWithGestao[] = [];
+      let from = 0;
 
-      if (search) {
-        query = query.or(
-          `guia_codigo.ilike.%${search}%,funcionario_nome.ilike.%${search}%,funcionario_cpf.ilike.%${search}%,empresa_nome.ilike.%${search}%,prestador_nome.ilike.%${search}%`
-        );
+      while (true) {
+        let query = supabase
+          .from("guias")
+          .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
+          .order("data_guia", { ascending: false })
+          .range(from, from + BATCH - 1);
+
+        if (search) {
+          query = query.or(
+            `guia_codigo.ilike.%${search}%,funcionario_nome.ilike.%${search}%,funcionario_cpf.ilike.%${search}%,empresa_nome.ilike.%${search}%,prestador_nome.ilike.%${search}%`
+          );
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data as unknown as GuiaWithGestao[]);
+        if (data.length < BATCH) break;
+        from += BATCH;
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data as unknown as GuiaWithGestao[]).filter((g) => !isPrestadorInterno(g.prestador_nome));
+      return allData.filter((g) => !isPrestadorInterno(g.prestador_nome));
     },
   });
 
