@@ -68,6 +68,11 @@ function getDerivedGuiaState(guia_gestao: GuiaWithGestao["guia_gestao"]) {
   };
 }
 
+function matchesStatusGuiaFilter(statusGuia: string, filterStatus: string) {
+  if (!filterStatus) return true;
+  return statusGuia === filterStatus.trim().toUpperCase();
+}
+
 interface GuiasListProps {
   readOnly?: boolean;
   injectedFilters?: Partial<GuiaFiltersState> | null;
@@ -248,7 +253,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
         if (sla !== f.sla) return false;
       }
-      if (f.statusGuia && statusGuia !== f.statusGuia) return false;
+      if (!matchesStatusGuiaFilter(statusGuia, f.statusGuia)) return false;
       if (f.origemAgendamento) {
         const origem = getOrigemAgendamento(g.solicitante_nome);
         if (origem !== f.origemAgendamento) return false;
