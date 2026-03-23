@@ -130,3 +130,12 @@ export function getGuiaStatusLabel(status: GuiaStatusType) {
     case "FINALIZADA": return "Finalizada";
   }
 }
+
+export function getGuiaStatusLabelShort(status: GuiaStatusType) {
+  switch (status) {
+    case "PENDENTE": return "Pendente";
+    case "INICIADA": return "Iniciada";
+    case "EM_ANDAMENTO": return "Em Andam.";
+    case "FINALIZADA": return "Finalizada";
+  }
+}
