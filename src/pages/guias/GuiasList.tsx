@@ -208,7 +208,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         if (f.atendido === "SIM" && !isAtendido) return false;
         if (f.atendido === "NAO" && isAtendido) return false;
       }
-      const gestao = Array.isArray(g.guia_gestao) ? g.guia_gestao[0] : null;
+      const gestao = getGestao(g.guia_gestao);
       const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
       if (f.compareceu && comp !== f.compareceu) return false;
       if (f.atendimentoLancado && (gestao?.atendimento_lancado ?? "NAO_INFORMADO") !== f.atendimentoLancado) return false;
@@ -239,13 +239,13 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
     result.sort((a, b) => {
       let valA: any, valB: any;
       if (sortField === "sla") {
-        const gA = Array.isArray(a.guia_gestao) ? a.guia_gestao[0] : null;
-        const gB = Array.isArray(b.guia_gestao) ? b.guia_gestao[0] : null;
+        const gA = getGestao(a.guia_gestao);
+        const gB = getGestao(b.guia_gestao);
         valA = slaOrder[getSlaStatus(a.data_agendamento ?? a.data_guia, gA?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [], gA?.sla_final)] ?? 0;
         valB = slaOrder[getSlaStatus(b.data_agendamento ?? b.data_guia, gB?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [], gB?.sla_final)] ?? 0;
       } else if (sortField === "statusGuia") {
-        const gA = Array.isArray(a.guia_gestao) ? a.guia_gestao[0] : null;
-        const gB = Array.isArray(b.guia_gestao) ? b.guia_gestao[0] : null;
+        const gA = getGestao(a.guia_gestao);
+        const gB = getGestao(b.guia_gestao);
         valA = statusOrder[getGuiaStatus(gA?.compareceu_status ?? "NAO_INFORMADO", gA?.atendimento_lancado ?? "NAO_INFORMADO", gA?.aso_anexado ?? "NAO_INFORMADO")] ?? 0;
         valB = statusOrder[getGuiaStatus(gB?.compareceu_status ?? "NAO_INFORMADO", gB?.atendimento_lancado ?? "NAO_INFORMADO", gB?.aso_anexado ?? "NAO_INFORMADO")] ?? 0;
       } else {
@@ -269,7 +269,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       const codes = Array.from(selected);
       for (const code of codes) {
         const guia = guias?.find((g) => g.guia_codigo === code);
-        const gestao = Array.isArray(guia?.guia_gestao) ? guia?.guia_gestao[0] : null;
+        const gestao = getGestao(guia?.guia_gestao ?? null);
         const oldValue = gestao?.[field] ?? "NAO_INFORMADO";
         await supabase.from("guia_gestao").update({ [field]: value, updated_by: user?.id }).eq("guia_codigo", code);
         await supabase.from("guia_audit_log").insert({ user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field, valor_antigo: oldValue, valor_novo: value });
@@ -384,7 +384,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
               </thead>
               <tbody>
                 {pagedGuias.map((guia) => {
-                  const gestao = Array.isArray(guia.guia_gestao) ? guia.guia_gestao[0] : null;
+                  const gestao = getGestao(guia.guia_gestao);
                   const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
                   const dataBase = guia.data_agendamento ?? guia.data_guia;
                   const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], gestao?.sla_final);
@@ -468,7 +468,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 }
 
 function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
-  const gestao = Array.isArray(guia.guia_gestao) ? guia.guia_gestao[0] : null;
+  const gestao = getGestao(guia.guia_gestao);
   const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
   const atend = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
   const aso = gestao?.aso_anexado ?? "NAO_INFORMADO";
