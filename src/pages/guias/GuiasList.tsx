@@ -409,7 +409,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
               </thead>
               <tbody>
                 {pagedGuias.map((guia) => {
-                  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
+                  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia: derivedStatusGuia } = getDerivedGuiaState(guia.guia_gestao);
                   const dataBase = guia.data_agendamento ?? guia.data_guia;
                   const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
                   const origem = getOrigemAgendamento(guia.solicitante_nome);
@@ -453,7 +453,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                         <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabelShort(guiaStatus)}</Badge>
+                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(derivedStatusGuia)}`}>{getGuiaStatusLabelShort(derivedStatusGuia)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} /></td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} /></td>
