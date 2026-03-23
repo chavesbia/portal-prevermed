@@ -35,8 +35,19 @@ type GuiaWithGestao = {
     atendimento_lancado: string;
     aso_anexado: string;
     sla_final?: string | null;
-  }[];
+  } | {
+    compareceu_status: string;
+    atendimento_lancado: string;
+    aso_anexado: string;
+    sla_final?: string | null;
+  }[] | null;
 };
+
+function getGestao(guia_gestao: GuiaWithGestao["guia_gestao"]) {
+  if (!guia_gestao) return null;
+  if (Array.isArray(guia_gestao)) return guia_gestao[0] ?? null;
+  return guia_gestao;
+}
 
 interface GuiasListProps {
   readOnly?: boolean;
