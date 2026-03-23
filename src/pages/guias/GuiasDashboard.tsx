@@ -136,7 +136,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   }
 
   const guiasWithData = guias.map((g) => {
-    const gestao = Array.isArray(g.guia_gestao) ? g.guia_gestao[0] : undefined;
+    const gestao = getGestao(g.guia_gestao);
     const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
     const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
     const asoAnexado = gestao?.aso_anexado ?? "NAO_INFORMADO";
