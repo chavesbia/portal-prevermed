@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSlaStatus, getSlaColor, getSlaLabel, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel } from "@/lib/guias/sla";
+import { getSlaStatus, getSlaColor, getSlaLabel, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel, getGuiaStatusLabelShort } from "@/lib/guias/sla";
 import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
