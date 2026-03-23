@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { CheckSquare, ChevronLeft, ChevronRight, ArrowUpDown, Eye, Check, X as XIcon, Minus } from "lucide-react";
+import { CheckSquare, ChevronLeft, ChevronRight, ArrowUpDown, Eye, Check, X as XIcon, Minus, Ban, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { GuiaFilters, emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
@@ -445,9 +445,9 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                       <td className="px-3 py-2 text-center">
                         <Badge className={`text-[10px] px-1.5 py-0 ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
                       </td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={comp} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={comp} field="compareceu" compareceu={comp} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} field="atend" compareceu={comp} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} field="aso" compareceu={comp} /></td>
                       <td className="px-3 py-2 text-center">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
                           <Eye className="h-3.5 w-3.5" />
