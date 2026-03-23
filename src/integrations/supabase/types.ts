@@ -608,6 +608,7 @@ export type Database = {
           guia_id: string
           id: string
           observacoes: string | null
+          sla_final: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -619,6 +620,7 @@ export type Database = {
           guia_id: string
           id?: string
           observacoes?: string | null
+          sla_final?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -630,6 +632,7 @@ export type Database = {
           guia_id?: string
           id?: string
           observacoes?: string | null
+          sla_final?: string | null
           updated_at?: string
           updated_by?: string | null
         }
