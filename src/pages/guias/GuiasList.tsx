@@ -60,7 +60,19 @@ const PAGE_SIZE = 50;
 type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla" | "statusGuia";
 type SortDir = "asc" | "desc";
 
-function StatusIcon({ status }: { status: string }) {
+function StatusIcon({ status, field, compareceu }: { status: string; field?: "compareceu" | "atend" | "aso"; compareceu?: string }) {
+  // Não compareceu: ícone de bloqueio para todos os campos
+  if (compareceu === "NAO_COMPARECEU") {
+    if (field === "compareceu") return <Ban className="h-4 w-4 text-destructive" />;
+    // Atend e ASO não se aplicam
+    if (field === "atend" || field === "aso") return <Ban className="h-4 w-4 text-muted-foreground" />;
+  }
+
+  // ASO pendente quando atendimento já lançado
+  if (field === "aso" && (status === "NAO" || status === "NAO_INFORMADO") && compareceu && compareceu !== "NAO_COMPARECEU" && compareceu !== "NAO_INFORMADO") {
+    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+  }
+
   if (status === "SIM" || status === "COMPARECEU") return <Check className="h-4 w-4 text-green-600" />;
   if (status === "NAO" || status === "NAO_COMPARECEU") return <XIcon className="h-4 w-4 text-destructive" />;
   if (status === "PARCIAL") return <span className="text-xs text-orange-500 font-medium">PAR</span>;
