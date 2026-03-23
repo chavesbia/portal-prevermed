@@ -443,7 +443,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                         <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <Badge className={`text-[10px] px-1.5 py-0 ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
+                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabelShort(guiaStatus)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={comp} field="compareceu" compareceu={comp} /></td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} field="atend" compareceu={comp} /></td>
