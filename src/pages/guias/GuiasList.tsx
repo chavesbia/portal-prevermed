@@ -508,7 +508,7 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
         <SheetTitle className="flex items-center gap-2 flex-wrap">
           Guia {guia.guia_codigo}
           <Badge className={`text-xs ${getSlaColor(sla)}`}>SLA: {getSlaLabel(sla)}</Badge>
-          <Badge className={`text-xs ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
+          <Badge className={`text-xs ${getGuiaStatusColor(statusGuia)}`}>{getGuiaStatusLabel(statusGuia)}</Badge>
         </SheetTitle>
       </SheetHeader>
       <div className="mt-4 space-y-4">
