@@ -22,8 +22,14 @@ type GuiaDash = {
   tipo_exame: string | null;
   atendido_texto: string | null;
   solicitante_nome: string | null;
-  guia_gestao: { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; sla_final?: string | null }[];
+  guia_gestao: { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; sla_final?: string | null } | { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; sla_final?: string | null }[] | null;
 };
+
+function getGestao(guia_gestao: GuiaDash["guia_gestao"]) {
+  if (!guia_gestao) return undefined;
+  if (Array.isArray(guia_gestao)) return guia_gestao[0] ?? undefined;
+  return guia_gestao;
+}
 
 type ExameDash = { guia_codigo: string; exame_nome: string | null };
 
@@ -130,7 +136,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
   }
 
   const guiasWithData = guias.map((g) => {
-    const gestao = Array.isArray(g.guia_gestao) ? g.guia_gestao[0] : undefined;
+    const gestao = getGestao(g.guia_gestao);
     const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
     const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
     const asoAnexado = gestao?.aso_anexado ?? "NAO_INFORMADO";
