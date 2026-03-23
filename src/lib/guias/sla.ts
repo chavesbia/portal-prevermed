@@ -96,14 +96,15 @@ export function getGuiaStatus(
   // Finalizada: não compareceu
   if (compareceu === "NAO_COMPARECEU") return "FINALIZADA";
 
-  // Finalizada: all 3 fields filled positively
   const compOk = compareceu === "COMPARECEU" || compareceu === "PARCIAL";
   const atendOk = atendimentoLancado === "SIM";
-  const asoOk = asoAnexado === "SIM" || asoAnexado === "NAO";
+  const asoOk = asoAnexado === "SIM";
+
+  // Finalizada: compareceu + atendimento lançado + ASO anexado
   if (compOk && atendOk && asoOk) return "FINALIZADA";
 
-  // Em andamento: atendimento lançado
-  if (atendOk) return "EM_ANDAMENTO";
+  // Em andamento: compareceu + atendimento lançado, mas ASO pendente
+  if (compOk && atendOk) return "EM_ANDAMENTO";
 
   // Iniciada: compareceu or parcial
   if (compOk) return "INICIADA";

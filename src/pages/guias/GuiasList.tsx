@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { CheckSquare, ChevronLeft, ChevronRight, ArrowUpDown, Eye, Check, X as XIcon, Minus } from "lucide-react";
+import { CheckSquare, ChevronLeft, ChevronRight, ArrowUpDown, Eye, Check, X as XIcon, Minus, Ban, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { GuiaFilters, emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
@@ -60,7 +60,19 @@ const PAGE_SIZE = 50;
 type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla" | "statusGuia";
 type SortDir = "asc" | "desc";
 
-function StatusIcon({ status }: { status: string }) {
+function StatusIcon({ status, field, compareceu }: { status: string; field?: "compareceu" | "atend" | "aso"; compareceu?: string }) {
+  // Não compareceu: ícone de bloqueio para todos os campos
+  if (compareceu === "NAO_COMPARECEU") {
+    if (field === "compareceu") return <Ban className="h-4 w-4 text-destructive" />;
+    // Atend e ASO não se aplicam
+    if (field === "atend" || field === "aso") return <Ban className="h-4 w-4 text-muted-foreground" />;
+  }
+
+  // ASO pendente quando atendimento já lançado
+  if (field === "aso" && (status === "NAO" || status === "NAO_INFORMADO") && compareceu && compareceu !== "NAO_COMPARECEU" && compareceu !== "NAO_INFORMADO") {
+    return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+  }
+
   if (status === "SIM" || status === "COMPARECEU") return <Check className="h-4 w-4 text-green-600" />;
   if (status === "NAO" || status === "NAO_COMPARECEU") return <XIcon className="h-4 w-4 text-destructive" />;
   if (status === "PARCIAL") return <span className="text-xs text-orange-500 font-medium">PAR</span>;
@@ -433,9 +445,9 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                       <td className="px-3 py-2 text-center">
                         <Badge className={`text-[10px] px-1.5 py-0 ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
                       </td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={comp} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={comp} field="compareceu" compareceu={comp} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} field="atend" compareceu={comp} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} field="aso" compareceu={comp} /></td>
                       <td className="px-3 py-2 text-center">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
                           <Eye className="h-3.5 w-3.5" />
@@ -515,15 +527,15 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
-              <StatusIcon status={comp} />
+              <StatusIcon status={comp} field="compareceu" compareceu={comp} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
-              <StatusIcon status={atend} />
+              <StatusIcon status={atend} field="atend" compareceu={comp} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">ASO</p>
-              <StatusIcon status={aso} />
+              <StatusIcon status={aso} field="aso" compareceu={comp} />
             </div>
           </div>
         </div>
