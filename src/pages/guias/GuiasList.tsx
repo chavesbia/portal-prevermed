@@ -49,6 +49,25 @@ function getGestao(guia_gestao: GuiaWithGestao["guia_gestao"]) {
   return guia_gestao;
 }
 
+function normalizeGestaoValue(value: string | null | undefined) {
+  return value?.trim().toUpperCase() || "NAO_INFORMADO";
+}
+
+function getDerivedGuiaState(guia_gestao: GuiaWithGestao["guia_gestao"]) {
+  const gestao = getGestao(guia_gestao);
+  const compareceu = normalizeGestaoValue(gestao?.compareceu_status);
+  const atendimentoLancado = normalizeGestaoValue(gestao?.atendimento_lancado);
+  const asoAnexado = normalizeGestaoValue(gestao?.aso_anexado);
+
+  return {
+    gestao,
+    compareceu,
+    atendimentoLancado,
+    asoAnexado,
+    statusGuia: getGuiaStatus(compareceu, atendimentoLancado, asoAnexado),
+  };
+}
+
 interface GuiasListProps {
   readOnly?: boolean;
   injectedFilters?: Partial<GuiaFiltersState> | null;
@@ -220,20 +239,16 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         if (f.atendido === "SIM" && !isAtendido) return false;
         if (f.atendido === "NAO" && isAtendido) return false;
       }
-      const gestao = getGestao(g.guia_gestao);
-      const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
-      if (f.compareceu && comp !== f.compareceu) return false;
-      if (f.atendimentoLancado && (gestao?.atendimento_lancado ?? "NAO_INFORMADO") !== f.atendimentoLancado) return false;
-      if (f.asoAnexado && (gestao?.aso_anexado ?? "NAO_INFORMADO") !== f.asoAnexado) return false;
+      const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(g.guia_gestao);
+      if (f.compareceu && compareceu !== f.compareceu) return false;
+      if (f.atendimentoLancado && atendimentoLancado !== f.atendimentoLancado) return false;
+      if (f.asoAnexado && asoAnexado !== f.asoAnexado) return false;
       if (f.sla) {
         const dataBase = g.data_agendamento ?? g.data_guia;
-        const sla = getSlaStatus(dataBase, gestao?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [], gestao?.sla_final);
+        const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
         if (sla !== f.sla) return false;
       }
-      if (f.statusGuia) {
-        const status = getGuiaStatus(comp, gestao?.atendimento_lancado ?? "NAO_INFORMADO", gestao?.aso_anexado ?? "NAO_INFORMADO");
-        if (status !== f.statusGuia) return false;
-      }
+      if (f.statusGuia && statusGuia !== f.statusGuia) return false;
       if (f.origemAgendamento) {
         const origem = getOrigemAgendamento(g.solicitante_nome);
         if (origem !== f.origemAgendamento) return false;
@@ -251,15 +266,13 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
     result.sort((a, b) => {
       let valA: any, valB: any;
       if (sortField === "sla") {
-        const gA = getGestao(a.guia_gestao);
-        const gB = getGestao(b.guia_gestao);
-        valA = slaOrder[getSlaStatus(a.data_agendamento ?? a.data_guia, gA?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [], gA?.sla_final)] ?? 0;
-        valB = slaOrder[getSlaStatus(b.data_agendamento ?? b.data_guia, gB?.atendimento_lancado ?? "NAO_INFORMADO", feriados ?? [], gB?.sla_final)] ?? 0;
+        const guiaA = getDerivedGuiaState(a.guia_gestao);
+        const guiaB = getDerivedGuiaState(b.guia_gestao);
+        valA = slaOrder[getSlaStatus(a.data_agendamento ?? a.data_guia, guiaA.atendimentoLancado, feriados ?? [], guiaA.gestao?.sla_final)] ?? 0;
+        valB = slaOrder[getSlaStatus(b.data_agendamento ?? b.data_guia, guiaB.atendimentoLancado, feriados ?? [], guiaB.gestao?.sla_final)] ?? 0;
       } else if (sortField === "statusGuia") {
-        const gA = getGestao(a.guia_gestao);
-        const gB = getGestao(b.guia_gestao);
-        valA = statusOrder[getGuiaStatus(gA?.compareceu_status ?? "NAO_INFORMADO", gA?.atendimento_lancado ?? "NAO_INFORMADO", gA?.aso_anexado ?? "NAO_INFORMADO")] ?? 0;
-        valB = statusOrder[getGuiaStatus(gB?.compareceu_status ?? "NAO_INFORMADO", gB?.atendimento_lancado ?? "NAO_INFORMADO", gB?.aso_anexado ?? "NAO_INFORMADO")] ?? 0;
+        valA = statusOrder[getDerivedGuiaState(a.guia_gestao).statusGuia] ?? 0;
+        valB = statusOrder[getDerivedGuiaState(b.guia_gestao).statusGuia] ?? 0;
       } else {
         valA = (a as any)[sortField] ?? "";
         valB = (b as any)[sortField] ?? "";
@@ -396,13 +409,10 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
               </thead>
               <tbody>
                 {pagedGuias.map((guia) => {
-                  const gestao = getGestao(guia.guia_gestao);
-                  const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
+                  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia: derivedStatusGuia } = getDerivedGuiaState(guia.guia_gestao);
                   const dataBase = guia.data_agendamento ?? guia.data_guia;
-                  const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], gestao?.sla_final);
+                  const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
                   const origem = getOrigemAgendamento(guia.solicitante_nome);
-                  const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
-                  const guiaStatus = getGuiaStatus(comp, atendLancado, gestao?.aso_anexado ?? "NAO_INFORMADO");
 
                   return (
                     <tr key={guia.id} className="border-b border-border hover:bg-muted/30 transition-colors">
@@ -443,11 +453,11 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                         <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabelShort(guiaStatus)}</Badge>
+                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(derivedStatusGuia)}`}>{getGuiaStatusLabelShort(derivedStatusGuia)}</Badge>
                       </td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={comp} field="compareceu" compareceu={comp} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={atendLancado} field="atend" compareceu={comp} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={gestao?.aso_anexado ?? "NAO_INFORMADO"} field="aso" compareceu={comp} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} /></td>
+                      <td className="px-3 py-2 text-center"><StatusIcon status={asoAnexado} field="aso" compareceu={compareceu} /></td>
                       <td className="px-3 py-2 text-center">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
                           <Eye className="h-3.5 w-3.5" />
@@ -480,12 +490,8 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 }
 
 function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
-  const gestao = getGestao(guia.guia_gestao);
-  const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
-  const atend = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
-  const aso = gestao?.aso_anexado ?? "NAO_INFORMADO";
-  const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, atend, feriados, gestao?.sla_final);
-  const guiaStatus = getGuiaStatus(comp, atend, aso);
+  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
+  const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, atendimentoLancado, feriados, gestao?.sla_final);
   const origem = getOrigemAgendamento(guia.solicitante_nome);
   const statusPrest = getStatusPrestador(guia.prestador_nome);
 
@@ -502,7 +508,7 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
         <SheetTitle className="flex items-center gap-2 flex-wrap">
           Guia {guia.guia_codigo}
           <Badge className={`text-xs ${getSlaColor(sla)}`}>SLA: {getSlaLabel(sla)}</Badge>
-          <Badge className={`text-xs ${getGuiaStatusColor(guiaStatus)}`}>{getGuiaStatusLabel(guiaStatus)}</Badge>
+          <Badge className={`text-xs ${getGuiaStatusColor(statusGuia)}`}>{getGuiaStatusLabel(statusGuia)}</Badge>
         </SheetTitle>
       </SheetHeader>
       <div className="mt-4 space-y-4">
@@ -527,15 +533,15 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
-              <StatusIcon status={comp} field="compareceu" compareceu={comp} />
+              <StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
-              <StatusIcon status={atend} field="atend" compareceu={comp} />
+              <StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">ASO</p>
-              <StatusIcon status={aso} field="aso" compareceu={comp} />
+              <StatusIcon status={asoAnexado} field="aso" compareceu={compareceu} />
             </div>
           </div>
         </div>
