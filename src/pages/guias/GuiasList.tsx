@@ -68,6 +68,11 @@ function getDerivedGuiaState(guia_gestao: GuiaWithGestao["guia_gestao"]) {
   };
 }
 
+function matchesStatusGuiaFilter(statusGuia: string, filterStatus: string) {
+  if (!filterStatus) return true;
+  return statusGuia === filterStatus.trim().toUpperCase();
+}
+
 interface GuiasListProps {
   readOnly?: boolean;
   injectedFilters?: Partial<GuiaFiltersState> | null;
@@ -78,6 +83,25 @@ const PAGE_SIZE = 50;
 
 type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla" | "statusGuia";
 type SortDir = "asc" | "desc";
+
+const GUIA_STATUS_FILTER_MAP = {
+  PENDENTE: "PENDENTE",
+  PENDENTES: "PENDENTE",
+  "PENDENTE ": "PENDENTE",
+  INICIADA: "INICIADA",
+  INICIADAS: "INICIADA",
+  "EM_ANDAMENTO": "EM_ANDAMENTO",
+  "EM ANDAMENTO": "EM_ANDAMENTO",
+  "EM ANDAM.": "EM_ANDAMENTO",
+  FINALIZADA: "FINALIZADA",
+  FINALIZADAS: "FINALIZADA",
+} as const;
+
+function normalizeStatusGuiaFilter(value: string | null | undefined) {
+  if (!value) return "";
+  const normalizedValue = value.trim().toUpperCase();
+  return GUIA_STATUS_FILTER_MAP[normalizedValue as keyof typeof GUIA_STATUS_FILTER_MAP] ?? normalizedValue;
+}
 
 function StatusIcon({ status, field, compareceu }: { status: string; field?: "compareceu" | "atend" | "aso"; compareceu?: string }) {
   // Não compareceu: ícone de bloqueio para todos os campos
@@ -137,6 +161,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         dataGuiaFim: f.dataGuiaFim ? new Date(f.dataGuiaFim) : undefined,
         dataAgendamentoInicio: f.dataAgendamentoInicio ? new Date(f.dataAgendamentoInicio) : undefined,
         dataAgendamentoFim: f.dataAgendamentoFim ? new Date(f.dataAgendamentoFim) : undefined,
+        statusGuia: normalizeStatusGuiaFilter(f.statusGuia),
       };
     }
     return { ...emptyFilters };
@@ -218,6 +243,8 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 
   const guias = useMemo(() => {
     if (!guiasRaw) return [];
+    const normalizedStatusGuiaFilter = normalizeStatusGuiaFilter(filters.statusGuia);
+
     let result = guiasRaw.filter((g) => {
       const f = filters;
       if (f.dataGuiaInicio && g.data_guia && new Date(g.data_guia + "T00:00:00") < f.dataGuiaInicio) return false;
@@ -248,7 +275,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
         if (sla !== f.sla) return false;
       }
-      if (f.statusGuia && statusGuia !== f.statusGuia) return false;
+      if (!matchesStatusGuiaFilter(statusGuia, normalizedStatusGuiaFilter)) return false;
       if (f.origemAgendamento) {
         const origem = getOrigemAgendamento(g.solicitante_nome);
         if (origem !== f.origemAgendamento) return false;
