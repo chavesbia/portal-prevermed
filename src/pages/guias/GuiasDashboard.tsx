@@ -133,7 +133,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  if (isLoading || !guias) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
