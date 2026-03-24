@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseFile, ParsedRow } from "@/lib/guias/importParser";
 import { analyzeImport, executeImport, type ImportAnalysis, type ImportResult } from "@/lib/guias/importService";
+import { usePrestadoresBloqueados } from "@/hooks/usePrestadoresBloqueados";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 
 export default function GuiasImportacao() {
   const { user, profile, isAdmin } = useAuth();
+  const { isPrestadorBloqueado } = usePrestadoresBloqueados();
   const [file, setFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [analysis, setAnalysis] = useState<ImportAnalysis | null>(null);
@@ -66,7 +68,7 @@ export default function GuiasImportacao() {
     if (parsedRows.length === 0) return;
     setAnalyzing(true);
     try {
-      const result = await analyzeImport(parsedRows);
+      const result = await analyzeImport(parsedRows, isPrestadorBloqueado);
       setAnalysis(result);
       toast({ title: "Análise concluída", description: `${result.items.length} guias analisadas, ${result.filteredCount} filtradas (prestadores internos)` });
     } catch (err: any) {
