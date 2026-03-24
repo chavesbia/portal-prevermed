@@ -62,6 +62,8 @@ interface GuiasDashboardProps {
 
 export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps) {
   const queryClient = useQueryClient();
+  const { isPrestadorBloqueado, isLoading: loadingBloqueados } = usePrestadoresBloqueados();
+
   const { data: feriados } = useQuery({
     queryKey: ["feriados"],
     queryFn: async () => {
@@ -78,7 +80,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     },
   });
 
-  const { data: guias, isLoading } = useQuery({
+  const { data: guiasRaw, isLoading: loadingGuias } = useQuery({
     queryKey: ["dashboard-guias"],
     queryFn: async () => {
       const allData: GuiaDash[] = [];
@@ -88,6 +90,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         const { data, error } = await supabase
           .from("guias")
           .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
+          .gte("data_guia", "2026-01-01")
           .range(from, from + batchSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
@@ -95,9 +98,12 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         if (data.length < batchSize) break;
         from += batchSize;
       }
-      return allData.filter((g) => !isPrestadorInterno(g.prestador_nome));
+      return allData;
     },
   });
+
+  const isLoading = loadingGuias || loadingBloqueados;
+  const guias = guiasRaw?.filter((g) => !isPrestadorBloqueado(g.prestador_nome)) ?? [];
 
   const { data: exames } = useQuery({
     queryKey: ["dashboard-exames"],
