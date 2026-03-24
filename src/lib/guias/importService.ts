@@ -1,6 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { ParsedRow } from "./importParser";
-import { isPrestadorInterno } from "./blocklist";
 
 export interface DiffField {
   campo: string;
@@ -68,9 +67,13 @@ const COMPARE_FIELDS: { key: keyof ParsedRow; label: string }[] = [
   { key: "hora_agendamento", label: "Hora Agendamento" },
 ];
 
-export async function analyzeImport(rows: ParsedRow[]): Promise<ImportAnalysis> {
-  // 1. Filter out internal providers
-  const externalRows = rows.filter((r) => !isPrestadorInterno(r.prestador_nome));
+export async function analyzeImport(
+  rows: ParsedRow[],
+  isPrestadorBloqueado?: (nome: string | null | undefined) => boolean
+): Promise<ImportAnalysis> {
+  // 1. Filter out blocked providers
+  const filterFn = isPrestadorBloqueado ?? (() => false);
+  const externalRows = rows.filter((r) => !filterFn(r.prestador_nome));
   const filteredCount = rows.length - externalRows.length;
 
   // 2. Group by guia_codigo

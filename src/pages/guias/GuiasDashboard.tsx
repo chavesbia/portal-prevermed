@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 import { getSlaStatus, getGuiaStatus, type SlaStatus, type GuiaStatusType } from "@/lib/guias/sla";
-import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
+import { getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
+import { usePrestadoresBloqueados } from "@/hooks/usePrestadoresBloqueados";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
