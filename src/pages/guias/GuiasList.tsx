@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getSlaStatus, getSlaColor, getSlaLabel, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel, getGuiaStatusLabelShort } from "@/lib/guias/sla";
-import { isPrestadorInterno, getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
+import { getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
+import { usePrestadoresBloqueados } from "@/hooks/usePrestadoresBloqueados";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -141,6 +142,8 @@ function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; 
 export default function GuiasList({ readOnly = false, injectedFilters, onFiltersConsumed }: GuiasListProps) {
   const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+  const { isPrestadorBloqueado } = usePrestadoresBloqueados();
+
   // Restore persisted state from sessionStorage
   const persistedState = useMemo(() => {
     try {
@@ -195,7 +198,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
     },
   });
 
-  const { data: guiasRaw, isLoading } = useQuery({
+  const { data: guiasAllRaw, isLoading } = useQuery({
     queryKey: ["guias", search],
     queryFn: async () => {
       const BATCH = 1000;
@@ -206,6 +209,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         let query = supabase
           .from("guias")
           .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
+          .gte("data_guia", "2026-01-01")
           .order("data_guia", { ascending: false })
           .range(from, from + BATCH - 1);
 
@@ -223,9 +227,11 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         from += BATCH;
       }
 
-      return allData.filter((g) => !isPrestadorInterno(g.prestador_nome));
+      return allData;
     },
   });
+
+  const guiasRaw = useMemo(() => guiasAllRaw?.filter((g) => !isPrestadorBloqueado(g.prestador_nome)) ?? [], [guiasAllRaw, isPrestadorBloqueado]);
 
   const { data: examesList } = useQuery({
     queryKey: ["exames-list"],

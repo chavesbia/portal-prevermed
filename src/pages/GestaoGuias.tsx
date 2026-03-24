@@ -1,24 +1,26 @@
 import { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, List, LayoutDashboard } from "lucide-react";
+import { Upload, List, LayoutDashboard, Settings } from "lucide-react";
 import GuiasImportacao from "./guias/GuiasImportacao";
 import GuiasList from "./guias/GuiasList";
 import GuiasDashboard from "./guias/GuiasDashboard";
+import PrestadoresBloqueadosConfig from "@/components/guias/PrestadoresBloqueadosConfig";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import { useSearchParams } from "react-router-dom";
 import { emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MODULE_ROUTE = '/gestao-guias';
 
 export default function GestaoGuias() {
   const { hasPermission, isReadOnly } = useModulePermissions();
+  const { isAdmin } = useAuth();
   const canImport = hasPermission(MODULE_ROUTE, 'create');
   const readOnly = isReadOnly(MODULE_ROUTE);
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "dashboard";
 
-  // Filters injected from dashboard card clicks
   const [injectedFilters, setInjectedFilters] = useState<Partial<GuiaFiltersState> | null>(null);
 
   const handleTabChange = (value: string) => {
@@ -54,6 +56,12 @@ export default function GestaoGuias() {
                 Importação
               </TabsTrigger>
             )}
+            {isAdmin && (
+              <TabsTrigger value="configuracoes" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Configurações
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -67,6 +75,12 @@ export default function GestaoGuias() {
           {canImport && (
             <TabsContent value="importacao">
               <GuiasImportacao />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
+            <TabsContent value="configuracoes">
+              <PrestadoresBloqueadosConfig />
             </TabsContent>
           )}
         </Tabs>
