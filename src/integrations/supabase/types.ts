@@ -1116,6 +1116,33 @@ export type Database = {
         }
         Relationships: []
       }
+      prestadores_bloqueados: {
+        Row: {
+          bloqueado_por: string | null
+          created_at: string
+          id: string
+          motivo: string | null
+          nome: string
+          nome_normalizado: string
+        }
+        Insert: {
+          bloqueado_por?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          nome: string
+          nome_normalizado: string
+        }
+        Update: {
+          bloqueado_por?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          nome?: string
+          nome_normalizado?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           about: string | null
