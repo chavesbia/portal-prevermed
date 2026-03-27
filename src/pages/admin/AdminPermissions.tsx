@@ -183,14 +183,14 @@ export default function AdminPermissions() {
   const [overviewSearch, setOverviewSearch] = useState('');
   const filteredOverview = usersWithPermissions.filter(u =>
     u.user!.full_name.toLowerCase().includes(overviewSearch.toLowerCase()) ||
-    u.user!.email.toLowerCase().includes(overviewSearch.toLowerCase())
+    (u.user!.contact_email || u.user!.email).toLowerCase().includes(overviewSearch.toLowerCase())
   );
 
   // ==================== User Permissions Tab ====================
 
   const filteredUsers = users.filter(u =>
     u.full_name.toLowerCase().includes(searchUser.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchUser.toLowerCase())
+    (u.contact_email || u.email).toLowerCase().includes(searchUser.toLowerCase())
   );
 
   // Get modules available to the selected user (based on their departments)
@@ -371,7 +371,7 @@ export default function AdminPermissions() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-semibold">{user!.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user!.email}</p>
+                          <p className="text-sm text-muted-foreground">{user!.contact_email || user!.email}</p>
                         </div>
                         {user!.position && <Badge variant="outline">{user!.position}</Badge>}
                       </div>
@@ -516,7 +516,7 @@ export default function AdminPermissions() {
                     >
                       <div>
                         <div className="font-medium">{u.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{u.email}</div>
+                        <div className="text-sm text-muted-foreground">{u.contact_email || u.email}</div>
                       </div>
                       {u.position && <Badge variant="outline">{u.position}</Badge>}
                     </button>
