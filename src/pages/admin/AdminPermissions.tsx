@@ -321,8 +321,12 @@ export default function AdminPermissions() {
         </Button>
       </div>
 
-      <Tabs defaultValue="dept-modules" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="overview" className="gap-2">
+            <Shield className="h-4 w-4" />
+            Visão Geral
+          </TabsTrigger>
           <TabsTrigger value="dept-modules" className="gap-2">
             <Building2 className="h-4 w-4" />
             Módulos por Departamento
@@ -332,6 +336,75 @@ export default function AdminPermissions() {
             Permissões de Usuários
           </TabsTrigger>
         </TabsList>
+
+        {/* ===== Tab: Overview ===== */}
+        <TabsContent value="overview">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Usuários com Permissões Liberadas</CardTitle>
+                <Badge variant="outline" className="text-sm">
+                  {usersWithPermissions.length} usuário(s)
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrar por nome ou e-mail..."
+                  value={overviewSearch}
+                  onChange={e => setOverviewSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {filteredOverview.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  Nenhum usuário com permissões encontrado.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredOverview.map(({ user, perms }) => (
+                    <div key={user!.user_id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold">{user!.full_name}</p>
+                          <p className="text-sm text-muted-foreground">{user!.email}</p>
+                        </div>
+                        {user!.position && <Badge variant="outline">{user!.position}</Badge>}
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Módulo</TableHead>
+                            <TableHead className="text-center">Visualizar</TableHead>
+                            <TableHead className="text-center">Criar</TableHead>
+                            <TableHead className="text-center">Editar</TableHead>
+                            <TableHead className="text-center">Excluir</TableHead>
+                            <TableHead className="text-center">Aprovar</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {perms.map(p => (
+                            <TableRow key={p.id}>
+                              <TableCell className="font-medium">{p.module_name}</TableCell>
+                              <TableCell className="text-center"><PermBadge value={p.can_view} /></TableCell>
+                              <TableCell className="text-center"><PermBadge value={p.can_create} /></TableCell>
+                              <TableCell className="text-center"><PermBadge value={p.can_edit} /></TableCell>
+                              <TableCell className="text-center"><PermBadge value={p.can_delete} /></TableCell>
+                              <TableCell className="text-center"><PermBadge value={p.can_approve} /></TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* ===== Tab: Department Modules ===== */}
         <TabsContent value="dept-modules">
