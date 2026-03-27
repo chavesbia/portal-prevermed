@@ -47,6 +47,7 @@ interface UserProfile {
   user_id: string;
   full_name: string;
   email: string;
+  contact_email: string | null;
   position: string | null;
 }
 
@@ -109,7 +110,7 @@ export default function AdminPermissions() {
       supabase.from('modules').select('id, name, route, icon, is_active').eq('is_active', true).order('name'),
       supabase.from('departments').select('id, name').order('name'),
       supabase.from('department_modules').select('id, department_id, module_id'),
-      supabase.from('profiles').select('user_id, full_name, email, position').eq('status', 'active').order('full_name'),
+      supabase.from('profiles').select('user_id, full_name, email, contact_email, position').eq('status', 'active').order('full_name'),
       supabase.from('permissions').select('id, user_id, module_id, can_view, can_create, can_edit, can_delete, can_approve').not('module_id', 'is', null),
     ]);
 
