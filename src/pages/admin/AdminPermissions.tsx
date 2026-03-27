@@ -160,6 +160,31 @@ export default function AdminPermissions() {
     fetchAllData();
   };
 
+  // ==================== Overview Tab ====================
+
+  const usersWithPermissions = (() => {
+    const userIds = [...new Set(permissions.map(p => p.user_id))];
+    return userIds
+      .map(uid => {
+        const user = users.find(u => u.user_id === uid);
+        const userPerms = permissions
+          .filter(p => p.user_id === uid)
+          .map(p => ({
+            ...p,
+            module_name: modules.find(m => m.id === p.module_id)?.name || 'Desconhecido',
+          }));
+        return { user, perms: userPerms };
+      })
+      .filter(u => u.user && u.perms.length > 0)
+      .sort((a, b) => (a.user!.full_name).localeCompare(b.user!.full_name));
+  })();
+
+  const [overviewSearch, setOverviewSearch] = useState('');
+  const filteredOverview = usersWithPermissions.filter(u =>
+    u.user!.full_name.toLowerCase().includes(overviewSearch.toLowerCase()) ||
+    u.user!.email.toLowerCase().includes(overviewSearch.toLowerCase())
+  );
+
   // ==================== User Permissions Tab ====================
 
   const filteredUsers = users.filter(u =>
