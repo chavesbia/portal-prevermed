@@ -29,6 +29,7 @@ import Notificacoes from "./pages/Notificacoes";
 import Precificacao from "./pages/Precificacao";
 import GestaoGuias from "./pages/GestaoGuias";
 import GuiaDetalhe from "./pages/guias/GuiaDetalhe";
+import CarteiraComercial from "./pages/CarteiraComercial";
 
 const queryClient = new QueryClient();
 
