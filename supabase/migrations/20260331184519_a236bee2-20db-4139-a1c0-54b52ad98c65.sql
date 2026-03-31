@@ -1,0 +1,1 @@
+UPDATE modules SET name = 'Gestão de Contratos' WHERE id = 'c034a8dd-8125-44bd-adee-e0f5f0f147d6';
