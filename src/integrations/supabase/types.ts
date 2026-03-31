@@ -285,6 +285,131 @@ export type Database = {
           },
         ]
       }
+      client_attachments: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          file_name: string | null
+          file_url: string
+          id: string
+          type: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          file_url: string
+          id?: string
+          type: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_attachments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commercial_clients: {
+        Row: {
+          active_lives: number | null
+          approval_date: string | null
+          city: string | null
+          cnpj: string | null
+          company_name: string
+          contract_end_date: string | null
+          contract_number: string | null
+          contract_signed: boolean | null
+          contract_start_date: string | null
+          created_at: string
+          created_by: string | null
+          has_contract: boolean | null
+          id: string
+          is_active: boolean | null
+          legal_name: string | null
+          notes: string | null
+          pricing_table_attached: boolean | null
+          proposal_approved: boolean | null
+          proposal_number: string | null
+          risk_grade: string
+          services_summary: string | null
+          soc_code: string | null
+          state: string | null
+          subgroup: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active_lives?: number | null
+          approval_date?: string | null
+          city?: string | null
+          cnpj?: string | null
+          company_name: string
+          contract_end_date?: string | null
+          contract_number?: string | null
+          contract_signed?: boolean | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          has_contract?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          legal_name?: string | null
+          notes?: string | null
+          pricing_table_attached?: boolean | null
+          proposal_approved?: boolean | null
+          proposal_number?: string | null
+          risk_grade: string
+          services_summary?: string | null
+          soc_code?: string | null
+          state?: string | null
+          subgroup: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active_lives?: number | null
+          approval_date?: string | null
+          city?: string | null
+          cnpj?: string | null
+          company_name?: string
+          contract_end_date?: string | null
+          contract_number?: string | null
+          contract_signed?: boolean | null
+          contract_start_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          has_contract?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          legal_name?: string | null
+          notes?: string | null
+          pricing_table_attached?: boolean | null
+          proposal_approved?: boolean | null
+          proposal_number?: string | null
+          risk_grade?: string
+          services_summary?: string | null
+          soc_code?: string | null
+          state?: string | null
+          subgroup?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       dashboards: {
         Row: {
           created_at: string
