@@ -65,6 +65,11 @@ export default function CarteiraComercial() {
                 <Plus className="h-4 w-4" /> Novo Cliente
               </TabsTrigger>
             )}
+            {canEdit && (
+              <TabsTrigger value="importar" className="gap-1.5">
+                <FileUp className="h-4 w-4" /> Importar SOC
+              </TabsTrigger>
+            )}
             {selectedClientId && (
               <TabsTrigger value="detalhe" className="gap-1.5">
                 Detalhes
