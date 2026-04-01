@@ -19,8 +19,9 @@ interface Props {
 }
 
 export default function CommercialClientDetail({ clientId, onBack, readOnly }: Props) {
-  const { clients } = useCommercialClients();
+  const { clients, updateClient } = useCommercialClients();
   const { attachments, isLoading: attachLoading, uploadAttachment, deleteAttachment } = useClientAttachments(clientId);
+  const { user } = useAuth();
   const [tab, setTab] = useState('dados');
   const [isEditing, setIsEditing] = useState(false);
   const [uploadType, setUploadType] = useState<'contrato' | 'proposta' | 'tabela'>('contrato');
