@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, List, Plus } from 'lucide-react';
+import { LayoutDashboard, List, Plus, FileUp } from 'lucide-react';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useSearchParams } from 'react-router-dom';
