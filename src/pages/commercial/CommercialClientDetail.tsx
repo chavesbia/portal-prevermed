@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
 import { useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 
 interface Props {
   clientId: string;
