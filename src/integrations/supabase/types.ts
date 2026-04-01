@@ -344,6 +344,9 @@ export type Database = {
           pricing_table_attached: boolean | null
           proposal_approved: boolean | null
           proposal_number: string | null
+          revisado: boolean
+          revisado_em: string | null
+          revisado_por: string | null
           risk_grade: string
           services_summary: string | null
           soc_code: string | null
@@ -372,6 +375,9 @@ export type Database = {
           pricing_table_attached?: boolean | null
           proposal_approved?: boolean | null
           proposal_number?: string | null
+          revisado?: boolean
+          revisado_em?: string | null
+          revisado_por?: string | null
           risk_grade: string
           services_summary?: string | null
           soc_code?: string | null
@@ -400,6 +406,9 @@ export type Database = {
           pricing_table_attached?: boolean | null
           proposal_approved?: boolean | null
           proposal_number?: string | null
+          revisado?: boolean
+          revisado_em?: string | null
+          revisado_por?: string | null
           risk_grade?: string
           services_summary?: string | null
           soc_code?: string | null
