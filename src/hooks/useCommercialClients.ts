@@ -25,6 +25,9 @@ export interface CommercialClient {
   pricing_table_attached: boolean;
   notes: string | null;
   is_active: boolean;
+  revisado: boolean;
+  revisado_em: string | null;
+  revisado_por: string | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;

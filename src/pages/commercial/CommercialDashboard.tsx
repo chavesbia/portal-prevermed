@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, type ClientStatus } from '@/lib/commercial-status';
-import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2 } from 'lucide-react';
+import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2, ClipboardList } from 'lucide-react';
 
 interface Props {
   onNavigate: (status: ClientStatus) => void;
@@ -45,7 +45,9 @@ export default function CommercialDashboard({ onNavigate }: Props) {
     );
   }
 
-  const activeCount = clients.filter(c => c.is_active).length;
+  const activeClients = clients.filter(c => c.is_active);
+  const activeCount = activeClients.length;
+  const pendingReviewCount = activeClients.filter(c => !c.revisado).length;
 
   return (
     <div className="space-y-6">
@@ -59,12 +61,22 @@ export default function CommercialDashboard({ onNavigate }: Props) {
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-200 bg-emerald-50/50">
+        <Card className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-700">Clientes OK</CardTitle>
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Clientes OK</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-emerald-700">{counts.ok}</p>
+            <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{counts.ok}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 cursor-pointer hover:shadow-md transition-shadow">
+          <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">Pendentes de Revisão</CardTitle>
+            <ClipboardList className="h-5 w-5 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-amber-700 dark:text-amber-400">{pendingReviewCount}</p>
           </CardContent>
         </Card>
       </div>

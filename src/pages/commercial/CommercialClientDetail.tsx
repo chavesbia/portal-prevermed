@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
 import { useRef } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 
 interface Props {
   clientId: string;
@@ -17,8 +19,9 @@ interface Props {
 }
 
 export default function CommercialClientDetail({ clientId, onBack, readOnly }: Props) {
-  const { clients } = useCommercialClients();
+  const { clients, updateClient } = useCommercialClients();
   const { attachments, isLoading: attachLoading, uploadAttachment, deleteAttachment } = useClientAttachments(clientId);
+  const { user } = useAuth();
   const [tab, setTab] = useState('dados');
   const [isEditing, setIsEditing] = useState(false);
   const [uploadType, setUploadType] = useState<'contrato' | 'proposta' | 'tabela'>('contrato');
@@ -65,9 +68,25 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-bold">{client.company_name}</h2>
         <Badge className={`${statusColors[status]} text-xs`}>{statusLabels[status]}</Badge>
+        {client.revisado ? (
+          <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 text-xs gap-1">
+            <ClipboardCheck className="h-3 w-3" /> Revisado {client.revisado_em ? `em ${format(new Date(client.revisado_em), 'dd/MM/yyyy')}` : ''}
+          </Badge>
+        ) : (
+          !readOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => updateClient.mutate({ id: clientId, revisado: true, revisado_em: new Date().toISOString(), revisado_por: user?.id || null } as any)}
+            >
+              <ClipboardCheck className="h-3.5 w-3.5" /> Marcar como Revisado
+            </Button>
+          )
+        )}
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
