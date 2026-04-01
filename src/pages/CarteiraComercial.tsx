@@ -16,6 +16,7 @@ const MODULE_ROUTE = '/carteira-comercial';
 export default function CarteiraComercial() {
   const { hasPermission, isReadOnly } = useModulePermissions();
   const canCreate = hasPermission(MODULE_ROUTE, 'create');
+  const canEdit = hasPermission(MODULE_ROUTE, 'edit');
   const readOnly = isReadOnly(MODULE_ROUTE);
   const [searchParams, setSearchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'dashboard';
