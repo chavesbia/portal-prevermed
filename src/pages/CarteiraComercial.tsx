@@ -8,6 +8,7 @@ import CommercialDashboard from './commercial/CommercialDashboard';
 import CommercialList from './commercial/CommercialList';
 import CommercialClientForm from './commercial/CommercialClientForm';
 import CommercialClientDetail from './commercial/CommercialClientDetail';
+import CommercialImport from './commercial/CommercialImport';
 import type { ClientStatus } from '@/lib/commercial-status';
 
 const MODULE_ROUTE = '/carteira-comercial';
