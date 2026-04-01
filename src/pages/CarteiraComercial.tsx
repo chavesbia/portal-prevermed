@@ -98,6 +98,12 @@ export default function CarteiraComercial() {
             )}
           </TabsContent>
 
+          <TabsContent value="importar">
+            {canEdit && (
+              <CommercialImport onBack={() => setSearchParams({ tab: 'clientes' }, { replace: true })} />
+            )}
+          </TabsContent>
+
           <TabsContent value="detalhe">
             {selectedClientId && (
               <CommercialClientDetail
