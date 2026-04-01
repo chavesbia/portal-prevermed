@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, type ClientStatus } from '@/lib/commercial-status';
-import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2 } from 'lucide-react';
+import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2, ClipboardList } from 'lucide-react';
 
 interface Props {
   onNavigate: (status: ClientStatus) => void;
