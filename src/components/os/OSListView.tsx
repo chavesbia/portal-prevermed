@@ -171,6 +171,16 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
         </>
       )}
 
+      {finalizarServico && (
+        <OSFinalizarServicoDialog
+          open={!!finalizarServico}
+          onOpenChange={() => setFinalizarServico(null)}
+          ordem={finalizarServico.ordem}
+          servico={finalizarServico.servico}
+          onFinalized={() => { setFinalizarServico(null); onRefresh?.(); }}
+        />
+      )}
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
