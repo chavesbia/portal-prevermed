@@ -7,7 +7,8 @@ import { OSNovaView } from '@/components/os/OSNovaView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
-  const { permissions } = useModulePermissions('/gestao-os');
+  const { getModulePermissions } = useModulePermissions();
+  const permissions = getModulePermissions('/gestao-os');
   const {
     isLoading, filters, setFilters,
     getFilteredOrdens, addOrdem, updateOrdemStatus,
