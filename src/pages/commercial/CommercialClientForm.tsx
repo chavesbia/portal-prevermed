@@ -121,7 +121,7 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
             <Label>UF</Label>
             <Select value={form.state} onValueChange={v => handleChange('state', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              <SelectContent>{STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </CardContent>
