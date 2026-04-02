@@ -19,7 +19,7 @@ const dashboardCards: { status: ClientStatus; icon: React.ElementType; color: st
   { status: 'renovacao_pendente', icon: FileWarning, color: 'text-blue-500' },
 ];
 
-export default function CommercialDashboard({ onNavigate }: Props) {
+export default function CommercialDashboard({ onNavigate, onSubgroupNavigate }: Props) {
   const { clients, isLoading } = useCommercialClients();
 
   const activeClients = useMemo(() => clients.filter(c => c.is_active), [clients]);
