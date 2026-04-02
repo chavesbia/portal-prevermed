@@ -35,11 +35,11 @@ function hasIncompleteFields(c: any): boolean {
   return !c.cnpj || !c.legal_name || !c.city || !c.soc_code;
 }
 
-export default function CommercialList({ initialStatusFilter, onClearStatusFilter, onViewClient, readOnly }: Props) {
+export default function CommercialList({ initialStatusFilter, initialSubgroupFilter, onClearStatusFilter, onClearSubgroupFilter, onViewClient, readOnly }: Props) {
   const { clients, isLoading } = useCommercialClients();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter || 'all');
-  const [subgroupFilter, setSubgroupFilter] = useState<string>('all');
+  const [subgroupFilter, setSubgroupFilter] = useState<string>(initialSubgroupFilter || 'all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [reviewFilter, setReviewFilter] = useState<string>('all');
   const [pendencyFilter, setPendencyFilter] = useState<PendencyFilter>('all');
