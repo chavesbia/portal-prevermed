@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
-import { computeClientStatus, statusLabels, type ClientStatus } from '@/lib/commercial-status';
-import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2, ClipboardList } from 'lucide-react';
+import { computeClientStatus, statusLabels, statusColors, type ClientStatus } from '@/lib/commercial-status';
+import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2, ClipboardList, Users } from 'lucide-react';
 
 interface Props {
   onNavigate: (status: ClientStatus) => void;
@@ -20,22 +21,35 @@ const dashboardCards: { status: ClientStatus; icon: React.ElementType; color: st
 export default function CommercialDashboard({ onNavigate }: Props) {
   const { clients, isLoading } = useCommercialClients();
 
+  const activeClients = useMemo(() => clients.filter(c => c.is_active), [clients]);
+
   const counts = useMemo(() => {
     const result: Record<ClientStatus, number> = {
-      sem_contrato: 0,
-      contrato_nao_assinado: 0,
-      vencido: 0,
-      a_vencer: 0,
-      renovacao_pendente: 0,
-      documentacao_incompleta: 0,
-      ok: 0,
+      sem_contrato: 0, contrato_nao_assinado: 0, vencido: 0,
+      a_vencer: 0, renovacao_pendente: 0, documentacao_incompleta: 0, ok: 0,
     };
-    for (const c of clients.filter(c => c.is_active)) {
+    for (const c of activeClients) {
       const status = computeClientStatus({ ...c, attachments_count: 0 });
       result[status]++;
     }
     return result;
-  }, [clients]);
+  }, [activeClients]);
+
+  const subgroupData = useMemo(() => {
+    const map: Record<string, { total: number; statuses: Record<ClientStatus, number> }> = {};
+    for (const c of activeClients) {
+      const sg = c.subgroup || 'Sem subgrupo';
+      if (!map[sg]) {
+        map[sg] = { total: 0, statuses: { sem_contrato: 0, contrato_nao_assinado: 0, vencido: 0, a_vencer: 0, renovacao_pendente: 0, documentacao_incompleta: 0, ok: 0 } };
+      }
+      map[sg].total++;
+      const status = computeClientStatus({ ...c, attachments_count: 0 });
+      map[sg].statuses[status]++;
+    }
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  }, [activeClients]);
+
+  const pendingReviewCount = useMemo(() => activeClients.filter(c => !c.revisado).length, [activeClients]);
 
   if (isLoading) {
     return (
@@ -45,10 +59,6 @@ export default function CommercialDashboard({ onNavigate }: Props) {
     );
   }
 
-  const activeClients = clients.filter(c => c.is_active);
-  const activeCount = activeClients.length;
-  const pendingReviewCount = activeClients.filter(c => !c.revisado).length;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -57,13 +67,13 @@ export default function CommercialDashboard({ onNavigate }: Props) {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Clientes Ativos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{activeCount}</p>
+            <p className="text-3xl font-bold">{activeClients.length}</p>
           </CardContent>
         </Card>
 
         <Card className="border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Clientes OK</CardTitle>
+            <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Documentação em Dia</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">{counts.ok}</p>
@@ -101,6 +111,47 @@ export default function CommercialDashboard({ onNavigate }: Props) {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <h3 className="text-lg font-semibold">Subgrupos</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {subgroupData.map(([name, data]) => {
+          const problemCount = data.total - data.statuses.ok;
+          return (
+            <Card key={name}>
+              <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-medium">{name}</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-2xl font-bold">{data.total} <span className="text-sm font-normal text-muted-foreground">clientes</span></p>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.statuses.ok > 0 && (
+                    <Badge className="bg-emerald-600 text-white text-[10px]">{data.statuses.ok} em dia</Badge>
+                  )}
+                  {data.statuses.vencido > 0 && (
+                    <Badge variant="destructive" className="text-[10px]">{data.statuses.vencido} vencido(s)</Badge>
+                  )}
+                  {data.statuses.a_vencer > 0 && (
+                    <Badge className="bg-yellow-500 text-white text-[10px]">{data.statuses.a_vencer} a vencer</Badge>
+                  )}
+                  {data.statuses.sem_contrato > 0 && (
+                    <Badge variant="destructive" className="text-[10px]">{data.statuses.sem_contrato} s/ contrato</Badge>
+                  )}
+                  {data.statuses.documentacao_incompleta > 0 && (
+                    <Badge className="bg-amber-600 text-white text-[10px]">{data.statuses.documentacao_incompleta} doc. incompleta</Badge>
+                  )}
+                  {data.statuses.contrato_nao_assinado > 0 && (
+                    <Badge className="bg-orange-500 text-white text-[10px]">{data.statuses.contrato_nao_assinado} não assinado</Badge>
+                  )}
+                  {data.statuses.renovacao_pendente > 0 && (
+                    <Badge className="bg-blue-500 text-white text-[10px]">{data.statuses.renovacao_pendente} renovação</Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
