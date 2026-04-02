@@ -17,7 +17,9 @@ function formatDateBR(dateStr: string | null | undefined): string | null {
 
 interface Props {
   initialStatusFilter: ClientStatus | null;
+  initialSubgroupFilter?: string | null;
   onClearStatusFilter: () => void;
+  onClearSubgroupFilter?: () => void;
   onViewClient: (id: string) => void;
   readOnly: boolean;
 }
