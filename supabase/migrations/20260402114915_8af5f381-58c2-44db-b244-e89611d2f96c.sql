@@ -1,0 +1,1 @@
+ALTER TABLE public.commercial_clients ADD COLUMN contract_notes text;
