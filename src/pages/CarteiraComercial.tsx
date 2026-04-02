@@ -22,6 +22,7 @@ export default function CarteiraComercial() {
   const defaultTab = searchParams.get('tab') || 'dashboard';
 
   const [statusFilter, setStatusFilter] = useState<ClientStatus | null>(null);
+  const [subgroupFilter, setSubgroupFilter] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
