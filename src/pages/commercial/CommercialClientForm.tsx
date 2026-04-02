@@ -12,6 +12,12 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { SUBGROUP_OPTIONS, RISK_GRADES, STATES } from '@/lib/commercial-constants';
 
+interface Props {
+  onSuccess: () => void;
+  initialData?: any;
+  isEditing?: boolean;
+}
+
 export default function CommercialClientForm({ onSuccess, initialData, isEditing }: Props) {
   const { createClient, updateClient } = useCommercialClients();
   const { user } = useAuth();
