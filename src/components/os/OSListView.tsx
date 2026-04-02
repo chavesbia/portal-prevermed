@@ -26,14 +26,16 @@ interface OSListViewProps {
   onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
+  onRefresh?: () => void;
 }
 
-export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onDelete, onGetHistorico }: OSListViewProps) {
+export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
