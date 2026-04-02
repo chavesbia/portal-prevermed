@@ -8,6 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors, type ClientStatus } from '@/lib/commercial-status';
 import { Search, X, Eye, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+
+function formatDateBR(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  try { return format(parseISO(dateStr), 'dd/MM/yyyy'); } catch { return dateStr; }
+}
 
 interface Props {
   initialStatusFilter: ClientStatus | null;
@@ -182,7 +188,7 @@ export default function CommercialList({ initialStatusFilter, onClearStatusFilte
                     <TableCell className="text-center">{c.active_lives}</TableCell>
                     <TableCell className="text-center">{c.has_contract ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : '—'}</TableCell>
                     <TableCell className="text-center">{c.contract_signed ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : '—'}</TableCell>
-                    <TableCell className="text-xs">{c.contract_end_date || '—'}</TableCell>
+                    <TableCell className="text-xs">{formatDateBR(c.contract_end_date) || '—'}</TableCell>
                     <TableCell className="text-center">{c.pricing_table_attached ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : '—'}</TableCell>
                     <TableCell className="text-center">
                       {c.revisado ? (

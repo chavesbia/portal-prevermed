@@ -331,6 +331,7 @@ export type Database = {
           cnpj: string | null
           company_name: string
           contract_end_date: string | null
+          contract_notes: string | null
           contract_number: string | null
           contract_signed: boolean | null
           contract_start_date: string | null
@@ -362,6 +363,7 @@ export type Database = {
           cnpj?: string | null
           company_name: string
           contract_end_date?: string | null
+          contract_notes?: string | null
           contract_number?: string | null
           contract_signed?: boolean | null
           contract_start_date?: string | null
@@ -393,6 +395,7 @@ export type Database = {
           cnpj?: string | null
           company_name?: string
           contract_end_date?: string | null
+          contract_notes?: string | null
           contract_number?: string | null
           contract_signed?: boolean | null
           contract_start_date?: string | null

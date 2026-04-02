@@ -24,6 +24,7 @@ export interface CommercialClient {
   services_summary: string | null;
   pricing_table_attached: boolean;
   notes: string | null;
+  contract_notes: string | null;
   is_active: boolean;
   revisado: boolean;
   revisado_em: string | null;

@@ -10,7 +10,12 @@ import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck 
 import CommercialClientForm from './CommercialClientForm';
 import { useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+
+function formatDateBR(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  try { return format(parseISO(dateStr), 'dd/MM/yyyy'); } catch { return dateStr; }
+}
 
 interface Props {
   clientId: string;
@@ -122,8 +127,11 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <BoolField label="Possui Contrato" value={client.has_contract} />
               <BoolField label="Contrato Assinado" value={client.contract_signed} />
               <Info label="Número do Contrato" value={client.contract_number} />
-              <Info label="Início da Vigência" value={client.contract_start_date} />
-              <Info label="Fim da Vigência" value={client.contract_end_date} />
+              <Info label="Início da Vigência" value={formatDateBR(client.contract_start_date)} />
+              <Info label="Fim da Vigência" value={formatDateBR(client.contract_end_date)} />
+              <div className="md:col-span-2 pt-2">
+                <Info label="Observações do Contrato" value={client.contract_notes} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -133,7 +141,7 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
             <CardContent className="pt-6 space-y-4">
               <BoolField label="Proposta Aprovada" value={client.proposal_approved} />
               <Info label="Número da Proposta" value={client.proposal_number} />
-              <Info label="Data de Aprovação" value={client.approval_date} />
+              <Info label="Data de Aprovação" value={formatDateBR(client.approval_date)} />
             </CardContent>
           </Card>
         </TabsContent>

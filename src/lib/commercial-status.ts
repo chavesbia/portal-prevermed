@@ -46,7 +46,7 @@ export const statusLabels: Record<ClientStatus, string> = {
   a_vencer: 'A Vencer',
   renovacao_pendente: 'Renovação Pendente',
   documentacao_incompleta: 'Documentação Incompleta',
-  ok: 'OK',
+  ok: 'Documentação em Dia',
 };
 
 export const statusColors: Record<ClientStatus, string> = {

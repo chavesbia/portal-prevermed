@@ -45,6 +45,7 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
     services_summary: initialData?.services_summary || '',
     pricing_table_attached: initialData?.pricing_table_attached || false,
     notes: initialData?.notes || '',
+    contract_notes: initialData?.contract_notes || '',
   });
 
   const handleChange = (field: string, value: any) => {
@@ -151,6 +152,10 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
           <div>
             <Label>Fim da Vigência</Label>
             <Input type="date" value={form.contract_end_date} onChange={e => handleChange('contract_end_date', e.target.value)} />
+          </div>
+          <div className="md:col-span-2">
+            <Label>Observações do Contrato</Label>
+            <Textarea value={form.contract_notes} onChange={e => handleChange('contract_notes', e.target.value)} rows={3} placeholder="Observações específicas do contrato..." />
           </div>
         </CardContent>
       </Card>
