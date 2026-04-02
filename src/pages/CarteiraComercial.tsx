@@ -87,7 +87,9 @@ export default function CarteiraComercial() {
           <TabsContent value="clientes">
             <CommercialList
               initialStatusFilter={statusFilter}
+              initialSubgroupFilter={subgroupFilter}
               onClearStatusFilter={() => setStatusFilter(null)}
+              onClearSubgroupFilter={() => setSubgroupFilter(null)}
               onViewClient={handleViewClient}
               readOnly={readOnly}
             />
