@@ -45,6 +45,7 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
     services_summary: initialData?.services_summary || '',
     pricing_table_attached: initialData?.pricing_table_attached || false,
     notes: initialData?.notes || '',
+    contract_notes: initialData?.contract_notes || '',
   });
 
   const handleChange = (field: string, value: any) => {
