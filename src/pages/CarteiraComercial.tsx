@@ -22,6 +22,7 @@ export default function CarteiraComercial() {
   const defaultTab = searchParams.get('tab') || 'dashboard';
 
   const [statusFilter, setStatusFilter] = useState<ClientStatus | null>(null);
+  const [subgroupFilter, setSubgroupFilter] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -80,13 +81,22 @@ export default function CarteiraComercial() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <CommercialDashboard onNavigate={handleDashboardNavigate} />
+            <CommercialDashboard
+              onNavigate={handleDashboardNavigate}
+              onSubgroupNavigate={(sg: string) => {
+                setSubgroupFilter(sg);
+                setStatusFilter(null);
+                setSearchParams({ tab: 'clientes' }, { replace: true });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="clientes">
             <CommercialList
               initialStatusFilter={statusFilter}
+              initialSubgroupFilter={subgroupFilter}
               onClearStatusFilter={() => setStatusFilter(null)}
+              onClearSubgroupFilter={() => setSubgroupFilter(null)}
               onViewClient={handleViewClient}
               readOnly={readOnly}
             />

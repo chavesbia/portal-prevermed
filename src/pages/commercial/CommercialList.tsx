@@ -17,7 +17,9 @@ function formatDateBR(dateStr: string | null | undefined): string | null {
 
 interface Props {
   initialStatusFilter: ClientStatus | null;
+  initialSubgroupFilter?: string | null;
   onClearStatusFilter: () => void;
+  onClearSubgroupFilter?: () => void;
   onViewClient: (id: string) => void;
   readOnly: boolean;
 }
@@ -33,11 +35,11 @@ function hasIncompleteFields(c: any): boolean {
   return !c.cnpj || !c.legal_name || !c.city || !c.soc_code;
 }
 
-export default function CommercialList({ initialStatusFilter, onClearStatusFilter, onViewClient, readOnly }: Props) {
+export default function CommercialList({ initialStatusFilter, initialSubgroupFilter, onClearStatusFilter, onClearSubgroupFilter, onViewClient, readOnly }: Props) {
   const { clients, isLoading } = useCommercialClients();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>(initialStatusFilter || 'all');
-  const [subgroupFilter, setSubgroupFilter] = useState<string>('all');
+  const [subgroupFilter, setSubgroupFilter] = useState<string>(initialSubgroupFilter || 'all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [reviewFilter, setReviewFilter] = useState<string>('all');
   const [pendencyFilter, setPendencyFilter] = useState<PendencyFilter>('all');
@@ -47,6 +49,12 @@ export default function CommercialList({ initialStatusFilter, onClearStatusFilte
       setStatusFilter(initialStatusFilter);
     }
   }, [initialStatusFilter]);
+
+  useEffect(() => {
+    if (initialSubgroupFilter) {
+      setSubgroupFilter(initialSubgroupFilter);
+    }
+  }, [initialSubgroupFilter]);
 
   const subgroups = useMemo(() => [...new Set(clients.map(c => c.subgroup).filter(Boolean))].sort(), [clients]);
   const riskGrades = useMemo(() => [...new Set(clients.map(c => c.risk_grade).filter(Boolean))].sort(), [clients]);
