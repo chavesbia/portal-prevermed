@@ -7,6 +7,7 @@ import { FileX, AlertTriangle, Clock, FileWarning, FileCheck, Loader2, Clipboard
 
 interface Props {
   onNavigate: (status: ClientStatus) => void;
+  onSubgroupNavigate: (subgroup: string) => void;
 }
 
 const dashboardCards: { status: ClientStatus; icon: React.ElementType; color: string }[] = [
