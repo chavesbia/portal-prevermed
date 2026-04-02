@@ -10,15 +10,13 @@ import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { SUBGROUP_OPTIONS, RISK_GRADES, STATES } from '@/lib/commercial-constants';
 
 interface Props {
   onSuccess: () => void;
   initialData?: any;
   isEditing?: boolean;
 }
-
-const riskGrades = ['1', '2', '3', '4'];
-const states = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 
 export default function CommercialClientForm({ onSuccess, initialData, isEditing }: Props) {
   const { createClient, updateClient } = useCommercialClients();
@@ -101,14 +99,19 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
           </div>
           <div>
             <Label>Subgrupo *</Label>
-            <Input value={form.subgroup} onChange={e => handleChange('subgroup', e.target.value)} />
+            <Select value={form.subgroup} onValueChange={v => handleChange('subgroup', v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                {SUBGROUP_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Grau de Risco *</Label>
             <Select value={form.risk_grade} onValueChange={v => handleChange('risk_grade', v)}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {riskGrades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                {RISK_GRADES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -124,7 +127,7 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
             <Label>UF</Label>
             <Select value={form.state} onValueChange={v => handleChange('state', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              <SelectContent>{STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </CardContent>
