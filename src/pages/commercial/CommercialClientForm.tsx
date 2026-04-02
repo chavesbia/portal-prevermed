@@ -10,15 +10,7 @@ import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-
-interface Props {
-  onSuccess: () => void;
-  initialData?: any;
-  isEditing?: boolean;
-}
-
-const riskGrades = ['1', '2', '3', '4'];
-const states = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+import { SUBGROUP_OPTIONS, RISK_GRADES, STATES } from '@/lib/commercial-constants';
 
 export default function CommercialClientForm({ onSuccess, initialData, isEditing }: Props) {
   const { createClient, updateClient } = useCommercialClients();
