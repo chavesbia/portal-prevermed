@@ -81,7 +81,14 @@ export default function CarteiraComercial() {
           </TabsList>
 
           <TabsContent value="dashboard">
-            <CommercialDashboard onNavigate={handleDashboardNavigate} />
+            <CommercialDashboard
+              onNavigate={handleDashboardNavigate}
+              onSubgroupNavigate={(sg: string) => {
+                setSubgroupFilter(sg);
+                setStatusFilter(null);
+                setSearchParams({ tab: 'clientes' }, { replace: true });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="clientes">

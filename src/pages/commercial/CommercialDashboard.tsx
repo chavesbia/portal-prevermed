@@ -119,7 +119,7 @@ export default function CommercialDashboard({ onNavigate, onSubgroupNavigate }: 
         {subgroupData.map(([name, data]) => {
           const problemCount = data.total - data.statuses.ok;
           return (
-            <Card key={name}>
+            <Card key={name} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onSubgroupNavigate(name)}>
               <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-medium">{name}</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />

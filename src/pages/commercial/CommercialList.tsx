@@ -50,6 +50,12 @@ export default function CommercialList({ initialStatusFilter, initialSubgroupFil
     }
   }, [initialStatusFilter]);
 
+  useEffect(() => {
+    if (initialSubgroupFilter) {
+      setSubgroupFilter(initialSubgroupFilter);
+    }
+  }, [initialSubgroupFilter]);
+
   const subgroups = useMemo(() => [...new Set(clients.map(c => c.subgroup).filter(Boolean))].sort(), [clients]);
   const riskGrades = useMemo(() => [...new Set(clients.map(c => c.risk_grade).filter(Boolean))].sort(), [clients]);
 
