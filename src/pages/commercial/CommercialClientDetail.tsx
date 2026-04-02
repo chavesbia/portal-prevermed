@@ -123,6 +123,9 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
 
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-bold">{client.company_name}</h2>
+        {!client.is_active && (
+          <Badge variant="outline" className="text-destructive border-destructive/30 bg-destructive/10 text-xs">Inativo</Badge>
+        )}
         <Badge className={`${statusColors[status]} text-xs`}>{statusLabels[status]}</Badge>
         {client.revisado ? (
           <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 text-xs gap-1">
