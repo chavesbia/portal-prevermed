@@ -153,6 +153,10 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
             <Label>Fim da Vigência</Label>
             <Input type="date" value={form.contract_end_date} onChange={e => handleChange('contract_end_date', e.target.value)} />
           </div>
+          <div className="md:col-span-2">
+            <Label>Observações do Contrato</Label>
+            <Textarea value={form.contract_notes} onChange={e => handleChange('contract_notes', e.target.value)} rows={3} placeholder="Observações específicas do contrato..." />
+          </div>
         </CardContent>
       </Card>
 

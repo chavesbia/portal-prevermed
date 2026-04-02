@@ -10,7 +10,12 @@ import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck 
 import CommercialClientForm from './CommercialClientForm';
 import { useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+
+function formatDateBR(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  try { return format(parseISO(dateStr), 'dd/MM/yyyy'); } catch { return dateStr; }
+}
 
 interface Props {
   clientId: string;
