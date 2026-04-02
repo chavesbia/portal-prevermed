@@ -69,7 +69,55 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
         {!readOnly && (
-          <Button variant="outline" onClick={() => setIsEditing(true)}>Editar</Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                updateClient.mutate({
+                  id: clientId,
+                  is_active: !client.is_active,
+                } as any)
+              }
+            >
+              {client.is_active ? (
+                <><PowerOff className="h-4 w-4" /> Inativar</>
+              ) : (
+                <><Power className="h-4 w-4" /> Reativar</>
+              )}
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-1.5">
+                  <Trash2 className="h-4 w-4" /> Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir <strong>{client.company_name}</strong>? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      deleteClient.mutate(clientId);
+                      onBack();
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button variant="outline" onClick={() => setIsEditing(true)}>Editar</Button>
+          </div>
         )}
       </div>
 
