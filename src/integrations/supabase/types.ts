@@ -921,6 +921,53 @@ export type Database = {
         }
         Relationships: []
       }
+      historico_os: {
+        Row: {
+          acao: string
+          comentario: string | null
+          created_at: string
+          id: string
+          ordem_id: string
+          servico_afetado: string | null
+          status_anterior: string | null
+          status_novo: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          acao: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          ordem_id: string
+          servico_afetado?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          acao?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          ordem_id?: string
+          servico_afetado?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historico_os_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mentions: {
         Row: {
           chat_message_id: string | null
@@ -1092,6 +1139,60 @@ export type Database = {
           related_type?: string | null
           title?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      ordens_servico: {
+        Row: {
+          contato_cliente: string | null
+          created_at: string
+          created_by: string | null
+          data_emissao: string | null
+          data_registro: string
+          empresa_cliente: string
+          id: string
+          numero_os: string
+          observacoes: string | null
+          prazo_acordado: string | null
+          responsavel_atual: string
+          status_os: string
+          tipo_servico_resumo: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contato_cliente?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string | null
+          data_registro?: string
+          empresa_cliente: string
+          id?: string
+          numero_os: string
+          observacoes?: string | null
+          prazo_acordado?: string | null
+          responsavel_atual: string
+          status_os?: string
+          tipo_servico_resumo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contato_cliente?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string | null
+          data_registro?: string
+          empresa_cliente?: string
+          id?: string
+          numero_os?: string
+          observacoes?: string | null
+          prazo_acordado?: string | null
+          responsavel_atual?: string
+          status_os?: string
+          tipo_servico_resumo?: string | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1566,6 +1667,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      servicos_os: {
+        Row: {
+          created_at: string
+          data_conclusao: string | null
+          data_inicio: string | null
+          id: string
+          observacoes: string | null
+          ordem_id: string
+          status: string
+          tipo: string
+          tipo_os: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_id: string
+          status?: string
+          tipo: string
+          tipo_os?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_id?: string
+          status?: string
+          tipo?: string
+          tipo_os?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servicos_os_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       units: {
         Row: {
