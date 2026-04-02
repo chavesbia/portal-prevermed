@@ -30,6 +30,7 @@ import Precificacao from "./pages/Precificacao";
 import GestaoGuias from "./pages/GestaoGuias";
 import GuiaDetalhe from "./pages/guias/GuiaDetalhe";
 import CarteiraComercial from "./pages/CarteiraComercial";
+import GestaoOS from "./pages/GestaoOS";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/gestao-guias" element={<GestaoGuias />} />
               <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
               <Route path="/carteira-comercial" element={<CarteiraComercial />} />
+              <Route path="/gestao-os" element={<GestaoOS />} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/notificacoes" element={<Notificacoes />} />
