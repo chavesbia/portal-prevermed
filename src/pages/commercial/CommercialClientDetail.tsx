@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
-import { useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 
@@ -24,7 +24,7 @@ interface Props {
 }
 
 export default function CommercialClientDetail({ clientId, onBack, readOnly }: Props) {
-  const { clients, updateClient } = useCommercialClients();
+  const { clients, updateClient, deleteClient } = useCommercialClients();
   const { attachments, isLoading: attachLoading, uploadAttachment, deleteAttachment } = useClientAttachments(clientId);
   const { user } = useAuth();
   const [tab, setTab] = useState('dados');
@@ -69,12 +69,63 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
         {!readOnly && (
-          <Button variant="outline" onClick={() => setIsEditing(true)}>Editar</Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() =>
+                updateClient.mutate({
+                  id: clientId,
+                  is_active: !client.is_active,
+                } as any)
+              }
+            >
+              {client.is_active ? (
+                <><PowerOff className="h-4 w-4" /> Inativar</>
+              ) : (
+                <><Power className="h-4 w-4" /> Reativar</>
+              )}
+            </Button>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-1.5">
+                  <Trash2 className="h-4 w-4" /> Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir <strong>{client.company_name}</strong>? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      deleteClient.mutate(clientId);
+                      onBack();
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <Button variant="outline" onClick={() => setIsEditing(true)}>Editar</Button>
+          </div>
         )}
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-xl font-bold">{client.company_name}</h2>
+        {!client.is_active && (
+          <Badge variant="outline" className="text-destructive border-destructive/30 bg-destructive/10 text-xs">Inativo</Badge>
+        )}
         <Badge className={`${statusColors[status]} text-xs`}>{statusLabels[status]}</Badge>
         {client.revisado ? (
           <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50 text-xs gap-1">
