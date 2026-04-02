@@ -4,6 +4,8 @@ import { useOrdens } from '@/hooks/useOrdens';
 import { OSDashboardView } from '@/components/os/OSDashboardView';
 import { OSListView } from '@/components/os/OSListView';
 import { OSNovaView } from '@/components/os/OSNovaView';
+import { OSSLAView } from '@/components/os/OSSLAView';
+import { OSGestaoVencimentosView } from '@/components/os/OSGestaoVencimentosView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
@@ -12,13 +14,12 @@ export default function GestaoOS() {
   const {
     isLoading, filters, setFilters,
     getFilteredOrdens, addOrdem, updateOrdemStatus,
-    deleteOrdem, getHistorico, getResponsaveis,
+    deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
   } = useOrdens();
 
   const filteredOrdens = getFilteredOrdens();
   const responsaveis = getResponsaveis();
   const canEdit = permissions?.can_edit ?? false;
-  const canDelete = permissions?.can_delete ?? false;
 
   if (isLoading) {
     return (
@@ -36,10 +37,12 @@ export default function GestaoOS() {
       </div>
 
       <Tabs defaultValue="dashboard">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
           {canEdit && <TabsTrigger value="nova">Nova OS</TabsTrigger>}
+          <TabsTrigger value="sla">SLA</TabsTrigger>
+          <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
@@ -60,6 +63,7 @@ export default function GestaoOS() {
             onUpdateStatus={updateOrdemStatus}
             onDelete={deleteOrdem}
             onGetHistorico={getHistorico}
+            onRefresh={fetchOrdens}
           />
         </TabsContent>
 
@@ -71,6 +75,14 @@ export default function GestaoOS() {
             />
           </TabsContent>
         )}
+
+        <TabsContent value="sla" className="mt-6">
+          <OSSLAView ordens={filteredOrdens} />
+        </TabsContent>
+
+        <TabsContent value="vencimentos" className="mt-6">
+          <OSGestaoVencimentosView />
+        </TabsContent>
       </Tabs>
     </div>
   );

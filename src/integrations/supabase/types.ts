@@ -422,6 +422,41 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracao_alertas: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          dias_antecedencia: number[]
+          id: string
+          tipo_laudo_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          dias_antecedencia?: number[]
+          id?: string
+          tipo_laudo_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          dias_antecedencia?: number[]
+          id?: string
+          tipo_laudo_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracao_alertas_tipo_laudo_id_fkey"
+            columns: ["tipo_laudo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_laudo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboards: {
         Row: {
           created_at: string
@@ -964,6 +999,101 @@ export type Database = {
             columns: ["ordem_id"]
             isOneToOne: false
             referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      laudos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_emissao: string
+          data_validade: string | null
+          empresa_cliente: string
+          id: string
+          justificativa_sem_vigencia: string | null
+          numero_os: string
+          observacoes: string | null
+          ordem_id: string
+          possui_vigencia: boolean
+          responsavel_tecnico_id: string
+          responsavel_tecnico_nome: string
+          responsavel_tecnico_registro: string
+          servico_id: string
+          tipo_laudo_id: string
+          tipo_laudo_nome: string
+          tipo_servico: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          data_validade?: string | null
+          empresa_cliente: string
+          id?: string
+          justificativa_sem_vigencia?: string | null
+          numero_os: string
+          observacoes?: string | null
+          ordem_id: string
+          possui_vigencia?: boolean
+          responsavel_tecnico_id: string
+          responsavel_tecnico_nome: string
+          responsavel_tecnico_registro: string
+          servico_id: string
+          tipo_laudo_id: string
+          tipo_laudo_nome: string
+          tipo_servico: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          data_validade?: string | null
+          empresa_cliente?: string
+          id?: string
+          justificativa_sem_vigencia?: string | null
+          numero_os?: string
+          observacoes?: string | null
+          ordem_id?: string
+          possui_vigencia?: boolean
+          responsavel_tecnico_id?: string
+          responsavel_tecnico_nome?: string
+          responsavel_tecnico_registro?: string
+          servico_id?: string
+          tipo_laudo_id?: string
+          tipo_laudo_nome?: string
+          tipo_servico?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_responsavel_tecnico_id_fkey"
+            columns: ["responsavel_tecnico_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis_tecnicos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos_os"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_tipo_laudo_id_fkey"
+            columns: ["tipo_laudo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_laudo"
             referencedColumns: ["id"]
           },
         ]
@@ -1620,6 +1750,42 @@ export type Database = {
         }
         Relationships: []
       }
+      responsaveis_tecnicos: {
+        Row: {
+          ativo: boolean
+          conselho: string
+          created_at: string
+          email: string
+          especialidade: string
+          id: string
+          nome: string
+          numero_registro: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          conselho?: string
+          created_at?: string
+          email?: string
+          especialidade?: string
+          id?: string
+          nome: string
+          numero_registro: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          conselho?: string
+          created_at?: string
+          email?: string
+          especialidade?: string
+          id?: string
+          nome?: string
+          numero_registro?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           category: string
@@ -1714,6 +1880,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tipos_laudo: {
+        Row: {
+          ativo: boolean
+          conselhos_permitidos: string[]
+          created_at: string
+          descricao: string
+          exige_vigencia: boolean
+          id: string
+          nome: string
+          prazo_vigencia_padrao: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          conselhos_permitidos?: string[]
+          created_at?: string
+          descricao?: string
+          exige_vigencia?: boolean
+          id?: string
+          nome: string
+          prazo_vigencia_padrao?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          conselhos_permitidos?: string[]
+          created_at?: string
+          descricao?: string
+          exige_vigencia?: boolean
+          id?: string
+          nome?: string
+          prazo_vigencia_padrao?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       units: {
         Row: {

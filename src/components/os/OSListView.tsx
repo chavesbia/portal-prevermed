@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight } from 'lucide-react';
+import { Eye, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,8 @@ import {
 import { OSFilterBar } from '@/components/os/OSFilterBar';
 import { OSDetailDialog } from '@/components/os/OSDetailDialog';
 import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
-import { OrdemServico, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
+import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
+import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -25,14 +26,16 @@ interface OSListViewProps {
   onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
+  onRefresh?: () => void;
 }
 
-export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onDelete, onGetHistorico }: OSListViewProps) {
+export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
@@ -142,7 +145,13 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             </td>
                             <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
                             <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
-                            <td className="py-2" />
+                            <td className="py-2 text-right">
+                              {servico.status !== 'Concluído' && (
+                                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
+                                  <CheckSquare className="h-3 w-3 mr-1" />Finalizar
+                                </Button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </React.Fragment>
@@ -160,6 +169,16 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
           <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
           <OSHistoryDialog ordem={selectedOS} open={showHistory} onOpenChange={setShowHistory} onGetHistorico={onGetHistorico} />
         </>
+      )}
+
+      {finalizarServico && (
+        <OSFinalizarServicoDialog
+          open={!!finalizarServico}
+          onOpenChange={() => setFinalizarServico(null)}
+          ordem={finalizarServico.ordem}
+          servico={finalizarServico.servico}
+          onFinalized={() => { setFinalizarServico(null); onRefresh?.(); }}
+        />
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
