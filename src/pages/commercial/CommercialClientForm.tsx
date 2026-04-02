@@ -93,14 +93,19 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
           </div>
           <div>
             <Label>Subgrupo *</Label>
-            <Input value={form.subgroup} onChange={e => handleChange('subgroup', e.target.value)} />
+            <Select value={form.subgroup} onValueChange={v => handleChange('subgroup', v)}>
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                {SUBGROUP_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Grau de Risco *</Label>
             <Select value={form.risk_grade} onValueChange={v => handleChange('risk_grade', v)}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {riskGrades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                {RISK_GRADES.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
