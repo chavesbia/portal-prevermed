@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
-import { useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 
