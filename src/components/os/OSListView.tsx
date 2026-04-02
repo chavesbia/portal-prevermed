@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight } from 'lucide-react';
+import { Eye, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,8 @@ import {
 import { OSFilterBar } from '@/components/os/OSFilterBar';
 import { OSDetailDialog } from '@/components/os/OSDetailDialog';
 import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
-import { OrdemServico, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
+import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
+import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
