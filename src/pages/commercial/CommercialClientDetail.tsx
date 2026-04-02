@@ -122,8 +122,11 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <BoolField label="Possui Contrato" value={client.has_contract} />
               <BoolField label="Contrato Assinado" value={client.contract_signed} />
               <Info label="Número do Contrato" value={client.contract_number} />
-              <Info label="Início da Vigência" value={client.contract_start_date} />
-              <Info label="Fim da Vigência" value={client.contract_end_date} />
+              <Info label="Início da Vigência" value={formatDateBR(client.contract_start_date)} />
+              <Info label="Fim da Vigência" value={formatDateBR(client.contract_end_date)} />
+              <div className="md:col-span-2 pt-2">
+                <Info label="Observações do Contrato" value={client.contract_notes} />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
