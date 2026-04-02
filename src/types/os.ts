@@ -16,6 +16,10 @@ export type StatusServico =
 
 export type TipoOS = 'Novo' | 'Revisão';
 
+export type ConselhoProfissional = 'CREA' | 'CRF' | 'CRM' | 'CRQ' | 'OUTRO';
+
+export type StatusVigencia = 'Vigente' | 'A vencer' | 'Vencido' | 'Sem vigência';
+
 export interface ServicoOS {
   id: string;
   ordem_id: string;
@@ -62,6 +66,61 @@ export interface HistoricoOS {
   created_at: string;
 }
 
+export interface ResponsavelTecnico {
+  id: string;
+  nome: string;
+  conselho: ConselhoProfissional;
+  numero_registro: string;
+  especialidade: string;
+  email: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TipoLaudo {
+  id: string;
+  nome: string;
+  descricao: string;
+  exige_vigencia: boolean;
+  conselhos_permitidos: string[];
+  prazo_vigencia_padrao: number | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Laudo {
+  id: string;
+  ordem_id: string;
+  servico_id: string;
+  tipo_laudo_id: string;
+  responsavel_tecnico_id: string;
+  numero_os: string;
+  empresa_cliente: string;
+  tipo_servico: string;
+  tipo_laudo_nome: string;
+  responsavel_tecnico_nome: string;
+  responsavel_tecnico_registro: string;
+  data_emissao: string;
+  possui_vigencia: boolean;
+  data_validade: string | null;
+  justificativa_sem_vigencia: string | null;
+  observacoes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConfiguracaoAlerta {
+  id: string;
+  tipo_laudo_id: string | null;
+  dias_antecedencia: number[];
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface OSFilters {
   search: string;
   status_os: string;
@@ -95,6 +154,8 @@ export const TIPO_SERVICO_OPTIONS = [
   'INSALUBRIDADE', 'PERICULOSIDADE', 'CIPA', 'TREINAMENTO',
   'PPP', 'PERICIA TÉCNICA', 'PERICIA MÉDICA',
 ];
+
+export const CONSELHO_OPTIONS: ConselhoProfissional[] = ['CREA', 'CRF', 'CRM', 'CRQ', 'OUTRO'];
 
 export const statusOSColors: Record<string, string> = {
   'Não iniciado': 'bg-muted text-muted-foreground',
