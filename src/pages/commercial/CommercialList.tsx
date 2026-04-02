@@ -8,6 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors, type ClientStatus } from '@/lib/commercial-status';
 import { Search, X, Eye, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+
+function formatDateBR(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  try { return format(parseISO(dateStr), 'dd/MM/yyyy'); } catch { return dateStr; }
+}
 
 interface Props {
   initialStatusFilter: ClientStatus | null;
