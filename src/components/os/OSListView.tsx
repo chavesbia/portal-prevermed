@@ -145,7 +145,13 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             </td>
                             <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
                             <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
-                            <td className="py-2" />
+                            <td className="py-2 text-right">
+                              {servico.status !== 'Concluído' && (
+                                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
+                                  <CheckSquare className="h-3 w-3 mr-1" />Finalizar
+                                </Button>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </React.Fragment>
