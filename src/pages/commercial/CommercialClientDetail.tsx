@@ -136,7 +136,7 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
             <CardContent className="pt-6 space-y-4">
               <BoolField label="Proposta Aprovada" value={client.proposal_approved} />
               <Info label="Número da Proposta" value={client.proposal_number} />
-              <Info label="Data de Aprovação" value={client.approval_date} />
+              <Info label="Data de Aprovação" value={formatDateBR(client.approval_date)} />
             </CardContent>
           </Card>
         </TabsContent>
