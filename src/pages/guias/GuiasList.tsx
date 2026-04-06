@@ -276,7 +276,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         if (f.atendido === "SIM" && !isAtendido) return false;
         if (f.atendido === "NAO" && isAtendido) return false;
       }
-      const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(g.guia_gestao);
+      const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia } = getDerivedGuiaState(g.guia_gestao);
       if (f.compareceu && compareceu !== f.compareceu) return false;
       if (f.atendimentoLancado && atendimentoLancado !== f.atendimentoLancado) return false;
       if (f.asoAnexado && asoAnexado !== f.asoAnexado) return false;
