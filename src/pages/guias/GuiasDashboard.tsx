@@ -147,9 +147,10 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
     const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
     const asoAnexado = gestao?.aso_anexado ?? "NAO_INFORMADO";
+    const aguardandoAso = (gestao as any)?.aguardando_aso ?? "NAO_INFORMADO";
     const dataBase = g.data_agendamento ?? g.data_guia;
     const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], gestao?.sla_final);
-    const guiaStatus = getGuiaStatus(comp, atendLancado, asoAnexado);
+    const guiaStatus = getGuiaStatus(comp, atendLancado, asoAnexado, aguardandoAso);
     const origem = getOrigemAgendamento(g.solicitante_nome);
     const statusPrest = getStatusPrestador(g.prestador_nome);
     return { ...g, sla, guiaStatus, gestao, origem, statusPrest };
