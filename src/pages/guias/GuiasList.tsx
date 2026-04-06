@@ -528,7 +528,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 }
 
 function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
-  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
+  const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
   const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, atendimentoLancado, feriados, gestao?.sla_final);
   const origem = getOrigemAgendamento(guia.solicitante_nome);
   const statusPrest = getStatusPrestador(guia.prestador_nome);
