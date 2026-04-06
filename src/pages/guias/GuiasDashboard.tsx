@@ -23,7 +23,7 @@ type GuiaDash = {
   tipo_exame: string | null;
   atendido_texto: string | null;
   solicitante_nome: string | null;
-  guia_gestao: { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; sla_final?: string | null } | { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; sla_final?: string | null }[] | null;
+  guia_gestao: { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; aguardando_aso?: string; sla_final?: string | null } | { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; aguardando_aso?: string; sla_final?: string | null }[] | null;
 };
 
 function getGestao(guia_gestao: GuiaDash["guia_gestao"]) {
@@ -89,7 +89,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
       while (true) {
         const { data, error } = await supabase
           .from("guias")
-          .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
+          .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, aguardando_aso, sla_final)")
           .gte("data_guia", "2026-01-01")
           .range(from, from + batchSize - 1);
         if (error) throw error;
