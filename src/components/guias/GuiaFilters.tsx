@@ -26,6 +26,7 @@ export interface GuiaFiltersState {
   compareceu: string;
   atendimentoLancado: string;
   asoAnexado: string;
+  aguardandoAso: string;
   exame: string;
   origemAgendamento: string;
   statusPrestador: string;
@@ -48,6 +49,7 @@ export const emptyFilters: GuiaFiltersState = {
   compareceu: "",
   atendimentoLancado: "",
   asoAnexado: "",
+  aguardandoAso: "",
   exame: "",
   origemAgendamento: "",
   statusPrestador: "",
@@ -168,6 +170,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
     filters.compareceu || undefined,
     filters.atendimentoLancado || undefined,
     filters.asoAnexado || undefined,
+    filters.aguardandoAso || undefined,
     filters.exame || undefined,
     filters.origemAgendamento || undefined,
     filters.statusPrestador || undefined,
