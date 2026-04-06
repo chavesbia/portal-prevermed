@@ -568,10 +568,14 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
 
         <div className="border-t border-border pt-3">
           <h4 className="text-sm font-semibold mb-2">Gestão Operacional</h4>
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
               <StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-1">Aguard. ASO</p>
+              <AguardandoAsoLabel status={aguardandoAso} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
