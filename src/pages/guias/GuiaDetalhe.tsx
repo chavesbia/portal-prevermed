@@ -326,6 +326,18 @@ export default function GuiaDetalhe() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Aguardando ASO</Label>
+              <Select value={aguardandoAso} onValueChange={(v) => setAguardandoAso(v as AguardandoAsoStatus)} disabled={!canEdit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
+                  <SelectItem value="CONTATO_REALIZADO">Contato Realizado</SelectItem>
+                  <SelectItem value="RECEBIDO">Recebido</SelectItem>
+                  <SelectItem value="NAO_RECEBIDO">Não Recebido</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>Atendimento Lançado</Label>
               <Select value={atendLancado} onValueChange={(v) => handleAtendLancadoChange(v as SimNaoStatus)} disabled={!canEdit}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -344,18 +356,6 @@ export default function GuiaDetalhe() {
                   <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
                   <SelectItem value="SIM">Sim</SelectItem>
                   <SelectItem value="NAO">Não</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Aguardando ASO</Label>
-              <Select value={aguardandoAso} onValueChange={(v) => setAguardandoAso(v as AguardandoAsoStatus)} disabled={!canEdit}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
-                  <SelectItem value="CONTATO_REALIZADO">Contato Realizado</SelectItem>
-                  <SelectItem value="RECEBIDO">Recebido</SelectItem>
-                  <SelectItem value="NAO_RECEBIDO">Não Recebido</SelectItem>
                 </SelectContent>
               </Select>
             </div>
