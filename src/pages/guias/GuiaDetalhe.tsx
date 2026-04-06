@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 
 type CompareceuStatus = "NAO_INFORMADO" | "COMPARECEU" | "NAO_COMPARECEU" | "PARCIAL";
 type SimNaoStatus = "NAO_INFORMADO" | "SIM" | "NAO";
+type AguardandoAsoStatus = "NAO_INFORMADO" | "CONTATO_REALIZADO" | "RECEBIDO" | "NAO_RECEBIDO";
 
 export default function GuiaDetalhe() {
   const { codigo } = useParams<{ codigo: string }>();
@@ -94,15 +95,16 @@ export default function GuiaDetalhe() {
   const [compareceu, setCompareceu] = useState<CompareceuStatus>("NAO_INFORMADO");
   const [atendLancado, setAtendLancado] = useState<SimNaoStatus>("NAO_INFORMADO");
   const [asoAnexado, setAsoAnexado] = useState<SimNaoStatus>("NAO_INFORMADO");
+  const [aguardandoAso, setAguardandoAso] = useState<AguardandoAsoStatus>("NAO_INFORMADO");
   const [observacoes, setObservacoes] = useState("");
 
   useEffect(() => {
     if (gestao) {
-      // Map legacy REMARCADO to NAO_INFORMADO
       const comp = gestao.compareceu_status as string;
       setCompareceu(comp === "REMARCADO" ? "NAO_INFORMADO" : comp as CompareceuStatus);
       setAtendLancado(gestao.atendimento_lancado as SimNaoStatus);
       setAsoAnexado(gestao.aso_anexado as SimNaoStatus);
+      setAguardandoAso((gestao as any).aguardando_aso as AguardandoAsoStatus ?? "NAO_INFORMADO");
       setObservacoes(gestao.observacoes ?? "");
     }
   }, [gestao]);
@@ -148,6 +150,7 @@ export default function GuiaDetalhe() {
       if (compareceu !== oldComp) changes.push({ campo: "compareceu_status", antigo: oldComp, novo: compareceu });
       if (atendLancado !== gestao.atendimento_lancado) changes.push({ campo: "atendimento_lancado", antigo: gestao.atendimento_lancado, novo: atendLancado });
       if (asoAnexado !== gestao.aso_anexado) changes.push({ campo: "aso_anexado", antigo: gestao.aso_anexado, novo: asoAnexado });
+      if (aguardandoAso !== ((gestao as any).aguardando_aso ?? "NAO_INFORMADO")) changes.push({ campo: "aguardando_aso", antigo: (gestao as any).aguardando_aso ?? "NAO_INFORMADO", novo: aguardandoAso });
       if (observacoes !== (gestao.observacoes ?? "")) changes.push({ campo: "observacoes", antigo: gestao.observacoes ?? "", novo: observacoes });
 
       if (changes.length === 0) return;
@@ -171,6 +174,7 @@ export default function GuiaDetalhe() {
           compareceu_status: compareceu,
           atendimento_lancado: atendLancado,
           aso_anexado: asoAnexado,
+          aguardando_aso: aguardandoAso,
           observacoes,
           updated_by: user.id,
           ...(atendLancado === "SIM" && gestao.atendimento_lancado !== "SIM" ? { sla_final: slaFinalValue } : {}),
@@ -205,7 +209,7 @@ export default function GuiaDetalhe() {
 
   const dataBase = guia.data_agendamento ?? guia.data_guia;
   const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], (gestao as any)?.sla_final);
-  const guiaStatus = getGuiaStatus(compareceu, atendLancado, asoAnexado);
+  const guiaStatus = getGuiaStatus(compareceu, atendLancado, asoAnexado, aguardandoAso);
 
   const formatField = (label: string, value: string | null) => (
     <div>
@@ -218,6 +222,7 @@ export default function GuiaDetalhe() {
     compareceu_status: "Compareceu",
     atendimento_lancado: "Atendimento Lançado",
     aso_anexado: "ASO Anexado",
+    aguardando_aso: "Aguardando ASO",
     observacoes: "Observações",
     sla_final: "SLA Final",
   };
@@ -339,6 +344,18 @@ export default function GuiaDetalhe() {
                   <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
                   <SelectItem value="SIM">Sim</SelectItem>
                   <SelectItem value="NAO">Não</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Aguardando ASO</Label>
+              <Select value={aguardandoAso} onValueChange={(v) => setAguardandoAso(v as AguardandoAsoStatus)} disabled={!canEdit}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NAO_INFORMADO">Não Informado</SelectItem>
+                  <SelectItem value="CONTATO_REALIZADO">Contato Realizado</SelectItem>
+                  <SelectItem value="RECEBIDO">Recebido</SelectItem>
+                  <SelectItem value="NAO_RECEBIDO">Não Recebido</SelectItem>
                 </SelectContent>
               </Select>
             </div>
