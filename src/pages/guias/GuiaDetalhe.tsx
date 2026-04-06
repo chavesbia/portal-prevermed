@@ -312,7 +312,7 @@ export default function GuiaDetalhe() {
       <Card>
         <CardHeader><CardTitle className="text-lg">Gestão Operacional</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Compareceu</Label>
               <Select value={compareceu} onValueChange={(v) => handleCompareceuChange(v as CompareceuStatus)} disabled={!canEdit}>
