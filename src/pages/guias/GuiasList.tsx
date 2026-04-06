@@ -127,6 +127,21 @@ function StatusIcon({ status, field, compareceu }: { status: string; field?: "co
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }
 
+const AGUARDANDO_ASO_LABELS: Record<string, string> = {
+  NAO_INFORMADO: "—",
+  CONTATO_REALIZADO: "Contato realizado",
+  RECEBIDO: "Recebido",
+  NAO_RECEBIDO: "Não recebido",
+};
+
+function AguardandoAsoLabel({ status }: { status: string }) {
+  const label = AGUARDANDO_ASO_LABELS[status] ?? "—";
+  if (status === "RECEBIDO") return <span className="text-xs font-medium text-green-600">{label}</span>;
+  if (status === "NAO_RECEBIDO") return <span className="text-xs font-medium text-destructive">{label}</span>;
+  if (status === "CONTATO_REALIZADO") return <span className="text-xs font-medium text-orange-500">{label}</span>;
+  return <Minus className="h-4 w-4 text-muted-foreground" />;
+}
+
 function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; maxW?: string }) {
   const display = text || "—";
   return (
@@ -528,7 +543,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 }
 
 function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
-  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
+  const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
   const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, atendimentoLancado, feriados, gestao?.sla_final);
   const origem = getOrigemAgendamento(guia.solicitante_nome);
   const statusPrest = getStatusPrestador(guia.prestador_nome);
@@ -568,10 +583,14 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
 
         <div className="border-t border-border pt-3">
           <h4 className="text-sm font-semibold mb-2">Gestão Operacional</h4>
-          <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
               <StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-1">Aguard. ASO</p>
+              <AguardandoAsoLabel status={aguardandoAso} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
