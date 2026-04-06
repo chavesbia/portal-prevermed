@@ -35,11 +35,13 @@ type GuiaWithGestao = {
     compareceu_status: string;
     atendimento_lancado: string;
     aso_anexado: string;
+    aguardando_aso?: string;
     sla_final?: string | null;
   } | {
     compareceu_status: string;
     atendimento_lancado: string;
     aso_anexado: string;
+    aguardando_aso?: string;
     sla_final?: string | null;
   }[] | null;
 };
@@ -59,13 +61,15 @@ function getDerivedGuiaState(guia_gestao: GuiaWithGestao["guia_gestao"]) {
   const compareceu = normalizeGestaoValue(gestao?.compareceu_status);
   const atendimentoLancado = normalizeGestaoValue(gestao?.atendimento_lancado);
   const asoAnexado = normalizeGestaoValue(gestao?.aso_anexado);
+  const aguardandoAso = normalizeGestaoValue((gestao as any)?.aguardando_aso);
 
   return {
     gestao,
     compareceu,
     atendimentoLancado,
     asoAnexado,
-    statusGuia: getGuiaStatus(compareceu, atendimentoLancado, asoAnexado),
+    aguardandoAso,
+    statusGuia: getGuiaStatus(compareceu, atendimentoLancado, asoAnexado, aguardandoAso),
   };
 }
 
@@ -208,7 +212,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       while (true) {
         let query = supabase
           .from("guias")
-          .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, sla_final)")
+          .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, aguardando_aso, sla_final)")
           .gte("data_guia", "2026-01-01")
           .order("data_guia", { ascending: false })
           .range(from, from + BATCH - 1);
@@ -276,6 +280,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       if (f.compareceu && compareceu !== f.compareceu) return false;
       if (f.atendimentoLancado && atendimentoLancado !== f.atendimentoLancado) return false;
       if (f.asoAnexado && asoAnexado !== f.asoAnexado) return false;
+      if (f.aguardandoAso && aguardandoAso !== f.aguardandoAso) return false;
       if (f.sla) {
         const dataBase = g.data_agendamento ?? g.data_guia;
         const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
