@@ -773,6 +773,7 @@ export type Database = {
       }
       guia_gestao: {
         Row: {
+          aguardando_aso: Database["public"]["Enums"]["aguardando_aso_status"]
           aso_anexado: Database["public"]["Enums"]["sim_nao_status"]
           atendimento_lancado: Database["public"]["Enums"]["sim_nao_status"]
           compareceu_status: Database["public"]["Enums"]["compareceu_status"]
@@ -785,6 +786,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          aguardando_aso?: Database["public"]["Enums"]["aguardando_aso_status"]
           aso_anexado?: Database["public"]["Enums"]["sim_nao_status"]
           atendimento_lancado?: Database["public"]["Enums"]["sim_nao_status"]
           compareceu_status?: Database["public"]["Enums"]["compareceu_status"]
@@ -797,6 +799,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          aguardando_aso?: Database["public"]["Enums"]["aguardando_aso_status"]
           aso_anexado?: Database["public"]["Enums"]["sim_nao_status"]
           atendimento_lancado?: Database["public"]["Enums"]["sim_nao_status"]
           compareceu_status?: Database["public"]["Enums"]["compareceu_status"]
@@ -2142,6 +2145,11 @@ export type Database = {
       }
     }
     Enums: {
+      aguardando_aso_status:
+        | "NAO_INFORMADO"
+        | "CONTATO_REALIZADO"
+        | "RECEBIDO"
+        | "NAO_RECEBIDO"
       chat_type: "direct" | "department"
       compareceu_status:
         | "NAO_INFORMADO"
@@ -2300,6 +2308,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      aguardando_aso_status: [
+        "NAO_INFORMADO",
+        "CONTATO_REALIZADO",
+        "RECEBIDO",
+        "NAO_RECEBIDO",
+      ],
       chat_type: ["direct", "department"],
       compareceu_status: [
         "NAO_INFORMADO",

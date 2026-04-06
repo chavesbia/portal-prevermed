@@ -26,6 +26,7 @@ export interface GuiaFiltersState {
   compareceu: string;
   atendimentoLancado: string;
   asoAnexado: string;
+  aguardandoAso: string;
   exame: string;
   origemAgendamento: string;
   statusPrestador: string;
@@ -48,6 +49,7 @@ export const emptyFilters: GuiaFiltersState = {
   compareceu: "",
   atendimentoLancado: "",
   asoAnexado: "",
+  aguardandoAso: "",
   exame: "",
   origemAgendamento: "",
   statusPrestador: "",
@@ -168,6 +170,7 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
     filters.compareceu || undefined,
     filters.atendimentoLancado || undefined,
     filters.asoAnexado || undefined,
+    filters.aguardandoAso || undefined,
     filters.exame || undefined,
     filters.origemAgendamento || undefined,
     filters.statusPrestador || undefined,
@@ -287,6 +290,17 @@ export function GuiaFilters({ filters, onChange, empresas, prestadores, tiposExa
             />
             <SelectField label="Atend. Lançado" value={filters.atendimentoLancado || "__all__"} onChange={(v) => update({ atendimentoLancado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }, { value: "NAO_INFORMADO", label: "Sem Preenchimento" }]} />
             <SelectField label="ASO Anexado" value={filters.asoAnexado || "__all__"} onChange={(v) => update({ asoAnexado: v })} options={[{ value: "SIM", label: "Sim" }, { value: "NAO", label: "Não" }, { value: "NAO_INFORMADO", label: "Sem Preenchimento" }]} />
+            <SelectField
+              label="Aguardando ASO"
+              value={filters.aguardandoAso || "__all__"}
+              onChange={(v) => update({ aguardandoAso: v })}
+              options={[
+                { value: "CONTATO_REALIZADO", label: "Contato Realizado" },
+                { value: "RECEBIDO", label: "Recebido" },
+                { value: "NAO_RECEBIDO", label: "Não Recebido" },
+                { value: "NAO_INFORMADO", label: "Sem Preenchimento" },
+              ]}
+            />
             <SelectField
               label="Origem Agendamento"
               value={filters.origemAgendamento || "__all__"}

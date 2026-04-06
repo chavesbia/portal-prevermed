@@ -91,7 +91,8 @@ export function getSlaLabel(status: SlaStatus) {
 export function getGuiaStatus(
   compareceu: string,
   atendimentoLancado: string,
-  asoAnexado: string
+  asoAnexado: string,
+  aguardandoAso?: string
 ): GuiaStatusType {
   // Finalizada: não compareceu
   if (compareceu === "NAO_COMPARECEU") return "FINALIZADA";
@@ -104,7 +105,9 @@ export function getGuiaStatus(
   if (compOk && atendOk && asoOk) return "FINALIZADA";
 
   // Em andamento: compareceu + atendimento lançado, mas ASO pendente
+  // Also Em andamento when aguardando ASO is pending (not received yet)
   if (compOk && atendOk) return "EM_ANDAMENTO";
+  if (compOk && aguardandoAso && aguardandoAso !== "NAO_INFORMADO" && aguardandoAso !== "RECEBIDO") return "EM_ANDAMENTO";
 
   // Iniciada: compareceu or parcial
   if (compOk) return "INICIADA";
