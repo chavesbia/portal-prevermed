@@ -134,11 +134,20 @@ const AGUARDANDO_ASO_LABELS: Record<string, string> = {
   NAO_RECEBIDO: "Não recebido",
 };
 
-function AguardandoAsoLabel({ status }: { status: string }) {
-  const label = AGUARDANDO_ASO_LABELS[status] ?? "—";
-  if (status === "RECEBIDO") return <span className="text-xs font-medium text-green-600">{label}</span>;
-  if (status === "NAO_RECEBIDO") return <span className="text-xs font-medium text-destructive">{label}</span>;
-  if (status === "CONTATO_REALIZADO") return <span className="text-xs font-medium text-orange-500">{label}</span>;
+const AGUARDANDO_ASO_SHORT_LABELS: Record<string, string> = {
+  NAO_INFORMADO: "—",
+  CONTATO_REALIZADO: "Contato",
+  RECEBIDO: "Recebido",
+  NAO_RECEBIDO: "Não rec.",
+};
+
+function AguardandoAsoLabel({ status, compact = false }: { status: string; compact?: boolean }) {
+  const label = compact ? (AGUARDANDO_ASO_SHORT_LABELS[status] ?? "—") : (AGUARDANDO_ASO_LABELS[status] ?? "—");
+  const textClassName = compact ? "text-[11px] font-medium whitespace-nowrap" : "text-xs font-medium";
+
+  if (status === "RECEBIDO") return <span className={`${textClassName} text-green-600`}>{label}</span>;
+  if (status === "NAO_RECEBIDO") return <span className={`${textClassName} text-destructive`}>{label}</span>;
+  if (status === "CONTATO_REALIZADO") return <span className={`${textClassName} text-orange-500`}>{label}</span>;
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }
 
@@ -455,6 +464,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                   <SortHeader field="sla" className="min-w-[70px]">SLA</SortHeader>
                   <SortHeader field="statusGuia" className="min-w-[90px]">Status</SortHeader>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Comp.</th>
+                  <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[90px]">Aguard. ASO</th>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Atend.</th>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">ASO</th>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap w-10"></th>
@@ -462,7 +472,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
               </thead>
               <tbody>
                 {pagedGuias.map((guia) => {
-                  const { gestao, compareceu, atendimentoLancado, asoAnexado, statusGuia: derivedStatusGuia } = getDerivedGuiaState(guia.guia_gestao);
+                  const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia: derivedStatusGuia } = getDerivedGuiaState(guia.guia_gestao);
                   const dataBase = guia.data_agendamento ?? guia.data_guia;
                   const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
                   const origem = getOrigemAgendamento(guia.solicitante_nome);
@@ -509,6 +519,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                         <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(derivedStatusGuia)}`}>{getGuiaStatusLabelShort(derivedStatusGuia)}</Badge>
                       </td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} /></td>
+                      <td className="px-3 py-2 text-center"><AguardandoAsoLabel status={aguardandoAso} compact /></td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} /></td>
                       <td className="px-3 py-2 text-center"><StatusIcon status={asoAnexado} field="aso" compareceu={compareceu} /></td>
                       <td className="px-3 py-2 text-center">
@@ -521,7 +532,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                 })}
                 {pagedGuias.length === 0 && (
                   <tr>
-                    <td colSpan={16} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={canEdit ? 17 : 16} className="text-center py-12 text-muted-foreground">
                       Nenhuma guia encontrada.
                     </td>
                   </tr>
