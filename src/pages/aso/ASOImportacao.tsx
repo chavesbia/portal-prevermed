@@ -3,13 +3,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { parseASOFile, ASOParsedRow } from "@/lib/aso/importParser";
 import { executeASOImport } from "@/lib/aso/importService";
 import { useASOLotes } from "@/hooks/useASOData";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Upload, FileSpreadsheet, CheckCircle, Loader2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import { ptBR } from "date-fns/locale";
 
 export default function ASOImportacao() {
@@ -18,9 +21,43 @@ export default function ASOImportacao() {
   const [parsedRows, setParsedRows] = useState<ASOParsedRow[]>([]);
   const [importing, setImporting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const { data: lotes, refetch } = useASOLotes();
+  const qc = useQueryClient();
 
   const displayName = profile?.full_name ?? user?.email ?? "";
+
+  const handleDeleteLote = async (loteId: string) => {
+    setDeleting(loteId);
+    try {
+      // Delete exames linked to atendimentos of this lote
+      const { data: atendimentos } = await supabase
+        .from("aso_atendimentos")
+        .select("id")
+        .eq("lote_id", loteId);
+
+      if (atendimentos && atendimentos.length > 0) {
+        const ids = atendimentos.map((a) => a.id);
+        await supabase.from("aso_exames_atendimento").delete().in("atendimento_id", ids);
+        await supabase.from("aso_historico").delete().in("atendimento_id", ids);
+      }
+
+      // Delete atendimentos
+      await supabase.from("aso_atendimentos").delete().eq("lote_id", loteId);
+      // Delete lote
+      const { error } = await supabase.from("aso_lotes_importacao").delete().eq("id", loteId);
+      if (error) throw error;
+
+      toast({ title: "Importação excluída", description: "O lote e todos os atendimentos vinculados foram removidos." });
+      refetch();
+      qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
+      qc.invalidateQueries({ queryKey: ["aso-stats"] });
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const handleFile = useCallback(async (f: File) => {
     setFile(f);
@@ -177,6 +214,7 @@ export default function ASOImportacao() {
                   <TableHead>Arquivo</TableHead>
                   <TableHead>Registros</TableHead>
                   <TableHead>Importado por</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -191,6 +229,33 @@ export default function ASOImportacao() {
                     <TableCell className="text-sm">{l.arquivo_nome || "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{l.total_registros}</TableCell>
                     <TableCell className="text-sm">{l.importado_por_nome || "—"}</TableCell>
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            {deleting === l.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir importação?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Isso removerá permanentemente o lote "{l.arquivo_nome}" com {l.total_registros} atendimentos,
+                              incluindo exames e histórico vinculados. Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => handleDeleteLote(l.id)}
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
