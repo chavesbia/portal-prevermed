@@ -202,7 +202,7 @@ export default function ASOListagem() {
             ))}
             {(!atendimentos || atendimentos.length === 0) && !isLoading && (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   Nenhum atendimento encontrado
                 </TableCell>
               </TableRow>
