@@ -23,6 +23,14 @@ import {
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History
 } from "lucide-react";
 
+function cleanAgenda(agenda: string | null): string {
+  if (!agenda) return "—";
+  const upper = agenda.toUpperCase();
+  if (upper.includes("OSASCO")) return "Osasco";
+  if (upper.includes("LAPA")) return "Lapa";
+  return agenda;
+}
+
 const STATUS_LABELS: Record<string, string> = {
   importado: "Importado",
   em_triagem: "Em Triagem",
@@ -171,7 +179,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
-        return { label: "Iniciar Triagem", action: () => advanceStatus("em_triagem", getSetorRecepcao()), validate: () => ({ ok: true }) };
+        return { label: "Iniciar Conferência", action: () => { advanceStatus("em_triagem", getSetorRecepcao()); setTab("recepcao"); }, validate: () => ({ ok: true }) };
       case "em_triagem": {
         const v = canAdvanceFromTriagem();
         if (a.possui_exame_complementar) {
@@ -289,7 +297,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 ["Funcionário", a.funcionario],
                 ["CPF", a.cpf],
                 ["Empresa", a.empresa],
-                ["Agenda", a.agenda],
+                ["Agenda", cleanAgenda(a.agenda)],
                 ["Data", formatDateBR(a.data_atendimento)],
                 ["Hora", a.hora_inicial],
                 ["Médico", a.medico],
@@ -317,13 +325,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
             )}
-            {a.riscos && (
-              <div>
-                <Label className="text-xs text-muted-foreground">Riscos</Label>
-                <p className="text-sm bg-muted/50 p-2 rounded">{a.riscos}</p>
-              </div>
-            )}
-
             {/* Classification */}
             <div className="border-t pt-4">
               <h4 className="font-medium mb-3 text-sm">Classificação</h4>
@@ -358,6 +359,34 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <h4 className="font-medium text-sm flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" /> Conferência da Recepção
             </h4>
+
+            {/* Classification inline */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Tipo de Prontuário</Label>
+                <Select
+                  value={a.tipo_prontuario || "none"}
+                  onValueChange={(v) => updateField("tipo_prontuario", v === "none" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não definido</SelectItem>
+                    <SelectItem value="digital">Digital</SelectItem>
+                    <SelectItem value="fisico">Físico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <Switch
+                  checked={a.base_socnet || false}
+                  onCheckedChange={(v) => updateField("base_socnet", v)}
+                />
+                <Label className="text-sm">Base SOCNET</Label>
+              </div>
+            </div>
+
+            <Separator />
+
             <div className="space-y-3">
               {[
                 { field: "prontuario_conferido", label: "Prontuário conferido" },
