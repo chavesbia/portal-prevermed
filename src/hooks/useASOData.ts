@@ -23,13 +23,13 @@ export function useASOAtendimentos(filters: ASOFilters = {}) {
         .order("data_atendimento", { ascending: false })
         .order("hora_inicial", { ascending: true });
 
-      if (filters.status) q = q.eq("status", filters.status);
+      if (filters.status) q = q.eq("status", filters.status as any);
       if (filters.agenda) q = q.eq("agenda", filters.agenda);
       if (filters.empresa) q = q.ilike("empresa", `%${filters.empresa}%`);
       if (filters.data_de) q = q.gte("data_atendimento", filters.data_de);
       if (filters.data_ate) q = q.lte("data_atendimento", filters.data_ate);
       if (filters.medico) q = q.ilike("medico", `%${filters.medico}%`);
-      if (filters.tipo_prontuario) q = q.eq("tipo_prontuario", filters.tipo_prontuario);
+      if (filters.tipo_prontuario) q = q.eq("tipo_prontuario", filters.tipo_prontuario as any);
       if (filters.base_socnet === true) q = q.eq("base_socnet", true);
       if (filters.base_socnet === false) q = q.eq("base_socnet", false);
       if (filters.search) {
