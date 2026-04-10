@@ -168,6 +168,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       }
     }
     setTab("recepcao");
+  };
 
   // Validation logic for stage advancement
   const complementaresPendentes = exames?.filter(
