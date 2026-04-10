@@ -114,7 +114,7 @@ export default function ASOKanban() {
                           </div>
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{a.data_atendimento} {a.hora_inicial || ""}</span>
+                            <span>{formatDateBR(a.data_atendimento)} {a.hora_inicial || ""}</span>
                           </div>
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <User className="h-3 w-3" />

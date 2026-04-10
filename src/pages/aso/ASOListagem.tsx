@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateBR } from "@/lib/utils";
 import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA, SLAResult } from "@/lib/aso/sla";
@@ -154,7 +155,7 @@ export default function ASOListagem() {
                   </Button>
                 </TableCell>
                 <TableCell className="text-xs font-mono">{a.id_interno?.slice(-12) || "—"}</TableCell>
-                <TableCell className="text-xs">{a.data_atendimento || "—"}</TableCell>
+                <TableCell className="text-xs">{formatDateBR(a.data_atendimento)}</TableCell>
                 <TableCell className="text-xs">{a.hora_inicial || "—"}</TableCell>
                 <TableCell className="text-xs max-w-[150px] truncate">{a.funcionario || "—"}</TableCell>
                 <TableCell className="text-xs max-w-[150px] truncate">{a.empresa || "—"}</TableCell>
