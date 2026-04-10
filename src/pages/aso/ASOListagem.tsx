@@ -214,7 +214,6 @@ export default function ASOListagem() {
             )}
           </TableBody>
         </Table>
-        </div>
       </div>
 
       <ASOWorkflowDrawer
