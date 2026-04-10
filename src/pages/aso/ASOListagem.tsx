@@ -35,6 +35,14 @@ const STATUS_COLORS: Record<string, string> = {
   finalizado: "bg-gray-200 text-gray-600",
 };
 
+function cleanAgenda(agenda: string | null): string {
+  if (!agenda) return "—";
+  const upper = agenda.toUpperCase();
+  if (upper.includes("OSASCO")) return "Osasco";
+  if (upper.includes("LAPA")) return "Lapa";
+  return agenda;
+}
+
 type Atendimento = NonNullable<ReturnType<typeof useASOAtendimentos>["data"]>[number];
 
 export default function ASOListagem() {
@@ -58,7 +66,7 @@ export default function ASOListagem() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, CPF, empresa ou ID..."
+            placeholder="Buscar por nome, CPF, empresa..."
             className="pl-9"
             value={filters.search || ""}
             onChange={(e) => setFilters(f => ({ ...f, search: e.target.value || undefined }))}
@@ -127,40 +135,37 @@ export default function ASOListagem() {
         {isLoading ? "Carregando..." : `${atendimentos?.length ?? 0} atendimentos encontrados`}
       </p>
 
-      <div className="border rounded-lg overflow-auto">
+      <div className="border rounded-lg overflow-auto max-h-[calc(100vh-380px)]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"></TableHead>
-              <TableHead>ID</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Hora</TableHead>
-              <TableHead>Funcionário</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Agenda</TableHead>
-              <TableHead>Tipo ASO</TableHead>
-              <TableHead>Prontuário</TableHead>
-              <TableHead>SOCNET</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>SLA</TableHead>
-              <TableHead>Setor</TableHead>
+              <TableHead className="w-10 sticky left-0 bg-background z-10"></TableHead>
+              <TableHead className="sticky left-10 bg-background z-10 min-w-[130px]">Funcionário</TableHead>
+              <TableHead className="min-w-[90px]">Data</TableHead>
+              <TableHead className="min-w-[60px]">Hora</TableHead>
+              <TableHead className="min-w-[140px]">Empresa</TableHead>
+              <TableHead className="min-w-[80px]">Unidade</TableHead>
+              <TableHead className="min-w-[100px]">Tipo ASO</TableHead>
+              <TableHead className="min-w-[80px]">Prontuário</TableHead>
+              <TableHead className="min-w-[70px]">SOCNET</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[70px]">SLA</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {atendimentos?.map((a) => (
               <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(a)}>
-                <TableCell>
+                <TableCell className="sticky left-0 bg-background z-10">
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setSelected(a); }}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </TableCell>
-                <TableCell className="text-xs font-mono">{a.id_interno?.slice(-12) || "—"}</TableCell>
+                <TableCell className="text-xs max-w-[150px] truncate sticky left-10 bg-background z-10 font-medium">{a.funcionario || "—"}</TableCell>
                 <TableCell className="text-xs">{formatDateBR(a.data_atendimento)}</TableCell>
                 <TableCell className="text-xs">{a.hora_inicial || "—"}</TableCell>
-                <TableCell className="text-xs max-w-[150px] truncate">{a.funcionario || "—"}</TableCell>
                 <TableCell className="text-xs max-w-[150px] truncate">{a.empresa || "—"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-xs">{a.agenda || "—"}</Badge>
+                  <Badge variant="outline" className="text-xs">{cleanAgenda(a.agenda)}</Badge>
                 </TableCell>
                 <TableCell className="text-xs">{a.tipo_compromisso || "—"}</TableCell>
                 <TableCell>
@@ -198,12 +203,11 @@ export default function ASOListagem() {
                     );
                   })()}
                 </TableCell>
-                <TableCell className="text-xs">{a.setor_responsavel || "—"}</TableCell>
               </TableRow>
             ))}
             {(!atendimentos || atendimentos.length === 0) && !isLoading && (
               <TableRow>
-                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   Nenhum atendimento encontrado
                 </TableCell>
               </TableRow>

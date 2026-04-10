@@ -171,7 +171,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
-        return { label: "Iniciar Triagem", action: () => advanceStatus("em_triagem", getSetorRecepcao()), validate: () => ({ ok: true }) };
+        return { label: "Iniciar Conferência", action: () => advanceStatus("em_triagem", getSetorRecepcao()), validate: () => ({ ok: true }) };
       case "em_triagem": {
         const v = canAdvanceFromTriagem();
         if (a.possui_exame_complementar) {
@@ -289,7 +289,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 ["Funcionário", a.funcionario],
                 ["CPF", a.cpf],
                 ["Empresa", a.empresa],
-                ["Agenda", a.agenda],
+                ["Agenda", cleanAgenda(a.agenda)],
                 ["Data", formatDateBR(a.data_atendimento)],
                 ["Hora", a.hora_inicial],
                 ["Médico", a.medico],
@@ -317,13 +317,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
             )}
-            {a.riscos && (
-              <div>
-                <Label className="text-xs text-muted-foreground">Riscos</Label>
-                <p className="text-sm bg-muted/50 p-2 rounded">{a.riscos}</p>
-              </div>
-            )}
-
             {/* Classification */}
             <div className="border-t pt-4">
               <h4 className="font-medium mb-3 text-sm">Classificação</h4>
