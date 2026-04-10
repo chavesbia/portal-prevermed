@@ -2,15 +2,18 @@ import { useState } from "react";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { useASOStats } from "@/hooks/useASOData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ASOImportacao from "./aso/ASOImportacao";
 import ASOListagem from "./aso/ASOListagem";
+import ASODashboard from "./aso/ASODashboard";
+import ASORelatorio from "./aso/ASORelatorio";
 
 const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
-  { key: "importado", label: "Importados", icon: Upload, color: "text-slate-500" },
+  { key: "importado", label: "Importados", icon: Upload, color: "text-muted-foreground" },
   { key: "em_triagem", label: "Em Triagem", icon: ClipboardCheck, color: "text-blue-500" },
   { key: "aguardando_exames", label: "Aguard. Exames", icon: Clock, color: "text-orange-500" },
   { key: "pronto_assinatura_medica", label: "Assin. Médica", icon: FileText, color: "text-purple-500" },
@@ -71,6 +74,12 @@ export default function LiberacaoASOs() {
               <Upload className="h-4 w-4" /> Importação
             </TabsTrigger>
           )}
+          <TabsTrigger value="dashboard" className="gap-1">
+            <BarChart3 className="h-4 w-4" /> Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="relatorio" className="gap-1">
+            <FileDown className="h-4 w-4" /> Relatórios
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="listagem">
@@ -81,6 +90,12 @@ export default function LiberacaoASOs() {
             <ASOImportacao />
           </TabsContent>
         )}
+        <TabsContent value="dashboard">
+          <ASODashboard />
+        </TabsContent>
+        <TabsContent value="relatorio">
+          <ASORelatorio />
+        </TabsContent>
       </Tabs>
     </div>
   );
