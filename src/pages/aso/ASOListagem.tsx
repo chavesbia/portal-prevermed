@@ -177,6 +177,26 @@ export default function ASOListagem() {
                     {STATUS_LABELS[a.status] || a.status}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  {(() => {
+                    const sla = getSLA(a);
+                    if (!sla) return <span className="text-xs text-muted-foreground">—</span>;
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
+                              {sla.emoji} {sla.diasUteis}d
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{sla.label} — {sla.diasUteis} dia(s) útil(eis)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell className="text-xs">{a.setor_responsavel || "—"}</TableCell>
               </TableRow>
             ))}
