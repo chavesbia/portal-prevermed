@@ -1,0 +1,87 @@
+import { useState } from "react";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
+import { useASOStats } from "@/hooks/useASOData";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import ASOImportacao from "./aso/ASOImportacao";
+import ASOListagem from "./aso/ASOListagem";
+
+const STAT_CARDS = [
+  { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
+  { key: "importado", label: "Importados", icon: Upload, color: "text-slate-500" },
+  { key: "em_triagem", label: "Em Triagem", icon: ClipboardCheck, color: "text-blue-500" },
+  { key: "aguardando_exames", label: "Aguard. Exames", icon: Clock, color: "text-orange-500" },
+  { key: "pronto_assinatura_medica", label: "Assin. Médica", icon: FileText, color: "text-purple-500" },
+  { key: "liberado", label: "Liberados", icon: CheckCircle, color: "text-green-500" },
+  { key: "liberado_faturamento", label: "Faturamento", icon: BarChart3, color: "text-emerald-500" },
+] as const;
+
+export default function LiberacaoASOs() {
+  const [tab, setTab] = useState("listagem");
+  const { hasPermission } = useModulePermissions();
+  const { data: stats } = useASOStats();
+
+  const canCreate = hasPermission("/liberacao-asos", "create");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Liberação de ASOs</h1>
+        <p className="text-muted-foreground">
+          Controle do fluxo de atendimentos, exames e liberação de ASOs
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {STAT_CARDS.map(({ key, label, icon: Icon, color }) => (
+            <Card key={key} className="p-3">
+              <div className="flex items-center gap-2">
+                <Icon className={`h-4 w-4 ${color}`} />
+                <span className="text-xs text-muted-foreground">{label}</span>
+              </div>
+              <p className="text-xl font-bold mt-1">{(stats as any)[key] ?? 0}</p>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Unidade badges */}
+      {stats && (
+        <div className="flex gap-3">
+          <Badge variant="outline" className="text-sm py-1 px-3">
+            🏢 Lapa: {stats.lapa}
+          </Badge>
+          <Badge variant="outline" className="text-sm py-1 px-3">
+            🏢 Osasco: {stats.osasco}
+          </Badge>
+        </div>
+      )}
+
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="listagem" className="gap-1">
+            <List className="h-4 w-4" /> Listagem
+          </TabsTrigger>
+          {canCreate && (
+            <TabsTrigger value="importacao" className="gap-1">
+              <Upload className="h-4 w-4" /> Importação
+            </TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="listagem">
+          <ASOListagem />
+        </TabsContent>
+        {canCreate && (
+          <TabsContent value="importacao">
+            <ASOImportacao />
+          </TabsContent>
+        )}
+      </Tabs>
+    </div>
+  );
+}
