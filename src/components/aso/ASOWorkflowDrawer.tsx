@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA } from "@/lib/aso/sla";
@@ -20,7 +20,7 @@ import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/use
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto } from "@/lib/aso/examClassifier";
 import {
-  CheckCircle, Clock, AlertTriangle, Plus, Trash2, FileText,
+  CheckCircle, Clock, Plus, Trash2, FileText,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History
 } from "lucide-react";
 
@@ -56,7 +56,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const WORKFLOW_STEPS = [
   { status: "importado", label: "Importado", icon: FileText },
-  { status: "em_triagem", label: "Triagem", icon: ClipboardCheck },
+  { status: "em_triagem", label: "Conferência", icon: ClipboardCheck },
   { status: "aguardando_exames", label: "Exames", icon: Clock },
   { status: "pronto_assinatura_medica", label: "Assinatura", icon: Stethoscope },
   { status: "em_escaneamento", label: "Escaneamento", icon: ScanLine },
@@ -87,7 +87,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExame, setNovoExame] = useState("");
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
 
-  const a = atendimento;
+  // Local state that mirrors the atendimento for instant UI updates
+  const [local, setLocal] = useState<any>(null);
+
+  useEffect(() => {
+    if (atendimento) {
+      setLocal({ ...atendimento });
+    }
+  }, [atendimento]);
+
+  const a = local || atendimento;
   const { data: exames } = useASOExames(a?.id);
   const { data: historico } = useASOHistorico(a?.id);
   const { data: feriados } = useFeriados();
@@ -97,16 +106,20 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
   const sla = ACTIVE_STATUSES.includes(a.status) ? calcSLA(a.data_atendimento, feriados || []) : null;
-
   const currentStepIndex = WORKFLOW_STEPS.findIndex(s => s.status === a.status);
 
   const updateField = async (field: string, value: any) => {
+    // Optimistic local update
+    setLocal((prev: any) => prev ? { ...prev, [field]: value } : prev);
+
     const { error } = await supabase
       .from("aso_atendimentos")
       .update({ [field]: value } as any)
       .eq("id", a.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+      // Revert
+      setLocal((prev: any) => prev ? { ...prev, [field]: a[field] } : prev);
       return;
     }
     await supabase.from("aso_historico").insert({
@@ -115,14 +128,40 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       user_name: profile?.full_name,
       acao: "alteracao_campo",
       campo: field,
-      valor_antigo: String(a[field] ?? ""),
+      valor_antigo: String(atendimento?.[field] ?? ""),
       valor_novo: String(value),
     } as any);
     onUpdate();
     qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
   };
 
+  const updateMultipleFields = async (fields: Record<string, any>) => {
+    setLocal((prev: any) => prev ? { ...prev, ...fields } : prev);
+    const { error } = await supabase
+      .from("aso_atendimentos")
+      .update(fields as any)
+      .eq("id", a.id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    for (const [field, value] of Object.entries(fields)) {
+      await supabase.from("aso_historico").insert({
+        atendimento_id: a.id,
+        user_id: profile?.user_id,
+        user_name: profile?.full_name,
+        acao: "alteracao_campo",
+        campo: field,
+        valor_antigo: String(atendimento?.[field] ?? ""),
+        valor_novo: String(value),
+      } as any);
+    }
+    onUpdate();
+    qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
+  };
+
   const advanceStatus = async (newStatus: string, newSetor: string) => {
+    setLocal((prev: any) => prev ? { ...prev, status: newStatus, setor_responsavel: newSetor } : prev);
     const { error } = await supabase
       .from("aso_atendimentos")
       .update({ status: newStatus, setor_responsavel: newSetor } as any)
@@ -158,10 +197,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           tipo: e.tipo,
         }));
         await supabase.from("aso_exames_atendimento").insert(records as any);
-        // Auto-flag if has complementar exams
         const hasCompl = parsed.some(e => e.tipo === "complementar");
         if (hasCompl) {
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
+          setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
         qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
         onUpdate();
@@ -170,7 +209,20 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     setTab("recepcao");
   };
 
-  // Validation logic for stage advancement
+  // Handle tipo_prontuario change with auto-set of tipo_assinatura
+  const handleTipoProntuarioChange = (v: string) => {
+    const val = v === "none" ? null : v;
+    const updates: Record<string, any> = { tipo_prontuario: val };
+    if (val === "digital") {
+      updates.tipo_assinatura = "digital";
+      // Auto-fill data_assinatura with data_atendimento
+      if (!a.data_assinatura && a.data_atendimento) {
+        updates.data_assinatura = a.data_atendimento;
+      }
+    }
+    updateMultipleFields(updates);
+  };
+
   const complementaresPendentes = exames?.filter(
     e => e.tipo === "complementar" && e.status !== "concluido"
   ) || [];
@@ -179,8 +231,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const canAdvanceFromTriagem = (): { ok: boolean; msg?: string } => {
     if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
-    if (!a.prontuario_conferido) return { ok: false, msg: "Confira o prontuário" };
-    if (!a.documentacao_ok) return { ok: false, msg: "Confirme a documentação" };
+    if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica" };
     return { ok: true };
   };
 
@@ -315,7 +366,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <TabsTrigger value="historico" className="text-xs">Histórico</TabsTrigger>
           </TabsList>
 
-          {/* TAB: Info */}
+          {/* TAB: Info (read-only) */}
           <TabsContent value="info" className="space-y-4 pb-6">
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -350,33 +401,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
             )}
-            {/* Classification */}
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-3 text-sm">Classificação</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-xs">Tipo de Prontuário</Label>
-                  <Select
-                    value={a.tipo_prontuario || "none"}
-                    onValueChange={(v) => updateField("tipo_prontuario", v === "none" ? null : v)}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Não definido</SelectItem>
-                      <SelectItem value="digital">Digital</SelectItem>
-                      <SelectItem value="fisico">Físico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-3 pt-5">
-                  <Switch
-                    checked={a.base_socnet || false}
-                    onCheckedChange={(v) => updateField("base_socnet", v)}
-                  />
-                  <Label className="text-sm">Base SOCNET</Label>
-                </div>
-              </div>
-            </div>
           </TabsContent>
 
           {/* TAB: Recepção */}
@@ -385,13 +409,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <ClipboardCheck className="h-4 w-4" /> Conferência da Recepção
             </h4>
 
-            {/* Classification inline */}
+            {/* Tipo Prontuário + Base SOCNET */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs">Tipo de Prontuário</Label>
                 <Select
                   value={a.tipo_prontuario || "none"}
-                  onValueChange={(v) => updateField("tipo_prontuario", v === "none" ? null : v)}
+                  onValueChange={handleTipoProntuarioChange}
                 >
                   <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
                   <SelectContent>
@@ -414,11 +438,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             <div className="space-y-3">
               {[
-                { field: "prontuario_conferido", label: "Prontuário conferido" },
-                { field: "documentacao_ok", label: "Documentação OK" },
-                { field: "ficha_clinica_ok", label: "Ficha clínica OK" },
-                { field: "vias_aso_ok", label: "Vias do ASO OK" },
-                { field: "carimbo_assinatura_ok", label: "Carimbo e assinatura física OK" },
+                { field: "ficha_clinica_ok", label: "Ficha Clínica" },
+                { field: "vias_aso_ok", label: "ASO" },
               ].map(({ field, label }) => (
                 <div key={field} className="flex items-center justify-between py-1">
                   <Label className="text-sm">{label}</Label>
@@ -435,7 +456,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <div className="flex items-center justify-between py-1">
               <div>
                 <Label className="text-sm font-medium">Possui exame complementar pendente?</Label>
-                <p className="text-xs text-muted-foreground">Exames cujo resultado não sai na hora</p>
+                <p className="text-xs text-muted-foreground">Se não selecionar, o exame está OK</p>
               </div>
               <Switch
                 checked={a.possui_exame_complementar || false}
@@ -449,6 +470,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 className="mt-1"
                 rows={3}
                 defaultValue={a.observacoes_recepcao || ""}
+                key={`obs-rec-${a.id}-${a.observacoes_recepcao}`}
                 onBlur={(e) => {
                   if (e.target.value !== (a.observacoes_recepcao || "")) {
                     updateField("observacoes_recepcao", e.target.value);
@@ -464,7 +486,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Clock className="h-4 w-4" /> Exames Complementares
             </h4>
 
-            {/* Add exam */}
             <div className="flex gap-2">
               <Input
                 placeholder="Nome do exame"
@@ -493,7 +514,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </Button>
             </div>
 
-            {/* Exam list */}
             {exames && exames.length > 0 ? (
               <div className="space-y-3">
                 {exames.map((ex) => (
@@ -602,6 +622,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   <Select
                     value={a.tipo_assinatura || "none"}
                     onValueChange={(v) => updateField("tipo_assinatura", v === "none" ? null : v)}
+                    disabled={a.tipo_prontuario === "digital"}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -610,11 +631,15 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       <SelectItem value="manual">Manual</SelectItem>
                     </SelectContent>
                   </Select>
+                  {a.tipo_prontuario === "digital" && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Prontuário digital → assinatura digital</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-xs">Data da Assinatura</Label>
                   <Input
                     type="date"
+                    key={`data-ass-${a.id}-${a.data_assinatura}`}
                     defaultValue={a.data_assinatura || ""}
                     onBlur={(e) => {
                       if (e.target.value !== (a.data_assinatura || "")) {
@@ -630,6 +655,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Textarea
                   className="mt-1"
                   rows={2}
+                  key={`obs-ass-${a.id}-${a.observacoes_assinatura}`}
                   defaultValue={a.observacoes_assinatura || ""}
                   onBlur={(e) => {
                     if (e.target.value !== (a.observacoes_assinatura || "")) {
@@ -671,6 +697,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   <Textarea
                     className="mt-1"
                     rows={2}
+                    key={`obs-esc-${a.id}-${a.observacoes_escaneamento}`}
                     defaultValue={a.observacoes_escaneamento || ""}
                     onBlur={(e) => {
                       if (e.target.value !== (a.observacoes_escaneamento || "")) {
@@ -692,6 +719,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Textarea
                 className="mt-1"
                 rows={2}
+                key={`obs-fat-${a.id}-${a.observacoes_faturamento}`}
                 defaultValue={a.observacoes_faturamento || ""}
                 onBlur={(e) => {
                   if (e.target.value !== (a.observacoes_faturamento || "")) {

@@ -135,8 +135,7 @@ export default function ASOListagem() {
         {isLoading ? "Carregando..." : `${atendimentos?.length ?? 0} atendimentos encontrados`}
       </p>
 
-      <div className="border rounded-lg overflow-x-auto">
-        <div className="overflow-y-auto max-h-[calc(100vh-400px)]">
+      <div className="border rounded-lg" style={{ overflow: "auto", maxHeight: "calc(100vh - 400px)" }}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -215,7 +214,6 @@ export default function ASOListagem() {
             )}
           </TableBody>
         </Table>
-        </div>
       </div>
 
       <ASOWorkflowDrawer
