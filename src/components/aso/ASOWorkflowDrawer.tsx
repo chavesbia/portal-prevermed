@@ -23,6 +23,17 @@ import {
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History
 } from "lucide-react";
 
+function cleanAgenda(agenda: string | null): string {
+  if (!agenda) return "—";
+  const upper = agenda.toUpperCase();
+  if (upper.includes("OSASCO")) return "Osasco";
+  if (upper.includes("LAPA")) return "Lapa";
+  return agenda;
+}
+  CheckCircle, Clock, AlertTriangle, Plus, Trash2, FileText,
+  ClipboardCheck, Stethoscope, ScanLine, Receipt, History
+} from "lucide-react";
+
 const STATUS_LABELS: Record<string, string> = {
   importado: "Importado",
   em_triagem: "Em Triagem",
