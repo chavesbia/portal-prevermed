@@ -80,9 +80,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const a = atendimento;
   const { data: exames } = useASOExames(a?.id);
   const { data: historico } = useASOHistorico(a?.id);
+  const { data: feriados } = useFeriados();
   const exameMutations = a ? useASOExameMutations(a.id) : null;
 
   if (!a) return null;
+
+  const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
+  const sla = ACTIVE_STATUSES.includes(a.status) ? calcSLA(a.data_atendimento, feriados || []) : null;
 
   const currentStepIndex = WORKFLOW_STEPS.findIndex(s => s.status === a.status);
 
