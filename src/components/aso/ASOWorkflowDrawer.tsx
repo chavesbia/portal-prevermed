@@ -249,11 +249,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
           {/* Current status + action */}
           <div className="flex items-center justify-between mt-3">
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`${STATUS_COLORS[a.status] || ""} text-sm`}>
                 {STATUS_LABELS[a.status] || a.status}
               </Badge>
-              <span className="text-xs text-muted-foreground ml-2">
+              {sla && (
+                <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
+                  {sla.emoji} {sla.diasUteis}d úteis — {sla.label}
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground">
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>
