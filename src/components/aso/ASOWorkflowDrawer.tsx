@@ -179,7 +179,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
-        return { label: "Iniciar Conferência", action: () => advanceStatus("em_triagem", getSetorRecepcao()), validate: () => ({ ok: true }) };
+        return { label: "Iniciar Conferência", action: () => { advanceStatus("em_triagem", getSetorRecepcao()); setTab("recepcao"); }, validate: () => ({ ok: true }) };
       case "em_triagem": {
         const v = canAdvanceFromTriagem();
         if (a.possui_exame_complementar) {
