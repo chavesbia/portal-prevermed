@@ -67,6 +67,303 @@ export type Database = {
           },
         ]
       }
+      aso_atendimentos: {
+        Row: {
+          agenda: string | null
+          aso_assinado: boolean | null
+          base_socnet: boolean | null
+          cargo: string | null
+          carimbo_assinatura_ok: boolean | null
+          conferencia_final_ok: boolean | null
+          cpf: string | null
+          created_at: string
+          data_assinatura: string | null
+          data_atendimento: string
+          detalhes: string | null
+          documentacao_ok: boolean | null
+          email_enviado: boolean | null
+          empresa: string | null
+          escaneado: boolean | null
+          exames_texto: string | null
+          ficha_clinica_ok: boolean | null
+          funcionario: string | null
+          hora_inicial: string | null
+          id: string
+          id_interno: string
+          lote_id: string
+          medico: string | null
+          observacoes_assinatura: string | null
+          observacoes_escaneamento: string | null
+          observacoes_faturamento: string | null
+          observacoes_recepcao: string | null
+          possui_exame_complementar: boolean | null
+          prontuario_conferido: boolean | null
+          renomeado: boolean | null
+          riscos: string | null
+          salvo_rede: boolean | null
+          salvo_socged: boolean | null
+          setor: string | null
+          setor_responsavel: string | null
+          status: Database["public"]["Enums"]["aso_status"]
+          tipo_assinatura:
+            | Database["public"]["Enums"]["aso_tipo_assinatura"]
+            | null
+          tipo_compromisso: string | null
+          tipo_prontuario:
+            | Database["public"]["Enums"]["aso_tipo_prontuario"]
+            | null
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+          usuario_soc: string | null
+          vias_aso_ok: boolean | null
+        }
+        Insert: {
+          agenda?: string | null
+          aso_assinado?: boolean | null
+          base_socnet?: boolean | null
+          cargo?: string | null
+          carimbo_assinatura_ok?: boolean | null
+          conferencia_final_ok?: boolean | null
+          cpf?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          data_atendimento: string
+          detalhes?: string | null
+          documentacao_ok?: boolean | null
+          email_enviado?: boolean | null
+          empresa?: string | null
+          escaneado?: boolean | null
+          exames_texto?: string | null
+          ficha_clinica_ok?: boolean | null
+          funcionario?: string | null
+          hora_inicial?: string | null
+          id?: string
+          id_interno: string
+          lote_id: string
+          medico?: string | null
+          observacoes_assinatura?: string | null
+          observacoes_escaneamento?: string | null
+          observacoes_faturamento?: string | null
+          observacoes_recepcao?: string | null
+          possui_exame_complementar?: boolean | null
+          prontuario_conferido?: boolean | null
+          renomeado?: boolean | null
+          riscos?: string | null
+          salvo_rede?: boolean | null
+          salvo_socged?: boolean | null
+          setor?: string | null
+          setor_responsavel?: string | null
+          status?: Database["public"]["Enums"]["aso_status"]
+          tipo_assinatura?:
+            | Database["public"]["Enums"]["aso_tipo_assinatura"]
+            | null
+          tipo_compromisso?: string | null
+          tipo_prontuario?:
+            | Database["public"]["Enums"]["aso_tipo_prontuario"]
+            | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          usuario_soc?: string | null
+          vias_aso_ok?: boolean | null
+        }
+        Update: {
+          agenda?: string | null
+          aso_assinado?: boolean | null
+          base_socnet?: boolean | null
+          cargo?: string | null
+          carimbo_assinatura_ok?: boolean | null
+          conferencia_final_ok?: boolean | null
+          cpf?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          data_atendimento?: string
+          detalhes?: string | null
+          documentacao_ok?: boolean | null
+          email_enviado?: boolean | null
+          empresa?: string | null
+          escaneado?: boolean | null
+          exames_texto?: string | null
+          ficha_clinica_ok?: boolean | null
+          funcionario?: string | null
+          hora_inicial?: string | null
+          id?: string
+          id_interno?: string
+          lote_id?: string
+          medico?: string | null
+          observacoes_assinatura?: string | null
+          observacoes_escaneamento?: string | null
+          observacoes_faturamento?: string | null
+          observacoes_recepcao?: string | null
+          possui_exame_complementar?: boolean | null
+          prontuario_conferido?: boolean | null
+          renomeado?: boolean | null
+          riscos?: string | null
+          salvo_rede?: boolean | null
+          salvo_socged?: boolean | null
+          setor?: string | null
+          setor_responsavel?: string | null
+          status?: Database["public"]["Enums"]["aso_status"]
+          tipo_assinatura?:
+            | Database["public"]["Enums"]["aso_tipo_assinatura"]
+            | null
+          tipo_compromisso?: string | null
+          tipo_prontuario?:
+            | Database["public"]["Enums"]["aso_tipo_prontuario"]
+            | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          usuario_soc?: string | null
+          vias_aso_ok?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_atendimentos_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "aso_lotes_importacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aso_exames_atendimento: {
+        Row: {
+          atendimento_id: string
+          created_at: string
+          data_conclusao: string | null
+          data_datado_soc: string | null
+          data_inserido_socged: string | null
+          data_recebimento: string | null
+          id: string
+          nome_exame: string
+          observacao: string | null
+          status: Database["public"]["Enums"]["aso_exame_status"]
+          tipo: Database["public"]["Enums"]["aso_exame_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          atendimento_id: string
+          created_at?: string
+          data_conclusao?: string | null
+          data_datado_soc?: string | null
+          data_inserido_socged?: string | null
+          data_recebimento?: string | null
+          id?: string
+          nome_exame: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["aso_exame_status"]
+          tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          atendimento_id?: string
+          created_at?: string
+          data_conclusao?: string | null
+          data_datado_soc?: string | null
+          data_inserido_socged?: string | null
+          data_recebimento?: string | null
+          id?: string
+          nome_exame?: string
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["aso_exame_status"]
+          tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_exames_atendimento_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "aso_atendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aso_historico: {
+        Row: {
+          acao: string
+          atendimento_id: string
+          campo: string | null
+          created_at: string
+          id: string
+          observacao: string | null
+          user_id: string | null
+          user_name: string | null
+          valor_antigo: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          acao: string
+          atendimento_id: string
+          campo?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          acao?: string
+          atendimento_id?: string
+          campo?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          user_id?: string | null
+          user_name?: string | null
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_historico_atendimento_id_fkey"
+            columns: ["atendimento_id"]
+            isOneToOne: false
+            referencedRelation: "aso_atendimentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aso_lotes_importacao: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_tamanho: number | null
+          created_at: string
+          id: string
+          importado_em: string
+          importado_por: string
+          importado_por_nome: string | null
+          total_registros: number
+          unidade: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          created_at?: string
+          id?: string
+          importado_em?: string
+          importado_por: string
+          importado_por_nome?: string | null
+          total_registros?: number
+          unidade: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_tamanho?: number | null
+          created_at?: string
+          id?: string
+          importado_em?: string
+          importado_por?: string
+          importado_por_nome?: string | null
+          total_registros?: number
+          unidade?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action_type: string
@@ -2150,6 +2447,24 @@ export type Database = {
         | "CONTATO_REALIZADO"
         | "RECEBIDO"
         | "NAO_RECEBIDO"
+      aso_exame_status:
+        | "pendente"
+        | "recebido"
+        | "datado_soc"
+        | "inserido_socged"
+        | "concluido"
+      aso_exame_tipo: "imediato" | "complementar"
+      aso_status:
+        | "importado"
+        | "em_triagem"
+        | "aguardando_exames"
+        | "pronto_assinatura_medica"
+        | "em_escaneamento"
+        | "liberado"
+        | "liberado_faturamento"
+        | "finalizado"
+      aso_tipo_assinatura: "digital" | "manual"
+      aso_tipo_prontuario: "digital" | "fisico"
       chat_type: "direct" | "department"
       compareceu_status:
         | "NAO_INFORMADO"
@@ -2314,6 +2629,26 @@ export const Constants = {
         "RECEBIDO",
         "NAO_RECEBIDO",
       ],
+      aso_exame_status: [
+        "pendente",
+        "recebido",
+        "datado_soc",
+        "inserido_socged",
+        "concluido",
+      ],
+      aso_exame_tipo: ["imediato", "complementar"],
+      aso_status: [
+        "importado",
+        "em_triagem",
+        "aguardando_exames",
+        "pronto_assinatura_medica",
+        "em_escaneamento",
+        "liberado",
+        "liberado_faturamento",
+        "finalizado",
+      ],
+      aso_tipo_assinatura: ["digital", "manual"],
+      aso_tipo_prontuario: ["digital", "fisico"],
       chat_type: ["direct", "department"],
       compareceu_status: [
         "NAO_INFORMADO",
