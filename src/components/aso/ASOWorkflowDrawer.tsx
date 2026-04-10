@@ -81,7 +81,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const { data: exames } = useASOExames(a?.id);
   const { data: historico } = useASOHistorico(a?.id);
   const { data: feriados } = useFeriados();
-  const exameMutations = a ? useASOExameMutations(a.id) : null;
+  const exameMutations = useASOExameMutations(a?.id ?? "");
 
   if (!a) return null;
 
