@@ -359,6 +359,34 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <h4 className="font-medium text-sm flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" /> Conferência da Recepção
             </h4>
+
+            {/* Classification inline */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">Tipo de Prontuário</Label>
+                <Select
+                  value={a.tipo_prontuario || "none"}
+                  onValueChange={(v) => updateField("tipo_prontuario", v === "none" ? null : v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não definido</SelectItem>
+                    <SelectItem value="digital">Digital</SelectItem>
+                    <SelectItem value="fisico">Físico</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3 pt-5">
+                <Switch
+                  checked={a.base_socnet || false}
+                  onCheckedChange={(v) => updateField("base_socnet", v)}
+                />
+                <Label className="text-sm">Base SOCNET</Label>
+              </div>
+            </div>
+
+            <Separator />
+
             <div className="space-y-3">
               {[
                 { field: "prontuario_conferido", label: "Prontuário conferido" },
