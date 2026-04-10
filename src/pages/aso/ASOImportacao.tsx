@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseASOFile, ASOParsedRow } from "@/lib/aso/importParser";
 import { executeASOImport } from "@/lib/aso/importService";
@@ -175,7 +176,7 @@ export default function ASOImportacao() {
                     {parsedRows.slice(0, 50).map((r, i) => (
                       <TableRow key={i}>
                         <TableCell className="text-xs">{r.agenda || "—"}</TableCell>
-                        <TableCell className="text-xs">{r.data_atendimento || "—"}</TableCell>
+                        <TableCell className="text-xs">{formatDateBR(r.data_atendimento)}</TableCell>
                         <TableCell className="text-xs">{r.hora_inicial || "—"}</TableCell>
                         <TableCell className="text-xs">{r.funcionario || "—"}</TableCell>
                         <TableCell className="text-xs font-mono">{r.cpf || "—"}</TableCell>
