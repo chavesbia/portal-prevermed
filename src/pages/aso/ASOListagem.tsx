@@ -41,6 +41,14 @@ export default function ASOListagem() {
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<Atendimento | null>(null);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
+  const { data: feriados } = useFeriados();
+
+  const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
+
+  const getSLA = (a: Atendimento): SLAResult | null => {
+    if (!ACTIVE_STATUSES.includes(a.status)) return null;
+    return calcSLA(a.data_atendimento, feriados || []);
+  };
 
   return (
     <div className="space-y-4">
