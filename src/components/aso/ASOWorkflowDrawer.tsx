@@ -18,6 +18,7 @@ import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
 import { useQueryClient } from "@tanstack/react-query";
+import { parseExamesTexto } from "@/lib/aso/examClassifier";
 import {
   CheckCircle, Clock, AlertTriangle, Plus, Trash2, FileText,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History
@@ -144,6 +145,29 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     onUpdate();
     qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
   };
+
+  const iniciarConferencia = async () => {
+    await advanceStatus("em_triagem", getSetorRecepcao());
+    // Auto-create individual exams from exames_texto if none exist yet
+    if (a.exames_texto && (!exames || exames.length === 0)) {
+      const parsed = parseExamesTexto(a.exames_texto);
+      if (parsed.length > 0) {
+        const records = parsed.map(e => ({
+          atendimento_id: a.id,
+          nome_exame: e.nome_exame,
+          tipo: e.tipo,
+        }));
+        await supabase.from("aso_exames_atendimento").insert(records as any);
+        // Auto-flag if has complementar exams
+        const hasCompl = parsed.some(e => e.tipo === "complementar");
+        if (hasCompl) {
+          await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
+        }
+        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+        onUpdate();
+      }
+    }
+    setTab("recepcao");
 
   // Validation logic for stage advancement
   const complementaresPendentes = exames?.filter(
