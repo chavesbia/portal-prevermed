@@ -4,12 +4,13 @@ import { useASOStats } from "@/hooks/useASOData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown, Columns3, AlertTriangle } from "lucide-react";
 import ASOImportacao from "./aso/ASOImportacao";
 import ASOListagem from "./aso/ASOListagem";
 import ASODashboard from "./aso/ASODashboard";
 import ASORelatorio from "./aso/ASORelatorio";
+import ASOKanban from "./aso/ASOKanban";
+import ASOAlertas from "./aso/ASOAlertas";
 
 const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
