@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateBR } from "@/lib/utils";
 import { useASOAtendimentos } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA, SLAResult } from "@/lib/aso/sla";
@@ -114,7 +115,7 @@ export default function ASOKanban() {
                           </div>
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{a.data_atendimento} {a.hora_inicial || ""}</span>
+                            <span>{formatDateBR(a.data_atendimento)} {a.hora_inicial || ""}</span>
                           </div>
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <User className="h-3 w-3" />

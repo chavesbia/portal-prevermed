@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
 import { useQueryClient } from "@tanstack/react-query";
@@ -289,7 +290,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 ["CPF", a.cpf],
                 ["Empresa", a.empresa],
                 ["Agenda", a.agenda],
-                ["Data", a.data_atendimento],
+                ["Data", formatDateBR(a.data_atendimento)],
                 ["Hora", a.hora_inicial],
                 ["Médico", a.medico],
                 ["Tipo ASO", a.tipo_compromisso],
