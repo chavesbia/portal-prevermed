@@ -141,6 +141,7 @@ export default function ASOListagem() {
               <TableHead>Prontuário</TableHead>
               <TableHead>SOCNET</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>SLA</TableHead>
               <TableHead>Setor</TableHead>
             </TableRow>
           </TableHeader>
