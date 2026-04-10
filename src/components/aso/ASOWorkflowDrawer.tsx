@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useFeriados } from "@/hooks/useFeriados";
+import { calcSLA } from "@/lib/aso/sla";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -78,9 +80,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const a = atendimento;
   const { data: exames } = useASOExames(a?.id);
   const { data: historico } = useASOHistorico(a?.id);
+  const { data: feriados } = useFeriados();
   const exameMutations = a ? useASOExameMutations(a.id) : null;
 
   if (!a) return null;
+
+  const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
+  const sla = ACTIVE_STATUSES.includes(a.status) ? calcSLA(a.data_atendimento, feriados || []) : null;
 
   const currentStepIndex = WORKFLOW_STEPS.findIndex(s => s.status === a.status);
 
@@ -243,11 +249,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
           {/* Current status + action */}
           <div className="flex items-center justify-between mt-3">
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`${STATUS_COLORS[a.status] || ""} text-sm`}>
                 {STATUS_LABELS[a.status] || a.status}
               </Badge>
-              <span className="text-xs text-muted-foreground ml-2">
+              {sla && (
+                <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
+                  {sla.emoji} {sla.diasUteis}d úteis — {sla.label}
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground">
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>

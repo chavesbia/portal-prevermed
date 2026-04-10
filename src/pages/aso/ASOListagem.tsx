@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
+import { useFeriados } from "@/hooks/useFeriados";
+import { calcSLA, SLAResult } from "@/lib/aso/sla";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Search, Eye, Filter, X } from "lucide-react";
 import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
@@ -38,6 +41,14 @@ export default function ASOListagem() {
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<Atendimento | null>(null);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
+  const { data: feriados } = useFeriados();
+
+  const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
+
+  const getSLA = (a: Atendimento): SLAResult | null => {
+    if (!ACTIVE_STATUSES.includes(a.status)) return null;
+    return calcSLA(a.data_atendimento, feriados || []);
+  };
 
   return (
     <div className="space-y-4">
@@ -130,6 +141,7 @@ export default function ASOListagem() {
               <TableHead>Prontuário</TableHead>
               <TableHead>SOCNET</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>SLA</TableHead>
               <TableHead>Setor</TableHead>
             </TableRow>
           </TableHeader>
@@ -165,12 +177,32 @@ export default function ASOListagem() {
                     {STATUS_LABELS[a.status] || a.status}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  {(() => {
+                    const sla = getSLA(a);
+                    if (!sla) return <span className="text-xs text-muted-foreground">—</span>;
+                    return (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
+                              {sla.emoji} {sla.diasUteis}d
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{sla.label} — {sla.diasUteis} dia(s) útil(eis)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell className="text-xs">{a.setor_responsavel || "—"}</TableCell>
               </TableRow>
             ))}
             {(!atendimentos || atendimentos.length === 0) && !isLoading && (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={13} className="text-center py-8 text-muted-foreground">
                   Nenhum atendimento encontrado
                 </TableCell>
               </TableRow>
