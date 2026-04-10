@@ -31,6 +31,8 @@ const COLUMN_MAP: Record<string, keyof ASOParsedRow> = {
   "Riscos": "riscos",
   "TipoCompromisso": "tipo_compromisso",
   "Tipo Compromisso": "tipo_compromisso",
+  "Tipo.Compromisso": "tipo_compromisso",
+  "Tipo de Compromisso": "tipo_compromisso",
   "Empresa": "empresa",
   "Unidade": "unidade",
   "Setor": "setor",
