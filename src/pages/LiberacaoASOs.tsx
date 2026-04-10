@@ -66,15 +66,21 @@ export default function LiberacaoASOs() {
       )}
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="listagem" className="gap-1">
             <List className="h-4 w-4" /> Listagem
+          </TabsTrigger>
+          <TabsTrigger value="kanban" className="gap-1">
+            <Columns3 className="h-4 w-4" /> Kanban
           </TabsTrigger>
           {canCreate && (
             <TabsTrigger value="importacao" className="gap-1">
               <Upload className="h-4 w-4" /> Importação
             </TabsTrigger>
           )}
+          <TabsTrigger value="alertas" className="gap-1">
+            <AlertTriangle className="h-4 w-4" /> Alertas
+          </TabsTrigger>
           <TabsTrigger value="dashboard" className="gap-1">
             <BarChart3 className="h-4 w-4" /> Dashboard
           </TabsTrigger>
@@ -86,11 +92,17 @@ export default function LiberacaoASOs() {
         <TabsContent value="listagem">
           <ASOListagem />
         </TabsContent>
+        <TabsContent value="kanban">
+          <ASOKanban />
+        </TabsContent>
         {canCreate && (
           <TabsContent value="importacao">
             <ASOImportacao />
           </TabsContent>
         )}
+        <TabsContent value="alertas">
+          <ASOAlertas />
+        </TabsContent>
         <TabsContent value="dashboard">
           <ASODashboard />
         </TabsContent>
