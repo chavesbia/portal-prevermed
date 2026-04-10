@@ -161,7 +161,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     return { ok: true };
   };
 
-  const getNextAction = () => {
+  const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
         return { label: "Iniciar Triagem", action: () => advanceStatus("em_triagem", getSetorRecepcao()), validate: () => ({ ok: true }) };
