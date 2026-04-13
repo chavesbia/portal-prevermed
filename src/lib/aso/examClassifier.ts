@@ -1,5 +1,5 @@
-// Exames com liberação imediata (no mesmo dia, mas controlados individualmente)
-const EXAMES_IMEDIATOS = [
+// Exames complementares com liberação imediata (no mesmo dia, controlados individualmente)
+const EXAMES_LIBERACAO_IMEDIATA = [
   "acuidade visual",
   "audiometria",
 ];
@@ -23,8 +23,14 @@ export type ExameTipo = "imediato" | "complementar" | "clinico";
 export function classifyExame(nomeExame: string): ExameTipo {
   const norm = normalizeExameName(nomeExame);
   if (EXAME_CLINICO_ALIASES.some(e => norm.includes(normalizeExameName(e)))) return "clinico";
-  if (EXAMES_IMEDIATOS.some(e => norm.includes(normalizeExameName(e)))) return "imediato";
+  if (EXAMES_LIBERACAO_IMEDIATA.some(e => norm.includes(normalizeExameName(e)))) return "imediato";
   return "complementar";
+}
+
+/** Verifica se o exame tem liberação imediata (Audiometria, Acuidade Visual) */
+export function isLiberacaoImediata(nomeExame: string): boolean {
+  const norm = normalizeExameName(nomeExame);
+  return EXAMES_LIBERACAO_IMEDIATA.some(e => norm.includes(normalizeExameName(e)));
 }
 
 /** Normaliza o nome do exame para exibição */
@@ -34,6 +40,19 @@ export function normalizeExameNome(nome: string): string {
     return "Exame Clínico";
   }
   return nome.trim();
+}
+
+/**
+ * Verifica se o prontuário pode ser liberado diretamente pela recepção
+ * (sem passar pela enfermagem).
+ * Condição: apenas Exame Clínico e/ou exames de liberação imediata (Audiometria, Acuidade Visual).
+ * Nenhum outro exame complementar.
+ */
+export function podeRecepcaoLiberar(examesNomes: string[]): boolean {
+  return examesNomes.every(nome => {
+    const tipo = classifyExame(nome);
+    return tipo === "clinico" || tipo === "imediato";
+  });
 }
 
 export function parseExamesTexto(examesTexto: string | null): { nome_exame: string; tipo: ExameTipo; status_inicial: string }[] {
