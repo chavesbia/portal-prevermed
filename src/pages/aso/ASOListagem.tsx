@@ -15,10 +15,10 @@ import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
 const STATUS_LABELS: Record<string, string> = {
   importado: "Importado",
-  em_triagem: "Em Triagem",
-  aguardando_exames: "Aguard. Exames",
-  pronto_assinatura_medica: "Assin. Médica",
-  em_escaneamento: "Escaneamento",
+  em_triagem: "Inicial",
+  aguardando_exames: "Exames Pend.",
+  pronto_assinatura_medica: "Assinatura",
+  em_escaneamento: "Liberação",
   liberado: "Liberado",
   liberado_faturamento: "Faturamento",
   finalizado: "Finalizado",
@@ -61,7 +61,6 @@ export default function ASOListagem() {
 
   return (
     <div className="space-y-4">
-      {/* Search & Filters */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

@@ -2453,6 +2453,8 @@ export type Database = {
         | "datado_soc"
         | "inserido_socged"
         | "concluido"
+        | "realizado"
+        | "liberado"
       aso_exame_tipo: "imediato" | "complementar"
       aso_status:
         | "importado"
@@ -2635,6 +2637,8 @@ export const Constants = {
         "datado_soc",
         "inserido_socged",
         "concluido",
+        "realizado",
+        "liberado",
       ],
       aso_exame_tipo: ["imediato", "complementar"],
       aso_status: [

@@ -15,9 +15,9 @@ import ASOAlertas from "./aso/ASOAlertas";
 const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
   { key: "importado", label: "Importados", icon: Upload, color: "text-muted-foreground" },
-  { key: "em_triagem", label: "Em Triagem", icon: ClipboardCheck, color: "text-blue-500" },
-  { key: "aguardando_exames", label: "Aguard. Exames", icon: Clock, color: "text-orange-500" },
-  { key: "pronto_assinatura_medica", label: "Assin. Médica", icon: FileText, color: "text-purple-500" },
+  { key: "em_triagem", label: "Inicial", icon: ClipboardCheck, color: "text-blue-500" },
+  { key: "aguardando_exames", label: "Exames Pend.", icon: Clock, color: "text-orange-500" },
+  { key: "pronto_assinatura_medica", label: "Assinatura", icon: FileText, color: "text-purple-500" },
   { key: "liberado", label: "Liberados", icon: CheckCircle, color: "text-green-500" },
   { key: "liberado_faturamento", label: "Faturamento", icon: BarChart3, color: "text-emerald-500" },
 ] as const;
@@ -38,7 +38,6 @@ export default function LiberacaoASOs() {
         </p>
       </div>
 
-      {/* KPI Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           {STAT_CARDS.map(({ key, label, icon: Icon, color }) => (
@@ -53,7 +52,6 @@ export default function LiberacaoASOs() {
         </div>
       )}
 
-      {/* Unidade badges */}
       {stats && (
         <div className="flex gap-3">
           <Badge variant="outline" className="text-sm py-1 px-3">

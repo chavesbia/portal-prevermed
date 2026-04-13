@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA } from "@/lib/aso/sla";
@@ -18,10 +18,11 @@ import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
 import { useQueryClient } from "@tanstack/react-query";
-import { parseExamesTexto } from "@/lib/aso/examClassifier";
+import { parseExamesTexto, classifyExame } from "@/lib/aso/examClassifier";
 import {
   CheckCircle, Clock, Plus, Trash2, FileText,
-  ClipboardCheck, Stethoscope, ScanLine, Receipt, History
+  ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
+  Syringe, Eye as EyeIcon
 } from "lucide-react";
 
 function cleanAgenda(agenda: string | null): string {
@@ -34,10 +35,10 @@ function cleanAgenda(agenda: string | null): string {
 
 const STATUS_LABELS: Record<string, string> = {
   importado: "Importado",
-  em_triagem: "Em Triagem",
-  aguardando_exames: "Aguard. Exames",
-  pronto_assinatura_medica: "Assinatura Médica",
-  em_escaneamento: "Escaneamento",
+  em_triagem: "Inicial",
+  aguardando_exames: "Exames Pendentes",
+  pronto_assinatura_medica: "Assinatura",
+  em_escaneamento: "Liberação",
   liberado: "Liberado",
   liberado_faturamento: "Faturamento",
   finalizado: "Finalizado",
@@ -56,21 +57,45 @@ const STATUS_COLORS: Record<string, string> = {
 
 const WORKFLOW_STEPS = [
   { status: "importado", label: "Importado", icon: FileText },
-  { status: "em_triagem", label: "Conferência", icon: ClipboardCheck },
-  { status: "aguardando_exames", label: "Exames", icon: Clock },
+  { status: "em_triagem", label: "Inicial", icon: ClipboardCheck },
+  { status: "aguardando_exames", label: "Exames Pend.", icon: Syringe },
   { status: "pronto_assinatura_medica", label: "Assinatura", icon: Stethoscope },
-  { status: "em_escaneamento", label: "Escaneamento", icon: ScanLine },
+  { status: "em_escaneamento", label: "Liberação", icon: ScanLine },
   { status: "liberado", label: "Liberado", icon: CheckCircle },
   { status: "liberado_faturamento", label: "Faturamento", icon: Receipt },
   { status: "finalizado", label: "Finalizado", icon: CheckCircle },
 ];
 
-const EXAME_STATUS_LABELS: Record<string, string> = {
-  pendente: "Pendente",
-  recebido: "Recebido",
-  datado_soc: "Datado SOC",
-  inserido_socged: "Inserido SOCGED",
-  concluido: "Concluído",
+// Friendly field labels for history
+const FIELD_LABELS: Record<string, string> = {
+  status: "Status",
+  tipo_prontuario: "Tipo de Prontuário",
+  base_socnet: "Base SOCNET",
+  ficha_clinica_ok: "Ficha Clínica",
+  vias_aso_ok: "ASO",
+  possui_exame_complementar: "Exame Complementar Pendente",
+  aso_assinado: "ASO Assinado",
+  tipo_assinatura: "Tipo de Assinatura",
+  data_assinatura: "Data da Assinatura",
+  escaneado: "Escaneado",
+  renomeado: "Renomeado",
+  salvo_rede: "Salvo na Rede",
+  salvo_socged: "Inserido no SOCGED",
+  email_enviado: "E-mail Enviado",
+  conferencia_final_ok: "Conferência Final",
+  observacoes_recepcao: "Observações da Recepção",
+  observacoes_assinatura: "Observações da Assinatura",
+  observacoes_escaneamento: "Observações da Liberação",
+  observacoes_faturamento: "Observações do Faturamento",
+  setor_responsavel: "Setor Responsável",
+};
+
+const ACTION_LABELS: Record<string, string> = {
+  avanco_status: "Avanço de status",
+  alteracao_campo: "Alteração de campo",
+  alteracao_exame: "Alteração de exame",
+  exame_adicionado: "Exame adicionado",
+  exame_removido: "Exame removido",
 };
 
 interface Props {
@@ -86,8 +111,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [tab, setTab] = useState("info");
   const [novoExame, setNovoExame] = useState("");
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
-
-  // Local state that mirrors the atendimento for instant UI updates
   const [local, setLocal] = useState<any>(null);
 
   useEffect(() => {
@@ -108,17 +131,25 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const sla = ACTIVE_STATUSES.includes(a.status) ? calcSLA(a.data_atendimento, feriados || []) : null;
   const currentStepIndex = WORKFLOW_STEPS.findIndex(s => s.status === a.status);
 
-  const updateField = async (field: string, value: any) => {
-    // Optimistic local update
-    setLocal((prev: any) => prev ? { ...prev, [field]: value } : prev);
+  const isDigital = a.tipo_prontuario === "digital";
+  const isFisico = a.tipo_prontuario === "fisico";
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
+    qc.invalidateQueries({ queryKey: ["aso-stats"] });
+    qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
+    qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+    onUpdate();
+  };
+
+  const updateField = async (field: string, value: any) => {
+    setLocal((prev: any) => prev ? { ...prev, [field]: value } : prev);
     const { error } = await supabase
       .from("aso_atendimentos")
       .update({ [field]: value } as any)
       .eq("id", a.id);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
-      // Revert
       setLocal((prev: any) => prev ? { ...prev, [field]: a[field] } : prev);
       return;
     }
@@ -131,8 +162,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       valor_antigo: String(atendimento?.[field] ?? ""),
       valor_novo: String(value),
     } as any);
-    onUpdate();
-    qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
+    invalidateAll();
   };
 
   const updateMultipleFields = async (fields: Record<string, any>) => {
@@ -156,8 +186,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         valor_novo: String(value),
       } as any);
     }
-    onUpdate();
-    qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
+    invalidateAll();
   };
 
   const advanceStatus = async (newStatus: string, newSetor: string) => {
@@ -181,13 +210,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       observacao: `Setor: ${newSetor}`,
     } as any);
     toast({ title: "Status atualizado", description: STATUS_LABELS[newStatus] });
-    onUpdate();
-    qc.invalidateQueries({ queryKey: ["aso-historico", a.id] });
+    invalidateAll();
   };
 
   const iniciarConferencia = async () => {
     await advanceStatus("em_triagem", getSetorRecepcao());
-    // Auto-create individual exams from exames_texto if none exist yet
+    // Auto-create individual exams from exames_texto
     if (a.exames_texto && (!exames || exames.length === 0)) {
       const parsed = parseExamesTexto(a.exames_texto);
       if (parsed.length > 0) {
@@ -195,6 +223,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           atendimento_id: a.id,
           nome_exame: e.nome_exame,
           tipo: e.tipo,
+          status: e.status_inicial,
         }));
         await supabase.from("aso_exames_atendimento").insert(records as any);
         const hasCompl = parsed.some(e => e.tipo === "complementar");
@@ -202,93 +231,157 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
           setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
-        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
-        onUpdate();
+        invalidateAll();
       }
     }
     setTab("recepcao");
   };
 
-  // Handle tipo_prontuario change with auto-set of tipo_assinatura
   const handleTipoProntuarioChange = (v: string) => {
     const val = v === "none" ? null : v;
     const updates: Record<string, any> = { tipo_prontuario: val };
     if (val === "digital") {
       updates.tipo_assinatura = "digital";
-      // Auto-fill data_assinatura with data_atendimento
       if (!a.data_assinatura && a.data_atendimento) {
         updates.data_assinatura = a.data_atendimento;
       }
+    } else if (val === "fisico") {
+      updates.tipo_assinatura = "manual";
     }
     updateMultipleFields(updates);
   };
 
-  const complementaresPendentes = exames?.filter(
-    e => e.tipo === "complementar" && e.status !== "concluido"
-  ) || [];
-  const hasComplementares = exames?.some(e => e.tipo === "complementar") || false;
-  const allExamesConcluidos = !hasComplementares || complementaresPendentes.length === 0;
+  // Exam helpers
+  const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
+  const examesImediatos = exames?.filter(e => e.tipo === "imediato" && e.nome_exame !== "Exame Clínico") || [];
+  const examesComplementares = exames?.filter(e => e.tipo === "complementar") || [];
+  const complementaresPendentes = examesComplementares.filter(e => e.status !== "liberado" && e.status !== "concluido");
+  const hasComplementares = examesComplementares.length > 0;
+  const allComplementaresLiberados = hasComplementares && complementaresPendentes.length === 0;
 
-  const canAdvanceFromTriagem = (): { ok: boolean; msg?: string } => {
-    if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
-    if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica" };
-    return { ok: true };
-  };
+  const getSetorRecepcao = () => a.agenda?.toLowerCase().includes("osasco") ? "Recepção Osasco" : "Recepção Lapa";
+  const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
+  const getSetorLiberacao = () => "Liberação";
 
-  const canAdvanceFromExames = (): { ok: boolean; msg?: string } => {
-    if (!allExamesConcluidos) return { ok: false, msg: `${complementaresPendentes.length} exame(s) pendente(s)` };
-    return { ok: true };
-  };
-
-  const canAdvanceFromAssinatura = (): { ok: boolean; msg?: string } => {
-    if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
-    return { ok: true };
-  };
-
-  const canAdvanceFromEscaneamento = (): { ok: boolean; msg?: string } => {
-    if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
-    if (!a.salvo_rede) return { ok: false, msg: "Não salvo na rede" };
-    if (!a.conferencia_final_ok) return { ok: false, msg: "Conferência final pendente" };
-    return { ok: true };
-  };
-
+  // ── FLOW LOGIC ──
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
-        return { label: "Iniciar Conferência", action: () => iniciarConferencia(), validate: () => ({ ok: true }) };
+        return { label: "Iniciar Conferência", action: iniciarConferencia, validate: () => ({ ok: true }) };
+
       case "em_triagem": {
-        const v = canAdvanceFromTriagem();
+        // Inicial - Recepção
         if (a.possui_exame_complementar) {
-          return { label: "Enviar para Aguardando Exames", action: () => advanceStatus("aguardando_exames", getSetorEnfermagem()), validate: () => v };
+          // Caso 3: tem exames pendentes → enviar para enfermagem
+          return {
+            label: "Enviar para Exames Pendentes",
+            action: () => advanceStatus("aguardando_exames", getSetorEnfermagem()),
+            validate: () => {
+              if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
+              return { ok: true };
+            },
+          };
         }
-        return { label: "Enviar para Assinatura Médica", action: () => advanceStatus("pronto_assinatura_medica", "Médico"), validate: () => v };
+        if (isDigital) {
+          // Caso 1: Digital sem pendentes → pode ir direto para Liberado
+          return {
+            label: "Liberar Atendimento",
+            action: () => advanceStatus("liberado", "Liberação"),
+            validate: () => {
+              if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
+              if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica" };
+              if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO" };
+              return { ok: true };
+            },
+          };
+        }
+        if (isFisico) {
+          // Caso 2: Físico sem pendentes → segue para Liberação (escaneamento)
+          return {
+            label: "Enviar para Liberação",
+            action: () => advanceStatus("em_escaneamento", getSetorLiberacao()),
+            validate: () => {
+              if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica com carimbo e assinatura" };
+              if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO com carimbo e assinatura" };
+              return { ok: true };
+            },
+          };
+        }
+        // tipo not set yet
+        return {
+          label: "Definir tipo de prontuário",
+          action: () => {},
+          validate: () => ({ ok: false, msg: "Defina o tipo de prontuário primeiro" }),
+        };
       }
+
       case "aguardando_exames": {
-        const v = canAdvanceFromExames();
-        return { label: "Enviar para Assinatura Médica", action: () => advanceStatus("pronto_assinatura_medica", "Médico"), validate: () => v };
+        // Enfermagem - exames pendentes
+        return {
+          label: "Enviar para Assinatura",
+          action: () => advanceStatus("pronto_assinatura_medica", "Médico"),
+          validate: () => {
+            if (complementaresPendentes.length > 0)
+              return { ok: false, msg: `${complementaresPendentes.length} exame(s) pendente(s)` };
+            return { ok: true };
+          },
+        };
       }
+
       case "pronto_assinatura_medica": {
-        const v = canAdvanceFromAssinatura();
-        if (a.tipo_prontuario === "fisico") {
-          return { label: "Enviar para Escaneamento", action: () => advanceStatus("em_escaneamento", "Liberação / Digitalização"), validate: () => v };
+        // Assinatura
+        if (isFisico) {
+          return {
+            label: "Enviar para Liberação",
+            action: () => advanceStatus("em_escaneamento", getSetorLiberacao()),
+            validate: () => {
+              if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
+              return { ok: true };
+            },
+          };
         }
-        return { label: "Liberar para Faturamento", action: () => advanceStatus("liberado_faturamento", "Faturamento"), validate: () => v };
+        // Digital
+        return {
+          label: "Liberar Atendimento",
+          action: () => advanceStatus("liberado", "Liberação"),
+          validate: () => {
+            if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
+            return { ok: true };
+          },
+        };
       }
+
       case "em_escaneamento": {
-        const v = canAdvanceFromEscaneamento();
-        return { label: "Liberar para Faturamento", action: () => advanceStatus("liberado_faturamento", "Faturamento"), validate: () => v };
+        // Liberação (físico)
+        return {
+          label: "Liberar Atendimento",
+          action: () => advanceStatus("liberado", "Liberação"),
+          validate: () => {
+            if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
+            if (!a.conferencia_final_ok) return { ok: false, msg: "Conferência final pendente" };
+            return { ok: true };
+          },
+        };
       }
+
       case "liberado":
-        return { label: "Liberar para Faturamento", action: () => advanceStatus("liberado_faturamento", "Faturamento"), validate: () => ({ ok: true }) };
+        return {
+          label: "Enviar para Faturamento",
+          action: () => advanceStatus("liberado_faturamento", "Faturamento"),
+          validate: () => ({ ok: true }),
+        };
+
       case "liberado_faturamento":
-        return { label: "Finalizar", action: () => advanceStatus("finalizado", "Concluído"), validate: () => ({ ok: true }) };
+        return {
+          label: "Finalizar",
+          action: () => advanceStatus("finalizado", "Concluído"),
+          validate: () => ({ ok: true }),
+        };
+
       default:
         return null;
     }
   };
-
-  const getSetorRecepcao = () => a.agenda?.toLowerCase().includes("osasco") ? "Recepção Osasco" : "Recepção Lapa";
-  const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
 
   const nextAction = getNextAction();
 
@@ -302,9 +395,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     nextAction.action();
   };
 
+  // Determine which tabs to show
+  const showLiberacaoTab = isFisico;
+  const tabCount = 4 + (showLiberacaoTab ? 1 : 0) + 1; // info, recepcao, exames, assinatura, [liberacao], historico
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[600px] sm:w-[700px] overflow-y-auto p-0">
+      <SheetContent className="w-[680px] sm:w-[760px] overflow-y-auto p-0">
         <div className="p-6 pb-3">
           <SheetHeader>
             <SheetTitle className="text-lg font-mono">{a.id_interno}</SheetTitle>
@@ -347,7 +444,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>
-            {nextAction && a.status !== "finalizado" && (
+            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && (
               <Button size="sm" onClick={handleAdvance}>
                 {nextAction.label}
               </Button>
@@ -358,15 +455,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         <Separator />
 
         <Tabs value={tab} onValueChange={setTab} className="px-6 pt-3">
-          <TabsList className="w-full grid grid-cols-5">
+          <TabsList className={`w-full grid ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
             <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
             <TabsTrigger value="recepcao" className="text-xs">Recepção</TabsTrigger>
             <TabsTrigger value="exames" className="text-xs">Exames</TabsTrigger>
             <TabsTrigger value="assinatura" className="text-xs">Assinatura</TabsTrigger>
+            {showLiberacaoTab && (
+              <TabsTrigger value="liberacao" className="text-xs">Liberação</TabsTrigger>
+            )}
             <TabsTrigger value="historico" className="text-xs">Histórico</TabsTrigger>
           </TabsList>
 
-          {/* TAB: Info (read-only) */}
+          {/* ── TAB: Info ── */}
           <TabsContent value="info" className="space-y-4 pb-6">
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -397,13 +497,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             )}
             {a.exames_texto && (
               <div>
-                <Label className="text-xs text-muted-foreground">Exames (texto importado)</Label>
+                <Label className="text-xs text-muted-foreground">Exames</Label>
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
             )}
           </TabsContent>
 
-          {/* TAB: Recepção */}
+          {/* ── TAB: Recepção ── */}
           <TabsContent value="recepcao" className="space-y-4 pb-6">
             <h4 className="font-medium text-sm flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" /> Conferência da Recepção
@@ -436,19 +536,75 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             <Separator />
 
+            {/* Conferência items - blocked if possui_exame_complementar */}
             <div className="space-y-3">
-              {[
-                { field: "ficha_clinica_ok", label: "Ficha Clínica" },
-                { field: "vias_aso_ok", label: "ASO" },
-              ].map(({ field, label }) => (
-                <div key={field} className="flex items-center justify-between py-1">
-                  <Label className="text-sm">{label}</Label>
-                  <Switch
-                    checked={a[field] || false}
-                    onCheckedChange={(v) => updateField(field, v)}
-                  />
+              {a.possui_exame_complementar ? (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+                  <p className="font-medium">⚠️ Atendimento com exames pendentes</p>
+                  <p className="text-xs mt-1">
+                    A recepção deve apenas identificar e direcionar para a Enfermagem. 
+                    A conferência de Ficha Clínica e ASO será realizada após a conclusão dos exames.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                <>
+                  {isFisico ? (
+                    // Físico: conferir com carimbo e assinatura
+                    <>
+                      {[
+                        { field: "ficha_clinica_ok", label: "Ficha Clínica com carimbo e assinatura" },
+                        { field: "vias_aso_ok", label: "ASO com carimbo e assinatura" },
+                      ].map(({ field, label }) => (
+                        <div key={field} className="flex items-center justify-between py-1">
+                          <Label className="text-sm">{label}</Label>
+                          <Switch
+                            checked={a[field] || false}
+                            onCheckedChange={(v) => updateField(field, v)}
+                          />
+                        </div>
+                      ))}
+                    </>
+                  ) : isDigital ? (
+                    // Digital: conferir documentos + SOCGED + data assinatura
+                    <>
+                      {[
+                        { field: "ficha_clinica_ok", label: "Ficha Clínica" },
+                        { field: "vias_aso_ok", label: "ASO" },
+                        { field: "salvo_socged", label: "Inserido no SOCGED" },
+                      ].map(({ field, label }) => (
+                        <div key={field} className="flex items-center justify-between py-1">
+                          <Label className="text-sm">{label}</Label>
+                          <Switch
+                            checked={a[field] || false}
+                            onCheckedChange={(v) => updateField(field, v)}
+                          />
+                        </div>
+                      ))}
+                      <div>
+                        <Label className="text-xs">Data da Assinatura</Label>
+                        <Input
+                          type="date"
+                          key={`data-ass-rec-${a.id}-${a.data_assinatura}`}
+                          defaultValue={a.data_assinatura || ""}
+                          onBlur={(e) => {
+                            if (e.target.value !== (a.data_assinatura || "")) {
+                              updateField("data_assinatura", e.target.value || null);
+                            }
+                          }}
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Preenchida automaticamente com a data da conferência. Edite se necessário.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    // Tipo não definido
+                    <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded">
+                      Selecione o tipo de prontuário para ver os itens de conferência.
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <Separator />
@@ -460,7 +616,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </div>
               <Switch
                 checked={a.possui_exame_complementar || false}
-                onCheckedChange={(v) => updateField("possui_exame_complementar", v)}
+                onCheckedChange={(v) => {
+                  updateField("possui_exame_complementar", v);
+                  // If turning off, also reset ficha/aso checks
+                }}
               />
             </div>
 
@@ -480,12 +639,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             </div>
           </TabsContent>
 
-          {/* TAB: Exames */}
+          {/* ── TAB: Exames ── */}
           <TabsContent value="exames" className="space-y-4 pb-6">
             <h4 className="font-medium text-sm flex items-center gap-2">
-              <Clock className="h-4 w-4" /> Exames Complementares
+              <Syringe className="h-4 w-4" /> Controle de Exames
             </h4>
 
+            {/* Add new exam */}
             <div className="flex gap-2">
               <Input
                 placeholder="Nome do exame"
@@ -514,98 +674,137 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </Button>
             </div>
 
-            {exames && exames.length > 0 ? (
-              <div className="space-y-3">
-                {exames.map((ex) => (
+            {/* Exame Clínico */}
+            {examesClinicos.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Exame Clínico</Label>
+                {examesClinicos.map((ex) => (
                   <Card key={ex.id} className="p-3">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">{ex.nome_exame}</p>
-                        <Badge variant="outline" className="text-[10px] mt-1">
-                          {ex.tipo === "complementar" ? "Complementar" : "Imediato"}
-                        </Badge>
+                        <p className="text-[10px] text-muted-foreground">
+                          Status inicial: Realizado. Só pode ser liberado após assinatura do ASO.
+                        </p>
+                      </div>
+                      <Badge className={
+                        ex.status === "liberado" ? "bg-green-100 text-green-700" :
+                        ex.status === "realizado" ? "bg-blue-100 text-blue-700" :
+                        "bg-orange-100 text-orange-700"
+                      }>
+                        {ex.status === "realizado" ? "Realizado" : ex.status === "liberado" ? "Liberado" : ex.status}
+                      </Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Exames Imediatos */}
+            {examesImediatos.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Exames com Liberação Imediata</Label>
+                {examesImediatos.map((ex) => (
+                  <Card key={ex.id} className="p-3 mb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{ex.nome_exame}</p>
+                        <Badge variant="outline" className="text-[10px]">Imediato</Badge>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge className={ex.status === "concluido" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
-                          {EXAME_STATUS_LABELS[ex.status] || ex.status}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => exameMutations?.deleteExame.mutate(ex.id)}
+                        <Select
+                          value={ex.status === "concluido" ? "liberado" : ex.status}
+                          onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
                         >
+                          <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="liberado">Liberado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-
-                    {ex.tipo === "complementar" && (
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <div>
-                          <Label className="text-[10px]">Status</Label>
-                          <Select
-                            value={ex.status}
-                            onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
-                          >
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {Object.entries(EXAME_STATUS_LABELS).map(([k, v]) => (
-                                <SelectItem key={k} value={k}>{v}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Data Recebimento</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs"
-                            defaultValue={ex.data_recebimento || ""}
-                            onChange={(e) => exameMutations?.updateExame.mutate({ id: ex.id, field: "data_recebimento", value: e.target.value || null })}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Datado SOC</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs"
-                            defaultValue={ex.data_datado_soc || ""}
-                            onChange={(e) => exameMutations?.updateExame.mutate({ id: ex.id, field: "data_datado_soc", value: e.target.value || null })}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-[10px]">Inserido SOCGED</Label>
-                          <Input
-                            type="date"
-                            className="h-8 text-xs"
-                            defaultValue={ex.data_inserido_socged || ""}
-                            onChange={(e) => exameMutations?.updateExame.mutate({ id: ex.id, field: "data_inserido_socged", value: e.target.value || null })}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </Card>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {/* Exames Complementares */}
+            {examesComplementares.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground mb-2 block">Exames Complementares Pendentes</Label>
+                {examesComplementares.map((ex) => (
+                  <Card key={ex.id} className="p-3 mb-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{ex.nome_exame}</p>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={ex.status === "concluido" ? "liberado" : (ex.status === "pendente" || ex.status === "liberado" ? ex.status : "pendente")}
+                          onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
+                        >
+                          <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pendente">Pendente</SelectItem>
+                            <SelectItem value="liberado">Liberado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    {/* Inserido no SOCGED flag */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        checked={!!ex.data_inserido_socged}
+                        onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                          id: ex.id,
+                          field: "data_inserido_socged",
+                          value: v ? new Date().toISOString().slice(0, 10) : null,
+                        })}
+                      />
+                      <Label className="text-xs">Inserido no SOCGED</Label>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {exames && exames.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum exame cadastrado</p>
             )}
 
             {hasComplementares && (
-              <div className={`p-3 rounded-lg text-sm ${allExamesConcluidos ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
-                {allExamesConcluidos
-                  ? "✅ Todos os exames complementares concluídos"
+              <div className={`p-3 rounded-lg text-sm ${allComplementaresLiberados ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
+                {allComplementaresLiberados
+                  ? "✅ Todos os exames complementares liberados"
                   : `⏳ ${complementaresPendentes.length} exame(s) complementar(es) pendente(s)`}
               </div>
             )}
           </TabsContent>
 
-          {/* TAB: Assinatura + Escaneamento */}
+          {/* ── TAB: Assinatura ── */}
           <TabsContent value="assinatura" className="space-y-4 pb-6">
             <h4 className="font-medium text-sm flex items-center gap-2">
               <Stethoscope className="h-4 w-4" /> Assinatura Médica
             </h4>
+
+            {/* Informativo do tipo de atendimento (somente leitura) */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/50 rounded p-3">
+                <Label className="text-[10px] text-muted-foreground">Tipo de Prontuário</Label>
+                <p className="text-sm font-medium capitalize">{a.tipo_prontuario || "Não definido"}</p>
+              </div>
+              <div className="bg-muted/50 rounded p-3">
+                <Label className="text-[10px] text-muted-foreground">Base SOCNET</Label>
+                <p className="text-sm font-medium">{a.base_socnet ? "Sim" : "Não"}</p>
+              </div>
+            </div>
+
+            <Separator />
 
             <div className="space-y-3">
               <div className="flex items-center justify-between py-1">
@@ -619,21 +818,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Tipo de Assinatura</Label>
-                  <Select
-                    value={a.tipo_assinatura || "none"}
-                    onValueChange={(v) => updateField("tipo_assinatura", v === "none" ? null : v)}
-                    disabled={a.tipo_prontuario === "digital"}
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Não definido</SelectItem>
-                      <SelectItem value="digital">Digital</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {a.tipo_prontuario === "digital" && (
-                    <p className="text-[10px] text-muted-foreground mt-1">Prontuário digital → assinatura digital</p>
-                  )}
+                  <div className="bg-muted/50 rounded p-2 text-sm mt-1">
+                    {a.tipo_assinatura === "digital" ? "Digital" : a.tipo_assinatura === "manual" ? "Manual" : "Não definido"}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {isFisico ? "Prontuário físico → assinatura manual" : isDigital ? "Prontuário digital → assinatura digital" : ""}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-xs">Data da Assinatura</Label>
@@ -650,6 +840,29 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 </div>
               </div>
 
+              {/* Exame Clínico - médico pode liberar */}
+              {examesClinicos.length > 0 && (
+                <>
+                  <Separator />
+                  <Label className="text-xs text-muted-foreground">Exame Clínico</Label>
+                  {examesClinicos.map((ex) => (
+                    <div key={ex.id} className="flex items-center justify-between py-1">
+                      <span className="text-sm">{ex.nome_exame}</span>
+                      <Select
+                        value={ex.status === "realizado" || ex.status === "liberado" ? ex.status : "realizado"}
+                        onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
+                      >
+                        <SelectTrigger className="h-7 text-xs w-[120px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="realizado">Realizado</SelectItem>
+                          <SelectItem value="liberado">Liberado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </>
+              )}
+
               <div>
                 <Label className="text-xs">Observações da Assinatura</Label>
                 <Textarea
@@ -665,97 +878,80 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 />
               </div>
             </div>
-
-            {/* Escaneamento section - only for physical records */}
-            {a.tipo_prontuario === "fisico" && (
-              <>
-                <Separator />
-                <h4 className="font-medium text-sm flex items-center gap-2">
-                  <ScanLine className="h-4 w-4" /> Escaneamento / Digitalização
-                </h4>
-                <div className="space-y-3">
-                  {[
-                    { field: "escaneado", label: "Escaneado" },
-                    { field: "renomeado", label: "Renomeado" },
-                    { field: "salvo_rede", label: "Salvo na rede" },
-                    { field: "salvo_socged", label: "Salvo no SOCGED" },
-                    { field: "email_enviado", label: "E-mail enviado" },
-                    { field: "conferencia_final_ok", label: "Conferência final OK" },
-                  ].map(({ field, label }) => (
-                    <div key={field} className="flex items-center justify-between py-1">
-                      <Label className="text-sm">{label}</Label>
-                      <Switch
-                        checked={a[field] || false}
-                        onCheckedChange={(v) => updateField(field, v)}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div>
-                  <Label className="text-xs">Observações do Escaneamento</Label>
-                  <Textarea
-                    className="mt-1"
-                    rows={2}
-                    key={`obs-esc-${a.id}-${a.observacoes_escaneamento}`}
-                    defaultValue={a.observacoes_escaneamento || ""}
-                    onBlur={(e) => {
-                      if (e.target.value !== (a.observacoes_escaneamento || "")) {
-                        updateField("observacoes_escaneamento", e.target.value);
-                      }
-                    }}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Faturamento obs */}
-            <Separator />
-            <h4 className="font-medium text-sm flex items-center gap-2">
-              <Receipt className="h-4 w-4" /> Faturamento
-            </h4>
-            <div>
-              <Label className="text-xs">Observações do Faturamento</Label>
-              <Textarea
-                className="mt-1"
-                rows={2}
-                key={`obs-fat-${a.id}-${a.observacoes_faturamento}`}
-                defaultValue={a.observacoes_faturamento || ""}
-                onBlur={(e) => {
-                  if (e.target.value !== (a.observacoes_faturamento || "")) {
-                    updateField("observacoes_faturamento", e.target.value);
-                  }
-                }}
-              />
-            </div>
           </TabsContent>
 
-          {/* TAB: Histórico */}
+          {/* ── TAB: Liberação (only for físico) ── */}
+          {showLiberacaoTab && (
+            <TabsContent value="liberacao" className="space-y-4 pb-6">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <ScanLine className="h-4 w-4" /> Liberação / Digitalização
+              </h4>
+              <div className="space-y-3">
+                {[
+                  { field: "escaneado", label: "Escaneado" },
+                  { field: "renomeado", label: "Renomeado" },
+                  { field: "salvo_socged", label: "Inserido no SOCGED" },
+                  { field: "email_enviado", label: "E-mail enviado" },
+                  { field: "conferencia_final_ok", label: "Conferência final" },
+                ].map(({ field, label }) => (
+                  <div key={field} className="flex items-center justify-between py-1">
+                    <Label className="text-sm">{label}</Label>
+                    <Switch
+                      checked={a[field] || false}
+                      onCheckedChange={(v) => updateField(field, v)}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <Label className="text-xs">Observações da Liberação</Label>
+                <Textarea
+                  className="mt-1"
+                  rows={2}
+                  key={`obs-lib-${a.id}-${a.observacoes_escaneamento}`}
+                  defaultValue={a.observacoes_escaneamento || ""}
+                  onBlur={(e) => {
+                    if (e.target.value !== (a.observacoes_escaneamento || "")) {
+                      updateField("observacoes_escaneamento", e.target.value);
+                    }
+                  }}
+                />
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ── TAB: Histórico ── */}
           <TabsContent value="historico" className="space-y-2 pb-6">
             <h4 className="font-medium text-sm flex items-center gap-2">
-              <History className="h-4 w-4" /> Rastreabilidade
+              <History className="h-4 w-4" /> Histórico de Alterações
             </h4>
             {historico && historico.length > 0 ? (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {historico.map((h) => (
-                  <div key={h.id} className="border rounded p-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{h.acao}</span>
-                      <span className="text-muted-foreground">
-                        {new Date(h.created_at).toLocaleString("pt-BR")}
-                      </span>
+                {historico.map((h) => {
+                  const acaoLabel = ACTION_LABELS[h.acao] || h.acao;
+                  const campoLabel = h.campo ? (FIELD_LABELS[h.campo] || h.campo) : null;
+                  return (
+                    <div key={h.id} className="border rounded-lg p-3 text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <Badge variant="outline" className="text-[10px]">{acaoLabel}</Badge>
+                        <span className="text-muted-foreground">
+                          {new Date(h.created_at).toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                      {campoLabel && (
+                        <p>
+                          <span className="text-muted-foreground">Campo:</span>{" "}
+                          <strong>{campoLabel}</strong>
+                          {h.valor_antigo && <> · De: <span className="text-red-600">{formatFieldValue(h.campo, h.valor_antigo)}</span></>}
+                          {h.valor_novo && <> · Para: <span className="text-green-600">{formatFieldValue(h.campo, h.valor_novo)}</span></>}
+                        </p>
+                      )}
+                      {h.observacao && <p className="text-muted-foreground">📝 {h.observacao}</p>}
+                      <p className="text-muted-foreground">👤 {h.user_name || "Sistema"}</p>
                     </div>
-                    {h.campo && (
-                      <p className="text-muted-foreground">
-                        Campo: <strong>{h.campo}</strong>
-                        {h.valor_antigo && <> | De: {h.valor_antigo}</>}
-                        {h.valor_novo && <> | Para: {h.valor_novo}</>}
-                      </p>
-                    )}
-                    {h.observacao && <p className="text-muted-foreground">{h.observacao}</p>}
-                    <p className="text-muted-foreground">Por: {h.user_name || "Sistema"}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum registro</p>
@@ -765,4 +961,24 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       </SheetContent>
     </Sheet>
   );
+}
+
+function formatFieldValue(campo: string | null, value: string): string {
+  if (!campo) return value;
+  // Boolean fields
+  if (value === "true") return "Sim";
+  if (value === "false") return "Não";
+  // Status fields
+  const statusMap: Record<string, string> = {
+    importado: "Importado",
+    em_triagem: "Inicial",
+    aguardando_exames: "Exames Pendentes",
+    pronto_assinatura_medica: "Assinatura",
+    em_escaneamento: "Liberação",
+    liberado: "Liberado",
+    liberado_faturamento: "Faturamento",
+    finalizado: "Finalizado",
+  };
+  if (campo === "status" && statusMap[value]) return statusMap[value];
+  return value;
 }
