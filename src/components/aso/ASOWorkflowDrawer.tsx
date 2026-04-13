@@ -18,7 +18,7 @@ import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
 import { useQueryClient } from "@tanstack/react-query";
-import { parseExamesTexto, classifyExame } from "@/lib/aso/examClassifier";
+import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
 import {
   CheckCircle, Clock, Plus, Trash2, FileText,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
@@ -226,8 +226,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           status: e.status_inicial,
         }));
         await supabase.from("aso_exames_atendimento").insert(records as any);
-        const hasCompl = parsed.some(e => e.tipo === "complementar");
-        if (hasCompl) {
+        // Check if there are real complementary exams (not just clinical + immediate)
+        const nomes = parsed.map(e => e.nome_exame);
+        const apenasRecepcao = podeRecepcaoLiberar(nomes);
+        if (!apenasRecepcao) {
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
           setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
@@ -253,15 +255,40 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   // Exam helpers
   const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
-  const examesImediatos = exames?.filter(e => e.tipo === "imediato" && e.nome_exame !== "Exame Clínico") || [];
-  const examesComplementares = exames?.filter(e => e.tipo === "complementar") || [];
-  const complementaresPendentes = examesComplementares.filter(e => e.status !== "liberado" && e.status !== "concluido");
-  const hasComplementares = examesComplementares.length > 0;
-  const allComplementaresLiberados = hasComplementares && complementaresPendentes.length === 0;
+  const examesImediatos = exames?.filter(e => {
+    const tipo = classifyExame(e.nome_exame);
+    return tipo === "imediato";
+  }) || [];
+  const examesComplementaresReais = exames?.filter(e => {
+    const tipo = classifyExame(e.nome_exame);
+    return tipo === "complementar";
+  }) || [];
+  // All non-clinical exams (imediatos + complementares)
+  const todosExamesNaoClinicos = exames?.filter(e => e.nome_exame !== "Exame Clínico") || [];
+  const examesPendentes = todosExamesNaoClinicos.filter(e => e.status !== "liberado" && e.status !== "concluido");
+  const hasComplementaresReais = examesComplementaresReais.length > 0;
+  const allExamesLiberados = todosExamesNaoClinicos.length > 0 && examesPendentes.length === 0;
+
+  // Can reception release directly? Only if exams are just clinical + immediate
+  const recepcaoPodeLiberar = exames && exames.length > 0 
+    ? podeRecepcaoLiberar(exames.map(e => e.nome_exame))
+    : !a.possui_exame_complementar;
 
   const getSetorRecepcao = () => a.agenda?.toLowerCase().includes("osasco") ? "Recepção Osasco" : "Recepção Lapa";
   const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
   const getSetorLiberacao = () => "Liberação";
+
+  // Auto-liberar exame clínico when ASO assinado
+  const handleAsoAssinado = async (v: boolean) => {
+    await updateField("aso_assinado", v);
+    if (v && examesClinicos.length > 0) {
+      for (const ex of examesClinicos) {
+        if (ex.status === "realizado") {
+          await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
+        }
+      }
+    }
+  };
 
   // ── FLOW LOGIC ──
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
@@ -271,8 +298,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
       case "em_triagem": {
         // Inicial - Recepção
-        if (a.possui_exame_complementar) {
-          // Caso 3: tem exames pendentes → enviar para enfermagem
+        if (a.possui_exame_complementar && !recepcaoPodeLiberar) {
+          // Has real complementary exams → send to nursing
           return {
             label: "Enviar para Exames Pendentes",
             action: () => advanceStatus("aguardando_exames", getSetorEnfermagem()),
@@ -283,31 +310,33 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           };
         }
         if (isDigital) {
-          // Caso 1: Digital sem pendentes → pode ir direto para Liberado
           return {
-            label: "Liberar Atendimento",
+            label: "Liberar Prontuário",
             action: () => advanceStatus("liberado", "Liberação"),
             validate: () => {
               if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
               if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica" };
               if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO" };
+              // Check immediate exams are all liberados
+              const imPendentes = examesImediatos.filter(e => e.status !== "liberado" && e.status !== "concluido");
+              if (imPendentes.length > 0) return { ok: false, msg: `${imPendentes.length} exame(s) imediato(s) pendente(s)` };
               return { ok: true };
             },
           };
         }
         if (isFisico) {
-          // Caso 2: Físico sem pendentes → segue para Liberação (escaneamento)
           return {
             label: "Enviar para Liberação",
             action: () => advanceStatus("em_escaneamento", getSetorLiberacao()),
             validate: () => {
               if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica com carimbo e assinatura" };
               if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO com carimbo e assinatura" };
+              const imPendentes = examesImediatos.filter(e => e.status !== "liberado" && e.status !== "concluido");
+              if (imPendentes.length > 0) return { ok: false, msg: `${imPendentes.length} exame(s) imediato(s) pendente(s)` };
               return { ok: true };
             },
           };
         }
-        // tipo not set yet
         return {
           label: "Definir tipo de prontuário",
           action: () => {},
@@ -316,20 +345,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       }
 
       case "aguardando_exames": {
-        // Enfermagem - exames pendentes
         return {
           label: "Enviar para Assinatura",
           action: () => advanceStatus("pronto_assinatura_medica", "Médico"),
           validate: () => {
-            if (complementaresPendentes.length > 0)
-              return { ok: false, msg: `${complementaresPendentes.length} exame(s) pendente(s)` };
+            if (examesPendentes.length > 0)
+              return { ok: false, msg: `${examesPendentes.length} exame(s) pendente(s)` };
             return { ok: true };
           },
         };
       }
 
       case "pronto_assinatura_medica": {
-        // Assinatura
         if (isFisico) {
           return {
             label: "Enviar para Liberação",
@@ -340,9 +367,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             },
           };
         }
-        // Digital
         return {
-          label: "Liberar Atendimento",
+          label: "Liberar Prontuário",
           action: () => advanceStatus("liberado", "Liberação"),
           validate: () => {
             if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
@@ -352,9 +378,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       }
 
       case "em_escaneamento": {
-        // Liberação (físico)
         return {
-          label: "Liberar Atendimento",
+          label: "Liberar Prontuário",
           action: () => advanceStatus("liberado", "Liberação"),
           validate: () => {
             if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
@@ -397,7 +422,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   // Determine which tabs to show
   const showLiberacaoTab = isFisico;
-  const tabCount = 4 + (showLiberacaoTab ? 1 : 0) + 1; // info, recepcao, exames, assinatura, [liberacao], historico
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -536,11 +560,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             <Separator />
 
-            {/* Conferência items - blocked if possui_exame_complementar */}
+            {/* Conferência items */}
             <div className="space-y-3">
-              {a.possui_exame_complementar ? (
+              {a.possui_exame_complementar && !recepcaoPodeLiberar ? (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-                  <p className="font-medium">⚠️ Atendimento com exames pendentes</p>
+                  <p className="font-medium">⚠️ Prontuário com exames complementares pendentes</p>
                   <p className="text-xs mt-1">
                     A recepção deve apenas identificar e direcionar para a Enfermagem. 
                     A conferência de Ficha Clínica e ASO será realizada após a conclusão dos exames.
@@ -549,7 +573,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               ) : (
                 <>
                   {isFisico ? (
-                    // Físico: conferir com carimbo e assinatura
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica com carimbo e assinatura" },
@@ -565,7 +588,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       ))}
                     </>
                   ) : isDigital ? (
-                    // Digital: conferir documentos + SOCGED + data assinatura
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica" },
@@ -598,10 +620,57 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       </div>
                     </>
                   ) : (
-                    // Tipo não definido
                     <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded">
                       Selecione o tipo de prontuário para ver os itens de conferência.
                     </div>
+                  )}
+
+                  {/* Exames imediatos na recepção (Audiometria, Acuidade Visual) */}
+                  {examesImediatos.length > 0 && (
+                    <>
+                      <Separator />
+                      <Label className="text-xs text-muted-foreground block">Exames com Liberação Imediata</Label>
+                      {examesImediatos.map((ex) => (
+                        <Card key={ex.id} className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">{ex.nome_exame}</p>
+                              <p className="text-[10px] text-muted-foreground">Complementar com liberação no mesmo dia</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={ex.status === "concluido" ? "liberado" : ex.status}
+                                onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
+                              >
+                                <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pendente">Pendente</SelectItem>
+                                  <SelectItem value="liberado">Liberado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          {/* SOCGED only when liberado */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Switch
+                              checked={!!ex.data_inserido_socged}
+                              disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                              onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                                id: ex.id,
+                                field: "data_inserido_socged",
+                                value: v ? new Date().toISOString().slice(0, 10) : null,
+                              })}
+                            />
+                            <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                              Inserido no SOCGED
+                              {ex.status !== "liberado" && ex.status !== "concluido" && (
+                                <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                              )}
+                            </Label>
+                          </div>
+                        </Card>
+                      ))}
+                    </>
                   )}
                 </>
               )}
@@ -618,7 +687,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 checked={a.possui_exame_complementar || false}
                 onCheckedChange={(v) => {
                   updateField("possui_exame_complementar", v);
-                  // If turning off, also reset ficha/aso checks
                 }}
               />
             </div>
@@ -684,7 +752,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       <div>
                         <p className="text-sm font-medium">{ex.nome_exame}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          Status inicial: Realizado. Só pode ser liberado após assinatura do ASO.
+                          Status inicial: Realizado. Liberado automaticamente ao assinar o ASO.
                         </p>
                       </div>
                       <Badge className={
@@ -700,10 +768,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </div>
             )}
 
-            {/* Exames Imediatos */}
+            {/* Exames com Liberação Imediata */}
             {examesImediatos.length > 0 && (
               <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Exames com Liberação Imediata</Label>
+                <Label className="text-xs text-muted-foreground mb-2 block">Exames Complementares com Liberação Imediata</Label>
                 {examesImediatos.map((ex) => (
                   <Card key={ex.id} className="p-3 mb-2">
                     <div className="flex items-center justify-between">
@@ -727,16 +795,34 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
+                    {/* SOCGED only when liberado */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        checked={!!ex.data_inserido_socged}
+                        disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                        onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                          id: ex.id,
+                          field: "data_inserido_socged",
+                          value: v ? new Date().toISOString().slice(0, 10) : null,
+                        })}
+                      />
+                      <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                        Inserido no SOCGED
+                        {ex.status !== "liberado" && ex.status !== "concluido" && (
+                          <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                        )}
+                      </Label>
+                    </div>
                   </Card>
                 ))}
               </div>
             )}
 
             {/* Exames Complementares */}
-            {examesComplementares.length > 0 && (
+            {examesComplementaresReais.length > 0 && (
               <div>
-                <Label className="text-xs text-muted-foreground mb-2 block">Exames Complementares Pendentes</Label>
-                {examesComplementares.map((ex) => (
+                <Label className="text-xs text-muted-foreground mb-2 block">Exames Complementares</Label>
+                {examesComplementaresReais.map((ex) => (
                   <Card key={ex.id} className="p-3 mb-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{ex.nome_exame}</p>
@@ -756,18 +842,44 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
-                    {/* Inserido no SOCGED flag */}
+                    {/* SOCGED only when liberado */}
                     <div className="flex items-center gap-2 mt-2">
                       <Switch
                         checked={!!ex.data_inserido_socged}
+                        disabled={ex.status !== "liberado" && ex.status !== "concluido"}
                         onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                           id: ex.id,
                           field: "data_inserido_socged",
                           value: v ? new Date().toISOString().slice(0, 10) : null,
                         })}
                       />
-                      <Label className="text-xs">Inserido no SOCGED</Label>
+                      <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                        Inserido no SOCGED
+                        {ex.status !== "liberado" && ex.status !== "concluido" && (
+                          <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                        )}
+                      </Label>
                     </div>
+                    {/* Impresso (only for físico) */}
+                    {isFisico && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={!!ex.data_recebimento}
+                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                            id: ex.id,
+                            field: "data_recebimento",
+                            value: v ? new Date().toISOString().slice(0, 10) : null,
+                          })}
+                        />
+                        <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                          Impresso
+                          {ex.status !== "liberado" && ex.status !== "concluido" && (
+                            <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                          )}
+                        </Label>
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
@@ -777,11 +889,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum exame cadastrado</p>
             )}
 
-            {hasComplementares && (
-              <div className={`p-3 rounded-lg text-sm ${allComplementaresLiberados ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
-                {allComplementaresLiberados
-                  ? "✅ Todos os exames complementares liberados"
-                  : `⏳ ${complementaresPendentes.length} exame(s) complementar(es) pendente(s)`}
+            {todosExamesNaoClinicos.length > 0 && (
+              <div className={`p-3 rounded-lg text-sm ${allExamesLiberados ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
+                {allExamesLiberados
+                  ? "✅ Todos os exames liberados"
+                  : `⏳ ${examesPendentes.length} exame(s) pendente(s)`}
               </div>
             )}
           </TabsContent>
@@ -811,7 +923,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Label className="text-sm">ASO assinado?</Label>
                 <Switch
                   checked={a.aso_assinado || false}
-                  onCheckedChange={(v) => updateField("aso_assinado", v)}
+                  onCheckedChange={handleAsoAssinado}
                 />
               </div>
 
@@ -965,10 +1077,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
 function formatFieldValue(campo: string | null, value: string): string {
   if (!campo) return value;
-  // Boolean fields
   if (value === "true") return "Sim";
   if (value === "false") return "Não";
-  // Status fields
   const statusMap: Record<string, string> = {
     importado: "Importado",
     em_triagem: "Inicial",

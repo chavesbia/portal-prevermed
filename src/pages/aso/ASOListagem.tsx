@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDateBR } from "@/lib/utils";
 import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA, SLAResult } from "@/lib/aso/sla";
+import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Eye, Filter, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Eye, Filter, X, FlaskConical } from "lucide-react";
 import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -49,8 +52,43 @@ export default function ASOListagem() {
   const [filters, setFilters] = useState<ASOFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<Atendimento | null>(null);
+  const [exameFilter, setExameFilter] = useState<string[]>([]);
+  const [exameSearch, setExameSearch] = useState("");
+  const [exameNames, setExameNames] = useState<string[]>([]);
+  const [filteredIds, setFilteredIds] = useState<Set<string> | null>(null);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
   const { data: feriados } = useFeriados();
+
+  // Load distinct exam names for filter
+  useEffect(() => {
+    supabase
+      .from("aso_exames_atendimento")
+      .select("nome_exame")
+      .then(({ data }) => {
+        if (data) {
+          const unique = [...new Set(data.map(d => d.nome_exame))].sort();
+          setExameNames(unique);
+        }
+      });
+  }, []);
+
+  // When exam filter changes, fetch matching atendimento IDs
+  useEffect(() => {
+    if (exameFilter.length === 0) {
+      setFilteredIds(null);
+      return;
+    }
+    supabase
+      .from("aso_exames_atendimento")
+      .select("atendimento_id, nome_exame")
+      .in("nome_exame", exameFilter)
+      .then(({ data }) => {
+        if (data) {
+          const ids = new Set(data.map(d => d.atendimento_id));
+          setFilteredIds(ids);
+        }
+      });
+  }, [exameFilter]);
 
   const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
 
@@ -59,9 +97,17 @@ export default function ASOListagem() {
     return calcSLA(a.data_atendimento, feriados || []);
   };
 
+  const displayedAtendimentos = filteredIds
+    ? atendimentos?.filter(a => filteredIds.has(a.id))
+    : atendimentos;
+
+  const filteredExameNames = exameSearch
+    ? exameNames.filter(n => n.toLowerCase().includes(exameSearch.toLowerCase()))
+    : exameNames;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -92,11 +138,60 @@ export default function ASOListagem() {
             <SelectItem value="Osasco">Osasco</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Exam filter */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className={exameFilter.length > 0 ? "border-primary" : ""}>
+              <FlaskConical className="h-4 w-4 mr-1" />
+              Exames
+              {exameFilter.length > 0 && (
+                <Badge className="ml-1 text-[10px] h-4 px-1">{exameFilter.length}</Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[280px] p-3" align="start">
+            <div className="space-y-2">
+              <Input
+                placeholder="Buscar exame..."
+                value={exameSearch}
+                onChange={(e) => setExameSearch(e.target.value)}
+                className="h-8 text-xs"
+              />
+              <div className="max-h-[200px] overflow-y-auto space-y-1">
+                {filteredExameNames.map(name => (
+                  <label key={name} className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded">
+                    <Checkbox
+                      checked={exameFilter.includes(name)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setExameFilter(prev => [...prev, name]);
+                        } else {
+                          setExameFilter(prev => prev.filter(n => n !== name));
+                        }
+                      }}
+                    />
+                    {name}
+                  </label>
+                ))}
+                {filteredExameNames.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Nenhum exame encontrado</p>
+                )}
+              </div>
+              {exameFilter.length > 0 && (
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setExameFilter([])}>
+                  Limpar seleção
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
           <Filter className="h-4 w-4 mr-1" /> Filtros
         </Button>
-        {Object.keys(filters).length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
+        {(Object.keys(filters).length > 0 || exameFilter.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); }}>
             <X className="h-4 w-4 mr-1" /> Limpar
           </Button>
         )}
@@ -131,7 +226,7 @@ export default function ASOListagem() {
       )}
 
       <p className="text-sm text-muted-foreground">
-        {isLoading ? "Carregando..." : `${atendimentos?.length ?? 0} atendimentos encontrados`}
+        {isLoading ? "Carregando..." : `${displayedAtendimentos?.length ?? 0} atendimentos encontrados`}
       </p>
 
       <div className="border rounded-lg" style={{ overflow: "auto", maxHeight: "calc(100vh - 400px)" }}>
@@ -152,7 +247,7 @@ export default function ASOListagem() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {atendimentos?.map((a) => (
+            {displayedAtendimentos?.map((a) => (
               <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(a)}>
                 <TableCell className="sticky left-0 bg-background z-10">
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setSelected(a); }}>
@@ -204,7 +299,7 @@ export default function ASOListagem() {
                 </TableCell>
               </TableRow>
             ))}
-            {(!atendimentos || atendimentos.length === 0) && !isLoading && (
+            {(!displayedAtendimentos || displayedAtendimentos.length === 0) && !isLoading && (
               <TableRow>
                 <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                   Nenhum atendimento encontrado
