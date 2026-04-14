@@ -4,6 +4,7 @@ import { ASOParsedRow, generateIdInterno, detectUnidade } from "./importParser";
 export interface ASOImportResult {
   loteId: string;
   totalImportados: number;
+  totalIgnorados: number;
   unidade: string;
 }
 
@@ -31,14 +32,15 @@ export async function executeASOImport(
 
   if (loteErr || !lote) throw new Error("Erro ao criar lote: " + loteErr?.message);
 
-  // Insert atendimentos
+  // Build atendimentos with lote-unique id_interno (include lote.id prefix to avoid collision)
+  const loteShort = lote.id.slice(0, 8);
   const atendimentos = rows.map((row, idx) => ({
-    id_interno: generateIdInterno(
+    id_interno: `${generateIdInterno(
       row.data_atendimento!,
       row.agenda,
       row.cpf,
       idx + 1
-    ),
+    )}-${loteShort}`,
     lote_id: lote.id,
     agenda: row.agenda,
     data_atendimento: row.data_atendimento!,
@@ -60,30 +62,56 @@ export async function executeASOImport(
   }));
 
   // Insert in chunks of 100
+  let totalImportados = 0;
+  let totalIgnorados = 0;
   const chunkSize = 100;
   for (let i = 0; i < atendimentos.length; i += chunkSize) {
     const chunk = atendimentos.slice(i, i + chunkSize);
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from("aso_atendimentos")
-      .insert(chunk as any);
-    if (error) throw new Error(`Erro ao inserir atendimentos (lote ${i}): ${error.message}`);
+      .insert(chunk as any)
+      .select("id");
+    if (error) {
+      // If it's a unique constraint error, try inserting one by one to skip duplicates
+      if (error.message?.includes("duplicate") || error.message?.includes("unique")) {
+        for (const item of chunk) {
+          const { error: singleErr } = await supabase
+            .from("aso_atendimentos")
+            .insert(item as any);
+          if (singleErr) {
+            totalIgnorados++;
+          } else {
+            totalImportados++;
+          }
+        }
+      } else {
+        throw new Error(`Erro ao inserir atendimentos (lote ${i}): ${error.message}`);
+      }
+    } else {
+      totalImportados += data?.length ?? chunk.length;
+    }
+  }
+
+  // Update lote with actual count
+  if (totalImportados !== rows.length) {
+    await supabase.from("aso_lotes_importacao").update({ total_registros: totalImportados } as any).eq("id", lote.id);
   }
 
   // Insert audit records for import
-  const { error: histErr } = await supabase.from("aso_historico").insert({
+  await supabase.from("aso_historico").insert({
     atendimento_id: null as any, // batch-level audit
     user_id: userId,
     user_name: userName,
     acao: "importacao_lote",
     campo: "lote_id",
     valor_novo: lote.id,
-    observacao: `Importação de ${rows.length} atendimentos - ${unidade} - ${file.name}`,
+    observacao: `Importação de ${totalImportados} atendimentos (${totalIgnorados} ignorados) - ${unidade} - ${file.name}`,
   });
-  // Non-critical, don't throw
 
   return {
     loteId: lote.id,
-    totalImportados: rows.length,
+    totalImportados,
+    totalIgnorados,
     unidade,
   };
 }
