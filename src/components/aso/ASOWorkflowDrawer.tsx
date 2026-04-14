@@ -20,7 +20,7 @@ import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/use
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
 import {
-  CheckCircle, Clock, Plus, Trash2, FileText,
+  CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
   Syringe, Eye as EyeIcon
 } from "lucide-react";
@@ -58,7 +58,7 @@ const STATUS_COLORS: Record<string, string> = {
 const WORKFLOW_STEPS = [
   { status: "importado", label: "Importado", icon: FileText },
   { status: "em_triagem", label: "Inicial", icon: ClipboardCheck },
-  { status: "aguardando_exames", label: "Exames Pend.", icon: Syringe },
+  { status: "aguardando_exames", label: "Exames Pendentes", icon: Syringe },
   { status: "pronto_assinatura_medica", label: "Assinatura", icon: Stethoscope },
   { status: "em_escaneamento", label: "Liberação", icon: ScanLine },
   { status: "liberado", label: "Liberado", icon: CheckCircle },
@@ -133,6 +133,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
+  const semExames = exames !== undefined && exames.length === 0;
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
@@ -214,6 +215,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   };
 
   const iniciarConferencia = async () => {
+    // Validate tipo_prontuario is set
+    if (!a.tipo_prontuario) {
+      toast({ title: "Não é possível avançar", description: "Selecione o Tipo de Prontuário (Digital ou Físico) antes de iniciar a conferência.", variant: "destructive" });
+      return;
+    }
     await advanceStatus("em_triagem", getSetorRecepcao());
     // Auto-create individual exams from exames_texto
     if (a.exames_texto && (!exames || exames.length === 0)) {
@@ -294,7 +300,14 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getNextAction = (): { label: string; action: () => void; validate: () => { ok: boolean; msg?: string } } | null => {
     switch (a.status) {
       case "importado":
-        return { label: "Iniciar Conferência", action: iniciarConferencia, validate: () => ({ ok: true }) };
+        return {
+          label: "Iniciar Conferência",
+          action: iniciarConferencia,
+          validate: () => {
+            if (!a.tipo_prontuario) return { ok: false, msg: "Selecione o Tipo de Prontuário (Digital ou Físico)" };
+            return { ok: true };
+          },
+        };
 
       case "em_triagem": {
         // Inicial - Recepção
@@ -459,6 +472,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Badge className={`${STATUS_COLORS[a.status] || ""} text-sm`}>
                 {STATUS_LABELS[a.status] || a.status}
               </Badge>
+              {semExames && a.status !== "importado" && (
+                <Badge className="bg-red-100 text-red-700 text-xs">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Sem exames
+                </Badge>
+              )}
               {sla && (
                 <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
                   {sla.emoji} {sla.diasUteis}d úteis — {sla.label}
@@ -525,6 +544,36 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
             )}
+
+            {/* Tipo Prontuário - required selection on Info tab (for importado status) */}
+            {a.status === "importado" && (
+              <>
+                <Separator />
+                <div>
+                  <Label className="text-xs font-medium">
+                    Tipo de Prontuário <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={a.tipo_prontuario || "none"}
+                    onValueChange={handleTipoProntuarioChange}
+                  >
+                    <SelectTrigger className={!a.tipo_prontuario ? "border-red-300 ring-1 ring-red-200" : ""}>
+                      <SelectValue placeholder="Selecionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Não definido</SelectItem>
+                      <SelectItem value="digital">Digital</SelectItem>
+                      <SelectItem value="fisico">Físico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!a.tipo_prontuario && (
+                    <p className="text-[11px] text-red-500 mt-1">
+                      Obrigatório selecionar antes de iniciar a conferência.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* ── TAB: Recepção ── */}
@@ -536,18 +585,25 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             {/* Tipo Prontuário + Base SOCNET */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs">Tipo de Prontuário</Label>
+                <Label className="text-xs">
+                  Tipo de Prontuário <span className="text-red-500">*</span>
+                </Label>
                 <Select
                   value={a.tipo_prontuario || "none"}
                   onValueChange={handleTipoProntuarioChange}
                 >
-                  <SelectTrigger><SelectValue placeholder="Selecionar" /></SelectTrigger>
+                  <SelectTrigger className={!a.tipo_prontuario ? "border-red-300 ring-1 ring-red-200" : ""}>
+                    <SelectValue placeholder="Selecionar" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Não definido</SelectItem>
                     <SelectItem value="digital">Digital</SelectItem>
                     <SelectItem value="fisico">Físico</SelectItem>
                   </SelectContent>
                 </Select>
+                {!a.tipo_prontuario && (
+                  <p className="text-[10px] text-red-500 mt-1">Campo obrigatório</p>
+                )}
               </div>
               <div className="flex items-center gap-3 pt-5">
                 <Switch
@@ -712,6 +768,17 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <h4 className="font-medium text-sm flex items-center gap-2">
               <Syringe className="h-4 w-4" /> Controle de Exames
             </h4>
+
+            {/* Alert: sem exames */}
+            {semExames && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Nenhum exame adicionado</p>
+                  <p className="text-xs mt-0.5">Adicione exames abaixo ou inicie a conferência para extração automática.</p>
+                </div>
+              </div>
+            )}
 
             {/* Add new exam */}
             <div className="flex gap-2">
