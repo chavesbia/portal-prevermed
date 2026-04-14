@@ -13,13 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Eye, Filter, X, FlaskConical } from "lucide-react";
+import { Search, Eye, Filter, X, FlaskConical, AlertTriangle } from "lucide-react";
 import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
 const STATUS_LABELS: Record<string, string> = {
   importado: "Importado",
   em_triagem: "Inicial",
-  aguardando_exames: "Exames Pend.",
+  aguardando_exames: "Exames Pendentes",
   pronto_assinatura_medica: "Assinatura",
   em_escaneamento: "Liberação",
   liberado: "Liberado",
@@ -56,18 +56,21 @@ export default function ASOListagem() {
   const [exameSearch, setExameSearch] = useState("");
   const [exameNames, setExameNames] = useState<string[]>([]);
   const [filteredIds, setFilteredIds] = useState<Set<string> | null>(null);
+  const [semExamesFilter, setSemExamesFilter] = useState(false);
+  const [idsComExames, setIdsComExames] = useState<Set<string> | null>(null);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
   const { data: feriados } = useFeriados();
 
-  // Load distinct exam names for filter
+  // Load distinct exam names + ids with exams for filter
   useEffect(() => {
     supabase
       .from("aso_exames_atendimento")
-      .select("nome_exame")
+      .select("nome_exame, atendimento_id")
       .then(({ data }) => {
         if (data) {
           const unique = [...new Set(data.map(d => d.nome_exame))].sort();
           setExameNames(unique);
+          setIdsComExames(new Set(data.map(d => d.atendimento_id)));
         }
       });
   }, []);
@@ -97,9 +100,14 @@ export default function ASOListagem() {
     return calcSLA(a.data_atendimento, feriados || []);
   };
 
-  const displayedAtendimentos = filteredIds
+  let displayedAtendimentos = filteredIds
     ? atendimentos?.filter(a => filteredIds.has(a.id))
     : atendimentos;
+
+  // Filter: sem exames
+  if (semExamesFilter && displayedAtendimentos && idsComExames) {
+    displayedAtendimentos = displayedAtendimentos.filter(a => !idsComExames.has(a.id));
+  }
 
   const filteredExameNames = exameSearch
     ? exameNames.filter(n => n.toLowerCase().includes(exameSearch.toLowerCase()))
@@ -142,16 +150,26 @@ export default function ASOListagem() {
         {/* Exam filter */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={exameFilter.length > 0 ? "border-primary" : ""}>
+            <Button variant="outline" size="sm" className={exameFilter.length > 0 || semExamesFilter ? "border-primary" : ""}>
               <FlaskConical className="h-4 w-4 mr-1" />
               Exames
-              {exameFilter.length > 0 && (
-                <Badge className="ml-1 text-[10px] h-4 px-1">{exameFilter.length}</Badge>
+              {(exameFilter.length > 0 || semExamesFilter) && (
+                <Badge className="ml-1 text-[10px] h-4 px-1">{exameFilter.length + (semExamesFilter ? 1 : 0)}</Badge>
               )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[280px] p-3" align="start">
             <div className="space-y-2">
+              {/* Sem exames filter */}
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-red-600">
+                <Checkbox
+                  checked={semExamesFilter}
+                  onCheckedChange={(checked) => setSemExamesFilter(!!checked)}
+                />
+                <AlertTriangle className="h-3 w-3" />
+                Sem exames cadastrados
+              </label>
+              <div className="border-t my-1" />
               <Input
                 placeholder="Buscar exame..."
                 value={exameSearch}
@@ -178,8 +196,8 @@ export default function ASOListagem() {
                   <p className="text-xs text-muted-foreground text-center py-2">Nenhum exame encontrado</p>
                 )}
               </div>
-              {exameFilter.length > 0 && (
-                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setExameFilter([])}>
+              {(exameFilter.length > 0 || semExamesFilter) && (
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setExameFilter([]); setSemExamesFilter(false); }}>
                   Limpar seleção
                 </Button>
               )}
@@ -190,8 +208,8 @@ export default function ASOListagem() {
         <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
           <Filter className="h-4 w-4 mr-1" /> Filtros
         </Button>
-        {(Object.keys(filters).length > 0 || exameFilter.length > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); }}>
+        {(Object.keys(filters).length > 0 || exameFilter.length > 0 || semExamesFilter) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); }}>
             <X className="h-4 w-4 mr-1" /> Limpar
           </Button>
         )}
@@ -243,65 +261,86 @@ export default function ASOListagem() {
               <TableHead className="min-w-[80px]">Prontuário</TableHead>
               <TableHead className="min-w-[70px]">SOCNET</TableHead>
               <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[80px]">Exames</TableHead>
               <TableHead className="min-w-[70px]">SLA</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayedAtendimentos?.map((a) => (
-              <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(a)}>
-                <TableCell className="sticky left-0 bg-background z-10">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setSelected(a); }}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-                <TableCell className="text-xs max-w-[150px] truncate sticky left-10 bg-background z-10 font-medium">{a.funcionario || "—"}</TableCell>
-                <TableCell className="text-xs">{formatDateBR(a.data_atendimento)}</TableCell>
-                <TableCell className="text-xs">{a.hora_inicial || "—"}</TableCell>
-                <TableCell className="text-xs max-w-[150px] truncate">{a.empresa || "—"}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">{cleanAgenda(a.agenda)}</Badge>
-                </TableCell>
-                <TableCell className="text-xs">{a.tipo_compromisso || "—"}</TableCell>
-                <TableCell>
-                  {a.tipo_prontuario ? (
-                    <Badge variant="secondary" className="text-xs capitalize">{a.tipo_prontuario}</Badge>
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="text-center">
-                  {a.base_socnet ? (
-                    <Badge className="text-xs bg-blue-100 text-blue-700">SIM</Badge>
-                  ) : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell>
-                  <Badge className={`text-xs ${STATUS_COLORS[a.status] || ""}`}>
-                    {STATUS_LABELS[a.status] || a.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {(() => {
-                    const sla = getSLA(a);
-                    if (!sla) return <span className="text-xs text-muted-foreground">—</span>;
-                    return (
+            {displayedAtendimentos?.map((a) => {
+              const temExames = idsComExames ? idsComExames.has(a.id) : true;
+              return (
+                <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(a)}>
+                  <TableCell className="sticky left-0 bg-background z-10">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setSelected(a); }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="text-xs max-w-[150px] truncate sticky left-10 bg-background z-10 font-medium">{a.funcionario || "—"}</TableCell>
+                  <TableCell className="text-xs">{formatDateBR(a.data_atendimento)}</TableCell>
+                  <TableCell className="text-xs">{a.hora_inicial || "—"}</TableCell>
+                  <TableCell className="text-xs max-w-[150px] truncate">{a.empresa || "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">{cleanAgenda(a.agenda)}</Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">{a.tipo_compromisso || "—"}</TableCell>
+                  <TableCell>
+                    {a.tipo_prontuario ? (
+                      <Badge variant="secondary" className="text-xs capitalize">{a.tipo_prontuario}</Badge>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {a.base_socnet ? (
+                      <Badge className="text-xs bg-blue-100 text-blue-700">SIM</Badge>
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`text-xs ${STATUS_COLORS[a.status] || ""}`}>
+                      {STATUS_LABELS[a.status] || a.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {!temExames && a.status !== "importado" ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
-                              {sla.emoji} {sla.diasUteis}d
+                            <Badge className="text-[10px] bg-red-100 text-red-700">
+                              <AlertTriangle className="h-3 w-3 mr-0.5" />
+                              Sem exames
                             </Badge>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>{sla.label} — {sla.diasUteis} dia(s) útil(eis)</p>
+                            <p>Nenhum exame cadastrado neste prontuário</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    );
-                  })()}
-                </TableCell>
-              </TableRow>
-            ))}
+                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const sla = getSLA(a);
+                      if (!sla) return <span className="text-xs text-muted-foreground">—</span>;
+                      return (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
+                                {sla.emoji} {sla.diasUteis}d
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{sla.label} — {sla.diasUteis} dia(s) útil(eis)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })()}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {(!displayedAtendimentos || displayedAtendimentos.length === 0) && !isLoading && (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                   Nenhum atendimento encontrado
                 </TableCell>
               </TableRow>

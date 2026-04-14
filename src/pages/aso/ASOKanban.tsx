@@ -14,7 +14,7 @@ import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 const COLUMNS = [
   { status: "importado", label: "Importados", color: "bg-slate-500" },
   { status: "em_triagem", label: "Inicial", color: "bg-blue-500" },
-  { status: "aguardando_exames", label: "Exames Pend.", color: "bg-orange-500" },
+  { status: "aguardando_exames", label: "Exames Pendentes", color: "bg-orange-500" },
   { status: "pronto_assinatura_medica", label: "Assinatura", color: "bg-purple-500" },
   { status: "em_escaneamento", label: "Liberação", color: "bg-yellow-500" },
   { status: "liberado", label: "Liberado", color: "bg-green-500" },
