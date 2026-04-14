@@ -16,7 +16,7 @@ const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
   { key: "importado", label: "Importados", icon: Upload, color: "text-muted-foreground" },
   { key: "em_triagem", label: "Inicial", icon: ClipboardCheck, color: "text-blue-500" },
-  { key: "aguardando_exames", label: "Exames Pend.", icon: Clock, color: "text-orange-500" },
+  { key: "aguardando_exames", label: "Exames Pendentes", icon: Clock, color: "text-orange-500" },
   { key: "pronto_assinatura_medica", label: "Assinatura", icon: FileText, color: "text-purple-500" },
   { key: "liberado", label: "Liberados", icon: CheckCircle, color: "text-green-500" },
   { key: "liberado_faturamento", label: "Faturamento", icon: BarChart3, color: "text-emerald-500" },

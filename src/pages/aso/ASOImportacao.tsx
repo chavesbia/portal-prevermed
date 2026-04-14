@@ -84,9 +84,10 @@ export default function ASOImportacao() {
     setImporting(true);
     try {
       const result = await executeASOImport(parsedRows, user.id, displayName, file);
+      const ignoradosMsg = result.totalIgnorados > 0 ? ` (${result.totalIgnorados} registro(s) ignorado(s) por duplicidade)` : "";
       toast({
         title: "Importação concluída!",
-        description: `${result.totalImportados} atendimentos importados (${result.unidade})`,
+        description: `${result.totalImportados} atendimentos importados (${result.unidade})${ignoradosMsg}`,
       });
       setParsedRows([]);
       setFile(null);
