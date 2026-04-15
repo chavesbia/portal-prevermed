@@ -22,7 +22,7 @@ import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/
 import {
   CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
-  Syringe, Eye as EyeIcon
+  Syringe, Eye as EyeIcon, Info
 } from "lucide-react";
 
 function cleanAgenda(agenda: string | null): string {
@@ -133,7 +133,32 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
-  const semExames = exames !== undefined && exames.length === 0;
+  
+  // Differentiate "sem exames" vs "sem exames complementares"
+  const totalExames = exames?.length ?? 0;
+  const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
+  const examesImediatos = exames?.filter(e => {
+    const tipo = classifyExame(e.nome_exame);
+    return tipo === "imediato";
+  }) || [];
+  const examesComplementaresReais = exames?.filter(e => {
+    const tipo = classifyExame(e.nome_exame);
+    return tipo === "complementar";
+  }) || [];
+  const todosExamesNaoClinicos = exames?.filter(e => e.nome_exame !== "Exame Clínico") || [];
+  const examesPendentes = todosExamesNaoClinicos.filter(e => e.status !== "liberado" && e.status !== "concluido");
+  const hasComplementaresReais = examesComplementaresReais.length > 0;
+  const allExamesLiberados = todosExamesNaoClinicos.length > 0 && examesPendentes.length === 0;
+
+  // "Sem exames" = really no exams at all
+  const semExamesNenhum = exames !== undefined && totalExames === 0;
+  // "Sem exames complementares" = has only clinical exam(s), no complementares/imediatos
+  const apenasClinico = exames !== undefined && totalExames > 0 && examesClinicos.length === totalExames;
+
+  // Can reception release directly? Only if exams are just clinical + immediate
+  const recepcaoPodeLiberar = exames && exames.length > 0 
+    ? podeRecepcaoLiberar(exames.map(e => e.nome_exame))
+    : !a.possui_exame_complementar;
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
@@ -214,8 +239,24 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     invalidateAll();
   };
 
+  // Auto-apply signature effects for immediate release cases
+  const applyAutoSignature = async () => {
+    const updates: Record<string, any> = { aso_assinado: true };
+    if (!a.data_assinatura) {
+      updates.data_assinatura = new Date().toISOString().slice(0, 10);
+    }
+    await updateMultipleFields(updates);
+    // Auto-liberar exame clínico
+    if (examesClinicos.length > 0) {
+      for (const ex of examesClinicos) {
+        if (ex.status === "realizado") {
+          await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
+        }
+      }
+    }
+  };
+
   const iniciarConferencia = async () => {
-    // Validate tipo_prontuario is set
     if (!a.tipo_prontuario) {
       toast({ title: "Não é possível avançar", description: "Selecione o Tipo de Prontuário (Digital ou Físico) antes de iniciar a conferência.", variant: "destructive" });
       return;
@@ -232,7 +273,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           status: e.status_inicial,
         }));
         await supabase.from("aso_exames_atendimento").insert(records as any);
-        // Check if there are real complementary exams (not just clinical + immediate)
         const nomes = parsed.map(e => e.nome_exame);
         const apenasRecepcao = podeRecepcaoLiberar(nomes);
         if (!apenasRecepcao) {
@@ -258,27 +298,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     }
     updateMultipleFields(updates);
   };
-
-  // Exam helpers
-  const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
-  const examesImediatos = exames?.filter(e => {
-    const tipo = classifyExame(e.nome_exame);
-    return tipo === "imediato";
-  }) || [];
-  const examesComplementaresReais = exames?.filter(e => {
-    const tipo = classifyExame(e.nome_exame);
-    return tipo === "complementar";
-  }) || [];
-  // All non-clinical exams (imediatos + complementares)
-  const todosExamesNaoClinicos = exames?.filter(e => e.nome_exame !== "Exame Clínico") || [];
-  const examesPendentes = todosExamesNaoClinicos.filter(e => e.status !== "liberado" && e.status !== "concluido");
-  const hasComplementaresReais = examesComplementaresReais.length > 0;
-  const allExamesLiberados = todosExamesNaoClinicos.length > 0 && examesPendentes.length === 0;
-
-  // Can reception release directly? Only if exams are just clinical + immediate
-  const recepcaoPodeLiberar = exames && exames.length > 0 
-    ? podeRecepcaoLiberar(exames.map(e => e.nome_exame))
-    : !a.possui_exame_complementar;
 
   const getSetorRecepcao = () => a.agenda?.toLowerCase().includes("osasco") ? "Recepção Osasco" : "Recepção Lapa";
   const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
@@ -310,9 +329,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         };
 
       case "em_triagem": {
-        // Inicial - Recepção
         if (a.possui_exame_complementar && !recepcaoPodeLiberar) {
-          // Has real complementary exams → send to nursing
           return {
             label: "Enviar para Exames Pendentes",
             action: () => advanceStatus("aguardando_exames", getSetorEnfermagem()),
@@ -325,12 +342,15 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         if (isDigital) {
           return {
             label: "Liberar Prontuário",
-            action: () => advanceStatus("liberado", "Liberação"),
+            action: async () => {
+              // Auto-apply signature effects before liberating
+              await applyAutoSignature();
+              await advanceStatus("liberado", "Liberação");
+            },
             validate: () => {
               if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
               if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica" };
               if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO" };
-              // Check immediate exams are all liberados
               const imPendentes = examesImediatos.filter(e => e.status !== "liberado" && e.status !== "concluido");
               if (imPendentes.length > 0) return { ok: false, msg: `${imPendentes.length} exame(s) imediato(s) pendente(s)` };
               return { ok: true };
@@ -340,7 +360,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         if (isFisico) {
           return {
             label: "Enviar para Liberação",
-            action: () => advanceStatus("em_escaneamento", getSetorLiberacao()),
+            action: async () => {
+              // Auto-apply signature effects before sending to liberação
+              await applyAutoSignature();
+              await advanceStatus("em_escaneamento", getSetorLiberacao());
+            },
             validate: () => {
               if (!a.ficha_clinica_ok) return { ok: false, msg: "Confirme a Ficha Clínica com carimbo e assinatura" };
               if (!a.vias_aso_ok) return { ok: false, msg: "Confirme o ASO com carimbo e assinatura" };
@@ -472,10 +496,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Badge className={`${STATUS_COLORS[a.status] || ""} text-sm`}>
                 {STATUS_LABELS[a.status] || a.status}
               </Badge>
-              {semExames && a.status !== "importado" && (
+              {semExamesNenhum && a.status !== "importado" && (
                 <Badge className="bg-red-100 text-red-700 text-xs">
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Sem exames
+                </Badge>
+              )}
+              {apenasClinico && a.status !== "importado" && (
+                <Badge className="bg-amber-100 text-amber-700 text-xs">
+                  <Info className="h-3 w-3 mr-1" />
+                  Sem exames complementares
                 </Badge>
               )}
               {sla && (
@@ -543,36 +573,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Label className="text-xs text-muted-foreground">Exames</Label>
                 <p className="text-sm bg-muted/50 p-2 rounded whitespace-pre-wrap">{a.exames_texto}</p>
               </div>
-            )}
-
-            {/* Tipo Prontuário - required selection on Info tab (for importado status) */}
-            {a.status === "importado" && (
-              <>
-                <Separator />
-                <div>
-                  <Label className="text-xs font-medium">
-                    Tipo de Prontuário <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={a.tipo_prontuario || "none"}
-                    onValueChange={handleTipoProntuarioChange}
-                  >
-                    <SelectTrigger className={!a.tipo_prontuario ? "border-red-300 ring-1 ring-red-200" : ""}>
-                      <SelectValue placeholder="Selecionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Não definido</SelectItem>
-                      <SelectItem value="digital">Digital</SelectItem>
-                      <SelectItem value="fisico">Físico</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {!a.tipo_prontuario && (
-                    <p className="text-[11px] text-red-500 mt-1">
-                      Obrigatório selecionar antes de iniciar a conferência.
-                    </p>
-                  )}
-                </div>
-              </>
             )}
           </TabsContent>
 
@@ -769,13 +769,24 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Syringe className="h-4 w-4" /> Controle de Exames
             </h4>
 
-            {/* Alert: sem exames */}
-            {semExames && (
+            {/* Alert: sem exames nenhum */}
+            {semExamesNenhum && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Nenhum exame adicionado</p>
-                  <p className="text-xs mt-0.5">Adicione exames abaixo ou inicie a conferência para extração automática.</p>
+                  <p className="font-medium">Sem exames</p>
+                  <p className="text-xs mt-0.5">Nenhum exame vinculado a este prontuário. Adicione exames abaixo ou inicie a conferência para extração automática.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Alert: apenas clínico, sem complementares */}
+            {apenasClinico && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
+                <Info className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Sem exames complementares</p>
+                  <p className="text-xs mt-0.5">Este prontuário possui apenas Exame Clínico. Pode ser liberado diretamente pela recepção.</p>
                 </div>
               </div>
             )}

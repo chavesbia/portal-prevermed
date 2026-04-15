@@ -4,6 +4,7 @@ import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA, SLAResult } from "@/lib/aso/sla";
 import { supabase } from "@/integrations/supabase/client";
+import { classifyExame } from "@/lib/aso/examClassifier";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Eye, Filter, X, FlaskConical, AlertTriangle } from "lucide-react";
+import { Search, Eye, Filter, X, FlaskConical, AlertTriangle, Info } from "lucide-react";
 import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -48,6 +49,12 @@ function cleanAgenda(agenda: string | null): string {
 
 type Atendimento = NonNullable<ReturnType<typeof useASOAtendimentos>["data"]>[number];
 
+// Exam data per atendimento
+interface ExameInfo {
+  atendimento_id: string;
+  nome_exame: string;
+}
+
 export default function ASOListagem() {
   const [filters, setFilters] = useState<ASOFilters>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -55,43 +62,67 @@ export default function ASOListagem() {
   const [exameFilter, setExameFilter] = useState<string[]>([]);
   const [exameSearch, setExameSearch] = useState("");
   const [exameNames, setExameNames] = useState<string[]>([]);
+  const [allExameData, setAllExameData] = useState<ExameInfo[]>([]);
   const [filteredIds, setFilteredIds] = useState<Set<string> | null>(null);
   const [semExamesFilter, setSemExamesFilter] = useState(false);
-  const [idsComExames, setIdsComExames] = useState<Set<string> | null>(null);
+  const [semComplementaresFilter, setSemComplementaresFilter] = useState(false);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
   const { data: feriados } = useFeriados();
 
-  // Load distinct exam names + ids with exams for filter
+  // Load all exam data for filtering
   useEffect(() => {
     supabase
       .from("aso_exames_atendimento")
       .select("nome_exame, atendimento_id")
       .then(({ data }) => {
         if (data) {
-          const unique = [...new Set(data.map(d => d.nome_exame))].sort();
+          setAllExameData(data);
+          // Normalize names: treat "Avaliação clínica ocupacional" variants as "Exame Clínico"
+          const normalized = data.map(d => {
+            const tipo = classifyExame(d.nome_exame);
+            return tipo === "clinico" ? "Exame Clínico" : d.nome_exame;
+          });
+          const unique = [...new Set(normalized)].sort();
           setExameNames(unique);
-          setIdsComExames(new Set(data.map(d => d.atendimento_id)));
         }
       });
   }, []);
 
-  // When exam filter changes, fetch matching atendimento IDs
+  // Derived sets for filtering
+  const idsComExames = new Set(allExameData.map(d => d.atendimento_id));
+  
+  // IDs that have ONLY clinical exams (no complementar/imediato)
+  const idsApenasClinicos = (() => {
+    const byAtendimento = new Map<string, string[]>();
+    for (const d of allExameData) {
+      if (!byAtendimento.has(d.atendimento_id)) byAtendimento.set(d.atendimento_id, []);
+      byAtendimento.get(d.atendimento_id)!.push(d.nome_exame);
+    }
+    const result = new Set<string>();
+    for (const [id, nomes] of byAtendimento) {
+      const allClinical = nomes.every(n => classifyExame(n) === "clinico");
+      if (allClinical) result.add(id);
+    }
+    return result;
+  })();
+
+  // When exam filter changes, fetch matching atendimento IDs (using normalized names)
   useEffect(() => {
     if (exameFilter.length === 0) {
       setFilteredIds(null);
       return;
     }
-    supabase
-      .from("aso_exames_atendimento")
-      .select("atendimento_id, nome_exame")
-      .in("nome_exame", exameFilter)
-      .then(({ data }) => {
-        if (data) {
-          const ids = new Set(data.map(d => d.atendimento_id));
-          setFilteredIds(ids);
-        }
-      });
-  }, [exameFilter]);
+    // Match exames considering normalization
+    const matchingIds = new Set<string>();
+    for (const d of allExameData) {
+      const tipo = classifyExame(d.nome_exame);
+      const normalizedName = tipo === "clinico" ? "Exame Clínico" : d.nome_exame;
+      if (exameFilter.includes(normalizedName)) {
+        matchingIds.add(d.atendimento_id);
+      }
+    }
+    setFilteredIds(matchingIds);
+  }, [exameFilter, allExameData]);
 
   const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
 
@@ -104,14 +135,21 @@ export default function ASOListagem() {
     ? atendimentos?.filter(a => filteredIds.has(a.id))
     : atendimentos;
 
-  // Filter: sem exames
-  if (semExamesFilter && displayedAtendimentos && idsComExames) {
+  // Filter: sem exames nenhum (really no exams at all)
+  if (semExamesFilter && displayedAtendimentos) {
     displayedAtendimentos = displayedAtendimentos.filter(a => !idsComExames.has(a.id));
+  }
+
+  // Filter: sem exames complementares (only clinical exams)
+  if (semComplementaresFilter && displayedAtendimentos) {
+    displayedAtendimentos = displayedAtendimentos.filter(a => idsApenasClinicos.has(a.id));
   }
 
   const filteredExameNames = exameSearch
     ? exameNames.filter(n => n.toLowerCase().includes(exameSearch.toLowerCase()))
     : exameNames;
+
+  const activeFilterCount = exameFilter.length + (semExamesFilter ? 1 : 0) + (semComplementaresFilter ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -150,24 +188,33 @@ export default function ASOListagem() {
         {/* Exam filter */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className={exameFilter.length > 0 || semExamesFilter ? "border-primary" : ""}>
+            <Button variant="outline" size="sm" className={activeFilterCount > 0 ? "border-primary" : ""}>
               <FlaskConical className="h-4 w-4 mr-1" />
               Exames
-              {(exameFilter.length > 0 || semExamesFilter) && (
-                <Badge className="ml-1 text-[10px] h-4 px-1">{exameFilter.length + (semExamesFilter ? 1 : 0)}</Badge>
+              {activeFilterCount > 0 && (
+                <Badge className="ml-1 text-[10px] h-4 px-1">{activeFilterCount}</Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[280px] p-3" align="start">
+          <PopoverContent className="w-[300px] p-3" align="start">
             <div className="space-y-2">
               {/* Sem exames filter */}
               <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-red-600">
                 <Checkbox
                   checked={semExamesFilter}
-                  onCheckedChange={(checked) => setSemExamesFilter(!!checked)}
+                  onCheckedChange={(checked) => { setSemExamesFilter(!!checked); if (checked) setSemComplementaresFilter(false); }}
                 />
                 <AlertTriangle className="h-3 w-3" />
                 Sem exames cadastrados
+              </label>
+              {/* Sem complementares filter */}
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-amber-600">
+                <Checkbox
+                  checked={semComplementaresFilter}
+                  onCheckedChange={(checked) => { setSemComplementaresFilter(!!checked); if (checked) setSemExamesFilter(false); }}
+                />
+                <Info className="h-3 w-3" />
+                Sem exames complementares
               </label>
               <div className="border-t my-1" />
               <Input
@@ -196,8 +243,8 @@ export default function ASOListagem() {
                   <p className="text-xs text-muted-foreground text-center py-2">Nenhum exame encontrado</p>
                 )}
               </div>
-              {(exameFilter.length > 0 || semExamesFilter) && (
-                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setExameFilter([]); setSemExamesFilter(false); }}>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); }}>
                   Limpar seleção
                 </Button>
               )}
@@ -208,8 +255,8 @@ export default function ASOListagem() {
         <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
           <Filter className="h-4 w-4 mr-1" /> Filtros
         </Button>
-        {(Object.keys(filters).length > 0 || exameFilter.length > 0 || semExamesFilter) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); }}>
+        {(Object.keys(filters).length > 0 || activeFilterCount > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); }}>
             <X className="h-4 w-4 mr-1" /> Limpar
           </Button>
         )}
@@ -267,7 +314,8 @@ export default function ASOListagem() {
           </TableHeader>
           <TableBody>
             {displayedAtendimentos?.map((a) => {
-              const temExames = idsComExames ? idsComExames.has(a.id) : true;
+              const temExames = idsComExames.has(a.id);
+              const apenasClinicos = idsApenasClinicos.has(a.id);
               return (
                 <TableRow key={a.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(a)}>
                   <TableCell className="sticky left-0 bg-background z-10">
@@ -310,6 +358,20 @@ export default function ASOListagem() {
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Nenhum exame cadastrado neste prontuário</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : temExames && apenasClinicos && a.status !== "importado" ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge className="text-[10px] bg-amber-100 text-amber-700">
+                              <Info className="h-3 w-3 mr-0.5" />
+                              Só clínico
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Apenas Exame Clínico — sem exames complementares</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
