@@ -61,10 +61,26 @@ export function useASOExameMutations(atendimentoId: string) {
       if (error) throw error;
       await logHistory(`exame.${params.field}`, null, String(params.value));
     },
-    onSuccess: () => {
+    onMutate: async (params) => {
+      await qc.cancelQueries({ queryKey: ["aso-exames", atendimentoId] });
+      const previous = qc.getQueryData<any[]>(["aso-exames", atendimentoId]);
+      if (previous) {
+        qc.setQueryData<any[]>(
+          ["aso-exames", atendimentoId],
+          previous.map(ex => ex.id === params.id ? { ...ex, [params.field]: params.value } : ex)
+        );
+      }
+      return { previous };
+    },
+    onError: (e: any, _params, context: any) => {
+      if (context?.previous) {
+        qc.setQueryData(["aso-exames", atendimentoId], context.previous);
+      }
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["aso-exames", atendimentoId] });
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const deleteExame = useMutation({

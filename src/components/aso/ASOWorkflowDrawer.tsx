@@ -134,12 +134,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
   
+  // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
+  const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
+  const hasRawExames = parsedFromRaw.length > 0;
+
   // Differentiate "sem exames" vs "sem exames complementares"
   const totalExames = exames?.length ?? 0;
   const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
   const examesImediatos = exames?.filter(e => {
     const tipo = classifyExame(e.nome_exame);
-    return tipo === "imediato";
+    return tipo === "imediato" && e.nome_exame !== "Exame Clínico";
   }) || [];
   const examesComplementaresReais = exames?.filter(e => {
     const tipo = classifyExame(e.nome_exame);
@@ -150,14 +154,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const hasComplementaresReais = examesComplementaresReais.length > 0;
   const allExamesLiberados = todosExamesNaoClinicos.length > 0 && examesPendentes.length === 0;
 
-  // "Sem exames" = really no exams at all
-  const semExamesNenhum = exames !== undefined && totalExames === 0;
-  // "Sem exames complementares" = has only clinical exam(s), no complementares/imediatos
-  const apenasClinico = exames !== undefined && totalExames > 0 && examesClinicos.length === totalExames;
+  // "Sem exames" = SEM nada nem no raw nem na tabela
+  const semExamesNenhum = exames !== undefined && totalExames === 0 && !hasRawExames;
+
+  // "Sem exames complementares" = só tem clínico (considera tabela ou raw)
+  const nomesEfetivos = totalExames > 0
+    ? exames!.map(e => e.nome_exame)
+    : parsedFromRaw.map(e => e.nome_exame);
+  const apenasClinico = nomesEfetivos.length > 0 && nomesEfetivos.every(n => n === "Exame Clínico");
 
   // Can reception release directly? Only if exams are just clinical + immediate
-  const recepcaoPodeLiberar = exames && exames.length > 0 
-    ? podeRecepcaoLiberar(exames.map(e => e.nome_exame))
+  const recepcaoPodeLiberar = nomesEfetivos.length > 0
+    ? podeRecepcaoLiberar(nomesEfetivos)
     : !a.possui_exame_complementar;
 
   const invalidateAll = () => {
@@ -261,8 +269,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       toast({ title: "Não é possível avançar", description: "Selecione o Tipo de Prontuário (Digital ou Físico) antes de iniciar a conferência.", variant: "destructive" });
       return;
     }
-    await advanceStatus("em_triagem", getSetorRecepcao());
-    // Auto-create individual exams from exames_texto
+    // Auto-create individual exams from exames_texto (sempre lê do raw da agenda SOC)
     if (a.exames_texto && (!exames || exames.length === 0)) {
       const parsed = parseExamesTexto(a.exames_texto);
       if (parsed.length > 0) {
@@ -272,16 +279,20 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           tipo: e.tipo,
           status: e.status_inicial,
         }));
-        await supabase.from("aso_exames_atendimento").insert(records as any);
+        const { error: insErr } = await supabase.from("aso_exames_atendimento").insert(records as any);
+        if (insErr) {
+          toast({ title: "Erro ao criar exames", description: insErr.message, variant: "destructive" });
+        }
         const nomes = parsed.map(e => e.nome_exame);
         const apenasRecepcao = podeRecepcaoLiberar(nomes);
         if (!apenasRecepcao) {
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
           setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
-        invalidateAll();
+        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
       }
     }
+    await advanceStatus("em_triagem", getSetorRecepcao());
     setTab("recepcao");
   };
 
@@ -769,13 +780,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Syringe className="h-4 w-4" /> Controle de Exames
             </h4>
 
-            {/* Alert: sem exames nenhum */}
+            {/* Alert: sem exames nenhum (nem no raw nem na tabela) */}
             {semExamesNenhum && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Sem exames</p>
-                  <p className="text-xs mt-0.5">Nenhum exame vinculado a este prontuário. Adicione exames abaixo ou inicie a conferência para extração automática.</p>
+                  <p className="text-xs mt-0.5">Nenhum exame vinculado a este prontuário (raw vazio). Adicione exames manualmente abaixo.</p>
                 </div>
               </div>
             )}
