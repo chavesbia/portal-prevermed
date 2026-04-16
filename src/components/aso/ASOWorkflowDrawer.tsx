@@ -269,8 +269,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       toast({ title: "Não é possível avançar", description: "Selecione o Tipo de Prontuário (Digital ou Físico) antes de iniciar a conferência.", variant: "destructive" });
       return;
     }
-    await advanceStatus("em_triagem", getSetorRecepcao());
-    // Auto-create individual exams from exames_texto
+    // Auto-create individual exams from exames_texto (sempre lê do raw da agenda SOC)
     if (a.exames_texto && (!exames || exames.length === 0)) {
       const parsed = parseExamesTexto(a.exames_texto);
       if (parsed.length > 0) {
@@ -280,16 +279,20 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           tipo: e.tipo,
           status: e.status_inicial,
         }));
-        await supabase.from("aso_exames_atendimento").insert(records as any);
+        const { error: insErr } = await supabase.from("aso_exames_atendimento").insert(records as any);
+        if (insErr) {
+          toast({ title: "Erro ao criar exames", description: insErr.message, variant: "destructive" });
+        }
         const nomes = parsed.map(e => e.nome_exame);
         const apenasRecepcao = podeRecepcaoLiberar(nomes);
         if (!apenasRecepcao) {
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
           setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
-        invalidateAll();
+        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
       }
     }
+    await advanceStatus("em_triagem", getSetorRecepcao());
     setTab("recepcao");
   };
 
