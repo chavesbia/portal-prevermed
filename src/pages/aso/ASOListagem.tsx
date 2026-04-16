@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateBR } from "@/lib/utils";
 import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA, SLAResult } from "@/lib/aso/sla";
 import { supabase } from "@/integrations/supabase/client";
-import { classifyExame } from "@/lib/aso/examClassifier";
+import { classifyExame, parseExamesTexto } from "@/lib/aso/examClassifier";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,23 +88,49 @@ export default function ASOListagem() {
       });
   }, []);
 
-  // Derived sets for filtering
-  const idsComExames = new Set(allExameData.map(d => d.atendimento_id));
-  
-  // IDs that have ONLY clinical exams (no complementar/imediato)
-  const idsApenasClinicos = (() => {
-    const byAtendimento = new Map<string, string[]>();
-    for (const d of allExameData) {
-      if (!byAtendimento.has(d.atendimento_id)) byAtendimento.set(d.atendimento_id, []);
-      byAtendimento.get(d.atendimento_id)!.push(d.nome_exame);
+  const effectiveExamesByAtendimento = useMemo(() => {
+    const linkedByAtendimento = new Map<string, string[]>();
+
+    for (const exame of allExameData) {
+      if (!linkedByAtendimento.has(exame.atendimento_id)) {
+        linkedByAtendimento.set(exame.atendimento_id, []);
+      }
+
+      linkedByAtendimento.get(exame.atendimento_id)!.push(exame.nome_exame);
     }
-    const result = new Set<string>();
-    for (const [id, nomes] of byAtendimento) {
-      const allClinical = nomes.every(n => classifyExame(n) === "clinico");
-      if (allClinical) result.add(id);
+
+    const result = new Map<string, string[]>();
+
+    for (const atendimento of atendimentos || []) {
+      const linkedExames = linkedByAtendimento.get(atendimento.id) || [];
+
+      if (linkedExames.length > 0) {
+        result.set(atendimento.id, linkedExames);
+        continue;
+      }
+
+      const parsedExames = parseExamesTexto(atendimento.exames_texto).map(exame => exame.nome_exame);
+      result.set(atendimento.id, parsedExames);
     }
+
     return result;
-  })();
+  }, [allExameData, atendimentos]);
+
+  // Derived sets for filtering
+  const idsComExames = useMemo(
+    () => new Set([...effectiveExamesByAtendimento.entries()]
+      .filter(([, nomes]) => nomes.length > 0)
+      .map(([id]) => id)),
+    [effectiveExamesByAtendimento]
+  );
+
+  // IDs that have ONLY clinical exams (no complementar/imediato)
+  const idsApenasClinicos = useMemo(
+    () => new Set([...effectiveExamesByAtendimento.entries()]
+      .filter(([, nomes]) => nomes.length > 0 && nomes.every(nome => classifyExame(nome) === "clinico"))
+      .map(([id]) => id)),
+    [effectiveExamesByAtendimento]
+  );
 
   // When exam filter changes, fetch matching atendimento IDs (using normalized names)
   useEffect(() => {
