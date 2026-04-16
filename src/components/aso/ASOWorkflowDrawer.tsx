@@ -780,13 +780,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Syringe className="h-4 w-4" /> Controle de Exames
             </h4>
 
-            {/* Alert: sem exames nenhum */}
+            {/* Alert: sem exames nenhum (nem no raw nem na tabela) */}
             {semExamesNenhum && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Sem exames</p>
-                  <p className="text-xs mt-0.5">Nenhum exame vinculado a este prontuário. Adicione exames abaixo ou inicie a conferência para extração automática.</p>
+                  <p className="text-xs mt-0.5">Nenhum exame vinculado a este prontuário (raw vazio). Adicione exames manualmente abaixo.</p>
                 </div>
               </div>
             )}
