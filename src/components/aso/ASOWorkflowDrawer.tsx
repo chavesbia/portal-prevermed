@@ -134,12 +134,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
   
+  // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
+  const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
+  const hasRawExames = parsedFromRaw.length > 0;
+
   // Differentiate "sem exames" vs "sem exames complementares"
   const totalExames = exames?.length ?? 0;
   const examesClinicos = exames?.filter(e => e.nome_exame === "Exame Clínico") || [];
   const examesImediatos = exames?.filter(e => {
     const tipo = classifyExame(e.nome_exame);
-    return tipo === "imediato";
+    return tipo === "imediato" && e.nome_exame !== "Exame Clínico";
   }) || [];
   const examesComplementaresReais = exames?.filter(e => {
     const tipo = classifyExame(e.nome_exame);
@@ -150,14 +154,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const hasComplementaresReais = examesComplementaresReais.length > 0;
   const allExamesLiberados = todosExamesNaoClinicos.length > 0 && examesPendentes.length === 0;
 
-  // "Sem exames" = really no exams at all
-  const semExamesNenhum = exames !== undefined && totalExames === 0;
-  // "Sem exames complementares" = has only clinical exam(s), no complementares/imediatos
-  const apenasClinico = exames !== undefined && totalExames > 0 && examesClinicos.length === totalExames;
+  // "Sem exames" = SEM nada nem no raw nem na tabela
+  const semExamesNenhum = exames !== undefined && totalExames === 0 && !hasRawExames;
+
+  // "Sem exames complementares" = só tem clínico (considera tabela ou raw)
+  const nomesEfetivos = totalExames > 0
+    ? exames!.map(e => e.nome_exame)
+    : parsedFromRaw.map(e => e.nome_exame);
+  const apenasClinico = nomesEfetivos.length > 0 && nomesEfetivos.every(n => n === "Exame Clínico");
 
   // Can reception release directly? Only if exams are just clinical + immediate
-  const recepcaoPodeLiberar = exames && exames.length > 0 
-    ? podeRecepcaoLiberar(exames.map(e => e.nome_exame))
+  const recepcaoPodeLiberar = nomesEfetivos.length > 0
+    ? podeRecepcaoLiberar(nomesEfetivos)
     : !a.possui_exame_complementar;
 
   const invalidateAll = () => {
