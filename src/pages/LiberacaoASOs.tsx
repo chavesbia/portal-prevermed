@@ -4,13 +4,14 @@ import { useASOStats } from "@/hooks/useASOData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown, Columns3, AlertTriangle } from "lucide-react";
+import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown, Columns3, AlertTriangle, PackageCheck } from "lucide-react";
 import ASOImportacao from "./aso/ASOImportacao";
 import ASOListagem from "./aso/ASOListagem";
 import ASODashboard from "./aso/ASODashboard";
 import ASORelatorio from "./aso/ASORelatorio";
 import ASOKanban from "./aso/ASOKanban";
 import ASOAlertas from "./aso/ASOAlertas";
+import ASOFechamento from "./aso/ASOFechamento";
 
 const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
@@ -79,6 +80,9 @@ export default function LiberacaoASOs() {
           <TabsTrigger value="alertas" className="gap-1">
             <AlertTriangle className="h-4 w-4" /> Alertas
           </TabsTrigger>
+          <TabsTrigger value="fechamento" className="gap-1">
+            <PackageCheck className="h-4 w-4" /> Fechamento
+          </TabsTrigger>
           <TabsTrigger value="dashboard" className="gap-1">
             <BarChart3 className="h-4 w-4" /> Dashboard
           </TabsTrigger>
@@ -100,6 +104,9 @@ export default function LiberacaoASOs() {
         )}
         <TabsContent value="alertas">
           <ASOAlertas />
+        </TabsContent>
+        <TabsContent value="fechamento">
+          <ASOFechamento />
         </TabsContent>
         <TabsContent value="dashboard">
           <ASODashboard />

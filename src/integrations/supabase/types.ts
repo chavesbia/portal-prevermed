@@ -85,6 +85,7 @@ export type Database = {
           empresa: string | null
           escaneado: boolean | null
           exames_texto: string | null
+          fechamento_lote_id: string | null
           ficha_clinica_ok: boolean | null
           funcionario: string | null
           hora_inicial: string | null
@@ -135,6 +136,7 @@ export type Database = {
           empresa?: string | null
           escaneado?: boolean | null
           exames_texto?: string | null
+          fechamento_lote_id?: string | null
           ficha_clinica_ok?: boolean | null
           funcionario?: string | null
           hora_inicial?: string | null
@@ -185,6 +187,7 @@ export type Database = {
           empresa?: string | null
           escaneado?: boolean | null
           exames_texto?: string | null
+          fechamento_lote_id?: string | null
           ficha_clinica_ok?: boolean | null
           funcionario?: string | null
           hora_inicial?: string | null
@@ -280,6 +283,104 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      aso_fechamento_itens: {
+        Row: {
+          atendimento_id: string
+          cargo: string | null
+          cpf: string | null
+          created_at: string
+          data_atendimento: string | null
+          empresa: string | null
+          funcionario: string | null
+          id: string
+          lote_id: string
+          setor: string | null
+          tipo_prontuario: string | null
+          unidade: string | null
+        }
+        Insert: {
+          atendimento_id: string
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_atendimento?: string | null
+          empresa?: string | null
+          funcionario?: string | null
+          id?: string
+          lote_id: string
+          setor?: string | null
+          tipo_prontuario?: string | null
+          unidade?: string | null
+        }
+        Update: {
+          atendimento_id?: string
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_atendimento?: string | null
+          empresa?: string | null
+          funcionario?: string | null
+          id?: string
+          lote_id?: string
+          setor?: string | null
+          tipo_prontuario?: string | null
+          unidade?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_fechamento_itens_lote_id_fkey"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "aso_fechamento_lotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aso_fechamento_lotes: {
+        Row: {
+          created_at: string
+          fechado_em: string
+          fechado_por: string
+          fechado_por_nome: string | null
+          filtro_tipo_prontuario: string
+          id: string
+          numero_lote: string
+          observacoes: string | null
+          periodo_final: string
+          periodo_inicial: string
+          total_prontuarios: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fechado_em?: string
+          fechado_por: string
+          fechado_por_nome?: string | null
+          filtro_tipo_prontuario?: string
+          id?: string
+          numero_lote: string
+          observacoes?: string | null
+          periodo_final: string
+          periodo_inicial: string
+          total_prontuarios?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fechado_em?: string
+          fechado_por?: string
+          fechado_por_nome?: string | null
+          filtro_tipo_prontuario?: string
+          id?: string
+          numero_lote?: string
+          observacoes?: string | null
+          periodo_final?: string
+          periodo_inicial?: string
+          total_prontuarios?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       aso_historico: {
         Row: {
@@ -2465,6 +2566,7 @@ export type Database = {
         | "liberado"
         | "liberado_faturamento"
         | "finalizado"
+        | "fechado"
       aso_tipo_assinatura: "digital" | "manual"
       aso_tipo_prontuario: "digital" | "fisico"
       chat_type: "direct" | "department"
@@ -2650,6 +2752,7 @@ export const Constants = {
         "liberado",
         "liberado_faturamento",
         "finalizado",
+        "fechado",
       ],
       aso_tipo_assinatura: ["digital", "manual"],
       aso_tipo_prontuario: ["digital", "fisico"],

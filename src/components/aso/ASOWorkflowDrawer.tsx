@@ -17,12 +17,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
+import { useASOEtapaPermissions, type ASOEtapa } from "@/hooks/useASOEtapaPermissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
 import {
   CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
-  Syringe, Eye as EyeIcon, Info
+  Syringe, Eye as EyeIcon, Info, Lock
 } from "lucide-react";
 
 function cleanAgenda(agenda: string | null): string {
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
   em_escaneamento: "Liberação",
   liberado: "Liberado",
   liberado_faturamento: "Faturamento",
+  fechado: "Fechado",
   finalizado: "Finalizado",
 };
 
@@ -52,6 +54,7 @@ const STATUS_COLORS: Record<string, string> = {
   em_escaneamento: "bg-yellow-100 text-yellow-700",
   liberado: "bg-green-100 text-green-700",
   liberado_faturamento: "bg-emerald-100 text-emerald-700",
+  fechado: "bg-indigo-100 text-indigo-700",
   finalizado: "bg-gray-200 text-gray-600",
 };
 
@@ -63,8 +66,28 @@ const WORKFLOW_STEPS = [
   { status: "em_escaneamento", label: "Liberação", icon: ScanLine },
   { status: "liberado", label: "Liberado", icon: CheckCircle },
   { status: "liberado_faturamento", label: "Faturamento", icon: Receipt },
-  { status: "finalizado", label: "Finalizado", icon: CheckCircle },
+  { status: "fechado", label: "Fechado", icon: CheckCircle },
 ];
+
+/** Mapeia status do prontuário → etapa de permissão. */
+function statusToEtapa(status: string): ASOEtapa | null {
+  switch (status) {
+    case "importado":
+    case "em_triagem":
+      return "recepcao";
+    case "aguardando_exames":
+      return "enfermagem";
+    case "pronto_assinatura_medica":
+      return "assinatura";
+    case "em_escaneamento":
+      return "liberacao";
+    case "liberado":
+    case "liberado_faturamento":
+      return "faturamento";
+    default:
+      return null;
+  }
+}
 
 // Friendly field labels for history
 const FIELD_LABELS: Record<string, string> = {
@@ -112,6 +135,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExame, setNovoExame] = useState("");
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
+  const etapaPerms = useASOEtapaPermissions();
 
   useEffect(() => {
     if (atendimento) {
@@ -133,6 +157,21 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
+
+  // ── ETAPA / BLOQUEIOS ──
+  const etapaAtual = statusToEtapa(a.status);
+  const isImportado = a.status === "importado";
+  const isFechado = a.status === "fechado" || a.status === "finalizado";
+
+  // Pode editar a aba da etapa atual?
+  const canEditEtapaAtual = etapaAtual ? etapaPerms.canEditEtapa(etapaAtual) : false;
+
+  // Recepção só edita após "Iniciar Conferência" (status sai de 'importado')
+  const canEditRecepcao = !isImportado && !isFechado && etapaAtual === "recepcao" && etapaPerms.canEditRecepcao;
+  const canEditEnfermagem = !isFechado && etapaAtual === "enfermagem" && etapaPerms.canEditEnfermagem;
+  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
+  const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
+  const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -445,11 +484,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         };
 
       case "liberado_faturamento":
-        return {
-          label: "Finalizar",
-          action: () => advanceStatus("finalizado", "Concluído"),
-          validate: () => ({ ok: true }),
-        };
+        // Sem ação individual: finalização ocorre via Fechamento de Lote.
+        return null;
 
       default:
         return null;
@@ -643,32 +679,46 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica com carimbo e assinatura" },
-                        { field: "vias_aso_ok", label: "ASO com carimbo e assinatura" },
-                      ].map(({ field, label }) => (
-                        <div key={field} className="flex items-center justify-between py-1">
-                          <Label className="text-sm">{label}</Label>
-                          <Switch
-                            checked={a[field] || false}
-                            onCheckedChange={(v) => updateField(field, v)}
-                          />
-                        </div>
-                      ))}
+                        { field: "vias_aso_ok", label: "ASO com carimbo e assinatura", isAso: true },
+                      ].map(({ field, label, isAso }) => {
+                        const blockedByPendente = isAso && a.possui_exame_complementar;
+                        return (
+                          <div key={field} className="flex items-center justify-between py-1">
+                            <Label className={`text-sm ${blockedByPendente ? "text-muted-foreground" : ""}`}>
+                              {label}
+                              {blockedByPendente && <span className="text-[10px] ml-1">(libere os exames complementares primeiro)</span>}
+                            </Label>
+                            <Switch
+                              checked={a[field] || false}
+                              disabled={!canEditRecepcao || blockedByPendente}
+                              onCheckedChange={(v) => updateField(field, v)}
+                            />
+                          </div>
+                        );
+                      })}
                     </>
                   ) : isDigital ? (
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica" },
-                        { field: "vias_aso_ok", label: "ASO" },
+                        { field: "vias_aso_ok", label: "ASO", isAso: true },
                         { field: "salvo_socged", label: "Inserido no SOCGED" },
-                      ].map(({ field, label }) => (
-                        <div key={field} className="flex items-center justify-between py-1">
-                          <Label className="text-sm">{label}</Label>
-                          <Switch
-                            checked={a[field] || false}
-                            onCheckedChange={(v) => updateField(field, v)}
-                          />
-                        </div>
-                      ))}
+                      ].map(({ field, label, isAso }) => {
+                        const blockedByPendente = isAso && a.possui_exame_complementar;
+                        return (
+                          <div key={field} className="flex items-center justify-between py-1">
+                            <Label className={`text-sm ${blockedByPendente ? "text-muted-foreground" : ""}`}>
+                              {label}
+                              {blockedByPendente && <span className="text-[10px] ml-1">(libere os exames complementares primeiro)</span>}
+                            </Label>
+                            <Switch
+                              checked={a[field] || false}
+                              disabled={!canEditRecepcao || blockedByPendente}
+                              onCheckedChange={(v) => updateField(field, v)}
+                            />
+                          </div>
+                        );
+                      })}
                       <div>
                         <Label className="text-xs">Data da Assinatura</Label>
                         <Input
