@@ -484,11 +484,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         };
 
       case "liberado_faturamento":
-        return {
-          label: "Finalizar",
-          action: () => advanceStatus("finalizado", "Concluído"),
-          validate: () => ({ ok: true }),
-        };
+        // Sem ação individual: finalização ocorre via Fechamento de Lote.
+        return null;
 
       default:
         return null;
