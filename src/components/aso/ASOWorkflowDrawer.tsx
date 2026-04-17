@@ -17,12 +17,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDateBR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/useASOExames";
+import { useASOEtapaPermissions, type ASOEtapa } from "@/hooks/useASOEtapaPermissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
 import {
   CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
-  Syringe, Eye as EyeIcon, Info
+  Syringe, Eye as EyeIcon, Info, Lock
 } from "lucide-react";
 
 function cleanAgenda(agenda: string | null): string {
@@ -41,6 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
   em_escaneamento: "Liberação",
   liberado: "Liberado",
   liberado_faturamento: "Faturamento",
+  fechado: "Fechado",
   finalizado: "Finalizado",
 };
 
@@ -52,6 +54,7 @@ const STATUS_COLORS: Record<string, string> = {
   em_escaneamento: "bg-yellow-100 text-yellow-700",
   liberado: "bg-green-100 text-green-700",
   liberado_faturamento: "bg-emerald-100 text-emerald-700",
+  fechado: "bg-indigo-100 text-indigo-700",
   finalizado: "bg-gray-200 text-gray-600",
 };
 
