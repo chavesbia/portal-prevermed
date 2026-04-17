@@ -679,32 +679,46 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica com carimbo e assinatura" },
-                        { field: "vias_aso_ok", label: "ASO com carimbo e assinatura" },
-                      ].map(({ field, label }) => (
-                        <div key={field} className="flex items-center justify-between py-1">
-                          <Label className="text-sm">{label}</Label>
-                          <Switch
-                            checked={a[field] || false}
-                            onCheckedChange={(v) => updateField(field, v)}
-                          />
-                        </div>
-                      ))}
+                        { field: "vias_aso_ok", label: "ASO com carimbo e assinatura", isAso: true },
+                      ].map(({ field, label, isAso }) => {
+                        const blockedByPendente = isAso && a.possui_exame_complementar;
+                        return (
+                          <div key={field} className="flex items-center justify-between py-1">
+                            <Label className={`text-sm ${blockedByPendente ? "text-muted-foreground" : ""}`}>
+                              {label}
+                              {blockedByPendente && <span className="text-[10px] ml-1">(libere os exames complementares primeiro)</span>}
+                            </Label>
+                            <Switch
+                              checked={a[field] || false}
+                              disabled={!canEditRecepcao || blockedByPendente}
+                              onCheckedChange={(v) => updateField(field, v)}
+                            />
+                          </div>
+                        );
+                      })}
                     </>
                   ) : isDigital ? (
                     <>
                       {[
                         { field: "ficha_clinica_ok", label: "Ficha Clínica" },
-                        { field: "vias_aso_ok", label: "ASO" },
+                        { field: "vias_aso_ok", label: "ASO", isAso: true },
                         { field: "salvo_socged", label: "Inserido no SOCGED" },
-                      ].map(({ field, label }) => (
-                        <div key={field} className="flex items-center justify-between py-1">
-                          <Label className="text-sm">{label}</Label>
-                          <Switch
-                            checked={a[field] || false}
-                            onCheckedChange={(v) => updateField(field, v)}
-                          />
-                        </div>
-                      ))}
+                      ].map(({ field, label, isAso }) => {
+                        const blockedByPendente = isAso && a.possui_exame_complementar;
+                        return (
+                          <div key={field} className="flex items-center justify-between py-1">
+                            <Label className={`text-sm ${blockedByPendente ? "text-muted-foreground" : ""}`}>
+                              {label}
+                              {blockedByPendente && <span className="text-[10px] ml-1">(libere os exames complementares primeiro)</span>}
+                            </Label>
+                            <Switch
+                              checked={a[field] || false}
+                              disabled={!canEditRecepcao || blockedByPendente}
+                              onCheckedChange={(v) => updateField(field, v)}
+                            />
+                          </div>
+                        );
+                      })}
                       <div>
                         <Label className="text-xs">Data da Assinatura</Label>
                         <Input
