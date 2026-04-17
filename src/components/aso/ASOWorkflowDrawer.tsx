@@ -66,8 +66,28 @@ const WORKFLOW_STEPS = [
   { status: "em_escaneamento", label: "Liberação", icon: ScanLine },
   { status: "liberado", label: "Liberado", icon: CheckCircle },
   { status: "liberado_faturamento", label: "Faturamento", icon: Receipt },
-  { status: "finalizado", label: "Finalizado", icon: CheckCircle },
+  { status: "fechado", label: "Fechado", icon: CheckCircle },
 ];
+
+/** Mapeia status do prontuário → etapa de permissão. */
+function statusToEtapa(status: string): ASOEtapa | null {
+  switch (status) {
+    case "importado":
+    case "em_triagem":
+      return "recepcao";
+    case "aguardando_exames":
+      return "enfermagem";
+    case "pronto_assinatura_medica":
+      return "assinatura";
+    case "em_escaneamento":
+      return "liberacao";
+    case "liberado":
+    case "liberado_faturamento":
+      return "faturamento";
+    default:
+      return null;
+  }
+}
 
 // Friendly field labels for history
 const FIELD_LABELS: Record<string, string> = {
