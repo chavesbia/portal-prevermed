@@ -717,24 +717,44 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                               </Select>
                             </div>
                           </div>
-                          {/* SOCGED only when liberado */}
-                          <div className="flex items-center gap-2 mt-2">
-                            <Switch
-                              checked={!!ex.data_inserido_socged}
-                              disabled={ex.status !== "liberado" && ex.status !== "concluido"}
-                              onCheckedChange={(v) => exameMutations?.updateExame.mutate({
-                                id: ex.id,
-                                field: "data_inserido_socged",
-                                value: v ? new Date().toISOString().slice(0, 10) : null,
-                              })}
-                            />
-                            <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
-                              Inserido no SOCGED
-                              {ex.status !== "liberado" && ex.status !== "concluido" && (
-                                <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
-                              )}
-                            </Label>
-                          </div>
+                          {/* Digital → SOCGED | Físico → Impresso */}
+                          {isFisico ? (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Switch
+                                checked={!!ex.data_recebimento}
+                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                                  id: ex.id,
+                                  field: "data_recebimento",
+                                  value: v ? new Date().toISOString().slice(0, 10) : null,
+                                })}
+                              />
+                              <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                                Impresso
+                                {ex.status !== "liberado" && ex.status !== "concluido" && (
+                                  <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                                )}
+                              </Label>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 mt-2">
+                              <Switch
+                                checked={!!ex.data_inserido_socged}
+                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                                  id: ex.id,
+                                  field: "data_inserido_socged",
+                                  value: v ? new Date().toISOString().slice(0, 10) : null,
+                                })}
+                              />
+                              <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                                Inserido no SOCGED
+                                {ex.status !== "liberado" && ex.status !== "concluido" && (
+                                  <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                                )}
+                              </Label>
+                            </div>
+                          )}
                         </Card>
                       ))}
                     </>
@@ -884,24 +904,44 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
-                    {/* SOCGED only when liberado */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Switch
-                        checked={!!ex.data_inserido_socged}
-                        disabled={ex.status !== "liberado" && ex.status !== "concluido"}
-                        onCheckedChange={(v) => exameMutations?.updateExame.mutate({
-                          id: ex.id,
-                          field: "data_inserido_socged",
-                          value: v ? new Date().toISOString().slice(0, 10) : null,
-                        })}
-                      />
-                      <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
-                        Inserido no SOCGED
-                        {ex.status !== "liberado" && ex.status !== "concluido" && (
-                          <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
-                        )}
-                      </Label>
-                    </div>
+                    {/* Digital → SOCGED | Físico → Impresso */}
+                    {isFisico ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={!!ex.data_recebimento}
+                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                            id: ex.id,
+                            field: "data_recebimento",
+                            value: v ? new Date().toISOString().slice(0, 10) : null,
+                          })}
+                        />
+                        <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                          Impresso
+                          {ex.status !== "liberado" && ex.status !== "concluido" && (
+                            <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                          )}
+                        </Label>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={!!ex.data_inserido_socged}
+                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                            id: ex.id,
+                            field: "data_inserido_socged",
+                            value: v ? new Date().toISOString().slice(0, 10) : null,
+                          })}
+                        />
+                        <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                          Inserido no SOCGED
+                          {ex.status !== "liberado" && ex.status !== "concluido" && (
+                            <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                          )}
+                        </Label>
+                      </div>
+                    )}
                   </Card>
                 ))}
               </div>
@@ -931,26 +971,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
-                    {/* SOCGED only when liberado */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <Switch
-                        checked={!!ex.data_inserido_socged}
-                        disabled={ex.status !== "liberado" && ex.status !== "concluido"}
-                        onCheckedChange={(v) => exameMutations?.updateExame.mutate({
-                          id: ex.id,
-                          field: "data_inserido_socged",
-                          value: v ? new Date().toISOString().slice(0, 10) : null,
-                        })}
-                      />
-                      <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
-                        Inserido no SOCGED
-                        {ex.status !== "liberado" && ex.status !== "concluido" && (
-                          <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
-                        )}
-                      </Label>
-                    </div>
-                    {/* Impresso (only for físico) */}
-                    {isFisico && (
+                    {/* Digital → SOCGED | Físico → Impresso */}
+                    {isFisico ? (
                       <div className="flex items-center gap-2 mt-2">
                         <Switch
                           checked={!!ex.data_recebimento}
@@ -963,6 +985,24 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         />
                         <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
                           Impresso
+                          {ex.status !== "liberado" && ex.status !== "concluido" && (
+                            <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
+                          )}
+                        </Label>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={!!ex.data_inserido_socged}
+                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          onCheckedChange={(v) => exameMutations?.updateExame.mutate({
+                            id: ex.id,
+                            field: "data_inserido_socged",
+                            value: v ? new Date().toISOString().slice(0, 10) : null,
+                          })}
+                        />
+                        <Label className={`text-xs ${ex.status !== "liberado" && ex.status !== "concluido" ? "text-muted-foreground" : ""}`}>
+                          Inserido no SOCGED
                           {ex.status !== "liberado" && ex.status !== "concluido" && (
                             <span className="text-[10px] ml-1">(libere o exame primeiro)</span>
                           )}
