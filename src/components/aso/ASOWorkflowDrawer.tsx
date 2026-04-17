@@ -135,6 +135,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExame, setNovoExame] = useState("");
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
+  const etapaPerms = useASOEtapaPermissions();
 
   useEffect(() => {
     if (atendimento) {
@@ -156,6 +157,21 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const isDigital = a.tipo_prontuario === "digital";
   const isFisico = a.tipo_prontuario === "fisico";
+
+  // ── ETAPA / BLOQUEIOS ──
+  const etapaAtual = statusToEtapa(a.status);
+  const isImportado = a.status === "importado";
+  const isFechado = a.status === "fechado" || a.status === "finalizado";
+
+  // Pode editar a aba da etapa atual?
+  const canEditEtapaAtual = etapaAtual ? etapaPerms.canEditEtapa(etapaAtual) : false;
+
+  // Recepção só edita após "Iniciar Conferência" (status sai de 'importado')
+  const canEditRecepcao = !isImportado && !isFechado && etapaAtual === "recepcao" && etapaPerms.canEditRecepcao;
+  const canEditEnfermagem = !isFechado && etapaAtual === "enfermagem" && etapaPerms.canEditEnfermagem;
+  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
+  const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
+  const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
