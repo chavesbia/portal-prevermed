@@ -174,7 +174,9 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
           path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
           requiresAuth: true,
           subItems: dept.modules
-            .filter(m => m.module_route)
+            // Esconde sub-módulos internos de permissão granular (ex: /liberacao-asos/recepcao).
+            // Apenas módulos de 1º nível (/algo) aparecem no menu.
+            .filter(m => m.module_route && (m.module_route.match(/\//g) || []).length === 1)
             .map(m => ({
               label: m.module_name,
               icon: getModuleIcon(m.module_icon),
