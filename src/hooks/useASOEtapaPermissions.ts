@@ -36,21 +36,12 @@ export function useASOEtapaPermissions() {
   const isAdmMaster = role === "adm_master";
 
   return useMemo(() => {
-    const baseCanEdit = hasPermission(ROUTE_PREFIX, "edit");
-
-    const detectGranular = (etapa: ASOEtapa) => {
-      const route = `${ROUTE_PREFIX}/${etapa}`;
-      return modules.some((m) => m.module_route === route);
-    };
-
     const canEditEtapa = (etapa: ASOEtapa): boolean => {
       if (isAdmMaster) return true;
+      // Regra estrita: sem permissão específica da etapa = somente leitura.
+      // Não há mais fallback para a permissão geral do módulo.
       const route = `${ROUTE_PREFIX}/${etapa}`;
-      const hasGranular = detectGranular(etapa);
-      // Se houver sub-módulo configurado, exige permissão específica
-      if (hasGranular) return hasPermission(route, "edit");
-      // Fallback: usa a permissão geral
-      return baseCanEdit;
+      return hasPermission(route, "edit");
     };
 
     return {
