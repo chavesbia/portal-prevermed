@@ -313,7 +313,7 @@ export default function ASOListagem() {
           <Filter className="h-4 w-4 mr-1" /> Filtros
         </Button>
         {(Object.keys(filters).length > 0 || activeFilterCount > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); }}>
+          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); try { localStorage.removeItem(STORAGE_KEY); } catch {} }}>
             <X className="h-4 w-4 mr-1" /> Limpar
           </Button>
         )}
