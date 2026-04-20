@@ -393,8 +393,7 @@ export default function ASOListagem() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <Badge className="text-[10px] bg-amber-100 text-amber-700">
-                              <Info className="h-3 w-3 mr-0.5" />
+                            <Badge variant="secondary" className="text-[10px]">
                               Só clínico
                             </Badge>
                           </TooltipTrigger>
