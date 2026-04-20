@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { formatDateBR } from "@/lib/utils";
 import { useASOAtendimentos, ASOFilters } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
@@ -322,7 +322,7 @@ export default function ASOListagem() {
         {isLoading ? "Carregando..." : `${displayedAtendimentos?.length ?? 0} atendimentos encontrados`}
       </p>
 
-      <div className="border rounded-lg" style={{ overflow: "auto", maxHeight: "calc(100vh - 400px)" }}>
+      <StickyScrollTable maxHeight="calc(100vh - 400px)">
         <Table>
           <TableHeader>
             <TableRow>
@@ -436,7 +436,7 @@ export default function ASOListagem() {
             )}
           </TableBody>
         </Table>
-      </div>
+      </StickyScrollTable>
 
       <ASOWorkflowDrawer
         atendimento={selected}
