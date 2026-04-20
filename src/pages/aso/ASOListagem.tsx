@@ -323,7 +323,7 @@ export default function ASOListagem() {
         {isLoading ? "Carregando..." : `${displayedAtendimentos?.length ?? 0} atendimentos encontrados`}
       </p>
 
-      <StickyScrollTable maxHeight="calc(100vh - 400px)">
+      <StickyScrollTable topOffset={56}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -376,34 +376,36 @@ export default function ASOListagem() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {!temExames && a.status !== "importado" ? (
+                    {a.status === "importado" ? (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    ) : !temExames ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <Badge className="text-[10px] bg-red-100 text-red-700">
-                              <AlertTriangle className="h-3 w-3 mr-0.5" />
-                              Sem exames
-                            </Badge>
+                            <Badge className="text-[10px] bg-red-100 text-red-700 hover:bg-red-100">Sem exames</Badge>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Nenhum exame cadastrado neste prontuário</p>
-                          </TooltipContent>
+                          <TooltipContent><p>Nenhum exame identificado neste prontuário</p></TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    ) : temExames && apenasClinicos && a.status !== "importado" ? (
+                    ) : apenasClinicos ? (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger>
-                            <Badge variant="secondary" className="text-[10px]">
-                              Só clínico
-                            </Badge>
+                            <Badge className="text-[10px] bg-green-100 text-green-700 hover:bg-green-100">Só clínico</Badge>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Apenas Exame Clínico — sem exames complementares</p>
-                          </TooltipContent>
+                          <TooltipContent><p>Apenas Exame Clínico — recepção pode liberar diretamente</p></TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    ) : <span className="text-xs text-muted-foreground">—</span>}
+                    ) : (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge className="text-[10px] bg-amber-100 text-amber-800 hover:bg-amber-100">Com exames</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent><p>Possui exames complementares além do clínico</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </TableCell>
                   <TableCell>
                     {(() => {

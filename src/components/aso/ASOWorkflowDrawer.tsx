@@ -555,16 +555,14 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Badge className={`${STATUS_COLORS[a.status] || ""} text-sm`}>
                 {STATUS_LABELS[a.status] || a.status}
               </Badge>
-              {semExamesNenhum && a.status !== "importado" && (
-                <Badge className="bg-red-100 text-red-700 text-xs">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Sem exames
-                </Badge>
+              {a.status !== "importado" && semExamesNenhum && (
+                <Badge className="text-xs bg-red-100 text-red-700 hover:bg-red-100">Sem exames</Badge>
               )}
-              {apenasClinico && a.status !== "importado" && (
-                <Badge variant="secondary" className="text-xs">
-                  Sem exames complementares
-                </Badge>
+              {a.status !== "importado" && !semExamesNenhum && apenasClinico && (
+                <Badge className="text-xs bg-green-100 text-green-700 hover:bg-green-100">Só clínico</Badge>
+              )}
+              {a.status !== "importado" && !semExamesNenhum && !apenasClinico && (
+                <Badge className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-100">Com exames</Badge>
               )}
               {sla && (
                 <Badge className={`text-xs ${sla.bgColor} ${sla.color}`}>
