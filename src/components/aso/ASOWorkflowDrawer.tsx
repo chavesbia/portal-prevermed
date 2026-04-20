@@ -353,15 +353,27 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
   const getSetorLiberacao = () => "Liberação";
 
-  // Auto-liberar exame clínico when ASO assinado
+  // Auto-liberar exame clínico quando ASO assinado + data preenchida
+  const autoLiberarClinico = async () => {
+    if (examesClinicos.length === 0) return;
+    for (const ex of examesClinicos) {
+      if (ex.status !== "liberado") {
+        await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
+      }
+    }
+  };
+
   const handleAsoAssinado = async (v: boolean) => {
     await updateField("aso_assinado", v);
-    if (v && examesClinicos.length > 0) {
-      for (const ex of examesClinicos) {
-        if (ex.status === "realizado") {
-          await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
-        }
-      }
+    if (v && a.data_assinatura) {
+      await autoLiberarClinico();
+    }
+  };
+
+  const handleDataAssinatura = async (v: string) => {
+    await updateField("data_assinatura", v || null);
+    if (v && a.aso_assinado) {
+      await autoLiberarClinico();
     }
   };
 
