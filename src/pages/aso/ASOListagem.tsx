@@ -58,19 +58,47 @@ interface ExameInfo {
   nome_exame: string;
 }
 
+const STORAGE_KEY = "aso-listagem-filters-v1";
+
+interface PersistedFilters {
+  filters: ASOFilters;
+  exameFilter: string[];
+  semExamesFilter: boolean;
+  semComplementaresFilter: boolean;
+}
+
+function loadPersistedFilters(): PersistedFilters {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { filters: {}, exameFilter: [], semExamesFilter: false, semComplementaresFilter: false };
+}
+
 export default function ASOListagem() {
-  const [filters, setFilters] = useState<ASOFilters>({});
+  const persisted = useMemo(() => loadPersistedFilters(), []);
+  const [filters, setFilters] = useState<ASOFilters>(persisted.filters);
   const [showFilters, setShowFilters] = useState(false);
   const [selected, setSelected] = useState<Atendimento | null>(null);
-  const [exameFilter, setExameFilter] = useState<string[]>([]);
+  const [exameFilter, setExameFilter] = useState<string[]>(persisted.exameFilter);
   const [exameSearch, setExameSearch] = useState("");
   const [exameNames, setExameNames] = useState<string[]>([]);
   const [allExameData, setAllExameData] = useState<ExameInfo[]>([]);
   const [filteredIds, setFilteredIds] = useState<Set<string> | null>(null);
-  const [semExamesFilter, setSemExamesFilter] = useState(false);
-  const [semComplementaresFilter, setSemComplementaresFilter] = useState(false);
+  const [semExamesFilter, setSemExamesFilter] = useState(persisted.semExamesFilter);
+  const [semComplementaresFilter, setSemComplementaresFilter] = useState(persisted.semComplementaresFilter);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
   const { data: feriados } = useFeriados();
+
+  // Persist filters to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ filters, exameFilter, semExamesFilter, semComplementaresFilter })
+      );
+    } catch {}
+  }, [filters, exameFilter, semExamesFilter, semComplementaresFilter]);
 
   // Load all exam data for filtering
   useEffect(() => {
