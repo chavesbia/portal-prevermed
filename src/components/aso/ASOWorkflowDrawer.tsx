@@ -738,7 +738,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                           defaultValue={a.data_assinatura || ""}
                           onBlur={(e) => {
                             if (e.target.value !== (a.data_assinatura || "")) {
-                              updateField("data_assinatura", e.target.value || null);
+                              handleDataAssinatura(e.target.value);
                             }
                           }}
                         />
@@ -1135,7 +1135,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     defaultValue={a.data_assinatura || ""}
                     onBlur={(e) => {
                       if (e.target.value !== (a.data_assinatura || "")) {
-                        updateField("data_assinatura", e.target.value || null);
+                        handleDataAssinatura(e.target.value);
                       }
                     }}
                   />
