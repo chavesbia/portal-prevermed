@@ -353,15 +353,27 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const getSetorEnfermagem = () => a.agenda?.toLowerCase().includes("osasco") ? "Enfermagem Osasco" : "Enfermagem Lapa";
   const getSetorLiberacao = () => "Liberação";
 
-  // Auto-liberar exame clínico when ASO assinado
+  // Auto-liberar exame clínico quando ASO assinado + data preenchida
+  const autoLiberarClinico = async () => {
+    if (examesClinicos.length === 0) return;
+    for (const ex of examesClinicos) {
+      if (ex.status !== "liberado") {
+        await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
+      }
+    }
+  };
+
   const handleAsoAssinado = async (v: boolean) => {
     await updateField("aso_assinado", v);
-    if (v && examesClinicos.length > 0) {
-      for (const ex of examesClinicos) {
-        if (ex.status === "realizado") {
-          await exameMutations?.updateExame.mutateAsync({ id: ex.id, field: "status", value: "liberado" });
-        }
-      }
+    if (v && a.data_assinatura) {
+      await autoLiberarClinico();
+    }
+  };
+
+  const handleDataAssinatura = async (v: string) => {
+    await updateField("data_assinatura", v || null);
+    if (v && a.aso_assinado) {
+      await autoLiberarClinico();
     }
   };
 
@@ -509,7 +521,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[680px] sm:w-[760px] overflow-y-auto p-0">
+      <SheetContent className="w-full sm:max-w-[860px] sm:w-[860px] overflow-y-auto p-0">
         <div className="p-6 pb-3">
           <SheetHeader>
             <SheetTitle className="text-lg font-mono">{a.id_interno}</SheetTitle>
@@ -550,8 +562,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 </Badge>
               )}
               {apenasClinico && a.status !== "importado" && (
-                <Badge className="bg-amber-100 text-amber-700 text-xs">
-                  <Info className="h-3 w-3 mr-1" />
+                <Badge variant="secondary" className="text-xs">
                   Sem exames complementares
                 </Badge>
               )}
@@ -727,7 +738,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                           defaultValue={a.data_assinatura || ""}
                           onBlur={(e) => {
                             if (e.target.value !== (a.data_assinatura || "")) {
-                              updateField("data_assinatura", e.target.value || null);
+                              handleDataAssinatura(e.target.value);
                             }
                           }}
                         />
@@ -1124,7 +1135,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     defaultValue={a.data_assinatura || ""}
                     onBlur={(e) => {
                       if (e.target.value !== (a.data_assinatura || "")) {
-                        updateField("data_assinatura", e.target.value || null);
+                        handleDataAssinatura(e.target.value);
                       }
                     }}
                   />
