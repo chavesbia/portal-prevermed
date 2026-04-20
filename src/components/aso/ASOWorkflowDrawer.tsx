@@ -509,7 +509,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-[680px] sm:w-[760px] overflow-y-auto p-0">
+      <SheetContent className="w-full sm:max-w-[860px] sm:w-[860px] overflow-y-auto p-0">
         <div className="p-6 pb-3">
           <SheetHeader>
             <SheetTitle className="text-lg font-mono">{a.id_interno}</SheetTitle>
@@ -550,8 +550,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 </Badge>
               )}
               {apenasClinico && a.status !== "importado" && (
-                <Badge className="bg-amber-100 text-amber-700 text-xs">
-                  <Info className="h-3 w-3 mr-1" />
+                <Badge variant="secondary" className="text-xs">
                   Sem exames complementares
                 </Badge>
               )}
