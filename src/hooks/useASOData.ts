@@ -24,7 +24,7 @@ export function useASOAtendimentos(filters: ASOFilters = {}) {
         .order("hora_inicial", { ascending: true });
 
       if (filters.status) q = q.eq("status", filters.status as any);
-      if (filters.agenda) q = q.eq("agenda", filters.agenda);
+      if (filters.agenda) q = q.ilike("agenda", `%${filters.agenda}%`);
       if (filters.empresa) q = q.ilike("empresa", `%${filters.empresa}%`);
       if (filters.data_de) q = q.gte("data_atendimento", filters.data_de);
       if (filters.data_ate) q = q.lte("data_atendimento", filters.data_ate);
