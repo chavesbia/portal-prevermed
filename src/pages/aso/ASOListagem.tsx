@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Eye, Filter, X, FlaskConical, AlertTriangle, Info } from "lucide-react";
+import { StickyScrollTable } from "@/components/ui/sticky-scroll-table";
 import ASOWorkflowDrawer from "@/components/aso/ASOWorkflowDrawer";
 
 const STATUS_LABELS: Record<string, string> = {
