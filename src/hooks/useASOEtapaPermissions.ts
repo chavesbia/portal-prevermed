@@ -44,12 +44,20 @@ export function useASOEtapaPermissions() {
       return hasPermission(route, "edit");
     };
 
+    const canAdvanceEtapa = (etapa: ASOEtapa): boolean => {
+      if (isAdmMaster) return true;
+      const route = `${ROUTE_PREFIX}/${etapa}`;
+      return hasPermission(route, "approve");
+    };
+
     return {
       isAdmMaster,
       canEditEtapa,
+      canAdvanceEtapa,
       canEditRecepcao: canEditEtapa("recepcao"),
       canEditEnfermagem: canEditEtapa("enfermagem"),
       canEditAssinatura: canEditEtapa("assinatura"),
+      canAdvanceAssinatura: canAdvanceEtapa("assinatura"),
       canEditLiberacao: canEditEtapa("liberacao"),
       canEditFaturamento: canEditEtapa("faturamento"),
       canCloseLote: isAdmMaster || canEditEtapa("fechamento"),

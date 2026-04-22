@@ -136,7 +136,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
   const etapaPerms = useASOEtapaPermissions();
-  const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canEditEnfermagem;
+  const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canAdvanceAssinatura;
 
   useEffect(() => {
     if (atendimento) {
@@ -177,11 +177,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   // Recepção só edita checklist após "Iniciar Conferência" (status sai de 'importado')
   const canEditRecepcao = !isImportado && canManageRecepcaoSetup;
   const canEditEnfermagem = !isFechado && etapaAtual === "enfermagem" && etapaPerms.canEditEnfermagem;
-  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && canAccessAssinatura;
+  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
-  const canAdvanceCurrentStage = etapaAtual === "assinatura" ? canAccessAssinatura : canEditEtapaAtual;
+  const canAdvanceCurrentStage = etapaAtual === "assinatura"
+    ? !isFechado && etapaPerms.canAdvanceAssinatura
+    : canEditEtapaAtual;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -1130,7 +1132,13 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             {!canEditAssinatura && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                Somente usuários com permissão de Assinatura ou Enfermagem podem alterar os campos desta etapa.
+                Somente usuários com permissão de edição da etapa Assinatura podem alterar os campos desta aba.
+              </div>
+            )}
+
+            {!canAdvanceCurrentStage && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                Você pode visualizar esta etapa, mas não possui permissão para avançar o prontuário para a próxima fase.
               </div>
             )}
 
