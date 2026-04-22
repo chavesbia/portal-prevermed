@@ -173,6 +173,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
+  const canManageExames = !isFechado && etapaPerms.canEditEnfermagem;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -777,6 +778,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2">
                               <Select
                                 value={ex.status === "concluido" ? "liberado" : ex.status}
+                                disabled={!canManageExames}
                                 onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
                               >
                                 <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
@@ -792,7 +794,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2 mt-2">
                               <Switch
                                 checked={!!ex.data_recebimento}
-                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                                 onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                                   id: ex.id,
                                   field: "data_recebimento",
@@ -810,7 +812,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2 mt-2">
                               <Switch
                                 checked={!!ex.data_inserido_socged}
-                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                                 onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                                   id: ex.id,
                                   field: "data_inserido_socged",
@@ -899,8 +901,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 value={novoExame}
                 onChange={(e) => setNovoExame(e.target.value)}
                 className="flex-1"
+                disabled={!canManageExames}
               />
-              <Select value={novoExameTipo} onValueChange={(v: any) => setNovoExameTipo(v)}>
+              <Select value={novoExameTipo} onValueChange={(v: any) => setNovoExameTipo(v)} disabled={!canManageExames}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -911,7 +914,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </Select>
               <Button
                 size="sm"
-                disabled={!novoExame.trim() || exameMutations?.addExame.isPending}
+                disabled={!canManageExames || !novoExame.trim() || exameMutations?.addExame.isPending}
                 onClick={() => {
                   exameMutations?.addExame.mutate({ nome_exame: novoExame.trim(), tipo: novoExameTipo });
                   setNovoExame("");
@@ -920,6 +923,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+
+            {!canManageExames && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                As alterações de status dos exames e o controle de inserção no SOCGED ficam disponíveis apenas para a equipe de Enfermagem.
+              </div>
+            )}
 
             {/* Exame Clínico */}
             {examesClinicos.length > 0 && (
@@ -961,6 +970,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       <div className="flex items-center gap-2">
                         <Select
                           value={ex.status === "concluido" ? "liberado" : ex.status}
+                          disabled={!canManageExames}
                           onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
                         >
                           <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
@@ -969,7 +979,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <SelectItem value="liberado">Liberado</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canManageExames} onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -977,9 +987,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     {/* Digital → SOCGED | Físico → Impresso */}
                     {isFisico ? (
                       <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={!!ex.data_recebimento}
-                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          <Switch
+                            checked={!!ex.data_recebimento}
+                            disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                           onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                             id: ex.id,
                             field: "data_recebimento",
@@ -995,9 +1005,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={!!ex.data_inserido_socged}
-                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          <Switch
+                            checked={!!ex.data_inserido_socged}
+                            disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                           onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                             id: ex.id,
                             field: "data_inserido_socged",
@@ -1028,6 +1038,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       <div className="flex items-center gap-2">
                         <Select
                           value={ex.status === "concluido" ? "liberado" : (ex.status === "pendente" || ex.status === "liberado" ? ex.status : "pendente")}
+                          disabled={!canManageExames}
                           onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
                         >
                           <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
@@ -1036,7 +1047,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <SelectItem value="liberado">Liberado</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canManageExames} onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -1044,9 +1055,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     {/* Digital → SOCGED | Físico → Impresso */}
                     {isFisico ? (
                       <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={!!ex.data_recebimento}
-                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          <Switch
+                            checked={!!ex.data_recebimento}
+                            disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                           onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                             id: ex.id,
                             field: "data_recebimento",
@@ -1062,9 +1073,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={!!ex.data_inserido_socged}
-                          disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                          <Switch
+                            checked={!!ex.data_inserido_socged}
+                            disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                           onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                             id: ex.id,
                             field: "data_inserido_socged",
