@@ -136,6 +136,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
   const etapaPerms = useASOEtapaPermissions();
+  const canAccessAssinatura = etapaPerms.canEditAssinatura;
 
   useEffect(() => {
     if (atendimento) {
@@ -180,7 +181,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
-  const canAccessAssinatura = etapaPerms.canEditAssinatura;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
