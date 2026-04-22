@@ -65,6 +65,7 @@ interface PersistedFilters {
   exameFilter: string[];
   semExamesFilter: boolean;
   semComplementaresFilter: boolean;
+  comComplementaresFilter: boolean;
 }
 
 function loadPersistedFilters(): PersistedFilters {
@@ -72,7 +73,13 @@ function loadPersistedFilters(): PersistedFilters {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
-  return { filters: {}, exameFilter: [], semExamesFilter: false, semComplementaresFilter: false };
+  return {
+    filters: {},
+    exameFilter: [],
+    semExamesFilter: false,
+    semComplementaresFilter: false,
+    comComplementaresFilter: false,
+  };
 }
 
 export default function ASOListagem() {
@@ -87,6 +94,7 @@ export default function ASOListagem() {
   const [filteredIds, setFilteredIds] = useState<Set<string> | null>(null);
   const [semExamesFilter, setSemExamesFilter] = useState(persisted.semExamesFilter);
   const [semComplementaresFilter, setSemComplementaresFilter] = useState(persisted.semComplementaresFilter);
+  const [comComplementaresFilter, setComComplementaresFilter] = useState(persisted.comComplementaresFilter);
   const { data: atendimentos, isLoading, refetch } = useASOAtendimentos(filters);
   const { data: feriados } = useFeriados();
 
@@ -95,10 +103,10 @@ export default function ASOListagem() {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ filters, exameFilter, semExamesFilter, semComplementaresFilter })
+        JSON.stringify({ filters, exameFilter, semExamesFilter, semComplementaresFilter, comComplementaresFilter })
       );
     } catch {}
-  }, [filters, exameFilter, semExamesFilter, semComplementaresFilter]);
+  }, [filters, exameFilter, semExamesFilter, semComplementaresFilter, comComplementaresFilter]);
 
   // Load all exam data for filtering
   useEffect(() => {
@@ -147,6 +155,11 @@ export default function ASOListagem() {
     return result;
   }, [allExameData, atendimentos]);
 
+  const normalizeExamFilterName = (nome: string) => {
+    const tipo = classifyExame(nome);
+    return tipo === "clinico" ? "Exame Clínico" : nome.trim();
+  };
+
   // Derived sets for filtering
   const idsComExames = useMemo(
     () => new Set([...effectiveExamesByAtendimento.entries()]
@@ -155,10 +168,18 @@ export default function ASOListagem() {
     [effectiveExamesByAtendimento]
   );
 
-  // IDs that have ONLY clinical exams (no complementar/imediato)
+  // IDs that have ONLY clinical exams (including aliases like Avaliação Clínica Ocupacional)
   const idsApenasClinicos = useMemo(
     () => new Set([...effectiveExamesByAtendimento.entries()]
       .filter(([, nomes]) => nomes.length > 0 && nomes.every(nome => classifyExame(nome) === "clinico"))
+      .map(([id]) => id)),
+    [effectiveExamesByAtendimento]
+  );
+
+  // IDs that have at least one non-clinical exam (imediato or complementar)
+  const idsComComplementares = useMemo(
+    () => new Set([...effectiveExamesByAtendimento.entries()]
+      .filter(([, nomes]) => nomes.some(nome => classifyExame(nome) !== "clinico"))
       .map(([id]) => id)),
     [effectiveExamesByAtendimento]
   );
@@ -174,12 +195,9 @@ export default function ASOListagem() {
     const matchingIds = new Set<string>();
 
     for (const [atendimentoId, nomes] of effectiveExamesByAtendimento.entries()) {
-      const normalizedNames = nomes.map((nome) => {
-        const tipo = classifyExame(nome);
-        return tipo === "clinico" ? "Exame Clínico" : nome;
-      });
+      const normalizedNames = new Set(nomes.map(normalizeExamFilterName));
 
-      if (normalizedNames.some((nome) => exameFilter.includes(nome))) {
+      if (exameFilter.every((nome) => normalizedNames.has(nome))) {
         matchingIds.add(atendimentoId);
       }
     }
@@ -208,11 +226,16 @@ export default function ASOListagem() {
     displayedAtendimentos = displayedAtendimentos.filter(a => idsApenasClinicos.has(a.id));
   }
 
+  // Filter: com exames complementares (at least one non-clinical exam)
+  if (comComplementaresFilter && displayedAtendimentos) {
+    displayedAtendimentos = displayedAtendimentos.filter(a => idsComComplementares.has(a.id));
+  }
+
   const filteredExameNames = exameSearch
     ? exameNames.filter(n => n.toLowerCase().includes(exameSearch.toLowerCase()))
     : exameNames;
 
-  const activeFilterCount = exameFilter.length + (semExamesFilter ? 1 : 0) + (semComplementaresFilter ? 1 : 0);
+  const activeFilterCount = exameFilter.length + (semExamesFilter ? 1 : 0) + (semComplementaresFilter ? 1 : 0) + (comComplementaresFilter ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -265,7 +288,14 @@ export default function ASOListagem() {
               <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-red-600">
                 <Checkbox
                   checked={semExamesFilter}
-                  onCheckedChange={(checked) => { setSemExamesFilter(!!checked); if (checked) setSemComplementaresFilter(false); }}
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked;
+                    setSemExamesFilter(isChecked);
+                    if (isChecked) {
+                      setSemComplementaresFilter(false);
+                      setComComplementaresFilter(false);
+                    }
+                  }}
                 />
                 <AlertTriangle className="h-3 w-3" />
                 Sem exames cadastrados
@@ -274,10 +304,32 @@ export default function ASOListagem() {
               <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-amber-600">
                 <Checkbox
                   checked={semComplementaresFilter}
-                  onCheckedChange={(checked) => { setSemComplementaresFilter(!!checked); if (checked) setSemExamesFilter(false); }}
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked;
+                    setSemComplementaresFilter(isChecked);
+                    if (isChecked) {
+                      setSemExamesFilter(false);
+                      setComComplementaresFilter(false);
+                    }
+                  }}
                 />
                 <Info className="h-3 w-3" />
                 Sem exames complementares
+              </label>
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-primary">
+                <Checkbox
+                  checked={comComplementaresFilter}
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked;
+                    setComComplementaresFilter(isChecked);
+                    if (isChecked) {
+                      setSemExamesFilter(false);
+                      setSemComplementaresFilter(false);
+                    }
+                  }}
+                />
+                <FlaskConical className="h-3 w-3" />
+                Com exames complementares
               </label>
               <div className="border-t my-1" />
               <Input
@@ -307,7 +359,7 @@ export default function ASOListagem() {
                 )}
               </div>
               {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); }}>
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); setComComplementaresFilter(false); }}>
                   Limpar seleção
                 </Button>
               )}
@@ -319,7 +371,7 @@ export default function ASOListagem() {
           <Filter className="h-4 w-4 mr-1" /> Filtros
         </Button>
         {(Object.keys(filters).length > 0 || activeFilterCount > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); try { localStorage.removeItem(STORAGE_KEY); } catch {} }}>
+          <Button variant="ghost" size="sm" onClick={() => { setFilters({}); setExameFilter([]); setSemExamesFilter(false); setSemComplementaresFilter(false); setComComplementaresFilter(false); try { localStorage.removeItem(STORAGE_KEY); } catch {} }}>
             <X className="h-4 w-4 mr-1" /> Limpar
           </Button>
         )}
