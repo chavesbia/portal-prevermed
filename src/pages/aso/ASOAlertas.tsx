@@ -1,6 +1,7 @@
 import { useASOAtendimentos } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA } from "@/lib/aso/sla";
+import { formatDuration, getAsoStageLabel, getCurrentStageDurationMs, getCurrentStageStartedAt, getTotalDurationMs } from "@/lib/aso/tempo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, Stethoscope, ScanLine, CheckCircle } from "lucide-react";
@@ -14,6 +15,9 @@ interface Alert {
   funcionario: string;
   empresa: string;
   diasUteis: number;
+  totalDurationMs: number;
+  stageDurationMs: number;
+  timingLabel: string;
 }
 
 const ALERT_CONFIG = {
@@ -32,7 +36,12 @@ export default function ASOAlertas() {
   const feriadoList = feriados || [];
 
   (atendimentos || []).forEach((a) => {
+    const timingRecord = a as unknown as Record<string, unknown>;
     const sla = calcSLA(a.data_atendimento, feriadoList, now);
+    const totalDurationMs = getTotalDurationMs(timingRecord, now) ?? 0;
+    const stageDurationMs = getCurrentStageDurationMs(timingRecord, now) ?? 0;
+    const stageLabel = getAsoStageLabel(getCurrentStageStartedAt(timingRecord) ? String((timingRecord.status as string | undefined) ?? "") : null);
+    const timingLabel = `${formatDuration(totalDurationMs)} total — ${formatDuration(stageDurationMs)} em ${stageLabel}`;
 
     // Exame parado: aguardando_exames há mais de 3 dias úteis
     if (a.status === "aguardando_exames" && sla.diasUteis >= 3) {
@@ -45,6 +54,9 @@ export default function ASOAlertas() {
         funcionario: a.funcionario || "—",
         empresa: a.empresa || "—",
         diasUteis: sla.diasUteis,
+        totalDurationMs,
+        stageDurationMs,
+        timingLabel,
       });
     }
 
@@ -59,6 +71,9 @@ export default function ASOAlertas() {
         funcionario: a.funcionario || "—",
         empresa: a.empresa || "—",
         diasUteis: sla.diasUteis,
+        totalDurationMs,
+        stageDurationMs,
+        timingLabel,
       });
     }
 
@@ -73,6 +88,9 @@ export default function ASOAlertas() {
         funcionario: a.funcionario || "—",
         empresa: a.empresa || "—",
         diasUteis: sla.diasUteis,
+        totalDurationMs,
+        stageDurationMs,
+        timingLabel,
       });
     }
 
@@ -91,6 +109,9 @@ export default function ASOAlertas() {
         funcionario: a.funcionario || "—",
         empresa: a.empresa || "—",
         diasUteis: sla.diasUteis,
+        totalDurationMs,
+        stageDurationMs,
+        timingLabel,
       });
     }
   });
@@ -98,7 +119,8 @@ export default function ASOAlertas() {
   // Sort: critical first, then by dias
   alerts.sort((a, b) => {
     if (a.severity !== b.severity) return a.severity === "critical" ? -1 : 1;
-    return b.diasUteis - a.diasUteis;
+    if (b.diasUteis !== a.diasUteis) return b.diasUteis - a.diasUteis;
+    return b.stageDurationMs - a.stageDurationMs;
   });
 
   const criticalCount = alerts.filter((a) => a.severity === "critical").length;
@@ -138,7 +160,8 @@ export default function ASOAlertas() {
                           <Badge variant="destructive" className="text-[10px] px-1 py-0">CRÍTICO</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
+                       <p className="text-xs text-muted-foreground mt-0.5">{alert.description}</p>
+                       <p className="text-xs text-muted-foreground mt-1">{alert.timingLabel}</p>
                       <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
                         <span>👤 {alert.funcionario}</span>
                         <span>🏢 {alert.empresa}</span>
