@@ -143,6 +143,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     }
   }, [atendimento]);
 
+  useEffect(() => {
+    if (tab === "assinatura" && !canAccessAssinatura) {
+      setTab("info");
+    }
+  }, [tab, canAccessAssinatura]);
+
   const a = local || atendimento;
   const { data: exames } = useASOExames(a?.id);
   const { data: historico } = useASOHistorico(a?.id);
@@ -274,7 +280,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       .select("id")
       .maybeSingle();
     if (error || !data) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: error?.message || "Você não tem permissão para alterar o status deste prontuário.", variant: "destructive" });
       setLocal((prev: any) => prev ? { ...prev, status: a.status, setor_responsavel: a.setor_responsavel } : prev);
       return;
     }
@@ -597,7 +603,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
         <Separator />
 
-        <Tabs value={tab} onValueChange={setTab} className="px-6 pt-3">
+        <Tabs value={tab} onValueChange={(nextTab) => {
+          if (nextTab === "assinatura" && !canAccessAssinatura) return;
+          setTab(nextTab);
+        }} className="px-6 pt-3">
           <TabsList className={`w-full grid ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
             <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
             <TabsTrigger value="recepcao" className="text-xs">Recepção</TabsTrigger>
