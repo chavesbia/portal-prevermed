@@ -163,23 +163,29 @@ export default function ASOListagem() {
     [effectiveExamesByAtendimento]
   );
 
-  // When exam filter changes, fetch matching atendimento IDs (using normalized names)
+  // When exam filter changes, match against the effective exam source for each atendimento:
+  // linked exams when they exist, otherwise the imported exames_texto fallback.
   useEffect(() => {
     if (exameFilter.length === 0) {
       setFilteredIds(null);
       return;
     }
-    // Match exames considering normalization
+
     const matchingIds = new Set<string>();
-    for (const d of allExameData) {
-      const tipo = classifyExame(d.nome_exame);
-      const normalizedName = tipo === "clinico" ? "Exame Clínico" : d.nome_exame;
-      if (exameFilter.includes(normalizedName)) {
-        matchingIds.add(d.atendimento_id);
+
+    for (const [atendimentoId, nomes] of effectiveExamesByAtendimento.entries()) {
+      const normalizedNames = nomes.map((nome) => {
+        const tipo = classifyExame(nome);
+        return tipo === "clinico" ? "Exame Clínico" : nome;
+      });
+
+      if (normalizedNames.some((nome) => exameFilter.includes(nome))) {
+        matchingIds.add(atendimentoId);
       }
     }
+
     setFilteredIds(matchingIds);
-  }, [exameFilter, allExameData]);
+  }, [exameFilter, effectiveExamesByAtendimento]);
 
   const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
 
