@@ -524,6 +524,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   };
 
   const nextAction = getNextAction();
+  const isStartConferenciaAction = a.status === "importado" && nextAction?.label === "Iniciar Conferência";
 
   const handleAdvance = () => {
     if (!nextAction) return;
@@ -596,7 +597,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>
-            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && canAdvanceCurrentStage && (
+            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && canAdvanceCurrentStage && !isStartConferenciaAction && (
               <Button size="sm" onClick={handleAdvance}>
                 {nextAction.label}
               </Button>
@@ -606,19 +607,19 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
         <Separator />
 
-        <Tabs value={tab} onValueChange={(nextTab) => {
+          <Tabs value={tab} onValueChange={(nextTab) => {
           if (nextTab === "assinatura" && !canAccessAssinatura) return;
           setTab(nextTab);
         }} className="px-6 pt-3">
-          <TabsList className={`w-full grid ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
-            <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
-            <TabsTrigger value="recepcao" className="text-xs">Recepção</TabsTrigger>
-            <TabsTrigger value="exames" className="text-xs">Exames</TabsTrigger>
-            <TabsTrigger value="assinatura" className="text-xs" disabled={!canAccessAssinatura}>Assinatura</TabsTrigger>
+          <TabsList className={`w-full grid rounded-lg border bg-muted/50 p-1 ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
+            <TabsTrigger value="info" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Info</TabsTrigger>
+            <TabsTrigger value="recepcao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Recepção</TabsTrigger>
+            <TabsTrigger value="exames" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Exames</TabsTrigger>
+            <TabsTrigger value="assinatura" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm" disabled={!canAccessAssinatura}>Assinatura</TabsTrigger>
             {showLiberacaoTab && (
-              <TabsTrigger value="liberacao" className="text-xs">Liberação</TabsTrigger>
+              <TabsTrigger value="liberacao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Liberação</TabsTrigger>
             )}
-            <TabsTrigger value="historico" className="text-xs">Histórico</TabsTrigger>
+            <TabsTrigger value="historico" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Histórico</TabsTrigger>
           </TabsList>
 
           {/* ── TAB: Info ── */}
@@ -663,6 +664,14 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <h4 className="font-medium text-sm flex items-center gap-2">
               <ClipboardCheck className="h-4 w-4" /> Conferência da Recepção
             </h4>
+
+            {isStartConferenciaAction && canManageRecepcaoSetup && (
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleAdvance}>
+                  {nextAction.label}
+                </Button>
+              </div>
+            )}
 
             {/* Tipo Prontuário + Base SOCNET */}
             <div className="grid grid-cols-2 gap-4">
