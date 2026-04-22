@@ -173,7 +173,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
-  const canManageExames = !isFechado && etapaPerms.canEditEnfermagem;
+  const canManageExames = canEditEnfermagem;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -926,7 +926,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             {!canManageExames && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                As alterações de status dos exames e o controle de inserção no SOCGED ficam disponíveis apenas para a equipe de Enfermagem.
+                As alterações de status dos exames e o controle de inserção no SOCGED ficam disponíveis apenas para a equipe de Enfermagem, durante a etapa de Exames Pendentes.
               </div>
             )}
 
@@ -1162,7 +1162,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 </div>
               </div>
 
-              {/* Exame Clínico - médico pode liberar */}
+              {/* Exame Clínico - somente leitura na assinatura */}
               {examesClinicos.length > 0 && (
                 <>
                   <Separator />
@@ -1170,16 +1170,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   {examesClinicos.map((ex) => (
                     <div key={ex.id} className="flex items-center justify-between py-1">
                       <span className="text-sm">{ex.nome_exame}</span>
-                      <Select
-                        value={ex.status === "realizado" || ex.status === "liberado" ? ex.status : "realizado"}
-                        onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
-                      >
-                        <SelectTrigger className="h-7 text-xs w-[120px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="realizado">Realizado</SelectItem>
-                          <SelectItem value="liberado">Liberado</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge variant="outline" className="text-[10px]">
+                        {ex.status === "realizado" ? "Realizado" : ex.status === "liberado" ? "Liberado" : ex.status}
+                      </Badge>
                     </div>
                   ))}
                 </>
