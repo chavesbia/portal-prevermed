@@ -174,6 +174,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
+  const canAccessAssinatura = etapaPerms.canEditAssinatura;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -266,12 +267,15 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const advanceStatus = async (newStatus: string, newSetor: string) => {
     setLocal((prev: any) => prev ? { ...prev, status: newStatus, setor_responsavel: newSetor } : prev);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("aso_atendimentos")
       .update({ status: newStatus, setor_responsavel: newSetor } as any)
-      .eq("id", a.id);
-    if (error) {
+      .eq("id", a.id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+      setLocal((prev: any) => prev ? { ...prev, status: a.status, setor_responsavel: a.setor_responsavel } : prev);
       return;
     }
     await supabase.from("aso_historico").insert({
@@ -598,7 +602,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
             <TabsTrigger value="recepcao" className="text-xs">Recepção</TabsTrigger>
             <TabsTrigger value="exames" className="text-xs">Exames</TabsTrigger>
-            <TabsTrigger value="assinatura" className="text-xs">Assinatura</TabsTrigger>
+            <TabsTrigger value="assinatura" className="text-xs" disabled={!canAccessAssinatura}>Assinatura</TabsTrigger>
             {showLiberacaoTab && (
               <TabsTrigger value="liberacao" className="text-xs">Liberação</TabsTrigger>
             )}
@@ -1114,6 +1118,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <Stethoscope className="h-4 w-4" /> Assinatura Médica
             </h4>
 
+            {!canEditAssinatura && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                Somente a equipe médica pode alterar os campos desta etapa.
+              </div>
+            )}
+
             {/* Informativo do tipo de atendimento (somente leitura) */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-muted/50 rounded p-3">
@@ -1133,6 +1143,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Label className="text-sm">ASO assinado?</Label>
                 <Switch
                   checked={a.aso_assinado || false}
+                  disabled={!canEditAssinatura}
                   onCheckedChange={handleAsoAssinado}
                 />
               </div>
@@ -1153,6 +1164,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     type="date"
                     key={`data-ass-${a.id}-${a.data_assinatura}`}
                     defaultValue={a.data_assinatura || ""}
+                    disabled={!canEditAssinatura}
                     onBlur={(e) => {
                       if (e.target.value !== (a.data_assinatura || "")) {
                         handleDataAssinatura(e.target.value);
@@ -1185,6 +1197,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   rows={2}
                   key={`obs-ass-${a.id}-${a.observacoes_assinatura}`}
                   defaultValue={a.observacoes_assinatura || ""}
+                  disabled={!canEditAssinatura}
                   onBlur={(e) => {
                     if (e.target.value !== (a.observacoes_assinatura || "")) {
                       updateField("observacoes_assinatura", e.target.value);
