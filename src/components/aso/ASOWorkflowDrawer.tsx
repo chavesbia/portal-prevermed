@@ -163,11 +163,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const isImportado = a.status === "importado";
   const isFechado = a.status === "fechado" || a.status === "finalizado";
 
-  // Pode editar a aba da etapa atual?
-  const canEditEtapaAtual = etapaAtual ? etapaPerms.canEditEtapa(etapaAtual) : false;
+  // Pode atuar na etapa atual?
+  const canEditEtapaAtual = !isFechado && (etapaAtual ? etapaPerms.canEditEtapa(etapaAtual) : false);
+  const canManageRecepcaoSetup = !isFechado && etapaAtual === "recepcao" && etapaPerms.canEditRecepcao;
 
-  // Recepção só edita após "Iniciar Conferência" (status sai de 'importado')
-  const canEditRecepcao = !isImportado && !isFechado && etapaAtual === "recepcao" && etapaPerms.canEditRecepcao;
+  // Recepção só edita checklist após "Iniciar Conferência" (status sai de 'importado')
+  const canEditRecepcao = !isImportado && canManageRecepcaoSetup;
   const canEditEnfermagem = !isFechado && etapaAtual === "enfermagem" && etapaPerms.canEditEnfermagem;
   const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
@@ -304,6 +305,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   };
 
   const iniciarConferencia = async () => {
+    if (!canManageRecepcaoSetup) {
+      toast({ title: "Acesso negado", description: "Somente a equipe de Recepção pode iniciar a conferência.", variant: "destructive" });
+      return;
+    }
     if (!a.tipo_prontuario) {
       toast({ title: "Não é possível avançar", description: "Selecione o Tipo de Prontuário (Digital ou Físico) antes de iniciar a conferência.", variant: "destructive" });
       return;
@@ -508,6 +513,10 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const handleAdvance = () => {
     if (!nextAction) return;
+    if (!canEditEtapaAtual) {
+      toast({ title: "Acesso negado", description: "Você não tem permissão para avançar esta etapa.", variant: "destructive" });
+      return;
+    }
     const v = nextAction.validate();
     if (!v.ok) {
       toast({ title: "Não é possível avançar", description: v.msg, variant: "destructive" });
@@ -573,7 +582,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>
-            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && (
+            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && canEditEtapaAtual && (
               <Button size="sm" onClick={handleAdvance}>
                 {nextAction.label}
               </Button>
@@ -647,6 +656,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 <Select
                   value={a.tipo_prontuario || "none"}
                   onValueChange={handleTipoProntuarioChange}
+                  disabled={!canManageRecepcaoSetup}
                 >
                   <SelectTrigger className={!a.tipo_prontuario ? "border-red-300 ring-1 ring-red-200" : ""}>
                     <SelectValue placeholder="Selecionar" />
@@ -664,6 +674,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <div className="flex items-center gap-3 pt-5">
                 <Switch
                   checked={a.base_socnet || false}
+                  disabled={!canManageRecepcaoSetup}
                   onCheckedChange={(v) => updateField("base_socnet", v)}
                 />
                 <Label className="text-sm">Base SOCNET</Label>
