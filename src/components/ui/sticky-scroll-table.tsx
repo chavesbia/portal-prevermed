@@ -18,51 +18,118 @@ interface StickyScrollTableProps {
 }
 
 export function StickyScrollTable({ children, className = "", topOffset = 0 }: StickyScrollTableProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
+  const floatingScrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [contentWidth, setContentWidth] = useState(0);
-  const syncing = useRef<"top" | "bottom" | null>(null);
+  const [floatingState, setFloatingState] = useState({ visible: false, left: 0, width: 0 });
+  const syncing = useRef<"top" | "floating" | "bottom" | null>(null);
+  const barHeight = 14;
 
-  // Mede a largura real do conteúdo para dimensionar a barra fake
   useEffect(() => {
-    if (!innerRef.current) return;
-    const ro = new ResizeObserver(() => {
-      if (innerRef.current) setContentWidth(innerRef.current.scrollWidth);
+    const updateLayout = () => {
+      if (!wrapperRef.current || !contentRef.current || !innerRef.current) return;
+
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const contentRect = contentRef.current.getBoundingClientRect();
+      const nextContentWidth = innerRef.current.scrollWidth;
+      const hasHorizontalOverflow = nextContentWidth > contentRef.current.clientWidth + 1;
+
+      setContentWidth(nextContentWidth);
+
+      setFloatingState({
+        visible:
+          hasHorizontalOverflow &&
+          wrapperRect.top < topOffset &&
+          wrapperRect.bottom > topOffset + barHeight + 8,
+        left: contentRect.left,
+        width: contentRect.width,
+      });
+    };
+
+    updateLayout();
+
+    const resizeObserver = new ResizeObserver(updateLayout);
+
+    if (wrapperRef.current) resizeObserver.observe(wrapperRef.current);
+    if (contentRef.current) resizeObserver.observe(contentRef.current);
+    if (innerRef.current) resizeObserver.observe(innerRef.current);
+
+    window.addEventListener("scroll", updateLayout, { passive: true });
+    window.addEventListener("resize", updateLayout);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("scroll", updateLayout);
+      window.removeEventListener("resize", updateLayout);
+    };
+  }, [children, topOffset]);
+
+  const syncScroll = (source: "top" | "floating" | "bottom") => {
+    if (syncing.current && syncing.current !== source) {
+      syncing.current = null;
+      return;
+    }
+
+    const refs = {
+      top: topScrollRef,
+      floating: floatingScrollRef,
+      bottom: contentRef,
+    } as const;
+
+    const scrollLeft = refs[source].current?.scrollLeft ?? 0;
+    syncing.current = source;
+
+    Object.entries(refs).forEach(([key, ref]) => {
+      if (key !== source && ref.current) {
+        ref.current.scrollLeft = scrollLeft;
+      }
     });
-    ro.observe(innerRef.current);
-    setContentWidth(innerRef.current.scrollWidth);
-    return () => ro.disconnect();
-  }, [children]);
+
+    requestAnimationFrame(() => {
+      if (syncing.current === source) syncing.current = null;
+    });
+  };
 
   const handleTopScroll = () => {
-    if (syncing.current === "bottom") { syncing.current = null; return; }
-    if (contentRef.current && topScrollRef.current) {
-      syncing.current = "top";
-      contentRef.current.scrollLeft = topScrollRef.current.scrollLeft;
-    }
+    syncScroll("top");
+  };
+
+  const handleFloatingScroll = () => {
+    syncScroll("floating");
   };
 
   const handleBottomScroll = () => {
-    if (syncing.current === "top") { syncing.current = null; return; }
-    if (contentRef.current && topScrollRef.current) {
-      syncing.current = "bottom";
-      topScrollRef.current.scrollLeft = contentRef.current.scrollLeft;
-    }
+    syncScroll("bottom");
   };
 
   return (
-    <div className={`border rounded-lg ${className}`}>
-      {/* Barra de rolagem horizontal sticky no topo do viewport */}
+    <div ref={wrapperRef} className={`border rounded-lg ${className}`}>
+      {floatingState.visible && (
+        <div
+          ref={floatingScrollRef}
+          onScroll={handleFloatingScroll}
+          className="fixed overflow-x-auto overflow-y-hidden rounded-md border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 z-40"
+          style={{
+            top: topOffset,
+            left: floatingState.left,
+            width: floatingState.width,
+            height: barHeight,
+          }}
+        >
+          <div style={{ width: contentWidth, height: 1 }} />
+        </div>
+      )}
       <div
         ref={topScrollRef}
         onScroll={handleTopScroll}
-        className="overflow-x-auto overflow-y-hidden border-b bg-muted/40 backdrop-blur supports-[backdrop-filter]:bg-muted/60 z-30"
-        style={{ height: 14, position: "sticky", top: topOffset }}
+        className="overflow-x-auto overflow-y-hidden border-b bg-muted/40 backdrop-blur supports-[backdrop-filter]:bg-muted/60"
+        style={{ height: barHeight }}
       >
         <div style={{ width: contentWidth, height: 1 }} />
       </div>
-      {/* Conteúdo real (scroll horizontal nativo da tabela) */}
       <div
         ref={contentRef}
         onScroll={handleBottomScroll}
