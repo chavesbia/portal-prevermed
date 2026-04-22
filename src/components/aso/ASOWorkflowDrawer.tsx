@@ -136,7 +136,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
   const etapaPerms = useASOEtapaPermissions();
-  const canAccessAssinatura = etapaPerms.canEditAssinatura;
+  const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canEditEnfermagem;
 
   useEffect(() => {
     if (atendimento) {
@@ -177,10 +177,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   // Recepção só edita checklist após "Iniciar Conferência" (status sai de 'importado')
   const canEditRecepcao = !isImportado && canManageRecepcaoSetup;
   const canEditEnfermagem = !isFechado && etapaAtual === "enfermagem" && etapaPerms.canEditEnfermagem;
-  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && etapaPerms.canEditAssinatura;
+  const canEditAssinatura = !isFechado && etapaAtual === "assinatura" && canAccessAssinatura;
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
+  const canAdvanceCurrentStage = etapaAtual === "assinatura" ? canAccessAssinatura : canEditEtapaAtual;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -524,7 +525,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const handleAdvance = () => {
     if (!nextAction) return;
-    if (!canEditEtapaAtual) {
+    if (!canAdvanceCurrentStage) {
       toast({ title: "Acesso negado", description: "Você não tem permissão para avançar esta etapa.", variant: "destructive" });
       return;
     }
@@ -593,7 +594,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 Setor: {a.setor_responsavel || "—"}
               </span>
             </div>
-            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && canEditEtapaAtual && (
+            {nextAction && a.status !== "finalizado" && nextAction.label !== "Definir tipo de prontuário" && canAdvanceCurrentStage && (
               <Button size="sm" onClick={handleAdvance}>
                 {nextAction.label}
               </Button>
@@ -1129,7 +1130,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
             {!canEditAssinatura && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                Somente a equipe médica pode alterar os campos desta etapa.
+                Somente usuários com permissão de Assinatura ou Enfermagem podem alterar os campos desta etapa.
               </div>
             )}
 
