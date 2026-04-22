@@ -71,6 +71,8 @@ export type Database = {
         Row: {
           agenda: string | null
           aso_assinado: boolean | null
+          assinatura_entrada_em: string | null
+          assinatura_saida_em: string | null
           base_socnet: boolean | null
           cargo: string | null
           carimbo_assinatura_ok: boolean | null
@@ -84,13 +86,22 @@ export type Database = {
           email_enviado: boolean | null
           empresa: string | null
           escaneado: boolean | null
+          exames_entrada_em: string | null
+          exames_saida_em: string | null
           exames_texto: string | null
+          faturamento_entrada_em: string | null
+          faturamento_saida_em: string | null
           fechamento_lote_id: string | null
           ficha_clinica_ok: boolean | null
+          finalizado_em: string | null
           funcionario: string | null
           hora_inicial: string | null
           id: string
           id_interno: string
+          importado_entrada_em: string | null
+          importado_saida_em: string | null
+          liberacao_entrada_em: string | null
+          liberacao_saida_em: string | null
           lote_id: string
           medico: string | null
           observacoes_assinatura: string | null
@@ -98,7 +109,10 @@ export type Database = {
           observacoes_faturamento: string | null
           observacoes_recepcao: string | null
           possui_exame_complementar: boolean | null
+          processo_iniciado_em: string | null
           prontuario_conferido: boolean | null
+          recepcao_entrada_em: string | null
+          recepcao_saida_em: string | null
           renomeado: boolean | null
           riscos: string | null
           salvo_rede: boolean | null
@@ -122,6 +136,8 @@ export type Database = {
         Insert: {
           agenda?: string | null
           aso_assinado?: boolean | null
+          assinatura_entrada_em?: string | null
+          assinatura_saida_em?: string | null
           base_socnet?: boolean | null
           cargo?: string | null
           carimbo_assinatura_ok?: boolean | null
@@ -135,13 +151,22 @@ export type Database = {
           email_enviado?: boolean | null
           empresa?: string | null
           escaneado?: boolean | null
+          exames_entrada_em?: string | null
+          exames_saida_em?: string | null
           exames_texto?: string | null
+          faturamento_entrada_em?: string | null
+          faturamento_saida_em?: string | null
           fechamento_lote_id?: string | null
           ficha_clinica_ok?: boolean | null
+          finalizado_em?: string | null
           funcionario?: string | null
           hora_inicial?: string | null
           id?: string
           id_interno: string
+          importado_entrada_em?: string | null
+          importado_saida_em?: string | null
+          liberacao_entrada_em?: string | null
+          liberacao_saida_em?: string | null
           lote_id: string
           medico?: string | null
           observacoes_assinatura?: string | null
@@ -149,7 +174,10 @@ export type Database = {
           observacoes_faturamento?: string | null
           observacoes_recepcao?: string | null
           possui_exame_complementar?: boolean | null
+          processo_iniciado_em?: string | null
           prontuario_conferido?: boolean | null
+          recepcao_entrada_em?: string | null
+          recepcao_saida_em?: string | null
           renomeado?: boolean | null
           riscos?: string | null
           salvo_rede?: boolean | null
@@ -173,6 +201,8 @@ export type Database = {
         Update: {
           agenda?: string | null
           aso_assinado?: boolean | null
+          assinatura_entrada_em?: string | null
+          assinatura_saida_em?: string | null
           base_socnet?: boolean | null
           cargo?: string | null
           carimbo_assinatura_ok?: boolean | null
@@ -186,13 +216,22 @@ export type Database = {
           email_enviado?: boolean | null
           empresa?: string | null
           escaneado?: boolean | null
+          exames_entrada_em?: string | null
+          exames_saida_em?: string | null
           exames_texto?: string | null
+          faturamento_entrada_em?: string | null
+          faturamento_saida_em?: string | null
           fechamento_lote_id?: string | null
           ficha_clinica_ok?: boolean | null
+          finalizado_em?: string | null
           funcionario?: string | null
           hora_inicial?: string | null
           id?: string
           id_interno?: string
+          importado_entrada_em?: string | null
+          importado_saida_em?: string | null
+          liberacao_entrada_em?: string | null
+          liberacao_saida_em?: string | null
           lote_id?: string
           medico?: string | null
           observacoes_assinatura?: string | null
@@ -200,7 +239,10 @@ export type Database = {
           observacoes_faturamento?: string | null
           observacoes_recepcao?: string | null
           possui_exame_complementar?: boolean | null
+          processo_iniciado_em?: string | null
           prontuario_conferido?: boolean | null
+          recepcao_entrada_em?: string | null
+          recepcao_saida_em?: string | null
           renomeado?: boolean | null
           riscos?: string | null
           salvo_rede?: boolean | null
@@ -2504,6 +2546,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aso_build_atendimento_timestamp: {
+        Args: { _data: string; _hora: string }
+        Returns: string
+      }
+      aso_status_to_stage: {
+        Args: { _status: Database["public"]["Enums"]["aso_status"] }
+        Returns: string
+      }
       can_approve_module_route: {
         Args: { _route: string; _user_id: string }
         Returns: boolean
