@@ -778,6 +778,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2">
                               <Select
                                 value={ex.status === "concluido" ? "liberado" : ex.status}
+                                disabled={!canManageExames}
                                 onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
                               >
                                 <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
@@ -793,7 +794,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2 mt-2">
                               <Switch
                                 checked={!!ex.data_recebimento}
-                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                                 onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                                   id: ex.id,
                                   field: "data_recebimento",
@@ -811,7 +812,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                             <div className="flex items-center gap-2 mt-2">
                               <Switch
                                 checked={!!ex.data_inserido_socged}
-                                disabled={ex.status !== "liberado" && ex.status !== "concluido"}
+                                disabled={!canManageExames || (ex.status !== "liberado" && ex.status !== "concluido")}
                                 onCheckedChange={(v) => exameMutations?.updateExame.mutate({
                                   id: ex.id,
                                   field: "data_inserido_socged",
