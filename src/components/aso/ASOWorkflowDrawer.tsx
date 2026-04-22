@@ -183,7 +183,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canManageExames = canEditEnfermagem;
   const canAdvanceCurrentStage = etapaAtual === "assinatura"
     ? !isFechado && etapaPerms.canAdvanceAssinatura
-    : !isFechado && (etapaAtual ? etapaPerms.canAdvanceEtapa(etapaAtual) : false);
+    : canEditEtapaAtual;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
