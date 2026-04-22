@@ -24,9 +24,9 @@ export function StickyScrollTable({ children, className = "", topOffset = 0 }: S
   const contentRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [contentWidth, setContentWidth] = useState(0);
-  const [floatingState, setFloatingState] = useState({ visible: false, left: 0, width: 0, bottom: 16 });
+  const [floatingState, setFloatingState] = useState({ visible: false, left: 0, width: 0, top: 0 });
   const syncing = useRef<"top" | "floating" | "bottom" | null>(null);
-  const barHeight = 14;
+  const barHeight = 16;
   const viewportPadding = 16;
 
   useEffect(() => {
@@ -40,9 +40,8 @@ export function StickyScrollTable({ children, className = "", topOffset = 0 }: S
       const availableLeft = Math.max(contentRect.left, viewportPadding);
       const availableRight = Math.min(contentRect.right, window.innerWidth - viewportPadding);
       const availableWidth = Math.max(0, availableRight - availableLeft);
-      const visibleInViewport =
-        wrapperRect.top < window.innerHeight - (barHeight + viewportPadding) &&
-        wrapperRect.bottom > topOffset + barHeight + 8;
+      const stickyTop = topOffset + viewportPadding;
+      const visibleInViewport = wrapperRect.top <= stickyTop && wrapperRect.bottom >= stickyTop + barHeight;
 
       setContentWidth(nextContentWidth);
 
@@ -50,7 +49,7 @@ export function StickyScrollTable({ children, className = "", topOffset = 0 }: S
         visible: hasHorizontalOverflow && visibleInViewport && availableWidth > 0,
         left: availableLeft,
         width: availableWidth,
-        bottom: viewportPadding,
+        top: stickyTop,
       });
     };
 
@@ -118,7 +117,7 @@ export function StickyScrollTable({ children, className = "", topOffset = 0 }: S
           onScroll={handleFloatingScroll}
           className="fixed overflow-x-auto overflow-y-hidden rounded-md border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 z-40"
           style={{
-            bottom: floatingState.bottom,
+            top: floatingState.top,
             left: floatingState.left,
             width: floatingState.width,
             height: barHeight,
