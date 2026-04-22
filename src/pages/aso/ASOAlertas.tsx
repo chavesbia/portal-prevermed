@@ -1,7 +1,7 @@
 import { useASOAtendimentos } from "@/hooks/useASOData";
 import { useFeriados } from "@/hooks/useFeriados";
 import { calcSLA } from "@/lib/aso/sla";
-import { formatDuration, getAsoStageLabel, getCurrentStageDurationMs, getCurrentStageStartedAt, getTotalDurationMs } from "@/lib/aso/tempo";
+import { formatDuration, getAsoStageFromStatus, getAsoStageLabel, getCurrentStageDurationMs, getTotalDurationMs } from "@/lib/aso/tempo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Clock, Stethoscope, ScanLine, CheckCircle } from "lucide-react";
@@ -40,7 +40,7 @@ export default function ASOAlertas() {
     const sla = calcSLA(a.data_atendimento, feriadoList, now);
     const totalDurationMs = getTotalDurationMs(timingRecord, now) ?? 0;
     const stageDurationMs = getCurrentStageDurationMs(timingRecord, now) ?? 0;
-    const stageLabel = getAsoStageLabel(getCurrentStageStartedAt(timingRecord) ? String((timingRecord.status as string | undefined) ?? "") : null);
+    const stageLabel = getAsoStageLabel(getAsoStageFromStatus(a.status));
     const timingLabel = `${formatDuration(totalDurationMs)} total — ${formatDuration(stageDurationMs)} em ${stageLabel}`;
 
     // Exame parado: aguardando_exames há mais de 3 dias úteis
