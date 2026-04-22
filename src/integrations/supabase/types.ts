@@ -2504,6 +2504,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_approve_module_route: {
+        Args: { _route: string; _user_id: string }
+        Returns: boolean
+      }
       can_edit_module_route: {
         Args: { _route: string; _user_id: string }
         Returns: boolean
