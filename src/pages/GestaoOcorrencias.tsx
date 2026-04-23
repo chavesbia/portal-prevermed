@@ -304,6 +304,7 @@ export default function GestaoOcorrencias() {
 
     try {
       const ticketPayload: Database['public']['Tables']['occurrence_tickets']['Insert'] = {
+        ticket_number: '',
         company_name: values.companyName.trim(),
         cnpj: values.cnpj.trim(),
         requester_name: values.requesterName?.trim() || null,
