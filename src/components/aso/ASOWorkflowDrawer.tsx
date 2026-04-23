@@ -126,9 +126,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  initialTab?: string;
 }
 
-export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate }: Props) {
+export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate, initialTab }: Props) {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState("info");
@@ -143,6 +144,17 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       setLocal({ ...atendimento });
     }
   }, [atendimento]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialTab === "assinatura" && !canAccessAssinatura) {
+      setTab("info");
+      return;
+    }
+    if (initialTab) {
+      setTab(initialTab);
+    }
+  }, [open, initialTab, canAccessAssinatura]);
 
   useEffect(() => {
     if (tab === "assinatura" && !canAccessAssinatura) {
