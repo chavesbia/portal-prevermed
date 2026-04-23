@@ -793,6 +793,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                           type="date"
                           key={`data-ass-rec-${a.id}-${a.data_assinatura}`}
                           defaultValue={a.data_assinatura || ""}
+                          disabled={!canEditRecepcao}
                           onBlur={(e) => {
                             if (e.target.value !== (a.data_assinatura || "")) {
                               handleDataAssinatura(e.target.value);
@@ -891,6 +892,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </div>
               <Switch
                 checked={a.possui_exame_complementar || false}
+                disabled={!canManageRecepcaoSetup}
                 onCheckedChange={(v) => {
                   updateField("possui_exame_complementar", v);
                 }}
@@ -904,6 +906,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 rows={3}
                 defaultValue={a.observacoes_recepcao || ""}
                 key={`obs-rec-${a.id}-${a.observacoes_recepcao}`}
+                disabled={!canEditRecepcao}
                 onBlur={(e) => {
                   if (e.target.value !== (a.observacoes_recepcao || "")) {
                     updateField("observacoes_recepcao", e.target.value);
