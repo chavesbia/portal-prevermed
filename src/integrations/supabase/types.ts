@@ -1715,6 +1715,384 @@ export type Database = {
         }
         Relationships: []
       }
+      occurrence_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_url: string
+          id: string
+          ticket_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          ticket_id: string
+          uploaded_by: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          ticket_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_comments: {
+        Row: {
+          body: string
+          comment_type: Database["public"]["Enums"]["occurrence_comment_type"]
+          created_at: string
+          created_by: string
+          id: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          comment_type?: Database["public"]["Enums"]["occurrence_comment_type"]
+          created_at?: string
+          created_by: string
+          id?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          comment_type?: Database["public"]["Enums"]["occurrence_comment_type"]
+          created_at?: string
+          created_by?: string
+          id?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_comments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_history: {
+        Row: {
+          action_type: string
+          details: Json | null
+          field_name: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          performed_at: string
+          performed_by: string | null
+          ticket_id: string
+        }
+        Insert: {
+          action_type: string
+          details?: Json | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          ticket_id: string
+        }
+        Update: {
+          action_type?: string
+          details?: Json | null
+          field_name?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_sla_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          priority: Database["public"]["Enums"]["occurrence_priority"]
+          target_hours: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          priority: Database["public"]["Enums"]["occurrence_priority"]
+          target_hours: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          priority?: Database["public"]["Enums"]["occurrence_priority"]
+          target_hours?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      occurrence_status_events: {
+        Row: {
+          changed_by: string | null
+          entered_at: string
+          exited_at: string | null
+          from_status: Database["public"]["Enums"]["occurrence_status"] | null
+          id: string
+          reason: string | null
+          ticket_id: string
+          to_status: Database["public"]["Enums"]["occurrence_status"]
+        }
+        Insert: {
+          changed_by?: string | null
+          entered_at?: string
+          exited_at?: string | null
+          from_status?: Database["public"]["Enums"]["occurrence_status"] | null
+          id?: string
+          reason?: string | null
+          ticket_id: string
+          to_status: Database["public"]["Enums"]["occurrence_status"]
+        }
+        Update: {
+          changed_by?: string | null
+          entered_at?: string
+          exited_at?: string | null
+          from_status?: Database["public"]["Enums"]["occurrence_status"] | null
+          id?: string
+          reason?: string | null
+          ticket_id?: string
+          to_status?: Database["public"]["Enums"]["occurrence_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_status_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_ticket_assignees: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assignment_role: Database["public"]["Enums"]["occurrence_assignee_role"]
+          id: string
+          is_active: boolean
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_role?: Database["public"]["Enums"]["occurrence_assignee_role"]
+          id?: string
+          is_active?: boolean
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assignment_role?: Database["public"]["Enums"]["occurrence_assignee_role"]
+          id?: string
+          is_active?: boolean
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_ticket_assignees_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_ticket_sector_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          is_active: boolean
+          sector: Database["public"]["Enums"]["occurrence_sector"]
+          ticket_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean
+          sector: Database["public"]["Enums"]["occurrence_sector"]
+          ticket_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          is_active?: boolean
+          sector?: Database["public"]["Enums"]["occurrence_sector"]
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_ticket_sector_assignments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      occurrence_tickets: {
+        Row: {
+          action_plan_due_at: string | null
+          action_plan_how: string | null
+          action_plan_owner_id: string | null
+          action_plan_what: string | null
+          client_validated: boolean
+          client_validated_at: string | null
+          cnpj: string
+          company_name: string
+          concluded_at: string | null
+          contact_origin: Database["public"]["Enums"]["occurrence_contact_origin"]
+          created_at: string
+          created_by: string
+          description: string
+          due_at: string | null
+          id: string
+          involved_sectors: Database["public"]["Enums"]["occurrence_sector"][]
+          last_client_response_at: string | null
+          last_internal_update_at: string | null
+          primary_sector:
+            | Database["public"]["Enums"]["occurrence_sector"]
+            | null
+          priority: Database["public"]["Enums"]["occurrence_priority"]
+          reopened_reason: string | null
+          requester_contact: string | null
+          requester_name: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["occurrence_status"]
+          ticket_number: string
+          ticket_type: Database["public"]["Enums"]["occurrence_type"]
+          unit: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          action_plan_due_at?: string | null
+          action_plan_how?: string | null
+          action_plan_owner_id?: string | null
+          action_plan_what?: string | null
+          client_validated?: boolean
+          client_validated_at?: string | null
+          cnpj: string
+          company_name: string
+          concluded_at?: string | null
+          contact_origin: Database["public"]["Enums"]["occurrence_contact_origin"]
+          created_at?: string
+          created_by: string
+          description: string
+          due_at?: string | null
+          id?: string
+          involved_sectors?: Database["public"]["Enums"]["occurrence_sector"][]
+          last_client_response_at?: string | null
+          last_internal_update_at?: string | null
+          primary_sector?:
+            | Database["public"]["Enums"]["occurrence_sector"]
+            | null
+          priority?: Database["public"]["Enums"]["occurrence_priority"]
+          reopened_reason?: string | null
+          requester_contact?: string | null
+          requester_name?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["occurrence_status"]
+          ticket_number: string
+          ticket_type: Database["public"]["Enums"]["occurrence_type"]
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          action_plan_due_at?: string | null
+          action_plan_how?: string | null
+          action_plan_owner_id?: string | null
+          action_plan_what?: string | null
+          client_validated?: boolean
+          client_validated_at?: string | null
+          cnpj?: string
+          company_name?: string
+          concluded_at?: string | null
+          contact_origin?: Database["public"]["Enums"]["occurrence_contact_origin"]
+          created_at?: string
+          created_by?: string
+          description?: string
+          due_at?: string | null
+          id?: string
+          involved_sectors?: Database["public"]["Enums"]["occurrence_sector"][]
+          last_client_response_at?: string | null
+          last_internal_update_at?: string | null
+          primary_sector?:
+            | Database["public"]["Enums"]["occurrence_sector"]
+            | null
+          priority?: Database["public"]["Enums"]["occurrence_priority"]
+          reopened_reason?: string | null
+          requester_contact?: string | null
+          requester_name?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["occurrence_status"]
+          ticket_number?: string
+          ticket_type?: Database["public"]["Enums"]["occurrence_type"]
+          unit?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ordens_servico: {
         Row: {
           contato_cliente: string | null
@@ -2554,14 +2932,38 @@ export type Database = {
         Args: { _status: Database["public"]["Enums"]["aso_status"] }
         Returns: string
       }
+      calculate_occurrence_due_at: {
+        Args: {
+          _base_time: string
+          _priority: Database["public"]["Enums"]["occurrence_priority"]
+        }
+        Returns: string
+      }
+      can_access_occurrence_attachment: {
+        Args: { _ticket_id: string }
+        Returns: boolean
+      }
+      can_access_occurrence_attachment_path: {
+        Args: { _path: string }
+        Returns: boolean
+      }
       can_approve_module_route: {
         Args: { _route: string; _user_id: string }
+        Returns: boolean
+      }
+      can_close_occurrence_ticket: {
+        Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
       can_edit_module_route: {
         Args: { _route: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_occurrence_ticket: {
+        Args: { _ticket_id: string; _user_id: string }
+        Returns: boolean
+      }
+      generate_occurrence_ticket_number: { Args: never; Returns: string }
       get_user_accessible_modules: {
         Args: { _user_id: string }
         Returns: {
@@ -2587,6 +2989,7 @@ export type Database = {
       }
       is_adm_master: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      is_occurrence_manager: { Args: { _user_id: string }; Returns: boolean }
       is_user_in_chat: {
         Args: { _chat_id: string; _user_id: string }
         Returns: boolean
@@ -2649,6 +3052,50 @@ export type Database = {
         | "chat_message"
         | "like"
         | "comment"
+      occurrence_assignee_role: "principal" | "apoio"
+      occurrence_comment_type:
+        | "comentario_interno"
+        | "resposta_cliente"
+        | "nota_status"
+        | "sistema"
+      occurrence_contact_origin:
+        | "email"
+        | "telefone"
+        | "whatsapp"
+        | "presencial"
+        | "reuniao"
+      occurrence_priority: "baixa" | "media" | "alta" | "critica"
+      occurrence_sector:
+        | "recepcao"
+        | "enfermagem"
+        | "medico"
+        | "liberacao"
+        | "faturamento"
+        | "comercial"
+        | "relacionamento"
+        | "financeiro"
+        | "engenharia"
+        | "operacional"
+        | "esocial"
+        | "credenciamento"
+        | "agendamento"
+        | "suporte"
+      occurrence_status:
+        | "aberto"
+        | "em_analise"
+        | "em_tratativa"
+        | "aguardando_retorno_interno"
+        | "aguardando_cliente"
+        | "resolvido"
+        | "aguardando_validacao_cliente"
+        | "concluido"
+        | "reaberto"
+      occurrence_type:
+        | "reclamacao"
+        | "solicitacao"
+        | "duvida"
+        | "sugestao"
+        | "ocorrencia"
       quotation_status:
         | "rascunho"
         | "aguardando_aprovacao"
@@ -2838,6 +3285,55 @@ export const Constants = {
         "chat_message",
         "like",
         "comment",
+      ],
+      occurrence_assignee_role: ["principal", "apoio"],
+      occurrence_comment_type: [
+        "comentario_interno",
+        "resposta_cliente",
+        "nota_status",
+        "sistema",
+      ],
+      occurrence_contact_origin: [
+        "email",
+        "telefone",
+        "whatsapp",
+        "presencial",
+        "reuniao",
+      ],
+      occurrence_priority: ["baixa", "media", "alta", "critica"],
+      occurrence_sector: [
+        "recepcao",
+        "enfermagem",
+        "medico",
+        "liberacao",
+        "faturamento",
+        "comercial",
+        "relacionamento",
+        "financeiro",
+        "engenharia",
+        "operacional",
+        "esocial",
+        "credenciamento",
+        "agendamento",
+        "suporte",
+      ],
+      occurrence_status: [
+        "aberto",
+        "em_analise",
+        "em_tratativa",
+        "aguardando_retorno_interno",
+        "aguardando_cliente",
+        "resolvido",
+        "aguardando_validacao_cliente",
+        "concluido",
+        "reaberto",
+      ],
+      occurrence_type: [
+        "reclamacao",
+        "solicitacao",
+        "duvida",
+        "sugestao",
+        "ocorrencia",
       ],
       quotation_status: [
         "rascunho",
