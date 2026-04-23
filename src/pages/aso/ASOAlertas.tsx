@@ -46,17 +46,20 @@ export default function ASOAlertas() {
   const now = new Date();
   const feriadoList = feriados || [];
 
-  const formatAlertDuration = (ms: number) => {
-    const totalHours = Math.floor(ms / 3600000);
-    const days = Math.floor(totalHours / 24);
-    const hours = totalHours % 24;
+  const formatTotalAlertDuration = (ms: number) => {
+    const totalDays = Math.floor(ms / 86400000);
+    return `${totalDays} dia${totalDays === 1 ? "" : "s"}`;
+  };
 
-    if (days > 0) {
-      return hours > 0 ? `${days} dia${days === 1 ? "" : "s"} ${hours}h` : `${days} dia${days === 1 ? "" : "s"}`;
+  const formatStageAlertDuration = (ms: number) => {
+    const totalHours = Math.floor(ms / 3600000);
+
+    if (totalHours < 24) {
+      return `${totalHours}h`;
     }
 
-    if (totalHours > 0) return `${totalHours}h`;
-    return "< 1h";
+    const totalDays = Math.floor(ms / 86400000);
+    return `${totalDays} dia${totalDays === 1 ? "" : "s"}`;
   };
 
   const canViewStage = (stage: Alert["groupStage"]) => {
@@ -85,7 +88,7 @@ export default function ASOAlertas() {
     const stageDurationMs = getCurrentStageDurationMs(timingRecord, now) ?? 0;
     const stageLabel = getAsoStageLabel(getAsoStageFromStatus(a.status));
     const stageStartedAtMs = getCurrentStageStartedAt(timingRecord)?.getTime() ?? new Date(a.data_atendimento).getTime();
-    const timingLabel = `${formatAlertDuration(totalDurationMs)} total — ${formatAlertDuration(stageDurationMs)} em ${stageLabel}`;
+    const timingLabel = `${formatTotalAlertDuration(totalDurationMs)} total — ${formatStageAlertDuration(stageDurationMs)} em ${stageLabel}`;
 
     // Exame parado: aguardando_exames há mais de 3 dias úteis
     if (a.status === "aguardando_exames" && sla.diasUteis >= 3) {
