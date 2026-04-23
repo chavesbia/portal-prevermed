@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock3, HeadphonesIcon, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, NotebookPen, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,7 @@ export default function GestaoOcorrencias() {
           </CardHeader>
           <CardContent className="flex items-end justify-between">
             <span className="text-3xl font-bold">{summary.total}</span>
-            <HeadphonesIcon className="h-5 w-5 text-primary" />
+            <NotebookPen className="h-5 w-5 text-primary" />
           </CardContent>
         </Card>
 
