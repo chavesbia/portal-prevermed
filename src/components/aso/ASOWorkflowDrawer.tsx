@@ -164,8 +164,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   useEffect(() => {
     if (tab === "assinatura" && !canAccessAssinatura) {
       setTab("info");
+      return;
     }
-  }, [tab, canAccessAssinatura]);
+    if (tab === "liberacao" && !canAccessLiberacao) {
+      setTab("info");
+    }
+  }, [tab, canAccessAssinatura, canAccessLiberacao]);
 
   const a = local || atendimento;
   const { data: exames } = useASOExames(a?.id);
@@ -198,9 +202,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
-  const canAdvanceCurrentStage = etapaAtual === "assinatura"
-    ? !isFechado && etapaPerms.canAdvanceAssinatura
-    : canEditEtapaAtual;
+  const canAdvanceCurrentStage = !isFechado && etapaAtual
+    ? etapaPerms.canAdvanceEtapa(etapaAtual)
+    : false;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
