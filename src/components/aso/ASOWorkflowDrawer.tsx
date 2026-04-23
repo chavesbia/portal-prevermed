@@ -80,8 +80,8 @@ function statusToEtapa(status: string): ASOEtapa | null {
     case "pronto_assinatura_medica":
       return "assinatura";
     case "em_escaneamento":
-      return "liberacao";
     case "liberado":
+      return "liberacao";
     case "liberado_faturamento":
       return "faturamento";
     default:
@@ -138,6 +138,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [local, setLocal] = useState<any>(null);
   const etapaPerms = useASOEtapaPermissions();
   const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canAdvanceAssinatura;
+  const canAccessLiberacao = etapaPerms.canEditLiberacao || etapaPerms.canAdvanceEtapa("liberacao");
 
   useEffect(() => {
     if (atendimento) {
@@ -151,10 +152,14 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       setTab("info");
       return;
     }
+    if (initialTab === "liberacao" && !canAccessLiberacao) {
+      setTab("info");
+      return;
+    }
     if (initialTab) {
       setTab(initialTab);
     }
-  }, [open, initialTab, canAccessAssinatura]);
+  }, [open, initialTab, canAccessAssinatura, canAccessLiberacao]);
 
   useEffect(() => {
     if (tab === "assinatura" && !canAccessAssinatura) {
