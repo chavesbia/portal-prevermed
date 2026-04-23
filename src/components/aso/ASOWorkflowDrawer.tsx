@@ -1266,6 +1266,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <h4 className="font-medium text-sm flex items-center gap-2">
                 <ScanLine className="h-4 w-4" /> Liberação / Digitalização
               </h4>
+              {!canEditLiberacao && (
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  Somente usuários com permissão da etapa Liberação podem alterar os campos desta aba.
+                </div>
+              )}
               <div className="space-y-3">
                 {[
                   { field: "escaneado", label: "Escaneado" },
@@ -1278,6 +1283,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     <Label className="text-sm">{label}</Label>
                     <Switch
                       checked={a[field] || false}
+                      disabled={!canEditLiberacao}
                       onCheckedChange={(v) => updateField(field, v)}
                     />
                   </div>
@@ -1291,6 +1297,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   rows={2}
                   key={`obs-lib-${a.id}-${a.observacoes_escaneamento}`}
                   defaultValue={a.observacoes_escaneamento || ""}
+                  disabled={!canEditLiberacao}
                   onBlur={(e) => {
                     if (e.target.value !== (a.observacoes_escaneamento || "")) {
                       updateField("observacoes_escaneamento", e.target.value);
