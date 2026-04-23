@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
+import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import Index from "./pages/Index";
 import Organograma from "./pages/Organograma";
 import Auth from "./pages/Auth";
@@ -62,7 +63,7 @@ const App = () => (
               <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
               <Route path="/carteira-comercial" element={<CarteiraComercial />} />
               <Route path="/gestao-os" element={<GestaoOS />} />
-              <Route path="/liberacao-asos" element={<LiberacaoASOs />} />
+              <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/social" element={<Social />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/notificacoes" element={<Notificacoes />} />

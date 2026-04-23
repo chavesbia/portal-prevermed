@@ -80,8 +80,8 @@ function statusToEtapa(status: string): ASOEtapa | null {
     case "pronto_assinatura_medica":
       return "assinatura";
     case "em_escaneamento":
-      return "liberacao";
     case "liberado":
+      return "liberacao";
     case "liberado_faturamento":
       return "faturamento";
     default:
@@ -138,6 +138,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [local, setLocal] = useState<any>(null);
   const etapaPerms = useASOEtapaPermissions();
   const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canAdvanceAssinatura;
+  const canAccessLiberacao = etapaPerms.canEditLiberacao || etapaPerms.canAdvanceEtapa("liberacao");
 
   useEffect(() => {
     if (atendimento) {
@@ -151,16 +152,24 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       setTab("info");
       return;
     }
+    if (initialTab === "liberacao" && !canAccessLiberacao) {
+      setTab("info");
+      return;
+    }
     if (initialTab) {
       setTab(initialTab);
     }
-  }, [open, initialTab, canAccessAssinatura]);
+  }, [open, initialTab, canAccessAssinatura, canAccessLiberacao]);
 
   useEffect(() => {
     if (tab === "assinatura" && !canAccessAssinatura) {
       setTab("info");
+      return;
     }
-  }, [tab, canAccessAssinatura]);
+    if (tab === "liberacao" && !canAccessLiberacao) {
+      setTab("info");
+    }
+  }, [tab, canAccessAssinatura, canAccessLiberacao]);
 
   const a = local || atendimento;
   const { data: exames } = useASOExames(a?.id);
@@ -193,9 +202,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const canEditLiberacao = !isFechado && etapaAtual === "liberacao" && etapaPerms.canEditLiberacao;
   const canEditFaturamento = !isFechado && etapaAtual === "faturamento" && etapaPerms.canEditFaturamento;
   const canManageExames = canEditEnfermagem;
-  const canAdvanceCurrentStage = etapaAtual === "assinatura"
-    ? !isFechado && etapaPerms.canAdvanceAssinatura
-    : canEditEtapaAtual;
+  const canAdvanceCurrentStage = !isFechado && etapaAtual
+    ? etapaPerms.canAdvanceEtapa(etapaAtual)
+    : false;
   
   // FONTE DE VERDADE: parse do exames_texto (raw da agenda SOC) como fallback quando ainda não há registros
   const parsedFromRaw = a.exames_texto ? parseExamesTexto(a.exames_texto) : [];
@@ -438,7 +447,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             action: async () => {
               // Auto-apply signature effects before liberating
               await applyAutoSignature();
-              await advanceStatus("liberado", "Liberação");
+              await advanceStatus("liberado_faturamento", "Faturamento");
             },
             validate: () => {
               if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
@@ -499,7 +508,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         }
         return {
           label: "Liberar Prontuário",
-          action: () => advanceStatus("liberado", "Liberação"),
+          action: () => advanceStatus("liberado_faturamento", "Faturamento"),
           validate: () => {
             if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
             return { ok: true };
@@ -510,7 +519,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       case "em_escaneamento": {
         return {
           label: "Liberar Prontuário",
-          action: () => advanceStatus("liberado", "Liberação"),
+          action: () => advanceStatus("liberado_faturamento", "Faturamento"),
           validate: () => {
             if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
             if (!a.conferencia_final_ok) return { ok: false, msg: "Conferência final pendente" };
@@ -621,6 +630,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
           <Tabs value={tab} onValueChange={(nextTab) => {
           if (nextTab === "assinatura" && !canAccessAssinatura) return;
+          if (nextTab === "liberacao" && !canAccessLiberacao) return;
           setTab(nextTab);
         }} className="px-6 pt-3">
           <TabsList className={`w-full grid rounded-lg border bg-muted/50 p-1 ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
@@ -629,7 +639,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <TabsTrigger value="exames" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Exames</TabsTrigger>
             <TabsTrigger value="assinatura" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm" disabled={!canAccessAssinatura}>Assinatura</TabsTrigger>
             {showLiberacaoTab && (
-              <TabsTrigger value="liberacao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Liberação</TabsTrigger>
+              <TabsTrigger value="liberacao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm" disabled={!canAccessLiberacao}>Liberação</TabsTrigger>
             )}
             <TabsTrigger value="historico" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Histórico</TabsTrigger>
           </TabsList>
@@ -783,6 +793,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                           type="date"
                           key={`data-ass-rec-${a.id}-${a.data_assinatura}`}
                           defaultValue={a.data_assinatura || ""}
+                          disabled={!canEditRecepcao}
                           onBlur={(e) => {
                             if (e.target.value !== (a.data_assinatura || "")) {
                               handleDataAssinatura(e.target.value);
@@ -881,6 +892,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               </div>
               <Switch
                 checked={a.possui_exame_complementar || false}
+                disabled={!canManageRecepcaoSetup}
                 onCheckedChange={(v) => {
                   updateField("possui_exame_complementar", v);
                 }}
@@ -894,6 +906,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 rows={3}
                 defaultValue={a.observacoes_recepcao || ""}
                 key={`obs-rec-${a.id}-${a.observacoes_recepcao}`}
+                disabled={!canEditRecepcao}
                 onBlur={(e) => {
                   if (e.target.value !== (a.observacoes_recepcao || "")) {
                     updateField("observacoes_recepcao", e.target.value);
@@ -1253,6 +1266,11 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <h4 className="font-medium text-sm flex items-center gap-2">
                 <ScanLine className="h-4 w-4" /> Liberação / Digitalização
               </h4>
+              {!canEditLiberacao && (
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  Somente usuários com permissão da etapa Liberação podem alterar os campos desta aba.
+                </div>
+              )}
               <div className="space-y-3">
                 {[
                   { field: "escaneado", label: "Escaneado" },
@@ -1265,6 +1283,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                     <Label className="text-sm">{label}</Label>
                     <Switch
                       checked={a[field] || false}
+                      disabled={!canEditLiberacao}
                       onCheckedChange={(v) => updateField(field, v)}
                     />
                   </div>
@@ -1278,6 +1297,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   rows={2}
                   key={`obs-lib-${a.id}-${a.observacoes_escaneamento}`}
                   defaultValue={a.observacoes_escaneamento || ""}
+                  disabled={!canEditLiberacao}
                   onBlur={(e) => {
                     if (e.target.value !== (a.observacoes_escaneamento || "")) {
                       updateField("observacoes_escaneamento", e.target.value);
