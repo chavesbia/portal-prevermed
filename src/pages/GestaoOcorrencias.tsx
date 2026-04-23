@@ -14,6 +14,8 @@ import {
   Paperclip,
   RefreshCw,
   Upload,
+  UserRound,
+  UsersRound,
   X,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +28,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -38,6 +39,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SearchableMultiSelect, type SearchableMultiSelectOption } from '@/components/ui/searchable-multi-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +60,9 @@ type ProfileOption = {
   user_id: string;
   full_name: string;
   unit: string | null;
+  email: string | null;
+  contact_email: string | null;
+  position: string | null;
 };
 
 type OccurrencePriority = Database['public']['Enums']['occurrence_priority'];
@@ -245,7 +250,7 @@ export default function GestaoOcorrencias() {
   const loadProfiles = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('user_id, full_name, unit')
+      .select('user_id, full_name, unit, email, contact_email, position')
       .eq('status', 'active')
       .order('full_name');
 
@@ -442,9 +447,49 @@ export default function GestaoOcorrencias() {
     return { total, open, waiting, done };
   }, [tickets]);
 
-  const supportAssigneeIds = form.watch('supportAssigneeIds');
   const selectedSectors = form.watch('involvedSectors');
+  const principalAssigneeId = form.watch('principalAssigneeId');
+  const supportAssigneeIds = form.watch('supportAssigneeIds');
   const dueMode = form.watch('dueMode');
+
+  const userOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return profiles.map((person) => {
+      const email = person.contact_email || person.email || '';
+      const secondary = [email, person.position, person.unit].filter(Boolean).join(' • ');
+
+      return {
+        value: person.user_id,
+        label: person.full_name,
+        typeLabel: 'Usuário',
+        secondaryLabel: secondary || undefined,
+        keywords: [person.full_name, email, person.position || '', person.unit || ''],
+      };
+    });
+  }, [profiles]);
+
+  const sectorSelectOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return sectorOptions.map((sector) => ({
+      value: sector.value,
+      label: sector.label,
+      typeLabel: 'Setor',
+      secondaryLabel: 'Setor operacional',
+      keywords: [sector.label, sector.value],
+    }));
+  }, []);
+
+  const principalAssigneeOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return userOptions.map((option) => ({
+      ...option,
+      disabled: supportAssigneeIds.includes(option.value),
+    }));
+  }, [supportAssigneeIds, userOptions]);
+
+  const supportAssigneeOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return userOptions.map((option) => ({
+      ...option,
+      disabled: option.value === principalAssigneeId,
+    }));
+  }, [principalAssigneeId, userOptions]);
 
   return (
     <div className="space-y-6">
