@@ -630,6 +630,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
           <Tabs value={tab} onValueChange={(nextTab) => {
           if (nextTab === "assinatura" && !canAccessAssinatura) return;
+          if (nextTab === "liberacao" && !canAccessLiberacao) return;
           setTab(nextTab);
         }} className="px-6 pt-3">
           <TabsList className={`w-full grid rounded-lg border bg-muted/50 p-1 ${showLiberacaoTab ? "grid-cols-6" : "grid-cols-5"}`}>
@@ -638,7 +639,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             <TabsTrigger value="exames" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Exames</TabsTrigger>
             <TabsTrigger value="assinatura" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm" disabled={!canAccessAssinatura}>Assinatura</TabsTrigger>
             {showLiberacaoTab && (
-              <TabsTrigger value="liberacao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Liberação</TabsTrigger>
+              <TabsTrigger value="liberacao" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm" disabled={!canAccessLiberacao}>Liberação</TabsTrigger>
             )}
             <TabsTrigger value="historico" className="text-xs data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm">Histórico</TabsTrigger>
           </TabsList>
