@@ -447,7 +447,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
             action: async () => {
               // Auto-apply signature effects before liberating
               await applyAutoSignature();
-              await advanceStatus("liberado", "Liberação");
+              await advanceStatus("liberado_faturamento", "Faturamento");
             },
             validate: () => {
               if (!a.tipo_prontuario) return { ok: false, msg: "Defina o tipo de prontuário" };
@@ -508,7 +508,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         }
         return {
           label: "Liberar Prontuário",
-          action: () => advanceStatus("liberado", "Liberação"),
+          action: () => advanceStatus("liberado_faturamento", "Faturamento"),
           validate: () => {
             if (!a.aso_assinado) return { ok: false, msg: "ASO não assinado" };
             return { ok: true };
@@ -519,7 +519,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       case "em_escaneamento": {
         return {
           label: "Liberar Prontuário",
-          action: () => advanceStatus("liberado", "Liberação"),
+          action: () => advanceStatus("liberado_faturamento", "Faturamento"),
           validate: () => {
             if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
             if (!a.conferencia_final_ok) return { ok: false, msg: "Conferência final pendente" };
