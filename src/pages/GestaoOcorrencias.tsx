@@ -14,6 +14,8 @@ import {
   Paperclip,
   RefreshCw,
   Upload,
+  UserRound,
+  UsersRound,
   X,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +28,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -38,6 +39,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SearchableMultiSelect, type SearchableMultiSelectOption } from '@/components/ui/searchable-multi-select';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +60,9 @@ type ProfileOption = {
   user_id: string;
   full_name: string;
   unit: string | null;
+  email: string | null;
+  contact_email: string | null;
+  position: string | null;
 };
 
 type OccurrencePriority = Database['public']['Enums']['occurrence_priority'];
@@ -245,7 +250,7 @@ export default function GestaoOcorrencias() {
   const loadProfiles = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('user_id, full_name, unit')
+      .select('user_id, full_name, unit, email, contact_email, position')
       .eq('status', 'active')
       .order('full_name');
 
@@ -442,9 +447,49 @@ export default function GestaoOcorrencias() {
     return { total, open, waiting, done };
   }, [tickets]);
 
-  const supportAssigneeIds = form.watch('supportAssigneeIds');
   const selectedSectors = form.watch('involvedSectors');
+  const principalAssigneeId = form.watch('principalAssigneeId');
+  const supportAssigneeIds = form.watch('supportAssigneeIds');
   const dueMode = form.watch('dueMode');
+
+  const userOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return profiles.map((person) => {
+      const email = person.contact_email || person.email || '';
+      const secondary = [email, person.position, person.unit].filter(Boolean).join(' • ');
+
+      return {
+        value: person.user_id,
+        label: person.full_name,
+        typeLabel: 'Usuário',
+        secondaryLabel: secondary || undefined,
+        keywords: [person.full_name, email, person.position || '', person.unit || ''],
+      };
+    });
+  }, [profiles]);
+
+  const sectorSelectOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return sectorOptions.map((sector) => ({
+      value: sector.value,
+      label: sector.label,
+      typeLabel: 'Setor',
+      secondaryLabel: 'Setor operacional',
+      keywords: [sector.label, sector.value],
+    }));
+  }, []);
+
+  const principalAssigneeOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return userOptions.map((option) => ({
+      ...option,
+      disabled: supportAssigneeIds.includes(option.value),
+    }));
+  }, [supportAssigneeIds, userOptions]);
+
+  const supportAssigneeOptions = useMemo<SearchableMultiSelectOption[]>(() => {
+    return userOptions.map((option) => ({
+      ...option,
+      disabled: option.value === principalAssigneeId,
+    }));
+  }, [principalAssigneeId, userOptions]);
 
   return (
     <div className="space-y-6">
@@ -635,75 +680,60 @@ export default function GestaoOcorrencias() {
 
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold">Setores envolvidos</h3>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    {sectorOptions.map((sector) => {
-                      const checked = selectedSectors.includes(sector.value);
-                      return (
-                        <label key={sector.value} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={(isChecked) => {
-                              const current = form.getValues('involvedSectors');
-                              form.setValue(
-                                'involvedSectors',
-                                isChecked
-                                  ? [...current, sector.value]
-                                  : current.filter((value) => value !== sector.value),
-                                { shouldValidate: true },
-                              );
-                            }}
-                          />
-                          <span>{sector.label}</span>
-                        </label>
-                      );
-                    })}
+                  <div className="space-y-3">
+                    <SearchableMultiSelect
+                      options={sectorSelectOptions}
+                      value={selectedSectors}
+                      onChange={(next) => form.setValue('involvedSectors', next as OccurrenceSector[], { shouldValidate: true })}
+                      placeholder="Buscar e selecionar setores"
+                      searchPlaceholder="Buscar por nome do setor"
+                      emptyText="Nenhum setor encontrado."
+                    />
+                    <FormDescription>
+                      Busque e selecione múltiplos setores sem expandir a tela; as tags ficam compactas com rolagem interna.
+                    </FormDescription>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold">Atribuição e direcionamento</h3>
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-4 xl:grid-cols-2">
                     <FormField control={form.control} name="principalAssigneeId" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Responsável principal</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                          <SelectContent>
-                            {profiles.map((person) => (
-                              <SelectItem key={person.user_id} value={person.user_id}>{person.full_name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormLabel className="flex items-center gap-2"><UserRound className="h-4 w-4" />Responsável principal</FormLabel>
+                        <FormControl>
+                          <SearchableMultiSelect
+                            options={principalAssigneeOptions}
+                            value={field.value ? [field.value] : []}
+                            onChange={(next) => field.onChange(next[0] ?? undefined)}
+                            placeholder="Buscar responsável principal"
+                            searchPlaceholder="Buscar por nome, e-mail, cargo ou unidade"
+                            emptyText="Nenhum usuário encontrado."
+                            maxSelected={1}
+                          />
+                        </FormControl>
+                        <FormDescription>Escolha um único responsável principal.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )} />
-                  </div>
 
-                  <div className="space-y-3">
-                    <FormLabel>Equipe envolvida</FormLabel>
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {profiles.map((person) => {
-                        const checked = supportAssigneeIds.includes(person.user_id);
-                        return (
-                          <label key={person.user_id} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(isChecked) => {
-                                const current = form.getValues('supportAssigneeIds');
-                                form.setValue(
-                                  'supportAssigneeIds',
-                                  isChecked
-                                    ? [...current, person.user_id]
-                                    : current.filter((value) => value !== person.user_id),
-                                );
-                              }}
-                            />
-                            <span>{person.full_name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    <FormDescription>Selecione uma ou mais pessoas de apoio, se necessário.</FormDescription>
+                    <FormField control={form.control} name="supportAssigneeIds" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2"><UsersRound className="h-4 w-4" />Equipe envolvida</FormLabel>
+                        <FormControl>
+                          <SearchableMultiSelect
+                            options={supportAssigneeOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Buscar usuários de apoio"
+                            searchPlaceholder="Buscar por nome, e-mail, cargo ou unidade"
+                            emptyText="Nenhum usuário encontrado."
+                          />
+                        </FormControl>
+                        <FormDescription>Selecione quantas pessoas de apoio forem necessárias.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
                   </div>
                 </div>
 
