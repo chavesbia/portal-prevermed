@@ -31,6 +31,7 @@ import {
   LayoutDashboard,
   Cog,
   Package,
+  NotebookPen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -108,6 +109,7 @@ const moduleIconMap: Record<string, LucideIcon> = {
   'GraduationCap': GraduationCap,
   'FileCode': FileCode,
   'Building2': Building2,
+  'NotebookPen': NotebookPen,
 };
 
 const getDepartmentIcon = (name: string): LucideIcon => {
