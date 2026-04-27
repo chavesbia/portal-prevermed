@@ -6,6 +6,9 @@ import { OSListView } from '@/components/os/OSListView';
 import { OSNovaView } from '@/components/os/OSNovaView';
 import { OSSLAView } from '@/components/os/OSSLAView';
 import { OSGestaoVencimentosView } from '@/components/os/OSGestaoVencimentosView';
+import { OSAgendaView } from '@/components/os/OSAgendaView';
+import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
+import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
@@ -41,6 +44,9 @@ export default function GestaoOS() {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
           {canEdit && <TabsTrigger value="nova">Nova OS</TabsTrigger>}
+          <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="sla">SLA</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
         </TabsList>
@@ -75,6 +81,18 @@ export default function GestaoOS() {
             />
           </TabsContent>
         )}
+
+        <TabsContent value="agenda" className="mt-6">
+          <OSAgendaView ordens={filteredOrdens} canEdit={canEdit} />
+        </TabsContent>
+
+        <TabsContent value="equipamentos" className="mt-6">
+          <OSEquipamentosView ordens={filteredOrdens} canEdit={canEdit} />
+        </TabsContent>
+
+        <TabsContent value="historico" className="mt-6">
+          <OSHistoricoGeralView ordens={filteredOrdens} />
+        </TabsContent>
 
         <TabsContent value="sla" className="mt-6">
           <OSSLAView ordens={filteredOrdens} />

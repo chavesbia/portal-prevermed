@@ -2147,6 +2147,197 @@ export type Database = {
         }
         Relationships: []
       }
+      os_equipamento_historico: {
+        Row: {
+          acao: string
+          comentario: string | null
+          created_at: string
+          equipamento_id: string
+          id: string
+          ordem_id: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          acao: string
+          comentario?: string | null
+          created_at?: string
+          equipamento_id: string
+          id?: string
+          ordem_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          acao?: string
+          comentario?: string | null
+          created_at?: string
+          equipamento_id?: string
+          id?: string
+          ordem_id?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_equipamento_historico_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "os_equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_equipamento_historico_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      os_equipamentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          empresa_cliente: string
+          id: string
+          localizacao: string | null
+          nome: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["equipamento_status"]
+          tipo: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          empresa_cliente: string
+          id?: string
+          localizacao?: string | null
+          nome: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["equipamento_status"]
+          tipo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          empresa_cliente?: string
+          id?: string
+          localizacao?: string | null
+          nome?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["equipamento_status"]
+          tipo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      os_visita_equipamentos: {
+        Row: {
+          created_at: string
+          equipamento_id: string
+          visita_id: string
+        }
+        Insert: {
+          created_at?: string
+          equipamento_id: string
+          visita_id: string
+        }
+        Update: {
+          created_at?: string
+          equipamento_id?: string
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_visita_equipamentos_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "os_equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_visita_equipamentos_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "os_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      os_visitas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_visita: string
+          empresa_cliente: string
+          endereco: string | null
+          hora_visita: string | null
+          id: string
+          motivo_cancelamento: string | null
+          numero_os: string | null
+          observacoes: string | null
+          ordem_id: string | null
+          responsavel_id: string | null
+          responsavel_nome: string
+          status: Database["public"]["Enums"]["visita_status"]
+          tipo_visita: Database["public"]["Enums"]["visita_tipo"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_visita: string
+          empresa_cliente: string
+          endereco?: string | null
+          hora_visita?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_os?: string | null
+          observacoes?: string | null
+          ordem_id?: string | null
+          responsavel_id?: string | null
+          responsavel_nome: string
+          status?: Database["public"]["Enums"]["visita_status"]
+          tipo_visita?: Database["public"]["Enums"]["visita_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_visita?: string
+          empresa_cliente?: string
+          endereco?: string | null
+          hora_visita?: string | null
+          id?: string
+          motivo_cancelamento?: string | null
+          numero_os?: string | null
+          observacoes?: string | null
+          ordem_id?: string | null
+          responsavel_id?: string | null
+          responsavel_nome?: string
+          status?: Database["public"]["Enums"]["visita_status"]
+          tipo_visita?: Database["public"]["Enums"]["visita_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_visitas_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           can_approve: boolean | null
@@ -3037,6 +3228,7 @@ export type Database = {
         | "NAO_COMPARECEU"
         | "REMARCADO"
         | "PARCIAL"
+      equipamento_status: "ativo" | "em_manutencao" | "inativo" | "descartado"
       hierarchy_position:
         | "director"
         | "manager"
@@ -3105,6 +3297,14 @@ export type Database = {
       unit_type: "lapa" | "osasco"
       user_role: "adm_master" | "adm_user" | "tech_user"
       user_status: "active" | "inactive"
+      visita_status: "agendada" | "realizada" | "cancelada"
+      visita_tipo:
+        | "Avaliação"
+        | "Coleta"
+        | "Inspeção"
+        | "Reunião"
+        | "Treinamento"
+        | "Outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3269,6 +3469,7 @@ export const Constants = {
         "REMARCADO",
         "PARCIAL",
       ],
+      equipamento_status: ["ativo", "em_manutencao", "inativo", "descartado"],
       hierarchy_position: [
         "director",
         "manager",
@@ -3345,6 +3546,15 @@ export const Constants = {
       unit_type: ["lapa", "osasco"],
       user_role: ["adm_master", "adm_user", "tech_user"],
       user_status: ["active", "inactive"],
+      visita_status: ["agendada", "realizada", "cancelada"],
+      visita_tipo: [
+        "Avaliação",
+        "Coleta",
+        "Inspeção",
+        "Reunião",
+        "Treinamento",
+        "Outro",
+      ],
     },
   },
 } as const
