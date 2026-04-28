@@ -110,6 +110,7 @@ export default function AdminUsers() {
   // New user form states
   const [newUserForm, setNewUserForm] = useState({
     full_name: '',
+    nickname: '',
     login: '',
     position: '',
     unit: 'lapa' as 'lapa' | 'osasco',
@@ -125,6 +126,9 @@ export default function AdminUsers() {
     direct_leader_id: '',
     direct_manager_id: '',
   });
+  const [newUserPhotoFile, setNewUserPhotoFile] = useState<File | null>(null);
+  const [newUserPhotoPreview, setNewUserPhotoPreview] = useState<string | null>(null);
+  const newUserPhotoInputRef = useRef<HTMLInputElement>(null);
   
   // Unified edit form states (includes profile, role, and departments)
   const [editForm, setEditForm] = useState({
