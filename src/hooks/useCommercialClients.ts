@@ -25,6 +25,10 @@ export interface CommercialClient {
   pricing_table_attached: boolean;
   notes: string | null;
   contract_notes: string | null;
+  contact_name: string | null;
+  contact_whatsapp: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
   is_active: boolean;
   revisado: boolean;
   revisado_em: string | null;
