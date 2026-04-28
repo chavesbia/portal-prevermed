@@ -212,6 +212,14 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
               <Input value={form.fabricante} onChange={e => setForm({ ...form, fabricante: e.target.value })} placeholder="Ex: 3M, Instrutherm" />
             </div>
             <div className="space-y-1">
+              <Label>Certificado</Label>
+              <Input
+                value={form.certificado}
+                onChange={e => setForm({ ...form, certificado: e.target.value })}
+                placeholder="Nº do certificado de calibração"
+              />
+            </div>
+            <div className="space-y-1">
               <Label>Data da Última Calibração</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -236,6 +244,71 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                 </PopoverContent>
               </Popover>
             </div>
+
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Equipamento de locação</Label>
+                <p className="text-xs text-muted-foreground">Marque se o equipamento é alugado de terceiros</p>
+              </div>
+              <Switch checked={form.is_locacao} onCheckedChange={(v) => setForm({ ...form, is_locacao: v })} />
+            </div>
+
+            {form.is_locacao && (
+              <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Dados da Locação (Nota Fiscal)</p>
+                <div className="space-y-1">
+                  <Label>Fornecedor *</Label>
+                  <Input
+                    value={form.locacao_fornecedor}
+                    onChange={e => setForm({ ...form, locacao_fornecedor: e.target.value })}
+                    placeholder="Razão social do fornecedor"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>CNPJ</Label>
+                  <Input
+                    value={form.locacao_cnpj}
+                    onChange={e => setForm({ ...form, locacao_cnpj: e.target.value })}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label>Nº da NF</Label>
+                    <Input
+                      value={form.locacao_nf_numero}
+                      onChange={e => setForm({ ...form, locacao_nf_numero: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Data da NF</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !form.locacao_nf_data && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {form.locacao_nf_data ? format(form.locacao_nf_data, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={form.locacao_nf_data || undefined} onSelect={(d) => setForm({ ...form, locacao_nf_data: d || null })} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Custo da Locação (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.locacao_custo}
+                    onChange={e => setForm({ ...form, locacao_custo: e.target.value })}
+                    placeholder="0,00"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <Label className="text-sm">Equipamento ativo</Label>
@@ -250,7 +323,7 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={!form.nome.trim()}>
+            <Button onClick={handleSave} disabled={!form.nome.trim() || (form.is_locacao && !form.locacao_fornecedor.trim())}>
               {editing ? 'Salvar' : 'Cadastrar'}
             </Button>
           </DialogFooter>
