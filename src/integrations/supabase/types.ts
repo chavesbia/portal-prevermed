@@ -2929,6 +2929,48 @@ export type Database = {
         }
         Relationships: []
       }
+      unauthorized_access_log: {
+        Row: {
+          attempt_source: string
+          attempted_resource: string
+          created_at: string
+          details: Json | null
+          http_method: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Insert: {
+          attempt_source: string
+          attempted_resource: string
+          created_at?: string
+          details?: Json | null
+          http_method?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          attempt_source?: string
+          attempted_resource?: string
+          created_at?: string
+          details?: Json | null
+          http_method?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       units: {
         Row: {
           additional_info: string | null
@@ -3188,6 +3230,15 @@ export type Database = {
       is_user_in_department: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
+      }
+      log_unauthorized_access: {
+        Args: {
+          _details?: Json
+          _method?: string
+          _resource: string
+          _source: string
+        }
+        Returns: string
       }
       user_has_module_access: {
         Args: { _module_id: string; _user_id: string }
