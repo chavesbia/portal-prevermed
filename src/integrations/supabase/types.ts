@@ -2973,6 +2973,158 @@ export type Database = {
         }
         Relationships: []
       }
+      renewal_quotation_items: {
+        Row: {
+          adjusted_value: number
+          applied_percent: number
+          created_at: string
+          current_value: number
+          id: string
+          is_included: boolean
+          observation: string | null
+          reference_value: number
+          renewal_id: string
+          service_id: string | null
+          service_name: string
+          sort_order: number
+        }
+        Insert: {
+          adjusted_value?: number
+          applied_percent?: number
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_included?: boolean
+          observation?: string | null
+          reference_value?: number
+          renewal_id: string
+          service_id?: string | null
+          service_name: string
+          sort_order?: number
+        }
+        Update: {
+          adjusted_value?: number
+          applied_percent?: number
+          created_at?: string
+          current_value?: number
+          id?: string
+          is_included?: boolean
+          observation?: string | null
+          reference_value?: number
+          renewal_id?: string
+          service_id?: string | null
+          service_name?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_quotation_items_renewal_id_fkey"
+            columns: ["renewal_id"]
+            isOneToOne: false
+            referencedRelation: "renewal_quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "renewal_quotation_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      renewal_quotations: {
+        Row: {
+          adjusted_total_annual: number
+          adjusted_total_monthly: number
+          approved_at: string | null
+          approved_by: string | null
+          client_id: string | null
+          client_name: string
+          created_at: string
+          created_by: string
+          current_lives: number
+          current_total_annual: number
+          current_total_monthly: number
+          deviation_percent: number
+          deviation_status: string
+          id: string
+          index_percent: number
+          index_type: string
+          justification: string | null
+          notes: string | null
+          reference_period: string | null
+          reference_total_monthly: number
+          rejection_reason: string | null
+          renewal_number: string | null
+          status: string
+          updated_at: string
+          version_number: number
+        }
+        Insert: {
+          adjusted_total_annual?: number
+          adjusted_total_monthly?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          client_name: string
+          created_at?: string
+          created_by: string
+          current_lives?: number
+          current_total_annual?: number
+          current_total_monthly?: number
+          deviation_percent?: number
+          deviation_status?: string
+          id?: string
+          index_percent?: number
+          index_type?: string
+          justification?: string | null
+          notes?: string | null
+          reference_period?: string | null
+          reference_total_monthly?: number
+          rejection_reason?: string | null
+          renewal_number?: string | null
+          status?: string
+          updated_at?: string
+          version_number?: number
+        }
+        Update: {
+          adjusted_total_annual?: number
+          adjusted_total_monthly?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          client_id?: string | null
+          client_name?: string
+          created_at?: string
+          created_by?: string
+          current_lives?: number
+          current_total_annual?: number
+          current_total_monthly?: number
+          deviation_percent?: number
+          deviation_status?: string
+          id?: string
+          index_percent?: number
+          index_type?: string
+          justification?: string | null
+          notes?: string | null
+          reference_period?: string | null
+          reference_total_monthly?: number
+          rejection_reason?: string | null
+          renewal_number?: string | null
+          status?: string
+          updated_at?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "renewal_quotations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responsaveis_tecnicos: {
         Row: {
           ativo: boolean
