@@ -47,11 +47,11 @@ export function UsefulLinks({ links }: UsefulLinksProps) {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                    <p className="font-medium text-sm break-words group-hover:text-primary transition-colors">
                       {link.title}
                     </p>
                     {link.description && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground break-words">
                         {link.description}
                       </p>
                     )}
