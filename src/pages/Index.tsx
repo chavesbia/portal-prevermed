@@ -383,9 +383,13 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Middle Section - Directory + Units */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      {/* Middle Section - Directory */}
+      <div className="grid grid-cols-1 gap-6">
         <DirectoryCard />
+      </div>
+
+      {/* Units - full width horizontal */}
+      <div className="grid grid-cols-1 gap-6">
         <UnitsCard />
       </div>
 
