@@ -16,7 +16,7 @@ interface OrgNodeProps {
 }
 
 function OrgNode({ node, level = 0 }: OrgNodeProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
 
   const getInitials = (name: string) => {
