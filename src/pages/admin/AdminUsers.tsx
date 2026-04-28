@@ -1133,6 +1133,53 @@ export default function AdminUsers() {
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={newUserPhotoPreview || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {newUserForm.full_name ? getInitials(newUserForm.full_name) : '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <input
+                  ref={newUserPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (!file.type.startsWith('image/')) {
+                      toast.error('Por favor, selecione uma imagem');
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error('A imagem deve ter no máximo 5MB');
+                      return;
+                    }
+                    setNewUserPhotoFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewUserPhotoPreview(reader.result as string);
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
+                  onClick={() => newUserPhotoInputRef.current?.click()}
+                  type="button"
+                >
+                  <Camera className="h-3 w-3" />
+                </Button>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Foto do perfil</p>
+                <p className="text-xs text-muted-foreground">Opcional. Será enviada após criar o usuário.</p>
+              </div>
+            </div>
+
             {/* Section: Basic Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -1151,6 +1198,17 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Apelido</Label>
+                  <Input
+                    value={newUserForm.nickname}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="Como prefere ser chamado"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Login *</Label>
                   <Input
                     value={newUserForm.login}
@@ -1161,8 +1219,16 @@ export default function AdminUsers() {
                     Senha padrão: prevermed
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Input
+                    value={newUserForm.position}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
+                    placeholder="Ex: Analista, Coordenador..."
+                  />
+                </div>
               </div>
-              
+            </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
