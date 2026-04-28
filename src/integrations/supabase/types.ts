@@ -1014,37 +1014,55 @@ export type Database = {
         Row: {
           category: string | null
           code: string | null
+          cost_value: number | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           is_active: boolean
           is_package: boolean
+          is_priceable: boolean
           name: string
+          price_in_plan: number | null
+          price_standalone: number | null
+          pricing_notes: string | null
+          unit: string | null
           updated_at: string
         }
         Insert: {
           category?: string | null
           code?: string | null
+          cost_value?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_package?: boolean
+          is_priceable?: boolean
           name: string
+          price_in_plan?: number | null
+          price_standalone?: number | null
+          pricing_notes?: string | null
+          unit?: string | null
           updated_at?: string
         }
         Update: {
           category?: string | null
           code?: string | null
+          cost_value?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_package?: boolean
+          is_priceable?: boolean
           name?: string
+          price_in_plan?: number | null
+          price_standalone?: number | null
+          pricing_notes?: string | null
+          unit?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2980,6 +2998,7 @@ export type Database = {
           created_at: string
           current_value: number
           id: string
+          in_monthly_package: boolean
           is_included: boolean
           observation: string | null
           reference_value: number
@@ -2994,6 +3013,7 @@ export type Database = {
           created_at?: string
           current_value?: number
           id?: string
+          in_monthly_package?: boolean
           is_included?: boolean
           observation?: string | null
           reference_value?: number
@@ -3008,6 +3028,7 @@ export type Database = {
           created_at?: string
           current_value?: number
           id?: string
+          in_monthly_package?: boolean
           is_included?: boolean
           observation?: string | null
           reference_value?: number
