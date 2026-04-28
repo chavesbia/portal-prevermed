@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Calculator, History, Package, GraduationCap, Settings } from "lucide-react";
+import { Calculator, History, Package, GraduationCap, Settings, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InLocoTab } from "@/components/pricing/InLocoTab";
 import { PlansTab } from "@/components/pricing/PlansTab";
 import { TrainingsTab } from "@/components/pricing/TrainingsTab";
 import { QuotationHistory } from "@/components/history/QuotationHistory";
 import { AdminTab } from "@/components/admin/AdminTab";
+import { RenewalForm } from "@/components/pricing/RenewalForm";
+import { RenewalHistory } from "@/components/pricing/RenewalHistory";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useServices";
 import { mapToPricingRole } from "@/lib/pricing-roles";
@@ -15,6 +17,8 @@ import { Loader2 } from "lucide-react";
 
 export default function Precificacao() {
   const [activeTab, setActiveTab] = useState("inloco");
+  const [inlocoSubTab, setInlocoSubTab] = useState("nova");
+  const [renovacaoSubTab, setRenovacaoSubTab] = useState("nova");
   const { isAdmin, profile, role } = useAuth();
   const { services, isLoading } = useServices();
 
@@ -30,6 +34,7 @@ export default function Precificacao() {
     setEditingQuotation(q);
     setCustosAdicionais(q.custosAdicionais);
     setActiveTab("inloco");
+    setInlocoSubTab("nova");
   };
 
   if (isLoading) {
@@ -55,6 +60,10 @@ export default function Precificacao() {
             <Calculator className="h-4 w-4" />
             In Loco
           </TabsTrigger>
+          <TabsTrigger value="renovacao" className="gap-1.5">
+            <RefreshCw className="h-4 w-4" />
+            Renovação
+          </TabsTrigger>
           <TabsTrigger value="planos" className="gap-1.5">
             <Package className="h-4 w-4" />
             Planos
@@ -62,10 +71,6 @@ export default function Precificacao() {
           <TabsTrigger value="treinamentos" className="gap-1.5">
             <GraduationCap className="h-4 w-4" />
             Treinamentos
-          </TabsTrigger>
-          <TabsTrigger value="historico" className="gap-1.5">
-            <History className="h-4 w-4" />
-            Histórico
           </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="admin" className="gap-1.5">
@@ -76,23 +81,59 @@ export default function Precificacao() {
         </TabsList>
 
         <TabsContent value="inloco" className="mt-6">
-          <InLocoTab
-            services={services}
-            userRole={userRole}
-            custosAdicionais={custosAdicionais}
-            onCustosChange={setCustosAdicionais}
-            editingQuotation={editingQuotation}
-            onClearEdit={() => setEditingQuotation(null)}
-          />
+          <Tabs value={inlocoSubTab} onValueChange={setInlocoSubTab}>
+            <TabsList>
+              <TabsTrigger value="nova" className="gap-1.5">
+                <Calculator className="h-4 w-4" />
+                Nova Memória
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="gap-1.5">
+                <History className="h-4 w-4" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="nova" className="mt-4">
+              <InLocoTab
+                services={services}
+                userRole={userRole}
+                custosAdicionais={custosAdicionais}
+                onCustosChange={setCustosAdicionais}
+                editingQuotation={editingQuotation}
+                onClearEdit={() => setEditingQuotation(null)}
+              />
+            </TabsContent>
+            <TabsContent value="historico" className="mt-4">
+              <QuotationHistory onEditQuotation={handleEditQuotation} />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
+
+        <TabsContent value="renovacao" className="mt-6">
+          <Tabs value={renovacaoSubTab} onValueChange={setRenovacaoSubTab}>
+            <TabsList>
+              <TabsTrigger value="nova" className="gap-1.5">
+                <RefreshCw className="h-4 w-4" />
+                Nova Renovação
+              </TabsTrigger>
+              <TabsTrigger value="historico" className="gap-1.5">
+                <History className="h-4 w-4" />
+                Histórico
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="nova" className="mt-4">
+              <RenewalForm onSaved={() => setRenovacaoSubTab("historico")} />
+            </TabsContent>
+            <TabsContent value="historico" className="mt-4">
+              <RenewalHistory />
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
         <TabsContent value="planos" className="mt-6">
           <PlansTab />
         </TabsContent>
         <TabsContent value="treinamentos" className="mt-6">
           <TrainingsTab />
-        </TabsContent>
-        <TabsContent value="historico" className="mt-6">
-          <QuotationHistory onEditQuotation={handleEditQuotation} />
         </TabsContent>
         {isAdmin && (
           <TabsContent value="admin" className="mt-6">
