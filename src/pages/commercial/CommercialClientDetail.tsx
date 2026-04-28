@@ -185,7 +185,7 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
         <TabsContent value="contrato">
           <Card>
             <CardContent className="pt-6 space-y-4">
-              <BoolField label="Possui Contrato" value={client.has_contract} />
+              <BoolField label="Contrato Elaborado" value={client.has_contract} />
               <BoolField label="Contrato Assinado" value={client.contract_signed} />
               <Info label="Número do Contrato" value={client.contract_number} />
               <Info label="Início da Vigência" value={formatDateBR(client.contract_start_date)} />
