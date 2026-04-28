@@ -468,6 +468,7 @@ export default function AdminUsers() {
         body: {
           users: [{
             full_name: newUserForm.full_name,
+            nickname: newUserForm.nickname || undefined,
             login: loginFormatted,
             position: newUserForm.position || undefined,
             unit: newUserForm.unit,
@@ -493,17 +494,36 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
+      const createdUserId = data?.results?.[0]?.success ? data.results[0].user_id : null;
+
       // After user is created, update direct_leader_id and direct_manager_id
-      if (data?.results?.[0]?.success && (newUserForm.direct_leader_id || newUserForm.direct_manager_id)) {
-        const createdUserId = data.results[0].user_id;
-        if (createdUserId) {
+      if (createdUserId && (newUserForm.direct_leader_id || newUserForm.direct_manager_id)) {
+        await supabase
+          .from('profiles')
+          .update({
+            direct_leader_id: newUserForm.direct_leader_id || null,
+            direct_manager_id: newUserForm.direct_manager_id || null,
+          })
+          .eq('user_id', createdUserId);
+      }
+
+      // Upload photo if provided
+      if (createdUserId && newUserPhotoFile) {
+        try {
+          const fileExt = newUserPhotoFile.name.split('.').pop();
+          const fileName = `${createdUserId}/${Date.now()}.${fileExt}`;
+          const { error: upErr } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, newUserPhotoFile, { upsert: true });
+          if (upErr) throw upErr;
+          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
           await supabase
             .from('profiles')
-            .update({
-              direct_leader_id: newUserForm.direct_leader_id || null,
-              direct_manager_id: newUserForm.direct_manager_id || null,
-            })
+            .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
             .eq('user_id', createdUserId);
+        } catch (photoErr) {
+          console.error('Erro ao enviar foto do novo usuário:', photoErr);
+          toast.error('Usuário criado, mas falhou ao enviar foto');
         }
       }
 
@@ -516,6 +536,7 @@ export default function AdminUsers() {
       setIsNewUserDialogOpen(false);
       setNewUserForm({
         full_name: '',
+        nickname: '',
         login: '',
         position: '',
         unit: 'lapa',
@@ -531,6 +552,9 @@ export default function AdminUsers() {
         direct_leader_id: '',
         direct_manager_id: '',
       });
+      setNewUserPhotoFile(null);
+      setNewUserPhotoPreview(null);
+      if (newUserPhotoInputRef.current) newUserPhotoInputRef.current.value = '';
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
