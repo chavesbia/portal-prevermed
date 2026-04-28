@@ -374,7 +374,9 @@ export default function Index() {
 
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
-          <BirthdayCard allBirthdays={allBirthdays} />
+          <div id="birthdays-section" className="scroll-mt-20">
+            <BirthdayCard allBirthdays={allBirthdays} />
+          </div>
 
           <CalendarPreviewCard />
 
