@@ -222,13 +222,21 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {clientServices.map(cs => (
-                      <Badge key={cs.id} variant="secondary" className="text-xs">
+                      <Badge
+                        key={cs.id}
+                        variant={cs.service?.is_package ? 'default' : 'secondary'}
+                        className="text-xs gap-1"
+                      >
+                        {cs.service?.is_package && <Package className="h-3 w-3" />}
                         {cs.service?.name || '—'}
                       </Badge>
                     ))}
                   </div>
                 )}
               </div>
+
+              <ClientPackageModules clientId={clientId} readOnly={readOnly} />
+
               <div>
                 <Info label="Resumo de Serviços (texto livre)" value={client.services_summary} />
               </div>
