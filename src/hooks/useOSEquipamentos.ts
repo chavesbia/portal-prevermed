@@ -8,9 +8,16 @@ export interface EquipamentoInput {
   nome: string;
   tipo?: string | null;
   fabricante?: string | null;
+  certificado?: string | null;
   data_ultima_calibracao?: string | null;
   observacoes?: string | null;
   ativo?: boolean;
+  is_locacao?: boolean;
+  locacao_fornecedor?: string | null;
+  locacao_cnpj?: string | null;
+  locacao_nf_numero?: string | null;
+  locacao_nf_data?: string | null;
+  locacao_custo?: number | null;
 }
 
 export function useOSEquipamentos() {
@@ -45,9 +52,16 @@ export function useOSEquipamentos() {
           nome: input.nome,
           tipo: input.tipo || null,
           fabricante: input.fabricante || null,
+          certificado: input.certificado || null,
           data_ultima_calibracao: input.data_ultima_calibracao || null,
           observacoes: input.observacoes || null,
           ativo: input.ativo ?? true,
+          is_locacao: input.is_locacao ?? false,
+          locacao_fornecedor: input.locacao_fornecedor || null,
+          locacao_cnpj: input.locacao_cnpj || null,
+          locacao_nf_numero: input.locacao_nf_numero || null,
+          locacao_nf_data: input.locacao_nf_data || null,
+          locacao_custo: input.locacao_custo ?? null,
           created_by: user?.id || null,
         } as any)
         .select()

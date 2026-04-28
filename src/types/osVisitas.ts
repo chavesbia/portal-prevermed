@@ -28,9 +28,16 @@ export interface OSEquipamento {
   nome: string;
   tipo: string | null;
   fabricante: string | null;
+  certificado: string | null;
   data_ultima_calibracao: string | null;
   observacoes: string | null;
   ativo: boolean;
+  is_locacao: boolean;
+  locacao_fornecedor: string | null;
+  locacao_cnpj: string | null;
+  locacao_nf_numero: string | null;
+  locacao_nf_data: string | null;
+  locacao_custo: number | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
