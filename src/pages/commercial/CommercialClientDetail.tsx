@@ -314,3 +314,16 @@ function Info({ label, value }: { label: string; value: string | null | undefine
     </div>
   );
 }
+
+function InfoIcon({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string | null | undefined }) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium break-all">{value || '—'}</p>
+      </div>
+    </div>
+  );
+}
+
