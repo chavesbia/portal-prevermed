@@ -8,6 +8,7 @@ const corsHeaders = {
 interface UserToCreate {
   full_name: string
   login: string
+  nickname?: string
   position?: string
   unit?: 'lapa' | 'osasco'
   hierarchy_position?: 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member'
