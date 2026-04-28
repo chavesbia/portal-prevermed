@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
+import { AdminMasterRoute } from "@/components/layout/AdminMasterRoute";
 import Index from "./pages/Index";
 import Organograma from "./pages/Organograma";
 import Auth from "./pages/Auth";
@@ -55,7 +56,7 @@ const App = () => (
               <Route path="/comunicados" element={<Comunicados />} />
               <Route path="/calendario" element={<Calendario />} />
               <Route path="/documentos" element={<Documentos />} />
-              <Route path="/admin/documentos" element={<AdminDocuments />} />
+              
               <Route path="/links" element={<LinksUteis />} />
               <Route path="/diretorio" element={<Diretorio />} />
               <Route path="/organograma" element={<Organograma />} />
@@ -71,12 +72,13 @@ const App = () => (
               <Route path="/notificacoes" element={<Notificacoes />} />
               <Route path="/departamentos/*" element={<Index />} />
               
-              {/* Admin routes */}
-              <Route path="/admin/usuarios" element={<AdminUsers />} />
-              <Route path="/admin/departamentos" element={<AdminDepartments />} />
-              <Route path="/admin/permissoes" element={<AdminPermissions />} />
-              <Route path="/admin/auditoria" element={<AdminAudit />} />
-              <Route path="/admin/configuracoes" element={<AdminSettings />} />
+              {/* Admin routes - exclusivo ADM Master */}
+              <Route path="/admin/usuarios" element={<AdminMasterRoute><AdminUsers /></AdminMasterRoute>} />
+              <Route path="/admin/departamentos" element={<AdminMasterRoute><AdminDepartments /></AdminMasterRoute>} />
+              <Route path="/admin/permissoes" element={<AdminMasterRoute><AdminPermissions /></AdminMasterRoute>} />
+              <Route path="/admin/auditoria" element={<AdminMasterRoute><AdminAudit /></AdminMasterRoute>} />
+              <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
+              <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
               
               
               <Route path="/perfil" element={<Profile />} />

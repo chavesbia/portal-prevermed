@@ -163,7 +163,7 @@ const adminSection: MenuSection = {
 
 export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const location = useLocation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmMaster } = useAuth();
   const { departmentsWithModules } = useModulePermissions();
 
   // Build dynamic departments section from permissions
@@ -201,7 +201,7 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   };
 
   const shouldShowItem = (item: MenuItem) => {
-    if (item.adminOnly && !isAdmin) return false;
+    if (item.adminOnly && !isAdmMaster) return false;
     if (item.requiresAuth && !user) return false;
     return true;
   };
