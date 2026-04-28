@@ -1228,30 +1228,20 @@ export default function AdminUsers() {
                   />
                 </div>
               </div>
-            </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <AtSign className="h-3 w-3" />
-                    @ Interno (menções)
-                  </Label>
-                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
-                    {newUserForm.login
-                      ? `@${newUserForm.login.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
-                      : 'Será gerado a partir do login'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Gerado automaticamente a partir do login do usuário.
-                  </p>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <AtSign className="h-3 w-3" />
+                  @ Interno (menções)
+                </Label>
+                <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
+                  {newUserForm.login
+                    ? `@${newUserForm.login.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
+                    : 'Será gerado a partir do login'}
                 </div>
-                <div className="space-y-2">
-                  <Label>Cargo</Label>
-                  <Input
-                    value={newUserForm.position}
-                    onChange={(e) => setNewUserForm(prev => ({ ...prev, position: e.target.value }))}
-                    placeholder="Ex: Analista, Coordenador..."
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Gerado automaticamente a partir do login do usuário.
+                </p>
               </div>
             </div>
 
