@@ -116,7 +116,7 @@ export default function AdminDocuments() {
     visibility_mode: 'public' as VisibilityMode,
   });
 
-  const isAdmin = role === 'adm_master' || role === 'adm_user';
+  const isAdmin = role === 'adm_master';
 
   useEffect(() => {
     fetchDocuments();
