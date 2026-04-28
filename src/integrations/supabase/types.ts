@@ -763,6 +763,64 @@ export type Database = {
           },
         ]
       }
+      commercial_client_service_modules: {
+        Row: {
+          client_id: string
+          component_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          package_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          component_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          package_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          component_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          package_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_client_service_modules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_client_service_modules_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_client_service_modules_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commercial_client_services: {
         Row: {
           client_id: string
@@ -913,6 +971,45 @@ export type Database = {
         }
         Relationships: []
       }
+      commercial_service_components: {
+        Row: {
+          component_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          package_id: string
+        }
+        Insert: {
+          component_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          package_id: string
+        }
+        Update: {
+          component_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_service_components_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_service_components_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commercial_services: {
         Row: {
           category: string | null
@@ -922,6 +1019,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_package: boolean
           name: string
           updated_at: string
         }
@@ -933,6 +1031,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_package?: boolean
           name: string
           updated_at?: string
         }
@@ -944,6 +1043,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_package?: boolean
           name?: string
           updated_at?: string
         }
