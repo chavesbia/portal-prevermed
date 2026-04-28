@@ -154,8 +154,10 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Fabricante</TableHead>
+                    <TableHead>Certificado</TableHead>
                     <TableHead>Última Calibração</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Locação</TableHead>
                     <TableHead>Ativo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -168,12 +170,22 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                         <TableCell className="font-medium">{eq.nome}</TableCell>
                         <TableCell className="text-muted-foreground">{eq.tipo || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{eq.fabricante || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">{eq.certificado || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {eq.data_ultima_calibracao
                             ? format(new Date(eq.data_ultima_calibracao + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })
                             : '-'}
                         </TableCell>
                         <TableCell><Badge className={calibracaoStatusColors[cal.status]}>{cal.label}</Badge></TableCell>
+                        <TableCell>
+                          {eq.is_locacao ? (
+                            <Badge variant="outline" title={eq.locacao_fornecedor || ''}>
+                              {eq.locacao_fornecedor || 'Locado'}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Próprio</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={eq.ativo ? 'default' : 'secondary'}>{eq.ativo ? 'Sim' : 'Não'}</Badge>
                         </TableCell>
