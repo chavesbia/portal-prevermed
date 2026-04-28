@@ -160,9 +160,9 @@ export default function AdminAudit() {
       log.object_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.comment?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesUser = !filterUser || log.user_id === filterUser;
-    const matchesAction = !filterAction || log.action_type === filterAction;
-    const matchesObject = !filterObject || log.object_type === filterObject;
+    const matchesUser = !filterUser || filterUser === '__all__' || log.user_id === filterUser;
+    const matchesAction = !filterAction || filterAction === '__all__' || log.action_type === filterAction;
+    const matchesObject = !filterObject || filterObject === '__all__' || log.object_type === filterObject;
 
     return matchesSearch && matchesUser && matchesAction && matchesObject;
   });
@@ -228,7 +228,7 @@ export default function AdminAudit() {
                 <SelectValue placeholder="Filtrar por usuário" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os usuários</SelectItem>
+                <SelectItem value="__all__">Todos os usuários</SelectItem>
                 {users.map(user => (
                   <SelectItem key={user.user_id} value={user.user_id}>
                     {user.full_name}
@@ -242,7 +242,7 @@ export default function AdminAudit() {
                 <SelectValue placeholder="Tipo de ação" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as ações</SelectItem>
+                <SelectItem value="__all__">Todas as ações</SelectItem>
                 {uniqueActions.map(action => (
                   <SelectItem key={action} value={action}>
                     {action}
@@ -256,7 +256,7 @@ export default function AdminAudit() {
                 <SelectValue placeholder="Tipo de objeto" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os objetos</SelectItem>
+                <SelectItem value="__all__">Todos os objetos</SelectItem>
                 {uniqueObjects.map(obj => (
                   <SelectItem key={obj} value={obj}>
                     {obj}

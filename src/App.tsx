@@ -23,6 +23,7 @@ import AdminPermissions from "./pages/admin/AdminPermissions";
 import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminDocuments from "./pages/admin/AdminDocuments";
+import AdminServicosOperacionais from "./pages/admin/AdminServicosOperacionais";
 
 import Documentos from "./pages/Documentos";
 import LinksUteis from "./pages/LinksUteis";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/admin/auditoria" element={<AdminMasterRoute><AdminAudit /></AdminMasterRoute>} />
               <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
               <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
+              <Route path="/admin/servicos-operacionais" element={<AdminMasterRoute><AdminServicosOperacionais /></AdminMasterRoute>} />
               
               
               <Route path="/perfil" element={<Profile />} />

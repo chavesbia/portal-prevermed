@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCommercialClients } from "@/hooks/useCommercialClients";
+import { useCommercialServices, useClientServices, useClientServiceModules } from "@/hooks/useCommercialServices";
 import {
   useRenewalQuotations,
   RenewalIndexType,
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -28,9 +30,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Calculator, Info } from "lucide-react";
+import { Trash2, Plus, Calculator, Info, Package2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+
+// shadcn checkbox isn't exported by default in some templates; ensure import
+// (já existe em src/components/ui/checkbox)
 
 // Tabela de referência baseada na PlansTab — Plano B (Pacote Vidas)
 const PLAN_TIERS = [
@@ -49,32 +55,32 @@ function getTier(lives: number) {
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
+const titleCase = (s: string) =>
+  s.toLowerCase().replace(/(?:^|\s)\S/g, (c) => c.toUpperCase());
+
 interface DraftItem extends RenewalItem {
   _key: string;
 }
 
-const newItem = (name = ""): DraftItem => ({
+const newItem = (overrides: Partial<DraftItem> = {}): DraftItem => ({
   _key: crypto.randomUUID(),
-  service_name: name,
+  service_id: null,
+  service_name: "",
   current_value: 0,
   applied_percent: 0,
   adjusted_value: 0,
   reference_value: 0,
   is_included: true,
+  in_monthly_package: false,
   observation: "",
+  ...overrides,
 });
 
-const SERVICE_SUGGESTIONS = [
-  "Pacote SST (gestão mensal)",
-  "Vida ativa com e-Social",
-  "PCMSO",
-  "LTCAT",
-  "PGR",
-  "DRPS",
-];
+const NO_SERVICE = "__manual__";
 
 export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
   const { clients } = useCommercialClients();
+  const { services: catalog } = useCommercialServices();
   const { saveRenewal } = useRenewalQuotations();
 
   const [clientId, setClientId] = useState<string>("");
@@ -83,11 +89,17 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
   const [indexType, setIndexType] = useState<RenewalIndexType>("IGPM");
   const [indexPercent, setIndexPercent] = useState<number>(0);
   const [referencePeriod, setReferencePeriod] = useState<string>("");
-  const [items, setItems] = useState<DraftItem[]>(
-    SERVICE_SUGGESTIONS.map((n) => newItem(n))
-  );
+  const [items, setItems] = useState<DraftItem[]>([newItem()]);
   const [justification, setJustification] = useState("");
   const [notes, setNotes] = useState("");
+
+  const { clientServices } = useClientServices(clientId || undefined);
+  const { modules: clientModules } = useClientServiceModules(clientId || undefined);
+
+  const priceableCatalog = useMemo(
+    () => catalog.filter((s) => s.is_active && s.is_priceable),
+    [catalog]
+  );
 
   const tier = useMemo(() => getTier(currentLives || 0), [currentLives]);
 
@@ -99,24 +111,99 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     return vidas + laudos;
   }, [currentLives, tier]);
 
-  const handleClientSelect = (id: string) => {
-    setClientId(id);
-    const c = clients.find((x) => x.id === id);
+  // Quando muda o cliente, auto-importa os serviços contratados (Carteira + módulos do pacote)
+  useEffect(() => {
+    if (!clientId) return;
+    const c = clients.find((x) => x.id === clientId);
     if (c) {
       setClientName(c.company_name);
       setCurrentLives(c.active_lives || 0);
     }
-  };
+  }, [clientId, clients]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    if (clientServices.length === 0 && clientModules.length === 0) return;
+
+    // Monta lista única de serviços do cliente: serviços diretamente vinculados + componentes ativos de pacotes
+    const seen = new Set<string>();
+    const imported: DraftItem[] = [];
+
+    clientServices.forEach((cs) => {
+      if (!cs.service || seen.has(cs.service.id)) return;
+      seen.add(cs.service.id);
+      const suggested = cs.service.price_in_plan ?? cs.service.price_standalone ?? 0;
+      imported.push(
+        newItem({
+          service_id: cs.service.id,
+          service_name: cs.service.name,
+          current_value: suggested,
+          adjusted_value: suggested,
+          reference_value: cs.service.price_in_plan ?? cs.service.price_standalone ?? 0,
+          in_monthly_package: !!cs.service.is_package,
+        })
+      );
+    });
+
+    // Adiciona componentes de pacote marcados como ativos
+    clientModules
+      .filter((m) => m.is_active)
+      .forEach((m) => {
+        if (seen.has(m.component_id)) return;
+        const svc = catalog.find((s) => s.id === m.component_id);
+        if (!svc) return;
+        seen.add(svc.id);
+        imported.push(
+          newItem({
+            service_id: svc.id,
+            service_name: svc.name,
+            current_value: 0,
+            in_monthly_package: true,
+            observation: "Componente do pacote contratado",
+          })
+        );
+      });
+
+    if (imported.length > 0) {
+      setItems(imported);
+      toast.success(`${imported.length} serviço(s) importado(s) da carteira do cliente`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, clientServices.length, clientModules.length]);
 
   const updateItem = (key: string, patch: Partial<DraftItem>) => {
     setItems((prev) =>
       prev.map((it) => {
         if (it._key !== key) return it;
         const next = { ...it, ...patch };
-        // recalcular valor reajustado
         next.adjusted_value = +(next.current_value * (1 + (next.applied_percent || 0) / 100)).toFixed(2);
         return next;
       })
+    );
+  };
+
+  const handlePickService = (key: string, serviceId: string) => {
+    if (serviceId === NO_SERVICE) {
+      updateItem(key, { service_id: null });
+      return;
+    }
+    const svc = priceableCatalog.find((s) => s.id === serviceId);
+    if (!svc) return;
+    const suggested = svc.price_in_plan ?? svc.price_standalone ?? 0;
+    setItems((prev) =>
+      prev.map((it) =>
+        it._key === key
+          ? {
+              ...it,
+              service_id: svc.id,
+              service_name: svc.name,
+              current_value: it.current_value || suggested,
+              reference_value: svc.price_in_plan ?? svc.price_standalone ?? 0,
+              adjusted_value: +((it.current_value || suggested) * (1 + (it.applied_percent || 0) / 100)).toFixed(2),
+              in_monthly_package: it.in_monthly_package ?? !!svc.is_package,
+            }
+          : it
+      )
     );
   };
 
@@ -150,12 +237,14 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     const validItems: RenewalItem[] = items
       .filter((i) => i.current_value > 0 || (i.service_name && i.service_name.trim()))
       .map((i, idx) => ({
-        service_name: i.service_name.toUpperCase(),
+        service_id: i.service_id ?? null,
+        service_name: (i.service_name || "").toUpperCase(),
         current_value: i.current_value,
         applied_percent: i.applied_percent,
         adjusted_value: i.adjusted_value,
         reference_value: i.reference_value,
         is_included: i.is_included !== false,
+        in_monthly_package: i.in_monthly_package === true,
         observation: i.observation || null,
         sort_order: idx,
       }));
@@ -179,7 +268,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     setCurrentLives(0);
     setIndexPercent(0);
     setReferencePeriod("");
-    setItems(SERVICE_SUGGESTIONS.map((n) => newItem(n)));
+    setItems([newItem()]);
     setJustification("");
     setNotes("");
     onSaved?.();
@@ -201,15 +290,19 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
             Memória de Cálculo de Renovação
           </CardTitle>
           <CardDescription>
-            Selecione o cliente, informe o índice e ajuste os serviços. O sistema compara com o
-            valor padrão da tabela de planos.
+            Selecione o cliente da Carteira — os serviços já contratados serão importados
+            automaticamente. Use o seletor para adicionar serviços extras do{" "}
+            <Link to="/admin/servicos-operacionais" className="text-primary underline">
+              catálogo central
+            </Link>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2 lg:col-span-2">
               <Label>Cliente da Carteira</Label>
-              <Select value={clientId} onValueChange={handleClientSelect}>
+              <Select value={clientId} onValueChange={setClientId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um cliente" />
                 </SelectTrigger>
@@ -287,7 +380,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
           <div>
             <CardTitle>Serviços</CardTitle>
             <CardDescription>
-              Edite valor atual e percentual aplicado linha a linha
+              Selecione do catálogo, marque o que está dentro do pacote mensal e ajuste valores.
             </CardDescription>
           </div>
           <Button
@@ -305,73 +398,131 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Serviço</TableHead>
+                  <TableHead className="min-w-[260px]">Serviço (catálogo)</TableHead>
+                  <TableHead className="text-center w-[110px]">No pacote SST?</TableHead>
                   <TableHead className="text-right">Valor atual</TableHead>
-                  <TableHead className="text-right w-[110px]">% aplicado</TableHead>
+                  <TableHead className="text-right w-[100px]">% aplic.</TableHead>
                   <TableHead className="text-right">Reajustado</TableHead>
                   <TableHead className="min-w-[180px]">Observações</TableHead>
                   <TableHead className="w-[40px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((it) => (
-                  <TableRow key={it._key}>
-                    <TableCell>
-                      <Input
-                        value={it.service_name}
-                        onChange={(e) => updateItem(it._key, { service_name: e.target.value })}
-                        placeholder="Nome do serviço"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={it.current_value || ""}
-                        onChange={(e) =>
-                          updateItem(it._key, { current_value: Number(e.target.value) || 0 })
-                        }
-                        className="h-8 text-right"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={it.applied_percent || ""}
-                        onChange={(e) =>
-                          updateItem(it._key, { applied_percent: Number(e.target.value) || 0 })
-                        }
-                        className="h-8 text-right"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{fmt(it.adjusted_value)}</TableCell>
-                    <TableCell>
-                      <Input
-                        value={it.observation || ""}
-                        onChange={(e) => updateItem(it._key, { observation: e.target.value })}
-                        placeholder="Ex.: incluso no pacote"
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() =>
-                          setItems((p) => p.filter((x) => x._key !== it._key))
-                        }
-                        className="h-7 w-7"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {items.map((it) => {
+                  const linkedSvc = it.service_id
+                    ? catalog.find((s) => s.id === it.service_id)
+                    : null;
+                  return (
+                    <TableRow key={it._key}>
+                      <TableCell>
+                        <Select
+                          value={it.service_id || NO_SERVICE}
+                          onValueChange={(v) => handlePickService(it._key, v)}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Selecionar serviço..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_SERVICE}>
+                              <span className="text-muted-foreground">— Digitar manualmente —</span>
+                            </SelectItem>
+                            {priceableCatalog.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                <div className="flex items-center gap-2">
+                                  {s.is_package && <Package2 className="h-3 w-3 text-primary" />}
+                                  <span>{titleCase(s.name)}</span>
+                                  {s.category && (
+                                    <Badge variant="outline" className="text-[10px] py-0">
+                                      {titleCase(s.category)}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!it.service_id && (
+                          <Input
+                            value={it.service_name}
+                            onChange={(e) => updateItem(it._key, { service_name: e.target.value })}
+                            placeholder="Nome do serviço (manual)"
+                            className="h-8 mt-1"
+                          />
+                        )}
+                        {linkedSvc && (linkedSvc.price_in_plan != null || linkedSvc.price_standalone != null) && (
+                          <div className="text-[10px] text-muted-foreground mt-1">
+                            Sugestão: avulso {fmt(linkedSvc.price_standalone ?? 0)} · plano{" "}
+                            {fmt(linkedSvc.price_in_plan ?? 0)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Checkbox
+                          checked={!!it.in_monthly_package}
+                          onCheckedChange={(v) =>
+                            updateItem(it._key, { in_monthly_package: v === true })
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={it.current_value || ""}
+                          onChange={(e) =>
+                            updateItem(it._key, { current_value: Number(e.target.value) || 0 })
+                          }
+                          className="h-8 text-right"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={it.applied_percent || ""}
+                          onChange={(e) =>
+                            updateItem(it._key, { applied_percent: Number(e.target.value) || 0 })
+                          }
+                          className="h-8 text-right"
+                        />
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{fmt(it.adjusted_value)}</TableCell>
+                      <TableCell>
+                        <Input
+                          value={it.observation || ""}
+                          onChange={(e) => updateItem(it._key, { observation: e.target.value })}
+                          placeholder="Notas específicas desta linha"
+                          className="h-8"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setItems((p) => p.filter((x) => x._key !== it._key))}
+                          className="h-7 w-7"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
+          {priceableCatalog.length === 0 && (
+            <Alert className="mt-3">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                O catálogo de serviços está vazio. Cadastre serviços em{" "}
+                <Link to="/admin/servicos-operacionais" className="text-primary underline">
+                  Administração › Serviços Operacionais
+                </Link>{" "}
+                para selecioná-los aqui.
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 

@@ -16,6 +16,7 @@ export interface RenewalItem {
   adjusted_value: number;
   reference_value: number;
   is_included?: boolean;
+  in_monthly_package?: boolean;
   observation?: string | null;
   sort_order?: number;
 }
@@ -177,6 +178,7 @@ export function useRenewalQuotations() {
           adjusted_value: it.adjusted_value,
           reference_value: it.reference_value,
           is_included: it.is_included !== false,
+          in_monthly_package: it.in_monthly_package === true,
           observation: it.observation ?? null,
           sort_order: idx,
         }));
