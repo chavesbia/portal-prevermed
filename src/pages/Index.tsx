@@ -282,10 +282,14 @@ export default function Index() {
 
         <Card
           className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
-          onClick={() => navigate('/diretorio')}
+          onClick={() => document.getElementById('birthdays-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/diretorio')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              document.getElementById('birthdays-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
         >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -370,7 +374,9 @@ export default function Index() {
 
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
-          <BirthdayCard allBirthdays={allBirthdays} />
+          <div id="birthdays-section" className="scroll-mt-20">
+            <BirthdayCard allBirthdays={allBirthdays} />
+          </div>
 
           <CalendarPreviewCard />
 

@@ -408,7 +408,7 @@ export default function Social() {
   } : null;
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto w-full">
       <div className="page-header">
         <h1 className="page-title flex items-center gap-2">
           <Users className="h-6 w-6" />

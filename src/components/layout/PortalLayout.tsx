@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { PortalHeader } from './PortalHeader';
 import { PortalSidebar } from './PortalSidebar';
+import { BackButton } from './BackButton';
 
 interface PortalLayoutProps {
   showSidebar?: boolean;
@@ -36,6 +37,7 @@ export function PortalLayout({ showSidebar = true }: PortalLayoutProps) {
         
         <main className="flex-1 overflow-auto animate-fade-in">
           <div className="container max-w-7xl py-6 px-4 lg:px-8">
+            <BackButton />
             <Outlet />
           </div>
         </main>
@@ -43,3 +45,4 @@ export function PortalLayout({ showSidebar = true }: PortalLayoutProps) {
     </div>
   );
 }
+
