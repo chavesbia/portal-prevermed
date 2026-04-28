@@ -1232,7 +1232,7 @@ export default function AdminUsers() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-1">
                   <AtSign className="h-3 w-3" />
-                  @ Interno (menções)
+                  Interno (menções)
                 </Label>
                 <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
                   {newUserForm.login
