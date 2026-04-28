@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, Search } from 'lucide-react';
+import { Plus, X, Search, Package } from 'lucide-react';
 import { useCommercialServices } from '@/hooks/useCommercialServices';
 
 interface Props {
