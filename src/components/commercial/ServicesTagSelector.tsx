@@ -50,7 +50,12 @@ export default function ServicesTagSelector({ value, onChange, disabled }: Props
           <span className="text-xs text-muted-foreground">Nenhum serviço selecionado</span>
         )}
         {selected.map(s => (
-          <Badge key={s.id} variant="secondary" className="gap-1 text-xs">
+          <Badge
+            key={s.id}
+            variant={s.is_package ? 'default' : 'secondary'}
+            className="gap-1 text-xs"
+          >
+            {s.is_package && <Package className="h-3 w-3" />}
             {s.name}
             {!disabled && (
               <button
