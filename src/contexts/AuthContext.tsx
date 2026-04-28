@@ -39,6 +39,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, profileData: { full_name?: string }) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isAdmMaster: boolean;
   refreshProfile: () => Promise<void>;
 }
 
@@ -168,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isAdmin = role === 'adm_master' || role === 'adm_user';
+  const isAdmMaster = role === 'adm_master';
 
   return (
     <AuthContext.Provider value={{
@@ -180,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       isAdmin,
+      isAdmMaster,
       refreshProfile,
     }}>
       {children}
