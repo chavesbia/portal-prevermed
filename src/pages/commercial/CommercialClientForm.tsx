@@ -189,7 +189,7 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-center gap-3">
             <Switch checked={form.has_contract} onCheckedChange={v => handleChange('has_contract', v)} />
-            <Label>Possui Contrato</Label>
+            <Label>Contrato Elaborado</Label>
           </div>
           <div className="flex items-center gap-3">
             <Switch checked={form.contract_signed} onCheckedChange={v => handleChange('contract_signed', v)} />
