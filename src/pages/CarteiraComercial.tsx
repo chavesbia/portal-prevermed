@@ -1,14 +1,16 @@
 import { useState, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, List, Plus, FileUp } from 'lucide-react';
+import { LayoutDashboard, List, Plus, FileUp, BarChart3, Settings } from 'lucide-react';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useSearchParams } from 'react-router-dom';
 import CommercialDashboard from './commercial/CommercialDashboard';
+import CommercialIndicators from './commercial/CommercialIndicators';
 import CommercialList from './commercial/CommercialList';
 import CommercialClientForm from './commercial/CommercialClientForm';
 import CommercialClientDetail from './commercial/CommercialClientDetail';
 import CommercialImport from './commercial/CommercialImport';
+import CommercialServicesConfig from './commercial/CommercialServicesConfig';
 import type { ClientStatus } from '@/lib/commercial-status';
 
 const MODULE_ROUTE = '/carteira-comercial';
@@ -24,7 +26,6 @@ export default function CarteiraComercial() {
   const [statusFilter, setStatusFilter] = useState<ClientStatus | null>(null);
   const [subgroupFilter, setSubgroupFilter] = useState<string | null>(null);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -56,9 +57,12 @@ export default function CarteiraComercial() {
         </div>
 
         <Tabs value={defaultTab} onValueChange={handleTabChange}>
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="dashboard" className="gap-1.5">
-              <LayoutDashboard className="h-4 w-4" /> Dashboard
+              <LayoutDashboard className="h-4 w-4" /> Visão Geral
+            </TabsTrigger>
+            <TabsTrigger value="indicadores" className="gap-1.5">
+              <BarChart3 className="h-4 w-4" /> Indicadores
             </TabsTrigger>
             <TabsTrigger value="clientes" className="gap-1.5">
               <List className="h-4 w-4" /> Clientes
@@ -71,6 +75,11 @@ export default function CarteiraComercial() {
             {canEdit && (
               <TabsTrigger value="importar" className="gap-1.5">
                 <FileUp className="h-4 w-4" /> Importar SOC
+              </TabsTrigger>
+            )}
+            {canEdit && (
+              <TabsTrigger value="config" className="gap-1.5">
+                <Settings className="h-4 w-4" /> Configurações
               </TabsTrigger>
             )}
             {selectedClientId && (
@@ -89,6 +98,10 @@ export default function CarteiraComercial() {
                 setSearchParams({ tab: 'clientes' }, { replace: true });
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="indicadores">
+            <CommercialIndicators />
           </TabsContent>
 
           <TabsContent value="clientes">
@@ -114,6 +127,10 @@ export default function CarteiraComercial() {
             {canEdit && (
               <CommercialImport onBack={() => setSearchParams({ tab: 'clientes' }, { replace: true })} />
             )}
+          </TabsContent>
+
+          <TabsContent value="config">
+            {canEdit && <CommercialServicesConfig />}
           </TabsContent>
 
           <TabsContent value="detalhe">
