@@ -52,6 +52,16 @@ Deno.serve(async (req) => {
 
     if (roleError || roleData?.role !== 'adm_master') {
       console.error('Role check failed:', roleError, roleData)
+      try {
+        await userClient.rpc('log_unauthorized_access', {
+          _resource: 'edge_function:reset-user-password',
+          _source: 'edge_function',
+          _method: req.method,
+          _details: { attempted_role: roleData?.role ?? null },
+        })
+      } catch (logErr) {
+        console.error('Failed to log unauthorized attempt:', logErr)
+      }
       return new Response(
         JSON.stringify({ error: 'Apenas ADM Master pode resetar senhas' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

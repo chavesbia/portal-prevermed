@@ -64,6 +64,17 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     if (roleData?.role !== 'adm_master') {
+      // Registra tentativa de acesso indevido
+      try {
+        await userClient.rpc('log_unauthorized_access', {
+          _resource: 'edge_function:bulk-create-users',
+          _source: 'edge_function',
+          _method: req.method,
+          _details: { attempted_role: roleData?.role ?? null },
+        })
+      } catch (logErr) {
+        console.error('Failed to log unauthorized attempt:', logErr)
+      }
       return new Response(
         JSON.stringify({ error: 'Apenas ADM Master pode importar usuários' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
