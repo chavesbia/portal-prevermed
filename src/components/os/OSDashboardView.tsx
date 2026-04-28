@@ -30,11 +30,20 @@ interface OSDashboardViewProps {
 }
 
 export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: OSDashboardViewProps) {
+  const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
+  const slaDias = encerradas
+    .map(o => o.data_emissao ? differenceInDays(new Date(o.updated_at), new Date(o.data_registro)) : null)
+    .filter((n): n is number => n !== null && n >= 0);
+  const slaMedio = slaDias.length ? (slaDias.reduce((a, b) => a + b, 0) / slaDias.length) : 0;
+  const novosCount = ordens.reduce((acc, o) => acc + (o.servicos?.filter(s => s.tipo_os === 'Novo').length || 0), 0);
+
   const stats = {
     total: ordens.length,
     emAndamento: ordens.filter(o => o.status_os === 'Em andamento' || o.status_os === 'Em revisão interna').length,
-    encerradas: ordens.filter(o => o.status_os === 'Encerrado').length,
+    encerradas: encerradas.length,
     pendentes: ordens.filter(o => ['Não iniciado', 'Aguardando assinatura', 'Aguardando cliente'].includes(o.status_os)).length,
+    novos: novosCount,
+    slaMedio: slaMedio.toFixed(1),
   };
 
   // Status chart data
