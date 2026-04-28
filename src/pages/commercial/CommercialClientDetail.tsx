@@ -8,11 +8,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { useClientServices } from '@/hooks/useCommercialServices';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff, Phone, Mail, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff, Phone, Mail, MessageCircle, User, Package } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { formatRiskGrade } from '@/lib/commercial-constants';
+import ClientPackageModules from '@/components/commercial/ClientPackageModules';
 
 function formatDateBR(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
