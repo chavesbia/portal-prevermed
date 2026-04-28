@@ -133,7 +133,7 @@ export async function analyzeImport(rows: SocRow[]): Promise<ImportItem[]> {
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
 
-    if (!row.company_name || !row.subgroup || !row.risk_grade) {
+    if (!row.company_name || !row.subgroup) {
       items.push({ row, status: 'erro', errorMsg: 'Campos obrigatórios ausentes' });
       continue;
     }
