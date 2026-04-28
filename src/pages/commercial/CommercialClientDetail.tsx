@@ -8,11 +8,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useCommercialClients, useClientAttachments } from '@/hooks/useCommercialClients';
 import { useClientServices } from '@/hooks/useCommercialServices';
 import { computeClientStatus, statusLabels, statusColors } from '@/lib/commercial-status';
-import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff, Phone, Mail, MessageCircle, User } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck, Power, PowerOff, Phone, Mail, MessageCircle, User, Package } from 'lucide-react';
 import CommercialClientForm from './CommercialClientForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { formatRiskGrade } from '@/lib/commercial-constants';
+import ClientPackageModules from '@/components/commercial/ClientPackageModules';
 
 function formatDateBR(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
@@ -221,13 +222,21 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {clientServices.map(cs => (
-                      <Badge key={cs.id} variant="secondary" className="text-xs">
+                      <Badge
+                        key={cs.id}
+                        variant={cs.service?.is_package ? 'default' : 'secondary'}
+                        className="text-xs gap-1"
+                      >
+                        {cs.service?.is_package && <Package className="h-3 w-3" />}
                         {cs.service?.name || '—'}
                       </Badge>
                     ))}
                   </div>
                 )}
               </div>
+
+              <ClientPackageModules clientId={clientId} readOnly={readOnly} />
+
               <div>
                 <Info label="Resumo de Serviços (texto livre)" value={client.services_summary} />
               </div>

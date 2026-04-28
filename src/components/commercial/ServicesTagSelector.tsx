@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, X, Search } from 'lucide-react';
+import { Plus, X, Search, Package } from 'lucide-react';
 import { useCommercialServices } from '@/hooks/useCommercialServices';
 
 interface Props {
@@ -50,7 +50,12 @@ export default function ServicesTagSelector({ value, onChange, disabled }: Props
           <span className="text-xs text-muted-foreground">Nenhum serviço selecionado</span>
         )}
         {selected.map(s => (
-          <Badge key={s.id} variant="secondary" className="gap-1 text-xs">
+          <Badge
+            key={s.id}
+            variant={s.is_package ? 'default' : 'secondary'}
+            className="gap-1 text-xs"
+          >
+            {s.is_package && <Package className="h-3 w-3" />}
             {s.name}
             {!disabled && (
               <button
@@ -104,7 +109,11 @@ export default function ServicesTagSelector({ value, onChange, disabled }: Props
                             checked={value.includes(s.id)}
                             onCheckedChange={() => toggle(s.id)}
                           />
+                          {s.is_package && <Package className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
                           <span className="flex-1">{s.name}</span>
+                          {s.is_package && (
+                            <span className="text-[10px] text-primary uppercase font-semibold">Pacote</span>
+                          )}
                         </label>
                       ))}
                     </div>
