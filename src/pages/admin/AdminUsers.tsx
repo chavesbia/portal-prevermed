@@ -1142,8 +1142,8 @@ export default function AdminUsers() {
                     @ Interno (menções)
                   </Label>
                   <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
-                    {newUserForm.login_handle
-                      ? `@${newUserForm.login_handle.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
+                    {newUserForm.login
+                      ? `@${newUserForm.login.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
                       : 'Será gerado a partir do login'}
                   </div>
                   <p className="text-xs text-muted-foreground">
