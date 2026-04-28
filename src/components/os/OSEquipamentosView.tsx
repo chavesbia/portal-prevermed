@@ -30,9 +30,16 @@ const emptyForm = {
   nome: '',
   tipo: '',
   fabricante: '',
+  certificado: '',
   data_ultima_calibracao: null as Date | null,
   observacoes: '',
   ativo: true,
+  is_locacao: false,
+  locacao_fornecedor: '',
+  locacao_cnpj: '',
+  locacao_nf_numero: '',
+  locacao_nf_data: null as Date | null,
+  locacao_custo: '',
 };
 
 export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
@@ -67,22 +74,39 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
       nome: eq.nome,
       tipo: eq.tipo || '',
       fabricante: eq.fabricante || '',
+      certificado: eq.certificado || '',
       data_ultima_calibracao: eq.data_ultima_calibracao ? new Date(eq.data_ultima_calibracao + 'T00:00:00') : null,
       observacoes: eq.observacoes || '',
       ativo: eq.ativo,
+      is_locacao: eq.is_locacao || false,
+      locacao_fornecedor: eq.locacao_fornecedor || '',
+      locacao_cnpj: eq.locacao_cnpj || '',
+      locacao_nf_numero: eq.locacao_nf_numero || '',
+      locacao_nf_data: eq.locacao_nf_data ? new Date(eq.locacao_nf_data + 'T00:00:00') : null,
+      locacao_custo: eq.locacao_custo != null ? String(eq.locacao_custo) : '',
     });
     setOpenDialog(true);
   };
 
   const handleSave = async () => {
     if (!form.nome.trim()) return;
+    if (form.is_locacao && !form.locacao_fornecedor.trim()) {
+      return;
+    }
     const payload = {
       nome: form.nome,
       tipo: form.tipo || null,
       fabricante: form.fabricante || null,
+      certificado: form.certificado || null,
       data_ultima_calibracao: form.data_ultima_calibracao ? format(form.data_ultima_calibracao, 'yyyy-MM-dd') : null,
       observacoes: form.observacoes || null,
       ativo: form.ativo,
+      is_locacao: form.is_locacao,
+      locacao_fornecedor: form.is_locacao ? (form.locacao_fornecedor || null) : null,
+      locacao_cnpj: form.is_locacao ? (form.locacao_cnpj || null) : null,
+      locacao_nf_numero: form.is_locacao ? (form.locacao_nf_numero || null) : null,
+      locacao_nf_data: form.is_locacao && form.locacao_nf_data ? format(form.locacao_nf_data, 'yyyy-MM-dd') : null,
+      locacao_custo: form.is_locacao && form.locacao_custo ? parseFloat(form.locacao_custo) : null,
     };
     const ok = editing
       ? await updateEquipamento(editing.id, payload)
