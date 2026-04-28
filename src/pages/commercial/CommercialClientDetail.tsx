@@ -164,7 +164,7 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <Info label="CNPJ" value={client.cnpj} />
               <Info label="Código SOC" value={client.soc_code} />
               <Info label="Subgrupo" value={client.subgroup} />
-              <Info label="Grau de Risco" value={client.risk_grade} />
+              <Info label="Grau de Risco" value={(await import('@/lib/commercial-constants')).formatRiskGrade(client.risk_grade)} />
               <Info label="Vidas Ativas" value={String(client.active_lives)} />
               <Info label="Cidade" value={client.city} />
               <Info label="UF" value={client.state} />
