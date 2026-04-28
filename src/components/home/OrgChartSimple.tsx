@@ -94,7 +94,7 @@ export function OrgChartSimple({ data, compact = false }: OrgChartSimpleProps) {
                 </>
               ) : (
                 <>
-                  <ChevronsDown className="h-4 w-4" /> Expandir hierarquia
+                  <ChevronsDown className="h-4 w-4" /> Expandir
                 </>
               )}
             </Button>
