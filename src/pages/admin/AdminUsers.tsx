@@ -1141,11 +1141,14 @@ export default function AdminUsers() {
                     <AtSign className="h-3 w-3" />
                     @ Interno (menções)
                   </Label>
-                  <Input
-                    value={newUserForm.internal_handle}
-                    onChange={(e) => setNewUserForm(prev => ({ ...prev, internal_handle: e.target.value }))}
-                    placeholder="@usuario"
-                  />
+                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
+                    {newUserForm.login_handle
+                      ? `@${newUserForm.login_handle.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
+                      : 'Será gerado a partir do login'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Gerado automaticamente a partir do login do usuário.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Cargo</Label>
