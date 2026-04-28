@@ -1,4 +1,4 @@
-import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, BarChart3 } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,11 +30,20 @@ interface OSDashboardViewProps {
 }
 
 export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: OSDashboardViewProps) {
+  const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
+  const slaDias = encerradas
+    .map(o => o.data_emissao ? differenceInDays(new Date(o.updated_at), new Date(o.data_registro)) : null)
+    .filter((n): n is number => n !== null && n >= 0);
+  const slaMedio = slaDias.length ? (slaDias.reduce((a, b) => a + b, 0) / slaDias.length) : 0;
+  const novosCount = ordens.reduce((acc, o) => acc + (o.servicos?.filter(s => s.tipo_os === 'Novo').length || 0), 0);
+
   const stats = {
     total: ordens.length,
     emAndamento: ordens.filter(o => o.status_os === 'Em andamento' || o.status_os === 'Em revisão interna').length,
-    encerradas: ordens.filter(o => o.status_os === 'Encerrado').length,
+    encerradas: encerradas.length,
     pendentes: ordens.filter(o => ['Não iniciado', 'Aguardando assinatura', 'Aguardando cliente'].includes(o.status_os)).length,
+    novos: novosCount,
+    slaMedio: slaMedio.toFixed(1),
   };
 
   // Status chart data
@@ -85,11 +94,13 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     <div className="space-y-6">
       <OSFilterBar filters={filters} setFilters={setFilters} responsaveis={responsaveis} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <OSKPICard title="Total de OS" value={stats.total} subtitle="Ordens registradas" icon={FileText} variant="primary" />
         <OSKPICard title="Em Andamento" value={stats.emAndamento} subtitle="Em execução" icon={Clock} variant="warning" />
         <OSKPICard title="Finalizadas" value={stats.encerradas} subtitle="Concluídas" icon={CheckCircle} variant="success" />
         <OSKPICard title="Pendentes" value={stats.pendentes} subtitle="Aguardando ação" icon={AlertCircle} variant="destructive" />
+        <OSKPICard title="Novos" value={stats.novos} subtitle="Serviços novos" icon={TrendingUp} />
+        <OSKPICard title="SLA Médio" value={`${stats.slaMedio}d`} subtitle="Tempo de conclusão" icon={Timer} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

@@ -33,12 +33,14 @@ export interface NovaVisitaInput {
   tipo_visita: VisitaTipo;
   endereco?: string | null;
   observacoes?: string | null;
+  custos_deslocamento?: number;
   equipamentos_ids?: string[];
 }
 
 export function useOSVisitas() {
   const { user } = useAuth();
   const [visitas, setVisitas] = useState<OSVisita[]>([]);
+  const [visitaEquipamentos, setVisitaEquipamentos] = useState<Record<string, string[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<VisitaFilters>(defaultFilters);
 
@@ -50,7 +52,17 @@ export function useOSVisitas() {
         .select('*')
         .order('data_visita', { ascending: false });
       if (error) throw error;
-      setVisitas((data || []) as OSVisita[]);
+      setVisitas((data || []) as unknown as OSVisita[]);
+
+      const { data: links } = await supabase
+        .from('os_visita_equipamentos')
+        .select('visita_id, equipamento_id');
+      const map: Record<string, string[]> = {};
+      (links || []).forEach((l: any) => {
+        if (!map[l.visita_id]) map[l.visita_id] = [];
+        map[l.visita_id].push(l.equipamento_id);
+      });
+      setVisitaEquipamentos(map);
     } catch (e: any) {
       console.error('Erro ao carregar visitas:', e);
       toast({ title: 'Erro', description: 'Erro ao carregar visitas.', variant: 'destructive' });
@@ -77,8 +89,9 @@ export function useOSVisitas() {
           status: 'agendada' as VisitaStatus,
           endereco: input.endereco || null,
           observacoes: input.observacoes || null,
+          custos_deslocamento: input.custos_deslocamento || 0,
           created_by: user?.id || null,
-        })
+        } as any)
         .select()
         .single();
       if (error) throw error;
@@ -130,6 +143,27 @@ export function useOSVisitas() {
     }
   };
 
+  /**
+   * Detecta conflitos: equipamentos já agendados em outras visitas no mesmo dia
+   * Retorna array de mensagens de conflito.
+   */
+  const detectConflitos = useCallback((dataISO: string, equipamentosIds: string[], excludeVisitaId?: string): string[] => {
+    if (!dataISO || equipamentosIds.length === 0) return [];
+    const conflitos: string[] = [];
+    visitas.forEach(v => {
+      if (v.id === excludeVisitaId) return;
+      if (v.status !== 'agendada') return;
+      if (v.data_visita !== dataISO) return;
+      const eqsDaVisita = visitaEquipamentos[v.id] || [];
+      equipamentosIds.forEach(eid => {
+        if (eqsDaVisita.includes(eid)) {
+          conflitos.push(`Equipamento já agendado para ${v.responsavel_nome}${v.numero_os ? ` na OS #${v.numero_os}` : ''}.`);
+        }
+      });
+    });
+    return Array.from(new Set(conflitos));
+  }, [visitas, visitaEquipamentos]);
+
   const getFiltered = useCallback(() => {
     return visitas.filter(v => {
       if (filters.search) {
@@ -155,5 +189,17 @@ export function useOSVisitas() {
     });
   }, [visitas, filters]);
 
-  return { visitas, isLoading, filters, setFilters, getFiltered, addVisita, updateVisitaStatus, deleteVisita, fetchVisitas };
+  return {
+    visitas,
+    visitaEquipamentos,
+    isLoading,
+    filters,
+    setFilters,
+    getFiltered,
+    addVisita,
+    updateVisitaStatus,
+    deleteVisita,
+    detectConflitos,
+    fetchVisitas,
+  };
 }

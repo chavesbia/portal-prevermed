@@ -2197,40 +2197,40 @@ export type Database = {
       }
       os_equipamentos: {
         Row: {
+          ativo: boolean
           created_at: string
           created_by: string | null
-          empresa_cliente: string
+          data_ultima_calibracao: string | null
+          fabricante: string | null
           id: string
-          localizacao: string | null
           nome: string
           observacoes: string | null
-          status: Database["public"]["Enums"]["equipamento_status"]
           tipo: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          ativo?: boolean
           created_at?: string
           created_by?: string | null
-          empresa_cliente: string
+          data_ultima_calibracao?: string | null
+          fabricante?: string | null
           id?: string
-          localizacao?: string | null
           nome: string
           observacoes?: string | null
-          status?: Database["public"]["Enums"]["equipamento_status"]
           tipo?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          ativo?: boolean
           created_at?: string
           created_by?: string | null
-          empresa_cliente?: string
+          data_ultima_calibracao?: string | null
+          fabricante?: string | null
           id?: string
-          localizacao?: string | null
           nome?: string
           observacoes?: string | null
-          status?: Database["public"]["Enums"]["equipamento_status"]
           tipo?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -2274,6 +2274,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          custos_deslocamento: number
           data_visita: string
           empresa_cliente: string
           endereco: string | null
@@ -2293,6 +2294,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          custos_deslocamento?: number
           data_visita: string
           empresa_cliente: string
           endereco?: string | null
@@ -2312,6 +2314,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          custos_deslocamento?: number
           data_visita?: string
           empresa_cliente?: string
           endereco?: string | null
@@ -3279,7 +3282,6 @@ export type Database = {
         | "NAO_COMPARECEU"
         | "REMARCADO"
         | "PARCIAL"
-      equipamento_status: "ativo" | "em_manutencao" | "inativo" | "descartado"
       hierarchy_position:
         | "director"
         | "manager"
@@ -3520,7 +3522,6 @@ export const Constants = {
         "REMARCADO",
         "PARCIAL",
       ],
-      equipamento_status: ["ativo", "em_manutencao", "inativo", "descartado"],
       hierarchy_position: [
         "director",
         "manager",

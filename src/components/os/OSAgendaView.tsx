@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Plus, Search, Trash2, Eye, X } from 'lucide-react';
+import { CalendarIcon, Plus, Search, Trash2, Eye, AlertTriangle } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,16 +12,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 import { cn } from '@/lib/utils';
 import { useOSVisitas } from '@/hooks/useOSVisitas';
-import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaStatus, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
+import { useOSEquipamentos } from '@/hooks/useOSEquipamentos';
+import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,6 +39,7 @@ const formSchema = z.object({
   tipo_visita: z.enum(['Avaliação', 'Coleta', 'Inspeção', 'Reunião', 'Treinamento', 'Outro']),
   endereco: z.string().optional(),
   observacoes: z.string().optional(),
+  custos_deslocamento: z.string().optional(),
 });
 type FormData = z.infer<typeof formSchema>;
 
@@ -44,18 +48,23 @@ interface OSAgendaViewProps {
   canEdit: boolean;
 }
 
+const formatBRL = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
 export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
-  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisitaStatus, deleteVisita } = useOSVisitas();
+  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
+  const { equipamentos } = useOSEquipamentos();
   const [openDialog, setOpenDialog] = useState(false);
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [selectedView, setSelectedView] = useState<OSVisita | null>(null);
   const [toCancel, setToCancel] = useState<OSVisita | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [toDelete, setToDelete] = useState<OSVisita | null>(null);
+  const [equipamentosIds, setEquipamentosIds] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { empresa_cliente: '', tipo_visita: 'Avaliação' },
+    defaultValues: { empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' },
   });
 
   useEffect(() => {
@@ -67,6 +76,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const filtered = getFiltered();
   const empresas = useMemo(() => Array.from(new Set(ordens.map(o => o.empresa_cliente))).sort(), [ordens]);
   const watchedOrdemId = form.watch('ordem_id');
+  const watchedData = form.watch('data_visita');
 
   useEffect(() => {
     if (watchedOrdemId && watchedOrdemId !== 'none') {
@@ -75,7 +85,29 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     }
   }, [watchedOrdemId, ordens, form]);
 
+  const conflitos = useMemo(() => {
+    if (!watchedData || equipamentosIds.length === 0) return [];
+    const dataISO = format(watchedData, 'yyyy-MM-dd');
+    return detectConflitos(dataISO, equipamentosIds);
+  }, [watchedData, equipamentosIds, detectConflitos]);
+
+  const equipNomes = (ids: string[]) =>
+    ids.map(id => equipamentos.find(e => e.id === id)?.nome).filter(Boolean).join(', ');
+
+  const toggleEquip = (id: string) => {
+    setEquipamentosIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const onOpenDialog = (open: boolean) => {
+    setOpenDialog(open);
+    if (!open) {
+      form.reset({ empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' });
+      setEquipamentosIds([]);
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
+    if (conflitos.length > 0) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
     const ok = await addVisita({
@@ -89,11 +121,10 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       tipo_visita: data.tipo_visita as VisitaTipo,
       endereco: data.endereco || null,
       observacoes: data.observacoes || null,
+      custos_deslocamento: parseFloat(data.custos_deslocamento || '0') || 0,
+      equipamentos_ids: equipamentosIds,
     });
-    if (ok) {
-      setOpenDialog(false);
-      form.reset({ empresa_cliente: '', tipo_visita: 'Avaliação' });
-    }
+    if (ok) onOpenDialog(false);
   };
 
   return (
@@ -104,7 +135,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
           <p className="text-sm text-muted-foreground">Agendamentos vinculados (ou não) a Ordens de Serviço.</p>
         </div>
         {canEdit && (
-          <Button onClick={() => setOpenDialog(true)}>
+          <Button onClick={() => onOpenDialog(true)}>
             <Plus className="mr-2 h-4 w-4" /> Nova Visita
           </Button>
         )}
@@ -172,47 +203,52 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
             <div className="text-center py-8 text-muted-foreground">Nenhuma visita encontrada.</div>
           ) : (
             <div className="space-y-3">
-              {filtered.map(v => (
-                <div key={v.id} className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={visitaStatusColors[v.status]}>{visitaStatusLabel[v.status]}</Badge>
-                        <Badge variant="outline">{v.tipo_visita}</Badge>
-                        {v.numero_os && <Badge variant="outline" className="font-mono">OS #{v.numero_os}</Badge>}
+              {filtered.map(v => {
+                const eqs = visitaEquipamentos[v.id] || [];
+                return (
+                  <div key={v.id} className="rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={visitaStatusColors[v.status]}>{visitaStatusLabel[v.status]}</Badge>
+                          <Badge variant="outline">{v.tipo_visita}</Badge>
+                          {v.numero_os && <Badge variant="outline" className="font-mono">OS #{v.numero_os}</Badge>}
+                        </div>
+                        <h3 className="font-semibold">{v.empresa_cliente}</h3>
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                          <span>📅 {format(new Date(v.data_visita + 'T00:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</span>
+                          {v.hora_visita && <span>🕐 {v.hora_visita}</span>}
+                          <span>👤 {v.responsavel_nome}</span>
+                          {v.custos_deslocamento > 0 && <span>💰 {formatBRL(v.custos_deslocamento)}</span>}
+                        </div>
+                        {v.endereco && <div className="text-sm text-muted-foreground">📍 {v.endereco}</div>}
+                        {eqs.length > 0 && <div className="text-sm text-muted-foreground">🔧 {equipNomes(eqs)}</div>}
                       </div>
-                      <h3 className="font-semibold">{v.empresa_cliente}</h3>
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span>📅 {format(new Date(v.data_visita + 'T00:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</span>
-                        {v.hora_visita && <span>🕐 {v.hora_visita}</span>}
-                        <span>👤 {v.responsavel_nome}</span>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
+                        {canEdit && v.status === 'agendada' && (
+                          <>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => updateVisitaStatus(v.id, 'realizada')}>Realizada</Button>
+                            <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
+                          </>
+                        )}
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setToDelete(v)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
-                      {v.endereco && <div className="text-sm text-muted-foreground">📍 {v.endereco}</div>}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
-                      {canEdit && v.status === 'agendada' && (
-                        <>
-                          <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => updateVisitaStatus(v.id, 'realizada')}>Realizada</Button>
-                          <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
-                        </>
-                      )}
-                      {canEdit && (
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setToDelete(v)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Dialog Nova Visita */}
-      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+      <Dialog open={openDialog} onOpenChange={onOpenDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Agendar Visita Técnica</DialogTitle></DialogHeader>
           <Form {...form}>
@@ -290,6 +326,56 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 </FormItem>
               )} />
 
+              {/* Equipamentos */}
+              <div className="space-y-2">
+                <Label>Equipamentos de Medição</Label>
+                {equipamentos.filter(e => e.ativo).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhum equipamento ativo. Cadastre na aba "Equipamentos".
+                  </p>
+                ) : (
+                  <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                    {equipamentos.filter(e => e.ativo).map(eq => {
+                      const conflito = conflitos.length > 0 && watchedData && (
+                        // checa se este equip está em outra visita do mesmo dia
+                        true
+                      );
+                      const checked = equipamentosIds.includes(eq.id);
+                      return (
+                        <div key={eq.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`equip-${eq.id}`}
+                            checked={checked}
+                            onCheckedChange={() => toggleEquip(eq.id)}
+                          />
+                          <label htmlFor={`equip-${eq.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                            {eq.nome}
+                            {eq.tipo && <span className="text-muted-foreground ml-1">({eq.tipo})</span>}
+                          </label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {conflitos.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {conflitos.map((c, i) => <li key={i}>{c}</li>)}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <FormField control={form.control} name="custos_deslocamento" render={({ field }) => (
+                <FormItem><FormLabel>Custos de Deslocamento (R$)</FormLabel>
+                  <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
+                </FormItem>
+              )} />
+
               <FormField control={form.control} name="observacoes" render={({ field }) => (
                 <FormItem><FormLabel>Observações</FormLabel>
                   <FormControl><Textarea rows={3} {...field} /></FormControl>
@@ -297,8 +383,8 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               )} />
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-                <Button type="submit">Agendar</Button>
+                <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
+                <Button type="submit" disabled={conflitos.length > 0}>Agendar</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -320,6 +406,12 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
               <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
               {selectedView.endereco && <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco}</div>}
+              {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
+                <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
+              )}
+              {selectedView.custos_deslocamento > 0 && (
+                <div><span className="text-muted-foreground">Custos de deslocamento:</span> {formatBRL(selectedView.custos_deslocamento)}</div>
+              )}
               {selectedView.observacoes && <div><span className="text-muted-foreground">Observações:</span> {selectedView.observacoes}</div>}
               {selectedView.motivo_cancelamento && <div className="text-destructive"><span className="text-muted-foreground">Motivo do cancelamento:</span> {selectedView.motivo_cancelamento}</div>}
             </div>
