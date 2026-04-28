@@ -2198,11 +2198,18 @@ export type Database = {
       os_equipamentos: {
         Row: {
           ativo: boolean
+          certificado: string | null
           created_at: string
           created_by: string | null
           data_ultima_calibracao: string | null
           fabricante: string | null
           id: string
+          is_locacao: boolean
+          locacao_cnpj: string | null
+          locacao_custo: number | null
+          locacao_fornecedor: string | null
+          locacao_nf_data: string | null
+          locacao_nf_numero: string | null
           nome: string
           observacoes: string | null
           tipo: string | null
@@ -2211,11 +2218,18 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          certificado?: string | null
           created_at?: string
           created_by?: string | null
           data_ultima_calibracao?: string | null
           fabricante?: string | null
           id?: string
+          is_locacao?: boolean
+          locacao_cnpj?: string | null
+          locacao_custo?: number | null
+          locacao_fornecedor?: string | null
+          locacao_nf_data?: string | null
+          locacao_nf_numero?: string | null
           nome: string
           observacoes?: string | null
           tipo?: string | null
@@ -2224,11 +2238,18 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          certificado?: string | null
           created_at?: string
           created_by?: string | null
           data_ultima_calibracao?: string | null
           fabricante?: string | null
           id?: string
+          is_locacao?: boolean
+          locacao_cnpj?: string | null
+          locacao_custo?: number | null
+          locacao_fornecedor?: string | null
+          locacao_nf_data?: string | null
+          locacao_nf_numero?: string | null
           nome?: string
           observacoes?: string | null
           tipo?: string | null

@@ -30,9 +30,16 @@ const emptyForm = {
   nome: '',
   tipo: '',
   fabricante: '',
+  certificado: '',
   data_ultima_calibracao: null as Date | null,
   observacoes: '',
   ativo: true,
+  is_locacao: false,
+  locacao_fornecedor: '',
+  locacao_cnpj: '',
+  locacao_nf_numero: '',
+  locacao_nf_data: null as Date | null,
+  locacao_custo: '',
 };
 
 export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
@@ -67,22 +74,39 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
       nome: eq.nome,
       tipo: eq.tipo || '',
       fabricante: eq.fabricante || '',
+      certificado: eq.certificado || '',
       data_ultima_calibracao: eq.data_ultima_calibracao ? new Date(eq.data_ultima_calibracao + 'T00:00:00') : null,
       observacoes: eq.observacoes || '',
       ativo: eq.ativo,
+      is_locacao: eq.is_locacao || false,
+      locacao_fornecedor: eq.locacao_fornecedor || '',
+      locacao_cnpj: eq.locacao_cnpj || '',
+      locacao_nf_numero: eq.locacao_nf_numero || '',
+      locacao_nf_data: eq.locacao_nf_data ? new Date(eq.locacao_nf_data + 'T00:00:00') : null,
+      locacao_custo: eq.locacao_custo != null ? String(eq.locacao_custo) : '',
     });
     setOpenDialog(true);
   };
 
   const handleSave = async () => {
     if (!form.nome.trim()) return;
+    if (form.is_locacao && !form.locacao_fornecedor.trim()) {
+      return;
+    }
     const payload = {
       nome: form.nome,
       tipo: form.tipo || null,
       fabricante: form.fabricante || null,
+      certificado: form.certificado || null,
       data_ultima_calibracao: form.data_ultima_calibracao ? format(form.data_ultima_calibracao, 'yyyy-MM-dd') : null,
       observacoes: form.observacoes || null,
       ativo: form.ativo,
+      is_locacao: form.is_locacao,
+      locacao_fornecedor: form.is_locacao ? (form.locacao_fornecedor || null) : null,
+      locacao_cnpj: form.is_locacao ? (form.locacao_cnpj || null) : null,
+      locacao_nf_numero: form.is_locacao ? (form.locacao_nf_numero || null) : null,
+      locacao_nf_data: form.is_locacao && form.locacao_nf_data ? format(form.locacao_nf_data, 'yyyy-MM-dd') : null,
+      locacao_custo: form.is_locacao && form.locacao_custo ? parseFloat(form.locacao_custo) : null,
     };
     const ok = editing
       ? await updateEquipamento(editing.id, payload)
@@ -130,8 +154,10 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Fabricante</TableHead>
+                    <TableHead>Certificado</TableHead>
                     <TableHead>Última Calibração</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Locação</TableHead>
                     <TableHead>Ativo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -144,12 +170,22 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                         <TableCell className="font-medium">{eq.nome}</TableCell>
                         <TableCell className="text-muted-foreground">{eq.tipo || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{eq.fabricante || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">{eq.certificado || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {eq.data_ultima_calibracao
                             ? format(new Date(eq.data_ultima_calibracao + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })
                             : '-'}
                         </TableCell>
                         <TableCell><Badge className={calibracaoStatusColors[cal.status]}>{cal.label}</Badge></TableCell>
+                        <TableCell>
+                          {eq.is_locacao ? (
+                            <Badge variant="outline" title={eq.locacao_fornecedor || ''}>
+                              {eq.locacao_fornecedor || 'Locado'}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Próprio</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant={eq.ativo ? 'default' : 'secondary'}>{eq.ativo ? 'Sim' : 'Não'}</Badge>
                         </TableCell>
@@ -188,6 +224,14 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
               <Input value={form.fabricante} onChange={e => setForm({ ...form, fabricante: e.target.value })} placeholder="Ex: 3M, Instrutherm" />
             </div>
             <div className="space-y-1">
+              <Label>Certificado</Label>
+              <Input
+                value={form.certificado}
+                onChange={e => setForm({ ...form, certificado: e.target.value })}
+                placeholder="Nº do certificado de calibração"
+              />
+            </div>
+            <div className="space-y-1">
               <Label>Data da Última Calibração</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -212,6 +256,71 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
                 </PopoverContent>
               </Popover>
             </div>
+
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Equipamento de locação</Label>
+                <p className="text-xs text-muted-foreground">Marque se o equipamento é alugado de terceiros</p>
+              </div>
+              <Switch checked={form.is_locacao} onCheckedChange={(v) => setForm({ ...form, is_locacao: v })} />
+            </div>
+
+            {form.is_locacao && (
+              <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Dados da Locação (Nota Fiscal)</p>
+                <div className="space-y-1">
+                  <Label>Fornecedor *</Label>
+                  <Input
+                    value={form.locacao_fornecedor}
+                    onChange={e => setForm({ ...form, locacao_fornecedor: e.target.value })}
+                    placeholder="Razão social do fornecedor"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>CNPJ</Label>
+                  <Input
+                    value={form.locacao_cnpj}
+                    onChange={e => setForm({ ...form, locacao_cnpj: e.target.value })}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label>Nº da NF</Label>
+                    <Input
+                      value={form.locacao_nf_numero}
+                      onChange={e => setForm({ ...form, locacao_nf_numero: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Data da NF</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !form.locacao_nf_data && 'text-muted-foreground')}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {form.locacao_nf_data ? format(form.locacao_nf_data, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={form.locacao_nf_data || undefined} onSelect={(d) => setForm({ ...form, locacao_nf_data: d || null })} className="p-3 pointer-events-auto" />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label>Custo da Locação (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.locacao_custo}
+                    onChange={e => setForm({ ...form, locacao_custo: e.target.value })}
+                    placeholder="0,00"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between rounded-md border p-3">
               <div>
                 <Label className="text-sm">Equipamento ativo</Label>
@@ -226,7 +335,7 @@ export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={!form.nome.trim()}>
+            <Button onClick={handleSave} disabled={!form.nome.trim() || (form.is_locacao && !form.locacao_fornecedor.trim())}>
               {editing ? 'Salvar' : 'Cadastrar'}
             </Button>
           </DialogFooter>

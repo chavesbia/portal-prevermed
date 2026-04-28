@@ -30,6 +30,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ProfileOption { user_id: string; full_name: string | null; }
 
+const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
+
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
   ordem_id: z.string().optional(),
@@ -68,9 +70,25 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   });
 
   useEffect(() => {
-    supabase.from('profiles').select('user_id, full_name').eq('status', 'active').order('full_name').then(({ data }) => {
+    (async () => {
+      // Apenas usuários do departamento de Engenharia podem ser responsáveis por visitas
+      const { data: ud } = await supabase
+        .from('user_departments')
+        .select('user_id')
+        .eq('department_id', ENGENHARIA_DEPT_ID);
+      const ids = (ud || []).map((r: any) => r.user_id);
+      if (ids.length === 0) {
+        setProfiles([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .eq('status', 'active')
+        .in('user_id', ids)
+        .order('full_name');
       setProfiles((data || []) as ProfileOption[]);
-    });
+    })();
   }, []);
 
   const filtered = getFiltered();
