@@ -258,9 +258,15 @@ export default function Index() {
         </p>
       </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - clickable */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="card-elevated">
+        <Card
+          className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
+          onClick={() => navigate('/comunicados')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/comunicados')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
@@ -273,8 +279,14 @@ export default function Index() {
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="card-elevated">
+
+        <Card
+          className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
+          onClick={() => navigate('/diretorio')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/diretorio')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-success/10">
@@ -287,8 +299,14 @@ export default function Index() {
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="card-elevated">
+
+        <Card
+          className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
+          onClick={() => navigate('/documentos')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/documentos')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-accent">
@@ -301,8 +319,14 @@ export default function Index() {
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="card-elevated">
+
+        <Card
+          className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
+          onClick={() => navigate('/chat')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/chat')}
+        >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-warning/10">
@@ -330,7 +354,7 @@ export default function Index() {
               Ver todos <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-          
+
           <div className="space-y-4">
             {announcements.length > 0 ? (
               announcements.map((announcement) => (
@@ -347,26 +371,27 @@ export default function Index() {
         {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
           <BirthdayCard allBirthdays={allBirthdays} />
-          
+
           <CalendarPreviewCard />
-          
-          <DocumentList 
+
+          <DocumentList
             documents={documents}
             onViewAll={() => navigate('/documentos')}
           />
-          
+
           <UsefulLinks links={usefulLinks} />
         </div>
       </div>
 
-      {/* Bottom Section */}
+      {/* Middle Section - Directory + Units */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <OrgChartSimple data={orgChart} />
         <DirectoryCard />
+        <UnitsCard />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <UnitsCard />
+      {/* Bottom Section - Org Chart (full width, collapsible) */}
+      <div className="grid grid-cols-1 gap-6">
+        <OrgChartSimple data={orgChart} />
       </div>
     </div>
   );
