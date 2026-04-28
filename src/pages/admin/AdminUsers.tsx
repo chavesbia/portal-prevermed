@@ -110,6 +110,7 @@ export default function AdminUsers() {
   // New user form states
   const [newUserForm, setNewUserForm] = useState({
     full_name: '',
+    nickname: '',
     login: '',
     position: '',
     unit: 'lapa' as 'lapa' | 'osasco',
@@ -125,6 +126,9 @@ export default function AdminUsers() {
     direct_leader_id: '',
     direct_manager_id: '',
   });
+  const [newUserPhotoFile, setNewUserPhotoFile] = useState<File | null>(null);
+  const [newUserPhotoPreview, setNewUserPhotoPreview] = useState<string | null>(null);
+  const newUserPhotoInputRef = useRef<HTMLInputElement>(null);
   
   // Unified edit form states (includes profile, role, and departments)
   const [editForm, setEditForm] = useState({
@@ -464,6 +468,7 @@ export default function AdminUsers() {
         body: {
           users: [{
             full_name: newUserForm.full_name,
+            nickname: newUserForm.nickname || undefined,
             login: loginFormatted,
             position: newUserForm.position || undefined,
             unit: newUserForm.unit,
@@ -489,17 +494,36 @@ export default function AdminUsers() {
 
       if (error) throw error;
 
+      const createdUserId = data?.results?.[0]?.success ? data.results[0].user_id : null;
+
       // After user is created, update direct_leader_id and direct_manager_id
-      if (data?.results?.[0]?.success && (newUserForm.direct_leader_id || newUserForm.direct_manager_id)) {
-        const createdUserId = data.results[0].user_id;
-        if (createdUserId) {
+      if (createdUserId && (newUserForm.direct_leader_id || newUserForm.direct_manager_id)) {
+        await supabase
+          .from('profiles')
+          .update({
+            direct_leader_id: newUserForm.direct_leader_id || null,
+            direct_manager_id: newUserForm.direct_manager_id || null,
+          })
+          .eq('user_id', createdUserId);
+      }
+
+      // Upload photo if provided
+      if (createdUserId && newUserPhotoFile) {
+        try {
+          const fileExt = newUserPhotoFile.name.split('.').pop();
+          const fileName = `${createdUserId}/${Date.now()}.${fileExt}`;
+          const { error: upErr } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, newUserPhotoFile, { upsert: true });
+          if (upErr) throw upErr;
+          const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
           await supabase
             .from('profiles')
-            .update({
-              direct_leader_id: newUserForm.direct_leader_id || null,
-              direct_manager_id: newUserForm.direct_manager_id || null,
-            })
+            .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
             .eq('user_id', createdUserId);
+        } catch (photoErr) {
+          console.error('Erro ao enviar foto do novo usuário:', photoErr);
+          toast.error('Usuário criado, mas falhou ao enviar foto');
         }
       }
 
@@ -512,6 +536,7 @@ export default function AdminUsers() {
       setIsNewUserDialogOpen(false);
       setNewUserForm({
         full_name: '',
+        nickname: '',
         login: '',
         position: '',
         unit: 'lapa',
@@ -527,6 +552,9 @@ export default function AdminUsers() {
         direct_leader_id: '',
         direct_manager_id: '',
       });
+      setNewUserPhotoFile(null);
+      setNewUserPhotoPreview(null);
+      if (newUserPhotoInputRef.current) newUserPhotoInputRef.current.value = '';
       fetchUsers();
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -1105,6 +1133,53 @@ export default function AdminUsers() {
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {/* Photo Upload */}
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={newUserPhotoPreview || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {newUserForm.full_name ? getInitials(newUserForm.full_name) : '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <input
+                  ref={newUserPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (!file.type.startsWith('image/')) {
+                      toast.error('Por favor, selecione uma imagem');
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error('A imagem deve ter no máximo 5MB');
+                      return;
+                    }
+                    setNewUserPhotoFile(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => setNewUserPhotoPreview(reader.result as string);
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
+                  onClick={() => newUserPhotoInputRef.current?.click()}
+                  type="button"
+                >
+                  <Camera className="h-3 w-3" />
+                </Button>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Foto do perfil</p>
+                <p className="text-xs text-muted-foreground">Opcional. Será enviada após criar o usuário.</p>
+              </div>
+            </div>
+
             {/* Section: Basic Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -1123,6 +1198,17 @@ export default function AdminUsers() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label>Apelido</Label>
+                  <Input
+                    value={newUserForm.nickname}
+                    onChange={(e) => setNewUserForm(prev => ({ ...prev, nickname: e.target.value }))}
+                    placeholder="Como prefere ser chamado"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Login *</Label>
                   <Input
                     value={newUserForm.login}
@@ -1133,23 +1219,6 @@ export default function AdminUsers() {
                     Senha padrão: prevermed
                   </p>
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <AtSign className="h-3 w-3" />
-                    @ Interno (menções)
-                  </Label>
-                  <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
-                    {newUserForm.login
-                      ? `@${newUserForm.login.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
-                      : 'Será gerado a partir do login'}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Gerado automaticamente a partir do login do usuário.
-                  </p>
-                </div>
                 <div className="space-y-2">
                   <Label>Cargo</Label>
                   <Input
@@ -1158,6 +1227,21 @@ export default function AdminUsers() {
                     placeholder="Ex: Analista, Coordenador..."
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1">
+                  <AtSign className="h-3 w-3" />
+                  @ Interno (menções)
+                </Label>
+                <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted/40 text-sm text-muted-foreground flex items-center">
+                  {newUserForm.login
+                    ? `@${newUserForm.login.toLowerCase().replace(/[^a-z0-9._-]/g, '')}`
+                    : 'Será gerado a partir do login'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Gerado automaticamente a partir do login do usuário.
+                </p>
               </div>
             </div>
 
