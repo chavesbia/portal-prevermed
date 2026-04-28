@@ -282,10 +282,10 @@ export default function Index() {
 
         <Card
           className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
-          onClick={() => navigate('/aniversariantes')}
+          onClick={() => navigate('/diretorio')}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/aniversariantes')}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/diretorio')}
         >
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
