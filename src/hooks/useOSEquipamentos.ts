@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { OSEquipamento, OSEquipamentoHistorico, EquipamentoStatus } from '@/types/osVisitas';
+import { OSEquipamento, OSEquipamentoHistorico } from '@/types/osVisitas';
 
 export interface EquipamentoInput {
   nome: string;
   tipo?: string | null;
-  empresa_cliente: string;
-  localizacao?: string | null;
-  status: EquipamentoStatus;
+  fabricante?: string | null;
+  data_ultima_calibracao?: string | null;
   observacoes?: string | null;
+  ativo?: boolean;
 }
 
 export function useOSEquipamentos() {
@@ -26,7 +26,7 @@ export function useOSEquipamentos() {
         .select('*')
         .order('nome', { ascending: true });
       if (error) throw error;
-      setEquipamentos((data || []) as OSEquipamento[]);
+      setEquipamentos((data || []) as unknown as OSEquipamento[]);
     } catch (e: any) {
       console.error('Erro ao carregar equipamentos:', e);
       toast({ title: 'Erro', description: 'Erro ao carregar equipamentos.', variant: 'destructive' });
@@ -41,7 +41,15 @@ export function useOSEquipamentos() {
     try {
       const { data, error } = await supabase
         .from('os_equipamentos')
-        .insert({ ...input, created_by: user?.id || null })
+        .insert({
+          nome: input.nome,
+          tipo: input.tipo || null,
+          fabricante: input.fabricante || null,
+          data_ultima_calibracao: input.data_ultima_calibracao || null,
+          observacoes: input.observacoes || null,
+          ativo: input.ativo ?? true,
+          created_by: user?.id || null,
+        } as any)
         .select()
         .single();
       if (error) throw error;
@@ -51,7 +59,7 @@ export function useOSEquipamentos() {
         user_id: user?.id || null,
         user_name: profile?.full_name || 'Sistema',
         acao: 'Cadastro',
-        comentario: `Equipamento cadastrado para ${input.empresa_cliente}.`,
+        comentario: `Equipamento "${input.nome}" cadastrado.`,
       });
 
       await fetchEquipamentos();
@@ -67,7 +75,7 @@ export function useOSEquipamentos() {
     try {
       const { error } = await supabase
         .from('os_equipamentos')
-        .update({ ...input, updated_by: user?.id || null })
+        .update({ ...input, updated_by: user?.id || null } as any)
         .eq('id', id);
       if (error) throw error;
 
