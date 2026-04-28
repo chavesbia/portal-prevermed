@@ -168,8 +168,15 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <Info label="Vidas Ativas" value={String(client.active_lives)} />
               <Info label="Cidade" value={client.city} />
               <Info label="UF" value={client.state} />
-              <div className="md:col-span-2">
-                <Info label="Resumo de Serviços" value={client.services_summary} />
+
+              <div className="md:col-span-2 pt-3 mt-2 border-t">
+                <p className="text-sm font-semibold text-muted-foreground mb-3">Contato</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InfoIcon icon={User} label="Nome" value={client.contact_name} />
+                  <InfoIcon icon={MessageCircle} label="WhatsApp" value={client.contact_whatsapp} />
+                  <InfoIcon icon={Phone} label="Telefone" value={client.contact_phone} />
+                  <InfoIcon icon={Mail} label="E-mail" value={client.contact_email} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -186,6 +193,9 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <div className="md:col-span-2 pt-2">
                 <Info label="Observações do Contrato" value={client.contract_notes} />
               </div>
+              <div className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+                💡 O contrato assinado pode ser anexado na aba <strong>Anexos</strong> (tipo "Contrato"). Em breve: integração com a plataforma <strong>Autentique</strong> para assinatura digital.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -196,6 +206,34 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <BoolField label="Proposta Aprovada" value={client.proposal_approved} />
               <Info label="Número da Proposta" value={client.proposal_number} />
               <Info label="Data de Aprovação" value={formatDateBR(client.approval_date)} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="operacional">
+          <Card>
+            <CardContent className="pt-6 space-y-5">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Serviços Contratados (TAGs)</p>
+                {clientServices.length === 0 ? (
+                  <p className="text-sm text-muted-foreground italic">Nenhum serviço vinculado. Edite o cliente para selecionar.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {clientServices.map(cs => (
+                      <Badge key={cs.id} variant="secondary" className="text-xs">
+                        {cs.service?.name || '—'}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <Info label="Resumo de Serviços (texto livre)" value={client.services_summary} />
+              </div>
+              <BoolField label="Tabela de Preços Anexada" value={client.pricing_table_attached} />
+              <div className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+                💡 Para anexar a <strong>tabela vigente</strong>, vá na aba <strong>Anexos</strong> e selecione o tipo "Tabela".
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
