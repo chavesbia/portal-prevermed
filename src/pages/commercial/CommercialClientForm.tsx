@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,10 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCommercialClients } from '@/hooks/useCommercialClients';
+import { useClientServices } from '@/hooks/useCommercialServices';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { SUBGROUP_OPTIONS, RISK_GRADES, STATES } from '@/lib/commercial-constants';
+import ServicesTagSelector from '@/components/commercial/ServicesTagSelector';
 
 interface Props {
   onSuccess: () => void;
@@ -21,6 +23,7 @@ interface Props {
 export default function CommercialClientForm({ onSuccess, initialData, isEditing }: Props) {
   const { createClient, updateClient } = useCommercialClients();
   const { user } = useAuth();
+  const { clientServices, setServices } = useClientServices(isEditing ? initialData?.id : undefined);
 
   const [form, setForm] = useState({
     company_name: initialData?.company_name || '',
@@ -32,6 +35,10 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
     active_lives: initialData?.active_lives || 0,
     subgroup: initialData?.subgroup || '',
     risk_grade: initialData?.risk_grade || '',
+    contact_name: initialData?.contact_name || '',
+    contact_whatsapp: initialData?.contact_whatsapp || '',
+    contact_email: initialData?.contact_email || '',
+    contact_phone: initialData?.contact_phone || '',
     has_contract: initialData?.has_contract || false,
     contract_signed: initialData?.contract_signed || false,
     contract_number: initialData?.contract_number || '',
@@ -45,6 +52,15 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
     notes: initialData?.notes || '',
     contract_notes: initialData?.contract_notes || '',
   });
+
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+
+  // Sync selected services when editing
+  useEffect(() => {
+    if (isEditing) {
+      setSelectedServiceIds(clientServices.map(cs => cs.service_id));
+    }
+  }, [isEditing, clientServices]);
 
   const handleChange = (field: string, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -60,21 +76,33 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
       ...form,
       cnpj: form.cnpj.trim() || null,
       soc_code: form.soc_code.trim() || null,
+      contact_name: form.contact_name.trim() || null,
+      contact_whatsapp: form.contact_whatsapp.trim() || null,
+      contact_email: form.contact_email.trim() || null,
+      contact_phone: form.contact_phone.trim() || null,
       contract_start_date: form.contract_start_date || null,
       contract_end_date: form.contract_end_date || null,
       approval_date: form.approval_date || null,
       ...(isEditing ? { updated_by: user?.id } : { created_by: user?.id }),
     };
 
+    let resultId: string | undefined;
     if (isEditing && initialData?.id) {
       await updateClient.mutateAsync({ id: initialData.id, ...payload });
+      resultId = initialData.id;
     } else {
-      await createClient.mutateAsync(payload);
+      const created: any = await createClient.mutateAsync(payload);
+      resultId = created?.id;
+    }
+
+    // Save services tags (only for editing existing client; new clients can edit after creation)
+    if (isEditing && resultId) {
+      await setServices.mutateAsync(selectedServiceIds);
     }
     onSuccess();
   };
 
-  const isPending = createClient.isPending || updateClient.isPending;
+  const isPending = createClient.isPending || updateClient.isPending || setServices.isPending;
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -130,6 +158,29 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
               <SelectContent>{STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+
+          {/* Contato */}
+          <div className="md:col-span-2 pt-3 border-t">
+            <p className="text-sm font-semibold text-muted-foreground mb-3">Contato</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <Label>Nome do Contato</Label>
+                <Input value={form.contact_name} onChange={e => handleChange('contact_name', e.target.value)} placeholder="Nome do responsável" />
+              </div>
+              <div>
+                <Label>WhatsApp</Label>
+                <Input value={form.contact_whatsapp} onChange={e => handleChange('contact_whatsapp', e.target.value)} placeholder="(11) 90000-0000" />
+              </div>
+              <div>
+                <Label>Telefone</Label>
+                <Input value={form.contact_phone} onChange={e => handleChange('contact_phone', e.target.value)} placeholder="(11) 0000-0000" />
+              </div>
+              <div className="md:col-span-2">
+                <Label>E-mail</Label>
+                <Input type="email" value={form.contact_email} onChange={e => handleChange('contact_email', e.target.value)} placeholder="contato@empresa.com.br" />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -160,6 +211,11 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
             <Label>Observações do Contrato</Label>
             <Textarea value={form.contract_notes} onChange={e => handleChange('contract_notes', e.target.value)} rows={3} placeholder="Observações específicas do contrato..." />
           </div>
+          <div className="md:col-span-2 text-xs text-muted-foreground bg-muted/40 rounded p-2">
+            💡 Após salvar o cadastro, vá em <strong>Anexos</strong> para anexar o contrato assinado e a tabela vigente.
+            <br />
+            <span className="opacity-80">Em breve: integração com a plataforma Autentique para assinatura digital.</span>
+          </div>
         </CardContent>
       </Card>
 
@@ -185,12 +241,30 @@ export default function CommercialClientForm({ onSuccess, initialData, isEditing
         <CardHeader><CardTitle className="text-lg">Operacional</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Resumo de Serviços</Label>
+            <Label>Serviços Contratados (TAGs)</Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              {isEditing
+                ? 'Selecione os serviços contratados pelo cliente.'
+                : 'Você poderá selecionar os serviços contratados após salvar o cadastro inicial.'}
+            </p>
+            {isEditing ? (
+              <ServicesTagSelector value={selectedServiceIds} onChange={setSelectedServiceIds} />
+            ) : (
+              <div className="text-xs text-muted-foreground italic p-3 rounded border border-dashed">
+                Disponível após o cadastro inicial.
+              </div>
+            )}
+          </div>
+          <div>
+            <Label>Resumo de Serviços (texto livre)</Label>
             <Textarea value={form.services_summary} onChange={e => handleChange('services_summary', e.target.value)} rows={3} />
           </div>
           <div className="flex items-center gap-3">
             <Switch checked={form.pricing_table_attached} onCheckedChange={v => handleChange('pricing_table_attached', v)} />
             <Label>Tabela de Preços Anexada</Label>
+          </div>
+          <div className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+            💡 Para anexar a <strong>tabela vigente</strong>, salve o cadastro e vá na aba <strong>Anexos</strong> do cliente, escolhendo o tipo "Tabela".
           </div>
           <div>
             <Label>Observações</Label>
