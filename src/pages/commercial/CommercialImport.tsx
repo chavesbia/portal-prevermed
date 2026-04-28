@@ -206,7 +206,7 @@ export default function CommercialImport({ onBack }: { onBack: () => void }) {
                   <TableCell>{[item.row.city, item.row.state].filter(Boolean).join('/')}</TableCell>
                   <TableCell className="text-right">{item.row.active_lives}</TableCell>
                   <TableCell className="max-w-[140px] truncate text-xs">{item.row.subgroup}</TableCell>
-                  <TableCell>{item.row.risk_grade}</TableCell>
+                  <TableCell>{item.row.risk_grade || <span className="text-muted-foreground italic text-xs">N/I</span>}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -5,6 +5,7 @@ import { computeClientStatus, statusLabels } from '@/lib/commercial-status';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, CartesianGrid, LineChart, Line } from 'recharts';
 import { Loader2 } from 'lucide-react';
 import { format, parseISO, addMonths, startOfMonth, isValid } from 'date-fns';
+import { isValidRiskGrade, RISK_GRADE_NOT_INFORMED_LABEL } from '@/lib/commercial-constants';
 import { ptBR } from 'date-fns/locale';
 
 const COLORS = ['hsl(var(--primary))', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
@@ -40,7 +41,7 @@ export default function CommercialIndicators() {
   const riskData = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const c of active) {
-      const r = c.risk_grade || 'N/I';
+      const r = isValidRiskGrade(c.risk_grade) ? c.risk_grade : RISK_GRADE_NOT_INFORMED_LABEL;
       counts[r] = (counts[r] || 0) + 1;
     }
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
