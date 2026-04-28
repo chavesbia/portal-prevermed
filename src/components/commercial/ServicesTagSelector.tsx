@@ -109,7 +109,11 @@ export default function ServicesTagSelector({ value, onChange, disabled }: Props
                             checked={value.includes(s.id)}
                             onCheckedChange={() => toggle(s.id)}
                           />
+                          {s.is_package && <Package className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
                           <span className="flex-1">{s.name}</span>
+                          {s.is_package && (
+                            <span className="text-[10px] text-primary uppercase font-semibold">Pacote</span>
+                          )}
                         </label>
                       ))}
                     </div>
