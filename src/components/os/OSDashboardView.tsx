@@ -94,11 +94,13 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     <div className="space-y-6">
       <OSFilterBar filters={filters} setFilters={setFilters} responsaveis={responsaveis} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <OSKPICard title="Total de OS" value={stats.total} subtitle="Ordens registradas" icon={FileText} variant="primary" />
         <OSKPICard title="Em Andamento" value={stats.emAndamento} subtitle="Em execução" icon={Clock} variant="warning" />
         <OSKPICard title="Finalizadas" value={stats.encerradas} subtitle="Concluídas" icon={CheckCircle} variant="success" />
         <OSKPICard title="Pendentes" value={stats.pendentes} subtitle="Aguardando ação" icon={AlertCircle} variant="destructive" />
+        <OSKPICard title="Novos" value={stats.novos} subtitle="Serviços novos" icon={TrendingUp} />
+        <OSKPICard title="SLA Médio" value={`${stats.slaMedio}d`} subtitle="Tempo de conclusão" icon={Timer} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
