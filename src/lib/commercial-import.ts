@@ -52,10 +52,11 @@ function parseDate(val: string | null | undefined): string | null {
 }
 
 function parseRiskGrade(val: string | number | null | undefined): string {
-  if (val == null || val === '') return '1';
+  // Grau de risco válido NR-4: 1, 2, 3 ou 4. Vazio/0 => string vazia (Não Informado).
+  if (val == null || val === '') return '';
   const n = Number(val);
-  if (!isNaN(n) && n >= 0 && n <= 4) return String(n);
-  return String(val);
+  if (!isNaN(n) && n >= 1 && n <= 4) return String(n);
+  return '';
 }
 
 export function parseExcelFile(file: File): Promise<SocRow[]> {
@@ -132,7 +133,7 @@ export async function analyzeImport(rows: SocRow[]): Promise<ImportItem[]> {
     if (seenKeys.has(key)) continue;
     seenKeys.add(key);
 
-    if (!row.company_name || !row.subgroup || !row.risk_grade) {
+    if (!row.company_name || !row.subgroup) {
       items.push({ row, status: 'erro', errorMsg: 'Campos obrigatórios ausentes' });
       continue;
     }

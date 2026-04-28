@@ -12,6 +12,7 @@ import { ArrowLeft, Upload, Trash2, FileText, Loader2, Check, X, ClipboardCheck,
 import CommercialClientForm from './CommercialClientForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
+import { formatRiskGrade } from '@/lib/commercial-constants';
 
 function formatDateBR(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
@@ -164,7 +165,7 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
               <Info label="CNPJ" value={client.cnpj} />
               <Info label="Código SOC" value={client.soc_code} />
               <Info label="Subgrupo" value={client.subgroup} />
-              <Info label="Grau de Risco" value={client.risk_grade} />
+              <Info label="Grau de Risco" value={formatRiskGrade(client.risk_grade)} />
               <Info label="Vidas Ativas" value={String(client.active_lives)} />
               <Info label="Cidade" value={client.city} />
               <Info label="UF" value={client.state} />

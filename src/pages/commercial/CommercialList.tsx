@@ -9,6 +9,7 @@ import { useCommercialClients } from '@/hooks/useCommercialClients';
 import { computeClientStatus, statusLabels, statusColors, type ClientStatus } from '@/lib/commercial-status';
 import { Search, X, Eye, Check, Loader2, AlertTriangle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { formatRiskGrade, isValidRiskGrade, RISK_GRADE_NOT_INFORMED_LABEL } from '@/lib/commercial-constants';
 
 function formatDateBR(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
@@ -57,7 +58,11 @@ export default function CommercialList({ initialStatusFilter, initialSubgroupFil
   }, [initialSubgroupFilter]);
 
   const subgroups = useMemo(() => [...new Set(clients.map(c => c.subgroup).filter(Boolean))].sort(), [clients]);
-  const riskGrades = useMemo(() => [...new Set(clients.map(c => c.risk_grade).filter(Boolean))].sort(), [clients]);
+  const riskGrades = useMemo(() => {
+    const valid = [...new Set(clients.map(c => c.risk_grade).filter(isValidRiskGrade))].sort();
+    const hasNotInformed = clients.some(c => !isValidRiskGrade(c.risk_grade));
+    return { valid, hasNotInformed };
+  }, [clients]);
 
   const filteredClients = useMemo(() => {
     return clients
@@ -73,7 +78,11 @@ export default function CommercialList({ initialStatusFilter, initialSubgroupFil
         }
         if (statusFilter !== 'all' && c.status_geral !== statusFilter) return false;
         if (subgroupFilter !== 'all' && c.subgroup !== subgroupFilter) return false;
-        if (riskFilter !== 'all' && c.risk_grade !== riskFilter) return false;
+        if (riskFilter !== 'all') {
+          if (riskFilter === '__none__') {
+            if (isValidRiskGrade(c.risk_grade)) return false;
+          } else if (c.risk_grade !== riskFilter) return false;
+        }
         if (reviewFilter === 'revisado' && !c.revisado) return false;
         if (reviewFilter === 'nao_revisado' && c.revisado) return false;
         if (pendencyFilter === 'sem_vigencia' && c.contract_end_date) return false;
@@ -129,10 +138,11 @@ export default function CommercialList({ initialStatusFilter, initialSubgroupFil
           </div>
           <div className="flex flex-col md:flex-row gap-3">
             <Select value={riskFilter} onValueChange={setRiskFilter}>
-              <SelectTrigger className="w-full md:w-36"><SelectValue placeholder="Grau de Risco" /></SelectTrigger>
+              <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Grau de Risco" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os graus</SelectItem>
-                {riskGrades.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                {riskGrades.valid.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                {riskGrades.hasNotInformed && <SelectItem value="__none__">{RISK_GRADE_NOT_INFORMED_LABEL}</SelectItem>}
               </SelectContent>
             </Select>
             <Select value={reviewFilter} onValueChange={setReviewFilter}>
@@ -192,7 +202,7 @@ export default function CommercialList({ initialStatusFilter, initialSubgroupFil
                     <TableCell className="font-medium max-w-[200px] truncate">{c.company_name}</TableCell>
                     <TableCell className="text-xs">{c.cnpj || '—'}</TableCell>
                     <TableCell className="text-xs">{c.subgroup}</TableCell>
-                    <TableCell className="text-center text-xs">{c.risk_grade}</TableCell>
+                    <TableCell className="text-center text-xs">{isValidRiskGrade(c.risk_grade) ? c.risk_grade : <span className="text-muted-foreground italic">N/I</span>}</TableCell>
                     <TableCell className="text-center">{c.active_lives}</TableCell>
                     <TableCell className="text-center">{c.has_contract ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : '—'}</TableCell>
                     <TableCell className="text-center">{c.contract_signed ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : '—'}</TableCell>
