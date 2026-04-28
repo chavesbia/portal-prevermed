@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Pencil, Trash2, Search, History } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, History, CalendarIcon } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,33 +9,35 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+import { cn } from '@/lib/utils';
 import { useOSEquipamentos } from '@/hooks/useOSEquipamentos';
-import { OSEquipamento, OSEquipamentoHistorico, EQUIPAMENTO_STATUS_OPTIONS, EquipamentoStatus, equipamentoStatusColors, equipamentoStatusLabel } from '@/types/osVisitas';
+import { OSEquipamento, OSEquipamentoHistorico, getCalibracaoStatus, calibracaoStatusColors } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 
 interface OSEquipamentosViewProps {
-  ordens: OrdemServico[];
+  ordens: OrdemServico[]; // mantido para assinatura compatível
   canEdit: boolean;
 }
 
 const emptyForm = {
   nome: '',
   tipo: '',
-  empresa_cliente: '',
-  localizacao: '',
-  status: 'ativo' as EquipamentoStatus,
+  fabricante: '',
+  data_ultima_calibracao: null as Date | null,
   observacoes: '',
+  ativo: true,
 };
 
-export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps) {
+export function OSEquipamentosView({ canEdit }: OSEquipamentosViewProps) {
   const { equipamentos, isLoading, addEquipamento, updateEquipamento, deleteEquipamento, getHistorico } = useOSEquipamentos();
   const [search, setSearch] = useState('');
-  const [empresaFilter, setEmpresaFilter] = useState('all');
   const [openDialog, setOpenDialog] = useState(false);
   const [editing, setEditing] = useState<OSEquipamento | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -43,19 +45,15 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
   const [historicoOpen, setHistoricoOpen] = useState<OSEquipamento | null>(null);
   const [historicoData, setHistoricoData] = useState<OSEquipamentoHistorico[]>([]);
 
-  const empresas = useMemo(() => {
-    const set = new Set<string>([...equipamentos.map(e => e.empresa_cliente), ...ordens.map(o => o.empresa_cliente)]);
-    return Array.from(set).sort();
-  }, [equipamentos, ordens]);
-
-  const filtered = equipamentos.filter(e => {
-    if (search) {
-      const s = search.toLowerCase();
-      if (!e.nome.toLowerCase().includes(s) && !e.empresa_cliente.toLowerCase().includes(s) && !(e.tipo || '').toLowerCase().includes(s)) return false;
-    }
-    if (empresaFilter !== 'all' && e.empresa_cliente !== empresaFilter) return false;
-    return true;
-  });
+  const filtered = useMemo(() => equipamentos.filter(e => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return (
+      e.nome.toLowerCase().includes(s) ||
+      (e.tipo || '').toLowerCase().includes(s) ||
+      (e.fabricante || '').toLowerCase().includes(s)
+    );
+  }), [equipamentos, search]);
 
   const handleNew = () => {
     setEditing(null);
@@ -68,19 +66,27 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
     setForm({
       nome: eq.nome,
       tipo: eq.tipo || '',
-      empresa_cliente: eq.empresa_cliente,
-      localizacao: eq.localizacao || '',
-      status: eq.status,
+      fabricante: eq.fabricante || '',
+      data_ultima_calibracao: eq.data_ultima_calibracao ? new Date(eq.data_ultima_calibracao + 'T00:00:00') : null,
       observacoes: eq.observacoes || '',
+      ativo: eq.ativo,
     });
     setOpenDialog(true);
   };
 
   const handleSave = async () => {
-    if (!form.nome.trim() || !form.empresa_cliente.trim()) return;
+    if (!form.nome.trim()) return;
+    const payload = {
+      nome: form.nome,
+      tipo: form.tipo || null,
+      fabricante: form.fabricante || null,
+      data_ultima_calibracao: form.data_ultima_calibracao ? format(form.data_ultima_calibracao, 'yyyy-MM-dd') : null,
+      observacoes: form.observacoes || null,
+      ativo: form.ativo,
+    };
     const ok = editing
-      ? await updateEquipamento(editing.id, form)
-      : await addEquipamento(form);
+      ? await updateEquipamento(editing.id, payload)
+      : await addEquipamento(payload);
     if (ok) setOpenDialog(false);
   };
 
@@ -94,25 +100,18 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Equipamentos</h2>
-          <p className="text-sm text-muted-foreground">Cadastro de equipamentos por cliente.</p>
+          <h2 className="text-xl font-semibold">Equipamentos de Medição</h2>
+          <p className="text-sm text-muted-foreground">Cadastre e gerencie os equipamentos utilizados nas visitas técnicas.</p>
         </div>
         {canEdit && <Button onClick={handleNew}><Plus className="mr-2 h-4 w-4" /> Novo Equipamento</Button>}
       </div>
 
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="relative">
+        <CardContent className="pt-6">
+          <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome, tipo ou cliente" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+            <Input placeholder="Buscar por nome, tipo ou fabricante" className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
-            <SelectTrigger><SelectValue placeholder="Cliente" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os clientes</SelectItem>
-              {empresas.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}
-            </SelectContent>
-          </Select>
         </CardContent>
       </Card>
 
@@ -130,29 +129,40 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
                   <TableRow>
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Localização</TableHead>
+                    <TableHead>Fabricante</TableHead>
+                    <TableHead>Última Calibração</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Ativo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map(eq => (
-                    <TableRow key={eq.id}>
-                      <TableCell className="font-medium">{eq.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">{eq.tipo || '-'}</TableCell>
-                      <TableCell>{eq.empresa_cliente}</TableCell>
-                      <TableCell className="text-muted-foreground">{eq.localizacao || '-'}</TableCell>
-                      <TableCell><Badge className={equipamentoStatusColors[eq.status]}>{equipamentoStatusLabel[eq.status]}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openHistorico(eq)}><History className="h-4 w-4" /></Button>
-                          {canEdit && <Button variant="ghost" size="icon" onClick={() => handleEdit(eq)}><Pencil className="h-4 w-4" /></Button>}
-                          {canEdit && <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setToDelete(eq)}><Trash2 className="h-4 w-4" /></Button>}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filtered.map(eq => {
+                    const cal = getCalibracaoStatus(eq.data_ultima_calibracao);
+                    return (
+                      <TableRow key={eq.id}>
+                        <TableCell className="font-medium">{eq.nome}</TableCell>
+                        <TableCell className="text-muted-foreground">{eq.tipo || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">{eq.fabricante || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {eq.data_ultima_calibracao
+                            ? format(new Date(eq.data_ultima_calibracao + 'T00:00:00'), 'dd/MM/yyyy', { locale: ptBR })
+                            : '-'}
+                        </TableCell>
+                        <TableCell><Badge className={calibracaoStatusColors[cal.status]}>{cal.label}</Badge></TableCell>
+                        <TableCell>
+                          <Badge variant={eq.ativo ? 'default' : 'secondary'}>{eq.ativo ? 'Sim' : 'Não'}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openHistorico(eq)}><History className="h-4 w-4" /></Button>
+                            {canEdit && <Button variant="ghost" size="icon" onClick={() => handleEdit(eq)}><Pencil className="h-4 w-4" /></Button>}
+                            {canEdit && <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setToDelete(eq)}><Trash2 className="h-4 w-4" /></Button>}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -167,29 +177,47 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Nome *</Label>
-              <Input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} />
+              <Input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Dosímetro de Ruído" />
             </div>
             <div className="space-y-1">
               <Label>Tipo</Label>
-              <Input value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} placeholder="Ex: Dosímetro, Bomba" />
+              <Input value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} placeholder="Ex: Medidor de Ruído" />
             </div>
             <div className="space-y-1">
-              <Label>Cliente *</Label>
-              <Input list="empresa-eq-list" value={form.empresa_cliente} onChange={e => setForm({ ...form, empresa_cliente: e.target.value })} />
-              <datalist id="empresa-eq-list">{empresas.map(e => <option key={e} value={e} />)}</datalist>
+              <Label>Fabricante</Label>
+              <Input value={form.fabricante} onChange={e => setForm({ ...form, fabricante: e.target.value })} placeholder="Ex: 3M, Instrutherm" />
             </div>
             <div className="space-y-1">
-              <Label>Localização</Label>
-              <Input value={form.localizacao} onChange={e => setForm({ ...form, localizacao: e.target.value })} placeholder="Setor / sala / unidade" />
+              <Label>Data da Última Calibração</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn('w-full justify-start text-left font-normal', !form.data_ultima_calibracao && 'text-muted-foreground')}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {form.data_ultima_calibracao
+                      ? format(form.data_ultima_calibracao, 'dd/MM/yyyy', { locale: ptBR })
+                      : 'Selecione uma data'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={form.data_ultima_calibracao || undefined}
+                    onSelect={(d) => setForm({ ...form, data_ultima_calibracao: d || null })}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            <div className="space-y-1">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={v => setForm({ ...form, status: v as EquipamentoStatus })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {EQUIPAMENTO_STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{equipamentoStatusLabel[s]}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label className="text-sm">Equipamento ativo</Label>
+                <p className="text-xs text-muted-foreground">Disponível para agendamento</p>
+              </div>
+              <Switch checked={form.ativo} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
             </div>
             <div className="space-y-1">
               <Label>Observações</Label>
@@ -198,7 +226,7 @@ export function OSEquipamentosView({ ordens, canEdit }: OSEquipamentosViewProps)
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenDialog(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={!form.nome.trim() || !form.empresa_cliente.trim()}>
+            <Button onClick={handleSave} disabled={!form.nome.trim()}>
               {editing ? 'Salvar' : 'Cadastrar'}
             </Button>
           </DialogFooter>
