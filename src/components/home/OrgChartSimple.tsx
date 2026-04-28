@@ -71,30 +71,54 @@ function OrgNode({ node, level = 0 }: OrgNodeProps) {
 }
 
 export function OrgChartSimple({ data, compact = false }: OrgChartSimpleProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <Card className="card-elevated">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Network className="h-5 w-5 text-primary" />
-          Organograma
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Network className="h-5 w-5 text-primary" />
+            Organograma
+          </CardTitle>
+          {data.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(!isOpen)}
+              className="gap-1"
+            >
+              {isOpen ? (
+                <>
+                  <ChevronsUp className="h-4 w-4" /> Recolher
+                </>
+              ) : (
+                <>
+                  <ChevronsDown className="h-4 w-4" /> Expandir hierarquia
+                </>
+              )}
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Organograma não configurado
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {data.map((node) => (
-              <OrgNode key={node.id} node={node} />
-            ))}
-          </div>
-        )}
-      </CardContent>
+      {isOpen && (
+        <CardContent>
+          {data.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Organograma não configurado
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1 max-h-[600px] overflow-auto">
+              {data.map((node) => (
+                <OrgNode key={node.id} node={node} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }
