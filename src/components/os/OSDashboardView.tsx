@@ -1,4 +1,4 @@
-import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, BarChart3 } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
