@@ -318,6 +318,17 @@ export function LaudosServicosManager() {
                     <TableCell>
                       {isAdmMaster && (
                         <div className="flex justify-end gap-1">
+                          {s.category === "Pacote" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary hover:text-primary"
+                              title="Compor pacote"
+                              onClick={() => openComposer(s)}
+                            >
+                              <Layers className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
