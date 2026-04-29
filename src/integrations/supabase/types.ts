@@ -2748,6 +2748,64 @@ export type Database = {
           },
         ]
       }
+      plan_service_prices: {
+        Row: {
+          catalog_service_id: string
+          created_at: string
+          id: string
+          is_included_in_package: boolean
+          life_range_id: string | null
+          notes: string | null
+          plan_id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          catalog_service_id: string
+          created_at?: string
+          id?: string
+          is_included_in_package?: boolean
+          life_range_id?: string | null
+          notes?: string | null
+          plan_id: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          catalog_service_id?: string
+          created_at?: string
+          id?: string
+          is_included_in_package?: boolean
+          life_range_id?: string | null
+          notes?: string | null
+          plan_id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_service_prices_catalog_service_id_fkey"
+            columns: ["catalog_service_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_service_prices_life_range_id_fkey"
+            columns: ["life_range_id"]
+            isOneToOne: false
+            referencedRelation: "life_ranges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_service_prices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_comments: {
         Row: {
           content: string
@@ -2863,6 +2921,48 @@ export type Database = {
           motivo?: string | null
           nome?: string
           nome_normalizado?: string
+        }
+        Relationships: []
+      }
+      pricing_plans: {
+        Row: {
+          billing_model: string
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          is_recommended: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          billing_model?: string
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_recommended?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          billing_model?: string
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          is_recommended?: boolean
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
