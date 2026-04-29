@@ -45,6 +45,7 @@ import {
 } from "@/hooks/useCatalogServices";
 import {
   BookOpen,
+  Layers,
   Loader2,
   Pencil,
   Plus,
@@ -54,6 +55,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PackageComposerDialog } from "@/components/admin/PackageComposerDialog";
 
 const fmt = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -100,6 +102,13 @@ export function LaudosServicosManager() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DraftService>(emptyDraft());
   const [newCategory, setNewCategory] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerService, setComposerService] = useState<CatalogService | null>(null);
+
+  const openComposer = (svc: CatalogService) => {
+    setComposerService(svc);
+    setComposerOpen(true);
+  };
 
   const filtered = useMemo(() => {
     return services.filter((s) => {
@@ -309,6 +318,17 @@ export function LaudosServicosManager() {
                     <TableCell>
                       {isAdmMaster && (
                         <div className="flex justify-end gap-1">
+                          {s.category === "Pacote" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary hover:text-primary"
+                              title="Compor pacote"
+                              onClick={() => openComposer(s)}
+                            >
+                              <Layers className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -494,6 +514,13 @@ export function LaudosServicosManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PackageComposerDialog
+        open={composerOpen}
+        onOpenChange={setComposerOpen}
+        parentService={composerService}
+        allServices={services}
+      />
     </Card>
   );
 }
