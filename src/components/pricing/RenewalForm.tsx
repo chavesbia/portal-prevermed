@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCommercialClients } from "@/hooks/useCommercialClients";
-import { useCommercialServices, useClientServices, useClientServiceModules } from "@/hooks/useCommercialServices";
+import { useServices } from "@/hooks/useServices";
 import {
   useRenewalQuotations,
   RenewalIndexType,
@@ -30,13 +30,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Calculator, Info, Package2 } from "lucide-react";
+import { Trash2, Plus, Calculator, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
-
-// shadcn checkbox isn't exported by default in some templates; ensure import
-// (já existe em src/components/ui/checkbox)
 
 // Tabela de referência baseada na PlansTab — Plano B (Pacote Vidas)
 const PLAN_TIERS = [
@@ -78,9 +74,15 @@ const newItem = (overrides: Partial<DraftItem> = {}): DraftItem => ({
 
 const NO_SERVICE = "__manual__";
 
+const CATEGORY_LABELS: Record<string, string> = {
+  servico: "Serviço",
+  exame_complementar: "Exame",
+  deslocamento: "Deslocamento",
+};
+
 export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
   const { clients } = useCommercialClients();
-  const { services: catalog } = useCommercialServices();
+  const { services: catalog, isLoading: loadingCatalog } = useServices();
   const { saveRenewal } = useRenewalQuotations();
 
   const [clientId, setClientId] = useState<string>("");
@@ -93,14 +95,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
   const [justification, setJustification] = useState("");
   const [notes, setNotes] = useState("");
 
-  const { clientServices } = useClientServices(clientId || undefined);
-  const { modules: clientModules } = useClientServiceModules(clientId || undefined);
-
-  const priceableCatalog = useMemo(
-    () => catalog.filter((s) => s.is_active && s.is_priceable),
-    [catalog]
-  );
-
   const tier = useMemo(() => getTier(currentLives || 0), [currentLives]);
 
   // referência: vidas * vida + laudos
@@ -111,7 +105,18 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     return vidas + laudos;
   }, [currentLives, tier]);
 
-  // Quando muda o cliente, auto-importa os serviços contratados (Carteira + módulos do pacote)
+  // Catálogo agrupado por categoria (igual base do In Loco "Gerenciar Serviços e Exames")
+  const groupedCatalog = useMemo(() => {
+    const groups: Record<string, typeof catalog> = {};
+    catalog.forEach((s) => {
+      const key = s.category || "outros";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s);
+    });
+    return groups;
+  }, [catalog]);
+
+  // Quando muda o cliente, preenche nome e vidas
   useEffect(() => {
     if (!clientId) return;
     const c = clients.find((x) => x.id === clientId);
@@ -120,56 +125,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
       setCurrentLives(c.active_lives || 0);
     }
   }, [clientId, clients]);
-
-  useEffect(() => {
-    if (!clientId) return;
-    if (clientServices.length === 0 && clientModules.length === 0) return;
-
-    // Monta lista única de serviços do cliente: serviços diretamente vinculados + componentes ativos de pacotes
-    const seen = new Set<string>();
-    const imported: DraftItem[] = [];
-
-    clientServices.forEach((cs) => {
-      if (!cs.service || seen.has(cs.service.id)) return;
-      seen.add(cs.service.id);
-      const suggested = cs.service.price_in_plan ?? cs.service.price_standalone ?? 0;
-      imported.push(
-        newItem({
-          service_id: cs.service.id,
-          service_name: cs.service.name,
-          current_value: suggested,
-          adjusted_value: suggested,
-          reference_value: cs.service.price_in_plan ?? cs.service.price_standalone ?? 0,
-          in_monthly_package: !!cs.service.is_package,
-        })
-      );
-    });
-
-    // Adiciona componentes de pacote marcados como ativos
-    clientModules
-      .filter((m) => m.is_active)
-      .forEach((m) => {
-        if (seen.has(m.component_id)) return;
-        const svc = catalog.find((s) => s.id === m.component_id);
-        if (!svc) return;
-        seen.add(svc.id);
-        imported.push(
-          newItem({
-            service_id: svc.id,
-            service_name: svc.name,
-            current_value: 0,
-            in_monthly_package: true,
-            observation: "Componente do pacote contratado",
-          })
-        );
-      });
-
-    if (imported.length > 0) {
-      setItems(imported);
-      toast.success(`${imported.length} serviço(s) importado(s) da carteira do cliente`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, clientServices.length, clientModules.length]);
 
   const updateItem = (key: string, patch: Partial<DraftItem>) => {
     setItems((prev) =>
@@ -187,20 +142,21 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
       updateItem(key, { service_id: null });
       return;
     }
-    const svc = priceableCatalog.find((s) => s.id === serviceId);
+    const svc = catalog.find((s) => s.id === serviceId);
     if (!svc) return;
-    const suggested = svc.price_in_plan ?? svc.price_standalone ?? 0;
     setItems((prev) =>
       prev.map((it) =>
         it._key === key
           ? {
               ...it,
               service_id: svc.id,
-              service_name: svc.name,
-              current_value: it.current_value || suggested,
-              reference_value: svc.price_in_plan ?? svc.price_standalone ?? 0,
-              adjusted_value: +((it.current_value || suggested) * (1 + (it.applied_percent || 0) / 100)).toFixed(2),
-              in_monthly_package: it.in_monthly_package ?? !!svc.is_package,
+              service_name: svc.description,
+              current_value: it.current_value || svc.unitValue,
+              reference_value: svc.unitValue,
+              adjusted_value: +(
+                (it.current_value || svc.unitValue) *
+                (1 + (it.applied_percent || 0) / 100)
+              ).toFixed(2),
             }
           : it
       )
@@ -262,7 +218,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
       notes: notes || undefined,
     });
 
-    // reset
     setClientId("");
     setClientName("");
     setCurrentLives(0);
@@ -290,12 +245,8 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
             Memória de Cálculo de Renovação
           </CardTitle>
           <CardDescription>
-            Selecione o cliente da Carteira — os serviços já contratados serão importados
-            automaticamente. Use o seletor para adicionar serviços extras do{" "}
-            <Link to="/admin/servicos-operacionais" className="text-primary underline">
-              catálogo central
-            </Link>
-            .
+            Selecione o cliente da Carteira e adicione serviços do mesmo catálogo do In Loco
+            (<strong>Gerenciar Serviços e Exames</strong>).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -380,7 +331,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
           <div>
             <CardTitle>Serviços</CardTitle>
             <CardDescription>
-              Selecione do catálogo, marque o que está dentro do pacote mensal e ajuste valores.
+              Selecione do mesmo catálogo do In Loco. Marque o que está dentro do pacote mensal SST.
             </CardDescription>
           </div>
           <Button
@@ -398,7 +349,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[260px]">Serviço (catálogo)</TableHead>
+                  <TableHead className="min-w-[260px]">Serviço (catálogo In Loco)</TableHead>
                   <TableHead className="text-center w-[110px]">No pacote SST?</TableHead>
                   <TableHead className="text-right">Valor atual</TableHead>
                   <TableHead className="text-right w-[100px]">% aplic.</TableHead>
@@ -422,22 +373,29 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                           <SelectTrigger className="h-8">
                             <SelectValue placeholder="Selecionar serviço..." />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-h-[320px]">
                             <SelectItem value={NO_SERVICE}>
                               <span className="text-muted-foreground">— Digitar manualmente —</span>
                             </SelectItem>
-                            {priceableCatalog.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                <div className="flex items-center gap-2">
-                                  {s.is_package && <Package2 className="h-3 w-3 text-primary" />}
-                                  <span>{titleCase(s.name)}</span>
-                                  {s.category && (
-                                    <Badge variant="outline" className="text-[10px] py-0">
-                                      {titleCase(s.category)}
-                                    </Badge>
-                                  )}
+                            {Object.entries(groupedCatalog).map(([cat, list]) => (
+                              <div key={cat}>
+                                <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground bg-muted/40">
+                                  {CATEGORY_LABELS[cat] || cat}
                                 </div>
-                              </SelectItem>
+                                {list.map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] text-muted-foreground font-mono">
+                                        {s.code}
+                                      </span>
+                                      <span>{titleCase(s.description)}</span>
+                                      <Badge variant="outline" className="text-[10px] py-0">
+                                        {fmt(s.unitValue)}
+                                      </Badge>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </div>
                             ))}
                           </SelectContent>
                         </Select>
@@ -449,10 +407,10 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                             className="h-8 mt-1"
                           />
                         )}
-                        {linkedSvc && (linkedSvc.price_in_plan != null || linkedSvc.price_standalone != null) && (
+                        {linkedSvc && (
                           <div className="text-[10px] text-muted-foreground mt-1">
-                            Sugestão: avulso {fmt(linkedSvc.price_standalone ?? 0)} · plano{" "}
-                            {fmt(linkedSvc.price_in_plan ?? 0)}
+                            Preço de venda padrão: {fmt(linkedSvc.unitValue)} · Custo:{" "}
+                            {fmt(linkedSvc.costValue)}
                           </div>
                         )}
                       </TableCell>
@@ -511,15 +469,12 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
               </TableBody>
             </Table>
           </div>
-          {priceableCatalog.length === 0 && (
+          {!loadingCatalog && catalog.length === 0 && (
             <Alert className="mt-3">
               <Info className="h-4 w-4" />
               <AlertDescription>
-                O catálogo de serviços está vazio. Cadastre serviços em{" "}
-                <Link to="/admin/servicos-operacionais" className="text-primary underline">
-                  Administração › Serviços Operacionais
-                </Link>{" "}
-                para selecioná-los aqui.
+                O catálogo de serviços está vazio. Cadastre serviços na aba <strong>Admin</strong> do
+                módulo Precificação (Gerenciar Serviços e Exames).
               </AlertDescription>
             </Alert>
           )}

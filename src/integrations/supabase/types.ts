@@ -1014,54 +1014,39 @@ export type Database = {
         Row: {
           category: string | null
           code: string | null
-          cost_value: number | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           is_active: boolean
           is_package: boolean
-          is_priceable: boolean
           name: string
-          price_in_plan: number | null
-          price_standalone: number | null
-          pricing_notes: string | null
           unit: string | null
           updated_at: string
         }
         Insert: {
           category?: string | null
           code?: string | null
-          cost_value?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_package?: boolean
-          is_priceable?: boolean
           name: string
-          price_in_plan?: number | null
-          price_standalone?: number | null
-          pricing_notes?: string | null
           unit?: string | null
           updated_at?: string
         }
         Update: {
           category?: string | null
           code?: string | null
-          cost_value?: number | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           is_active?: boolean
           is_package?: boolean
-          is_priceable?: boolean
           name?: string
-          price_in_plan?: number | null
-          price_standalone?: number | null
-          pricing_notes?: string | null
           unit?: string | null
           updated_at?: string
         }
@@ -3049,7 +3034,7 @@ export type Database = {
             foreignKeyName: "renewal_quotation_items_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
-            referencedRelation: "commercial_services"
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
