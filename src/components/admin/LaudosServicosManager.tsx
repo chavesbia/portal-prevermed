@@ -185,10 +185,6 @@ export function LaudosServicosManager() {
               <BookOpen className="h-5 w-5 text-primary" />
               Laudos e Serviços
             </CardTitle>
-            <CardDescription>
-              Catálogo central de laudos, treinamentos, palestras, perícias e demais
-              serviços. Reutilizado em Renovação, Proposta, Contrato, OS e Faturamento.
-            </CardDescription>
           </div>
           {isAdmMaster && (
             <Button onClick={startCreate} className="gap-2">
@@ -278,7 +274,7 @@ export function LaudosServicosManager() {
                 filtered.map((s) => (
                   <TableRow key={s.id} className={!s.is_active ? "opacity-50" : ""}>
                     <TableCell>
-                      <div className="font-medium">{titleCase(s.name)}</div>
+                      <div className="font-medium uppercase">{s.name}</div>
                       {s.description && (
                         <div className="text-xs text-muted-foreground line-clamp-1">
                           {s.description}
