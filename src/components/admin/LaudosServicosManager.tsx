@@ -45,6 +45,7 @@ import {
 } from "@/hooks/useCatalogServices";
 import {
   BookOpen,
+  Layers,
   Loader2,
   Pencil,
   Plus,
@@ -54,6 +55,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PackageComposerDialog } from "@/components/admin/PackageComposerDialog";
 
 const fmt = (v: number | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
