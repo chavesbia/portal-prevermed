@@ -356,7 +356,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
               <TableBody>
                 {items.map((it) => {
                   const cmp = compareLine(it);
-                  const refTotal = lineReferenceTotal(it);
                   return (
                     <TableRow key={it._key}>
                       <TableCell>
