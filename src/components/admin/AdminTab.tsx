@@ -549,11 +549,6 @@ export function AdminTab() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Aprovação de Usuários Pendentes */}
-      <PendingApprovals />
-
-      {/* Gerenciamento de Usuários */}
-      <UserManagement />
     </div>
   );
 }
