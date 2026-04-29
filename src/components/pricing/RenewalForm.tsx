@@ -69,11 +69,16 @@ const newItem = (overrides: Partial<DraftItem> = {}): DraftItem => ({
   ...overrides,
 });
 
-const lineCurrentTotal = (it: DraftItem) => +(it.quantity * it.unit_value).toFixed(2);
+// Quando o item está "incluso no pacote mensal", o valor é diluído em 12 parcelas
+// para refletir o pagamento mensal dentro do pacote SST.
+const monthlyDivisor = (it: DraftItem) => (it.in_monthly_package ? 12 : 1);
+
+const lineCurrentTotal = (it: DraftItem) =>
+  +((it.quantity * it.unit_value) / monthlyDivisor(it)).toFixed(2);
 const lineAdjustedTotal = (it: DraftItem) =>
   +(lineCurrentTotal(it) * (1 + (it.applied_percent || 0) / 100)).toFixed(2);
 const lineReferenceTotal = (it: DraftItem) =>
-  +(it.quantity * it.reference_value).toFixed(2);
+  +((it.quantity * it.reference_value) / monthlyDivisor(it)).toFixed(2);
 
 const compareLine = (it: DraftItem): "ACIMA" | "IGUAL" | "ABAIXO" | null => {
   const ref = lineReferenceTotal(it);
@@ -351,7 +356,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
               <TableBody>
                 {items.map((it) => {
                   const cmp = compareLine(it);
-                  const refTotal = lineReferenceTotal(it);
                   return (
                     <TableRow key={it._key}>
                       <TableCell>
@@ -370,28 +374,13 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                                 </div>
                                 {list.map((s) => (
                                   <SelectItem key={s.id} value={s.id}>
-                                    <div className="flex items-center gap-2">
-                                      <span>{titleCase(s.name)}</span>
-                                      {s.reference_value != null && (
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[10px] py-0"
-                                        >
-                                          {fmt(s.reference_value)}
-                                        </Badge>
-                                      )}
-                                    </div>
+                                    <span className="uppercase">{s.name}</span>
                                   </SelectItem>
                                 ))}
                               </div>
                             ))}
                           </SelectContent>
                         </Select>
-                        {refTotal > 0 && (
-                          <div className="text-[10px] text-muted-foreground mt-1">
-                            Ref. total: {fmt(refTotal)}
-                          </div>
-                        )}
                       </TableCell>
                       <TableCell>
                         <Input
@@ -430,6 +419,11 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {fmt(lineCurrentTotal(it))}
+                        {it.in_monthly_package && it.quantity * it.unit_value > 0 && (
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            de {fmt(it.quantity * it.unit_value)} ÷ 12
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Input
