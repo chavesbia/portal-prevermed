@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { Calculator, History, Package, GraduationCap, Settings, RefreshCw } from "lucide-react";
+import { Calculator, History, Package, GraduationCap, RefreshCw, Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { InLocoTab } from "@/components/pricing/InLocoTab";
 import { PlansTab } from "@/components/pricing/PlansTab";
 import { TrainingsTab } from "@/components/pricing/TrainingsTab";
 import { QuotationHistory } from "@/components/history/QuotationHistory";
-import { AdminTab } from "@/components/admin/AdminTab";
 import { RenewalForm } from "@/components/pricing/RenewalForm";
 import { RenewalHistory } from "@/components/pricing/RenewalHistory";
+import { InLocoSettingsSheet } from "@/components/pricing/InLocoSettingsSheet";
+import { RenewalSettingsSheet } from "@/components/pricing/RenewalSettingsSheet";
+import { PlansSettingsSheet } from "@/components/pricing/PlansSettingsSheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useServices } from "@/hooks/useServices";
 import { mapToPricingRole } from "@/lib/pricing-roles";
@@ -19,11 +22,15 @@ export default function Precificacao() {
   const [activeTab, setActiveTab] = useState("inloco");
   const [inlocoSubTab, setInlocoSubTab] = useState("nova");
   const [renovacaoSubTab, setRenovacaoSubTab] = useState("nova");
-  const { isAdmin, profile, role } = useAuth();
+  const { isAdmMaster, profile, role } = useAuth();
   const { services, isLoading } = useServices();
 
   const [custosAdicionais, setCustosAdicionais] = useState<CustosAdicionaisData>(initialCustosAdicionais);
   const [editingQuotation, setEditingQuotation] = useState<EditingQuotation | null>(null);
+
+  const [inlocoSettingsOpen, setInlocoSettingsOpen] = useState(false);
+  const [renewalSettingsOpen, setRenewalSettingsOpen] = useState(false);
+  const [plansSettingsOpen, setPlansSettingsOpen] = useState(false);
 
   const userRole = mapToPricingRole(
     profile?.hierarchy_position as any,
@@ -72,26 +79,33 @@ export default function Precificacao() {
             <GraduationCap className="h-4 w-4" />
             Treinamentos
           </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="admin" className="gap-1.5">
-              <Settings className="h-4 w-4" />
-              Admin
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="inloco" className="mt-6">
           <Tabs value={inlocoSubTab} onValueChange={setInlocoSubTab}>
-            <TabsList>
-              <TabsTrigger value="nova" className="gap-1.5">
-                <Calculator className="h-4 w-4" />
-                Nova Memória
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="gap-1.5">
-                <History className="h-4 w-4" />
-                Histórico
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <TabsList>
+                <TabsTrigger value="nova" className="gap-1.5">
+                  <Calculator className="h-4 w-4" />
+                  Nova Memória
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="gap-1.5">
+                  <History className="h-4 w-4" />
+                  Histórico
+                </TabsTrigger>
+              </TabsList>
+              {isAdmMaster && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setInlocoSettingsOpen(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Configurações
+                </Button>
+              )}
+            </div>
             <TabsContent value="nova" className="mt-4">
               <InLocoTab
                 services={services}
@@ -110,16 +124,29 @@ export default function Precificacao() {
 
         <TabsContent value="renovacao" className="mt-6">
           <Tabs value={renovacaoSubTab} onValueChange={setRenovacaoSubTab}>
-            <TabsList>
-              <TabsTrigger value="nova" className="gap-1.5">
-                <RefreshCw className="h-4 w-4" />
-                Nova Renovação
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="gap-1.5">
-                <History className="h-4 w-4" />
-                Histórico
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <TabsList>
+                <TabsTrigger value="nova" className="gap-1.5">
+                  <RefreshCw className="h-4 w-4" />
+                  Nova Renovação
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="gap-1.5">
+                  <History className="h-4 w-4" />
+                  Histórico
+                </TabsTrigger>
+              </TabsList>
+              {isAdmMaster && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setRenewalSettingsOpen(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Configuração
+                </Button>
+              )}
+            </div>
             <TabsContent value="nova" className="mt-4">
               <RenewalForm onSaved={() => setRenovacaoSubTab("historico")} />
             </TabsContent>
@@ -129,18 +156,30 @@ export default function Precificacao() {
           </Tabs>
         </TabsContent>
 
-        <TabsContent value="planos" className="mt-6">
+        <TabsContent value="planos" className="mt-6 space-y-4">
+          {isAdmMaster && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setPlansSettingsOpen(true)}
+              >
+                <Settings className="h-4 w-4" />
+                Configuração
+              </Button>
+            </div>
+          )}
           <PlansTab />
         </TabsContent>
         <TabsContent value="treinamentos" className="mt-6">
           <TrainingsTab />
         </TabsContent>
-        {isAdmin && (
-          <TabsContent value="admin" className="mt-6">
-            <AdminTab />
-          </TabsContent>
-        )}
       </Tabs>
+
+      <InLocoSettingsSheet open={inlocoSettingsOpen} onOpenChange={setInlocoSettingsOpen} />
+      <RenewalSettingsSheet open={renewalSettingsOpen} onOpenChange={setRenewalSettingsOpen} />
+      <PlansSettingsSheet open={plansSettingsOpen} onOpenChange={setPlansSettingsOpen} />
     </div>
   );
 }
