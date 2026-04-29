@@ -42,6 +42,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useServices } from "@/hooks/useServices";
 import { LaudosServicosManager } from "@/components/admin/LaudosServicosManager";
+import { LifeRangesManager } from "@/components/admin/LifeRangesManager";
+import { PricingPlansManager } from "@/components/admin/PricingPlansManager";
 
 interface EditingServiceWithMargin extends ServiceItem {
   marginPercent?: number;
@@ -552,6 +554,12 @@ export function AdminTab() {
 
       {/* Catálogo central — também acessível em /admin/laudos-servicos */}
       <LaudosServicosManager />
+
+      {/* Faixas de vida editáveis */}
+      <LifeRangesManager />
+
+      {/* Planos comerciais e matriz de preços */}
+      <PricingPlansManager />
     </div>
   );
 }
