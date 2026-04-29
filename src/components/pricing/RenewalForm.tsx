@@ -301,7 +301,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Percentual padrão (%)</Label>
+              <Label>Percentual (%)</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -343,12 +343,12 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                 <TableRow>
                   <TableHead className="min-w-[260px]">Serviço *</TableHead>
                   <TableHead className="text-right w-[80px]">Qtd</TableHead>
-                  <TableHead className="text-center w-[110px]">Incluso no pacote</TableHead>
-                  <TableHead className="text-right w-[120px]">Valor unitário</TableHead>
+                  <TableHead className="text-center w-[90px]">Pacote</TableHead>
+                  <TableHead className="text-right w-[110px]">Valor</TableHead>
                   <TableHead className="text-right w-[120px]">Valor total</TableHead>
-                  <TableHead className="text-right w-[90px]">% aplicado</TableHead>
+                  <TableHead className="text-right w-[80px]">%</TableHead>
                   <TableHead className="text-right w-[130px]">Reajustado</TableHead>
-                  <TableHead className="text-center w-[110px]">vs Ref.</TableHead>
+                  <TableHead className="text-center w-[100px]">Tabela</TableHead>
                   <TableHead className="min-w-[160px]">Observações</TableHead>
                   <TableHead className="w-[40px]" />
                 </TableRow>
@@ -546,7 +546,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                   : "secondary"
               }
             >
-              {dev.deviation_status} do padrão
+              {dev.deviation_status} da tabela
             </Badge>
           </CardContent>
         </Card>
