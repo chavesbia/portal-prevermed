@@ -1,7 +1,5 @@
 import { useState, useMemo } from "react";
 import { Settings, Percent, Plus, Pencil, Trash2, Save, Search, X, Loader2 } from "lucide-react";
-import { UserManagement } from "./UserManagement";
-import { PendingApprovals } from "./PendingApprovals";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -551,11 +549,6 @@ export function AdminTab() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Aprovação de Usuários Pendentes */}
-      <PendingApprovals />
-
-      {/* Gerenciamento de Usuários */}
-      <UserManagement />
     </div>
   );
 }
