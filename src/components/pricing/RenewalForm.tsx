@@ -419,6 +419,11 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {fmt(lineCurrentTotal(it))}
+                        {it.in_monthly_package && it.quantity * it.unit_value > 0 && (
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            de {fmt(it.quantity * it.unit_value)} ÷ 12
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Input
