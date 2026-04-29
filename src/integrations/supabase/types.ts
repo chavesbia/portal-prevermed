@@ -626,6 +626,102 @@ export type Database = {
           },
         ]
       }
+      catalog_service_packages: {
+        Row: {
+          created_at: string
+          id: string
+          item_type: string
+          package_id: string
+          quantity: number
+          service_id: string
+          unit_value: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_type?: string
+          package_id: string
+          quantity?: number
+          service_id: string
+          unit_value?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_type?: string
+          package_id?: string
+          quantity?: number
+          service_id?: string
+          unit_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_service_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_service_packages_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalog_services: {
+        Row: {
+          area: string
+          category: string
+          created_at: string
+          created_by: string | null
+          delivery_days: number | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          package_eligible: boolean
+          reference_value: number | null
+          service_type: string
+          updated_at: string
+          validity_months: number | null
+        }
+        Insert: {
+          area: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          delivery_days?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          package_eligible?: boolean
+          reference_value?: number | null
+          service_type: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Update: {
+          area?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_days?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          package_eligible?: boolean
+          reference_value?: number | null
+          service_type?: string
+          updated_at?: string
+          validity_months?: number | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           chat_id: string
@@ -1730,6 +1826,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      life_ranges: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          max_lives: number | null
+          min_lives: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          max_lives?: number | null
+          min_lives: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          max_lives?: number | null
+          min_lives?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       mentions: {
         Row: {
@@ -2980,12 +3109,15 @@ export type Database = {
         Row: {
           adjusted_value: number
           applied_percent: number
+          catalog_service_id: string | null
+          comparison_status: string | null
           created_at: string
           current_value: number
           id: string
           in_monthly_package: boolean
           is_included: boolean
           observation: string | null
+          quantity: number
           reference_value: number
           renewal_id: string
           service_id: string | null
@@ -2995,12 +3127,15 @@ export type Database = {
         Insert: {
           adjusted_value?: number
           applied_percent?: number
+          catalog_service_id?: string | null
+          comparison_status?: string | null
           created_at?: string
           current_value?: number
           id?: string
           in_monthly_package?: boolean
           is_included?: boolean
           observation?: string | null
+          quantity?: number
           reference_value?: number
           renewal_id: string
           service_id?: string | null
@@ -3010,12 +3145,15 @@ export type Database = {
         Update: {
           adjusted_value?: number
           applied_percent?: number
+          catalog_service_id?: string | null
+          comparison_status?: string | null
           created_at?: string
           current_value?: number
           id?: string
           in_monthly_package?: boolean
           is_included?: boolean
           observation?: string | null
+          quantity?: number
           reference_value?: number
           renewal_id?: string
           service_id?: string | null
@@ -3023,6 +3161,13 @@ export type Database = {
           sort_order?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "renewal_quotation_items_catalog_service_id_fkey"
+            columns: ["catalog_service_id"]
+            isOneToOne: false
+            referencedRelation: "catalog_services"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "renewal_quotation_items_renewal_id_fkey"
             columns: ["renewal_id"]
