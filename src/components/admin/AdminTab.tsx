@@ -41,6 +41,7 @@ import { ServiceItem } from "@/types/pricing";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useServices } from "@/hooks/useServices";
+import { LaudosServicosManager } from "@/components/admin/LaudosServicosManager";
 
 interface EditingServiceWithMargin extends ServiceItem {
   marginPercent?: number;
@@ -257,7 +258,7 @@ export function AdminTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                Gerenciar Serviços e Exames
+                Exames e Serviços - In Loco
               </CardTitle>
               <CardDescription>
                 {filteredServices.length} de {services.length} serviços
@@ -549,6 +550,8 @@ export function AdminTab() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Catálogo central — também acessível em /admin/laudos-servicos */}
+      <LaudosServicosManager />
     </div>
   );
 }
