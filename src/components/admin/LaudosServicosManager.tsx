@@ -102,6 +102,13 @@ export function LaudosServicosManager() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DraftService>(emptyDraft());
   const [newCategory, setNewCategory] = useState("");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerService, setComposerService] = useState<CatalogService | null>(null);
+
+  const openComposer = (svc: CatalogService) => {
+    setComposerService(svc);
+    setComposerOpen(true);
+  };
 
   const filtered = useMemo(() => {
     return services.filter((s) => {
