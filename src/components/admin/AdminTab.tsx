@@ -257,7 +257,7 @@ export function AdminTab() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                Gerenciar Serviços e Exames
+                Exames e Serviços - In Loco
               </CardTitle>
               <CardDescription>
                 {filteredServices.length} de {services.length} serviços
