@@ -514,6 +514,13 @@ export function LaudosServicosManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PackageComposerDialog
+        open={composerOpen}
+        onOpenChange={setComposerOpen}
+        parentService={composerService}
+        allServices={services}
+      />
     </Card>
   );
 }
