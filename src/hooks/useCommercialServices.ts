@@ -10,12 +10,6 @@ export interface CommercialService {
   description: string | null;
   is_active: boolean;
   is_package: boolean;
-  is_priceable: boolean;
-  unit: string | null;
-  cost_value: number | null;
-  price_standalone: number | null;
-  price_in_plan: number | null;
-  pricing_notes: string | null;
   created_at: string;
   updated_at: string;
 }
