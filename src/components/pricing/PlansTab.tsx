@@ -522,13 +522,16 @@ export function PlansTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-primary">
             <Users className="h-5 w-5" />
-            Simulação para {lives} vidas
+            Simulação para {lives} vidas — {selectedPlan.name}
           </CardTitle>
+          <CardDescription>
+            Gestão de vidas cobrada mensalmente (12x). Laudos cobrados 1x ao ano, podendo ser parcelados em até 12x dentro do pacote.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg bg-card p-4 shadow-sm">
-              <p className="text-sm text-muted-foreground">Valor Mensal</p>
+              <p className="text-sm text-muted-foreground">Valor Mensal (12x)</p>
               <p className="text-2xl font-bold text-primary">{formatCurrency(planCalc.monthly)}</p>
             </div>
             <div className="rounded-lg bg-card p-4 shadow-sm">
@@ -538,13 +541,47 @@ export function PlansTab() {
             <div className="rounded-lg bg-card p-4 shadow-sm">
               <p className="text-sm text-muted-foreground">Laudos (Anual)</p>
               <p className="text-2xl font-bold">{formatCurrency(planCalc.laudos)}</p>
+              <p className="text-[11px] text-muted-foreground">parcelado em 12x de {formatCurrency(planCalc.laudos / 12)}</p>
             </div>
             <div className="rounded-lg bg-card p-4 shadow-sm">
-              <p className="text-sm text-muted-foreground">Gestão Vidas</p>
+              <p className="text-sm text-muted-foreground">Gestão Vidas (Anual)</p>
               <p className="text-2xl font-bold">{formatCurrency(planCalc.vidasAnual)}</p>
+              <p className="text-[11px] text-muted-foreground">{lives} vidas × {formatCurrency(planCalc.valorUnitario)} × 12 meses</p>
             </div>
           </div>
-          <div className="mt-4 flex justify-end">
+
+          <div className="rounded-lg border bg-card/60 p-4">
+            <p className="text-sm font-semibold mb-3">Composição do pacote</p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between border-b pb-2">
+                <span className="font-medium">Gestão de vidas — {planCalc.descricaoUnitario}</span>
+                <span className="font-mono">
+                  {lives} × {formatCurrency(planCalc.valorUnitario)} × 12 = {formatCurrency(planCalc.vidasAnual)}
+                </span>
+              </div>
+              {[
+                { label: "LTCAT", value: currentTierValues.ltcat },
+                { label: "PGR", value: currentTierValues.pgr },
+                { label: "DRPS", value: currentTierValues.drps },
+                { label: "PCMSO", value: currentTierValues.pcmso },
+              ].filter((i) => i.value > 0).map((item) => (
+                <div key={item.label} className="flex justify-between text-muted-foreground">
+                  <span>{item.label} <span className="text-[11px]">(1x ao ano · 12x de {formatCurrency(item.value / 12)})</span></span>
+                  <span className="font-mono">{formatCurrency(item.value)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between border-t pt-2 font-semibold">
+                <span>Total Anual</span>
+                <span className="font-mono">{formatCurrency(planCalc.annual)}</span>
+              </div>
+              <div className="flex justify-between text-primary font-semibold">
+                <span>Parcela Mensal (12x)</span>
+                <span className="font-mono">{formatCurrency(planCalc.monthly)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
             <Button size="lg">Gerar Proposta</Button>
           </div>
         </CardContent>
