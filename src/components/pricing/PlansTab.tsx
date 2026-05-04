@@ -126,35 +126,22 @@ export function PlansTab() {
     const mensageria = activeServices.find((service) =>
       includesText(service.name, ["MENSAGERIA", "ESOCIAL", "E SOCIAL", "E-SOCIAL"])
     );
+    const vidaTerms = [
+      "VIDA ATIVA",
+      "PACOTE VIDA",
+      "PACOTE VIDAS",
+      "GESTAO VIDA",
+      "GESTAO VIDAS",
+      "VALOR POR VIDA",
+      "POR VIDA",
+      "VIDAS",
+    ];
     const vida =
       activeServices.find(
         (service) =>
           (service.package_eligible || service.service_type === "RECORRENTE") &&
-          includesText(service.name, [
-            "PACOTE VIDA",
-            "PACOTE VIDAS",
-            "GESTAO VIDA",
-            "GESTAO VIDAS",
-            "GESTÃO VIDA",
-            "GESTÃO VIDAS",
-            "VALOR POR VIDA",
-            "POR VIDA",
-            "VIDAS",
-          ])
-      ) ??
-      activeServices.find((service) =>
-        includesText(service.name, [
-          "PACOTE VIDA",
-          "PACOTE VIDAS",
-          "GESTAO VIDA",
-          "GESTAO VIDAS",
-          "GESTÃO VIDA",
-          "GESTÃO VIDAS",
-          "VALOR POR VIDA",
-          "POR VIDA",
-          "VIDAS",
-        ])
-      );
+          includesText(service.name, vidaTerms)
+      ) ?? activeServices.find((service) => includesText(service.name, vidaTerms));
 
     return { ltcat, pgr, drps, pcmso, aso, mensageria, vida };
   }, [activeServices]);
