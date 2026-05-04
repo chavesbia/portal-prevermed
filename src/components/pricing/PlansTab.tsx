@@ -214,14 +214,14 @@ export function PlansTab() {
       aso: getServicePrice(
         selectedPriceMap,
         matchedServices.aso?.id,
-        getTier?.id ?? null,
+        null,
         matchedServices.aso?.reference_value ?? 0,
         fallback.aso
       ),
       mensageria: getServicePrice(
         selectedPriceMap,
         matchedServices.mensageria?.id,
-        getTier?.id ?? null,
+        null,
         matchedServices.mensageria?.reference_value ?? 0,
         fallback.mensageria
       ),
