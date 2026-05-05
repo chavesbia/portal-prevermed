@@ -92,6 +92,9 @@ export default function ASOImportacao() {
       setParsedRows([]);
       setFile(null);
       refetch();
+      qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
+      qc.invalidateQueries({ queryKey: ["aso-stats"] });
+      qc.invalidateQueries({ queryKey: ["aso-dashboard"] });
     } catch (err: any) {
       toast({ title: "Erro na importação", description: err.message, variant: "destructive" });
     } finally {
