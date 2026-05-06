@@ -2688,6 +2688,10 @@ export type Database = {
           id: string
           match_type: string
           permission_id: string
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           template_id: string
         }
         Insert: {
@@ -2696,6 +2700,10 @@ export type Database = {
           id?: string
           match_type: string
           permission_id: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           template_id: string
         }
         Update: {
@@ -2704,6 +2712,10 @@ export type Database = {
           id?: string
           match_type?: string
           permission_id?: string
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           template_id?: string
         }
         Relationships: [
@@ -3855,6 +3867,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_shadow_template: {
+        Args: { _notes?: string; _shadow_id: string }
+        Returns: undefined
+      }
       aso_build_atendimento_timestamp: {
         Args: { _data: string; _hora: string }
         Returns: string
@@ -3937,6 +3953,10 @@ export type Database = {
           _source: string
         }
         Returns: string
+      }
+      reject_shadow_template: {
+        Args: { _notes?: string; _shadow_id: string }
+        Returns: undefined
       }
       user_has_module_access: {
         Args: { _module_id: string; _user_id: string }
