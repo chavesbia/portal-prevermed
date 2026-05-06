@@ -158,6 +158,7 @@ const adminSection: MenuSection = {
     { label: 'Laudos e Serviços', icon: NotebookPen, path: '/admin/laudos-servicos', adminOnly: true },
     { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Revisão de Permissões', icon: Shield, path: '/admin/revisao-permissoes', adminOnly: true },
+    { label: 'Revisão de Vínculos', icon: Network, path: '/admin/revisao-vinculos', adminOnly: true },
     { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
     { label: 'Configurações', icon: Settings, path: '/admin/configuracoes', adminOnly: true },
   ],
