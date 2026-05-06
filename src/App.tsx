@@ -24,6 +24,7 @@ import AdminAudit from "./pages/admin/AdminAudit";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminDocuments from "./pages/admin/AdminDocuments";
 import AdminLaudosServicos from "./pages/admin/AdminLaudosServicos";
+import AdminShadowReview from "./pages/admin/AdminShadowReview";
 
 import Documentos from "./pages/Documentos";
 import LinksUteis from "./pages/LinksUteis";
