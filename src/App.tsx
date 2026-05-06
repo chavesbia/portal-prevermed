@@ -82,6 +82,7 @@ const App = () => (
               <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
               <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
               <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
+              <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
               
               
               <Route path="/perfil" element={<Profile />} />
