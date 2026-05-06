@@ -2681,6 +2681,48 @@ export type Database = {
           },
         ]
       }
+      permission_template_shadow: {
+        Row: {
+          computed_at: string
+          diff: Json | null
+          id: string
+          match_type: string
+          permission_id: string
+          template_id: string
+        }
+        Insert: {
+          computed_at?: string
+          diff?: Json | null
+          id?: string
+          match_type: string
+          permission_id: string
+          template_id: string
+        }
+        Update: {
+          computed_at?: string
+          diff?: Json | null
+          id?: string
+          match_type?: string
+          permission_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_template_shadow_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: true
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "permission_template_shadow_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "role_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           can_approve: boolean | null
