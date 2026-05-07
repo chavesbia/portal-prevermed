@@ -56,7 +56,7 @@ export default function AdminInertLinksReview() {
       const [{ data: uds, error: e1 }, { data: dms, error: e2 }, { data: tpls, error: e3 }] = await Promise.all([
         supabase
           .from('user_departments')
-          .select('id,user_id,department_id,is_lotacao,departments(name),profiles:user_id(full_name,email)')
+          .select('id,user_id,department_id,is_lotacao,departments(name)')
           .eq('is_lotacao', false),
         supabase
           .from('department_modules')
@@ -67,6 +67,14 @@ export default function AdminInertLinksReview() {
           .order('name'),
       ]);
       if (e1 || e2 || e3) throw e1 || e2 || e3;
+
+      const userIds = [...new Set((uds || []).map((u: any) => u.user_id))];
+      const { data: profs, error: ep } = await supabase
+        .from('profiles')
+        .select('user_id,full_name,email')
+        .in('user_id', userIds.length ? userIds : ['00000000-0000-0000-0000-000000000000']);
+      if (ep) throw ep;
+      const profileMap = new Map((profs || []).map((p: any) => [p.user_id, p]));
 
       const dmByDept = new Map<string, { module_id: string; name: string }[]>();
       for (const dm of (dms || []) as any[]) {
@@ -99,8 +107,8 @@ export default function AdminInertLinksReview() {
         inert.push({
           link_id: ud.id,
           user_id: ud.user_id,
-          user_name: (ud.profiles as any)?.full_name ?? null,
-          user_email: (ud.profiles as any)?.email ?? null,
+          user_name: profileMap.get(ud.user_id)?.full_name ?? null,
+          user_email: profileMap.get(ud.user_id)?.email ?? null,
           department_id: ud.department_id,
           department_name: (ud.departments as any)?.name ?? '—',
           modules_count: mods.length,
