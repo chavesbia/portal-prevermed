@@ -107,8 +107,8 @@ export default function AdminInertLinksReview() {
         inert.push({
           link_id: ud.id,
           user_id: ud.user_id,
-          user_name: (ud.profiles as any)?.full_name ?? null,
-          user_email: (ud.profiles as any)?.email ?? null,
+          user_name: profileMap.get(ud.user_id)?.full_name ?? null,
+          user_email: profileMap.get(ud.user_id)?.email ?? null,
           department_id: ud.department_id,
           department_name: (ud.departments as any)?.name ?? '—',
           modules_count: mods.length,
