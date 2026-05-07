@@ -295,9 +295,9 @@ export default function AdminShadowReview() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Permissão</TableHead>
-                      <TableHead>Atual</TableHead>
-                      <TableHead>Template</TableHead>
-                      <TableHead>Diff</TableHead>
+                      <TableHead>Atual (hoje)</TableHead>
+                      <TableHead>Template (sugerido)</TableHead>
+                      <TableHead>Mudança</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
