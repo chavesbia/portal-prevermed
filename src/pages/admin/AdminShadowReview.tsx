@@ -258,11 +258,11 @@ export default function AdminShadowReview() {
       </Card>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Revisar mapeamento</DialogTitle>
             <DialogDescription>
-              Compare as permissões atuais do usuário com o template sugerido.
+              <strong>Atual</strong> = permissão que o usuário tem hoje. <strong>Template</strong> = permissão que ele passaria a ter ao aplicar o molde sugerido. <strong>Mudança</strong> = onde os dois divergem (o que seria sobrescrito ao aprovar).
             </DialogDescription>
           </DialogHeader>
           {selected && (
@@ -295,9 +295,9 @@ export default function AdminShadowReview() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Permissão</TableHead>
-                      <TableHead>Atual</TableHead>
-                      <TableHead>Template</TableHead>
-                      <TableHead>Diff</TableHead>
+                      <TableHead>Atual (hoje)</TableHead>
+                      <TableHead>Template (sugerido)</TableHead>
+                      <TableHead>Mudança</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
