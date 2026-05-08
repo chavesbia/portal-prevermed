@@ -113,7 +113,7 @@ export default function Index() {
         .from('user_departments')
         .select('user_id, department_id')
         .in('user_id', userIds)
-        .eq('is_primary', true);
+        .eq('is_lotacao', true);
 
       const { data: depts } = await supabase
         .from('departments')
