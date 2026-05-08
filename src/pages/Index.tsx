@@ -113,7 +113,7 @@ export default function Index() {
         .from('user_departments')
         .select('user_id, department_id')
         .in('user_id', userIds)
-        .eq('is_primary', true);
+        .eq('is_lotacao', true);
 
       const { data: depts } = await supabase
         .from('departments')
@@ -173,7 +173,7 @@ export default function Index() {
 
     const { data: userDepts } = await supabase
       .from('user_departments')
-      .select('user_id, department_id, is_primary')
+      .select('user_id, department_id, is_lotacao')
       .in('user_id', userIds);
 
     const { data: depts } = await supabase
@@ -185,7 +185,7 @@ export default function Index() {
     const userDeptMap = new Map<string, string>();
     (userDepts || []).forEach(ud => {
       const deptName = deptMap.get(ud.department_id) || '';
-      if (ud.is_primary || !userDeptMap.has(ud.user_id)) {
+      if (ud.is_lotacao || !userDeptMap.has(ud.user_id)) {
         userDeptMap.set(ud.user_id, deptName);
       }
     });
