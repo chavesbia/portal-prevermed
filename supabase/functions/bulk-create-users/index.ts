@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
               return {
                 user_id: userId,
                 department_id: deptId,
-                is_primary: user.primary_department?.toLowerCase().trim() === name.toLowerCase().trim(),
+                is_lotacao: user.primary_department?.toLowerCase().trim() === name.toLowerCase().trim(),
               }
             })
             .filter(Boolean)

@@ -85,7 +85,7 @@ interface UserWithDetails {
   direct_manager_id: string | null;
   created_at: string;
   role?: string;
-  departments?: { id: string; name: string; is_primary: boolean }[];
+  departments?: { id: string; name: string; is_lotacao: boolean }[];
 }
 
 interface Department {
@@ -179,7 +179,7 @@ export default function AdminUsers() {
       // Fetch user departments
       const { data: userDepts, error: deptsError } = await supabase
         .from('user_departments')
-        .select('user_id, department_id, is_primary, departments(id, name)');
+        .select('user_id, department_id, is_lotacao, departments(id, name)');
 
       if (deptsError) throw deptsError;
 
@@ -191,7 +191,7 @@ export default function AdminUsers() {
           .map(d => ({
             id: (d.departments as any)?.id || '',
             name: (d.departments as any)?.name || '',
-            is_primary: d.is_primary || false,
+            is_lotacao: d.is_lotacao || false,
           }));
 
         return {
@@ -239,7 +239,7 @@ export default function AdminUsers() {
       internal_handle: user.internal_handle || '',
       role: user.role || '',
       departments: user.departments?.map(d => d.id) || [],
-      primary_department: user.departments?.find(d => d.is_primary)?.id || '',
+      primary_department: user.departments?.find(d => d.is_lotacao)?.id || '',
       phone_extension: user.phone_extension || '',
       contact_email: user.contact_email || '',
       direct_leader_id: user.direct_leader_id || '',
@@ -326,7 +326,7 @@ export default function AdminUsers() {
         const deptInserts = editForm.departments.map(deptId => ({
           user_id: selectedUser.user_id,
           department_id: deptId,
-          is_primary: deptId === editForm.primary_department,
+          is_lotacao: deptId === editForm.primary_department,
         }));
 
         const { error: deptError } = await supabase
@@ -704,7 +704,7 @@ export default function AdminUsers() {
                           user.departments.map(dept => (
                             <Badge 
                               key={dept.id} 
-                              variant={dept.is_primary ? "default" : "outline"}
+                              variant={dept.is_lotacao ? "default" : "outline"}
                               className="text-xs"
                             >
                               {dept.name}
