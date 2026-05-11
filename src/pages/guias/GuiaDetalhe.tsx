@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { getSlaStatus, getSlaColor, getSlaLabel, calcSlaToFreeze, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel } from "@/lib/guias/sla";
 import { toTitleCase } from "@/lib/guias/blocklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +25,9 @@ type AguardandoAsoStatus = "NAO_INFORMADO" | "CONTATO_REALIZADO" | "RECEBIDO" | 
 export default function GuiaDetalhe() {
   const { codigo } = useParams<{ codigo: string }>();
   const { user, profile, isAdmin } = useAuth();
+  const { hasPermission } = useModulePermissions();
   const queryClient = useQueryClient();
-  const canEdit = isAdmin;
+  const canEdit = isAdmin && hasPermission("/gestao-guias", "edit");
   const displayName = profile?.full_name ?? user?.email ?? "";
 
   const { data: feriados } = useQuery({
@@ -168,7 +170,7 @@ export default function GuiaDetalhe() {
         // SLA is historical, don't clear it
       }
 
-      await supabase
+      const { error: updateError } = await supabase
         .from("guia_gestao")
         .update({
           compareceu_status: compareceu,
@@ -181,8 +183,10 @@ export default function GuiaDetalhe() {
         } as any)
         .eq("guia_codigo", codigo!);
 
+      if (updateError) throw updateError;
+
       for (const change of changes) {
-        await supabase.from("guia_audit_log").insert({
+        const { error: auditError } = await supabase.from("guia_audit_log").insert({
           user_id: user.id,
           user_name: displayName,
           guia_codigo: codigo!,
@@ -190,6 +194,8 @@ export default function GuiaDetalhe() {
           valor_antigo: change.antigo,
           valor_novo: change.novo,
         });
+
+        if (auditError) throw auditError;
       }
     },
     onSuccess: async () => {
