@@ -507,6 +507,219 @@ export type Database = {
         }
         Relationships: []
       }
+      aso_retificacao_anexos: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          solicitacao_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          solicitacao_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          solicitacao_id?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_retificacao_anexos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "aso_retificacao_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aso_retificacao_areas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aso_retificacao_medicos_examinadores: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          crm: string | null
+          id: string
+          is_active: boolean
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          crm?: string | null
+          id?: string
+          is_active?: boolean
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          crm?: string | null
+          id?: string
+          is_active?: boolean
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aso_retificacao_motivos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aso_retificacao_solicitacoes: {
+        Row: {
+          area_id: string | null
+          cnpj: string
+          colaborador_cpf: string
+          colaborador_nome: string
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          data_retificacao: string | null
+          data_solicitacao: string
+          descricao: string
+          empresa: string
+          id: string
+          medico_examinador_id: string | null
+          motivo_id: string | null
+          observacoes: string | null
+          responsavel_retificacao_id: string | null
+          unidade: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          area_id?: string | null
+          cnpj: string
+          colaborador_cpf: string
+          colaborador_nome: string
+          created_at?: string
+          created_by: string
+          created_by_name?: string | null
+          data_retificacao?: string | null
+          data_solicitacao?: string
+          descricao: string
+          empresa: string
+          id?: string
+          medico_examinador_id?: string | null
+          motivo_id?: string | null
+          observacoes?: string | null
+          responsavel_retificacao_id?: string | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          area_id?: string | null
+          cnpj?: string
+          colaborador_cpf?: string
+          colaborador_nome?: string
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          data_retificacao?: string | null
+          data_solicitacao?: string
+          descricao?: string
+          empresa?: string
+          id?: string
+          medico_examinador_id?: string | null
+          motivo_id?: string | null
+          observacoes?: string | null
+          responsavel_retificacao_id?: string | null
+          unidade?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aso_retificacao_solicitacoes_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "aso_retificacao_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aso_retificacao_solicitacoes_medico_examinador_id_fkey"
+            columns: ["medico_examinador_id"]
+            isOneToOne: false
+            referencedRelation: "aso_retificacao_medicos_examinadores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aso_retificacao_solicitacoes_motivo_id_fkey"
+            columns: ["motivo_id"]
+            isOneToOne: false
+            referencedRelation: "aso_retificacao_motivos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action_type: string

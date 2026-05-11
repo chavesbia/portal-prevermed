@@ -32,6 +32,7 @@ import {
   Cog,
   Package,
   NotebookPen,
+  FileEdit,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,7 @@ const moduleIconMap: Record<string, LucideIcon> = {
   'FileCode': FileCode,
   'Building2': Building2,
   'NotebookPen': NotebookPen,
+  'FileEdit': FileEdit,
 };
 
 const getDepartmentIcon = (name: string): LucideIcon => {
