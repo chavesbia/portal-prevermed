@@ -228,6 +228,8 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 
   const { data: guiasAllRaw, isLoading } = useQuery({
     queryKey: ["guias", search],
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const BATCH = 1000;
       let allData: GuiaWithGestao[] = [];

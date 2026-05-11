@@ -192,11 +192,13 @@ export default function GuiaDetalhe() {
         });
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["guia_gestao", codigo] });
-      queryClient.invalidateQueries({ queryKey: ["guia_audit_log", codigo] });
-      queryClient.invalidateQueries({ queryKey: ["guias"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["guia_gestao", codigo] }),
+        queryClient.invalidateQueries({ queryKey: ["guia_audit_log", codigo] }),
+        queryClient.invalidateQueries({ queryKey: ["guias"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard-guias"], refetchType: "all" }),
+      ]);
       toast({ title: "Salvo!" });
     },
     onError: (err: any) => {
