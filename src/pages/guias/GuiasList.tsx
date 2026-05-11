@@ -360,8 +360,16 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         const guia = guias?.find((g) => g.guia_codigo === code);
         const gestao = getGestao(guia?.guia_gestao ?? null);
         const oldValue = gestao?.[field] ?? "NAO_INFORMADO";
-        await supabase.from("guia_gestao").update({ [field]: value, updated_by: user?.id }).eq("guia_codigo", code);
-        await supabase.from("guia_audit_log").insert({ user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field, valor_antigo: oldValue, valor_novo: value });
+        const { error: updateError } = await supabase
+          .from("guia_gestao")
+          .update({ [field]: value, updated_by: user?.id })
+          .eq("guia_codigo", code);
+
+        if (updateError) throw updateError;
+
+        const { error: auditError } = await supabase.from("guia_audit_log").insert({ user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field, valor_antigo: oldValue, valor_novo: value });
+
+        if (auditError) throw auditError;
       }
     },
     onSuccess: () => {
