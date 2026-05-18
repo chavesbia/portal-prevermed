@@ -173,6 +173,26 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
       if (error) { toast.error('Erro ao salvar: ' + error.message); return; }
       setSavedId(data!.id);
       toast.success('Solicitação criada. Você pode adicionar anexos abaixo.');
+
+      // Notificação push para o responsável pela retificação (estrutura preparada
+      // para envio de e-mail futuro via email_pending).
+      const autorNome = profile?.full_name || user.email || 'Alguém';
+      const destinatarios = new Set<string>();
+      if (values.responsavel_retificacao_id && values.responsavel_retificacao_id !== user.id) {
+        destinatarios.add(values.responsavel_retificacao_id);
+      }
+      if (destinatarios.size > 0) {
+        const rows = Array.from(destinatarios).map((uid) => ({
+          user_id: uid,
+          title: 'Nova solicitação de retificação de ASO',
+          content: `${autorNome} criou uma solicitação para ${payload.colaborador_nome} (${payload.empresa}).`,
+          notification_type: 'aso_retificacao' as const,
+          related_id: data!.id,
+          related_type: 'aso_retificacao',
+          email_pending: true,
+        }));
+        await supabase.from('notifications').insert(rows);
+      }
     }
     qc.invalidateQueries({ queryKey: ['retificacao-solicitacoes'] });
   };
