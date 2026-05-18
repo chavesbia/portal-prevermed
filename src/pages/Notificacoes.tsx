@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Bell, MessageSquare, Heart, AtSign, Newspaper, FileText, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, MessageSquare, Heart, AtSign, Newspaper, FileText, FileEdit, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   chat_message: { icon: MessageSquare, color: 'text-primary', label: 'Chat' },
   like: { icon: Heart, color: 'text-red-500', label: 'Curtida' },
   comment: { icon: MessageSquare, color: 'text-teal-500', label: 'Comentário' },
+  aso_retificacao: { icon: FileEdit, color: 'text-amber-500', label: 'Retificação ASO' },
 };
 
 export default function Notificacoes() {
@@ -101,6 +102,8 @@ export default function Notificacoes() {
     } else if (n.notification_type === 'mention') {
       if (n.related_type === 'chat') navigate('/chat');
       else navigate('/social');
+    } else if (n.notification_type === 'aso_retificacao') {
+      navigate('/retificacao-asos');
     }
   };
 
