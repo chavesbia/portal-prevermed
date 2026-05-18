@@ -2212,6 +2212,8 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          email_pending: boolean
+          email_sent_at: string | null
           id: string
           is_read: boolean | null
           notification_type: Database["public"]["Enums"]["notification_type"]
@@ -2224,6 +2226,8 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          email_pending?: boolean
+          email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
           notification_type: Database["public"]["Enums"]["notification_type"]
@@ -2236,6 +2240,8 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          email_pending?: boolean
+          email_sent_at?: string | null
           id?: string
           is_read?: boolean | null
           notification_type?: Database["public"]["Enums"]["notification_type"]
@@ -4228,6 +4234,7 @@ export type Database = {
         | "chat_message"
         | "like"
         | "comment"
+        | "aso_retificacao"
       occurrence_assignee_role: "principal" | "apoio"
       occurrence_comment_type:
         | "comentario_interno"
@@ -4469,6 +4476,7 @@ export const Constants = {
         "chat_message",
         "like",
         "comment",
+        "aso_retificacao",
       ],
       occurrence_assignee_role: ["principal", "apoio"],
       occurrence_comment_type: [
