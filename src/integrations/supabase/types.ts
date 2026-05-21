@@ -4149,6 +4149,28 @@ export type Database = {
           module_route: string
         }[]
       }
+      guias_business_days: {
+        Args: { _end: string; _start: string }
+        Returns: number
+      }
+      guias_filtros_disponiveis: { Args: never; Returns: Json }
+      guias_sla_status: {
+        Args: {
+          _atendimento_lancado: string
+          _data_base: string
+          _sla_final: string
+        }
+        Returns: string
+      }
+      guias_status_guia: {
+        Args: {
+          _aguardando: string
+          _aso: string
+          _atend: string
+          _comp: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
@@ -4167,6 +4189,16 @@ export type Database = {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
       }
+      listar_guias: {
+        Args: {
+          _filters?: Json
+          _page?: number
+          _page_size?: number
+          _sort_dir?: string
+          _sort_field?: string
+        }
+        Returns: Json
+      }
       log_unauthorized_access: {
         Args: {
           _details?: Json
@@ -4180,6 +4212,8 @@ export type Database = {
         Args: { _notes?: string; _shadow_id: string }
         Returns: undefined
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       user_has_module_access: {
         Args: { _module_id: string; _user_id: string }
         Returns: boolean

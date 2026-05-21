@@ -2,9 +2,8 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSlaStatus, getSlaColor, getSlaLabel, getGuiaStatus, getGuiaStatusColor, getGuiaStatusLabel, getGuiaStatusLabelShort } from "@/lib/guias/sla";
+import { getSlaColor, getSlaLabel, getGuiaStatusColor, getGuiaStatusLabel, getGuiaStatusLabelShort, type SlaStatus, type GuiaStatusType } from "@/lib/guias/sla";
 import { getOrigemAgendamento, getStatusPrestador, toTitleCase } from "@/lib/guias/blocklist";
-import { usePrestadoresBloqueados } from "@/hooks/usePrestadoresBloqueados";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,7 +15,8 @@ import { GuiaFilters, emptyFilters, type GuiaFiltersState } from "@/components/g
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
-type GuiaWithGestao = {
+// Row returned by the listar_guias RPC (flat shape)
+type GuiaRow = {
   id: string;
   guia_codigo: string;
   data_guia: string | null;
@@ -31,52 +31,16 @@ type GuiaWithGestao = {
   situacao: string | null;
   solicitante_nome: string | null;
   unidade_nome: string | null;
-  guia_gestao: {
-    compareceu_status: string;
-    atendimento_lancado: string;
-    aso_anexado: string;
-    aguardando_aso?: string;
-    sla_final?: string | null;
-  } | {
-    compareceu_status: string;
-    atendimento_lancado: string;
-    aso_anexado: string;
-    aguardando_aso?: string;
-    sla_final?: string | null;
-  }[] | null;
+  compareceu: string;
+  atendimento_lancado: string;
+  aso_anexado: string;
+  aguardando_aso: string;
+  sla_final: string | null;
+  sla: SlaStatus;
+  status_guia: GuiaStatusType;
+  origem: "CLIENTE" | "PREVERMED";
+  status_prestador: "COM PRESTADOR" | "SEM PRESTADOR";
 };
-
-function getGestao(guia_gestao: GuiaWithGestao["guia_gestao"]) {
-  if (!guia_gestao) return null;
-  if (Array.isArray(guia_gestao)) return guia_gestao[0] ?? null;
-  return guia_gestao;
-}
-
-function normalizeGestaoValue(value: string | null | undefined) {
-  return value?.trim().toUpperCase() || "NAO_INFORMADO";
-}
-
-function getDerivedGuiaState(guia_gestao: GuiaWithGestao["guia_gestao"]) {
-  const gestao = getGestao(guia_gestao);
-  const compareceu = normalizeGestaoValue(gestao?.compareceu_status);
-  const atendimentoLancado = normalizeGestaoValue(gestao?.atendimento_lancado);
-  const asoAnexado = normalizeGestaoValue(gestao?.aso_anexado);
-  const aguardandoAso = normalizeGestaoValue((gestao as any)?.aguardando_aso);
-
-  return {
-    gestao,
-    compareceu,
-    atendimentoLancado,
-    asoAnexado,
-    aguardandoAso,
-    statusGuia: getGuiaStatus(compareceu, atendimentoLancado, asoAnexado, aguardandoAso),
-  };
-}
-
-function matchesStatusGuiaFilter(statusGuia: string, filterStatus: string) {
-  if (!filterStatus) return true;
-  return statusGuia === filterStatus.trim().toUpperCase();
-}
 
 interface GuiasListProps {
   readOnly?: boolean;
@@ -86,65 +50,29 @@ interface GuiasListProps {
 
 const PAGE_SIZE = 50;
 
-type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla" | "statusGuia";
+type SortField = "data_guia" | "guia_codigo" | "empresa_nome" | "prestador_nome" | "funcionario_nome" | "data_agendamento" | "sla" | "status_guia";
 type SortDir = "asc" | "desc";
 
-const GUIA_STATUS_FILTER_MAP = {
-  PENDENTE: "PENDENTE",
-  PENDENTES: "PENDENTE",
-  "PENDENTE ": "PENDENTE",
-  INICIADA: "INICIADA",
-  INICIADAS: "INICIADA",
-  "EM_ANDAMENTO": "EM_ANDAMENTO",
-  "EM ANDAMENTO": "EM_ANDAMENTO",
-  "EM ANDAM.": "EM_ANDAMENTO",
-  FINALIZADA: "FINALIZADA",
-  FINALIZADAS: "FINALIZADA",
-} as const;
-
-function normalizeStatusGuiaFilter(value: string | null | undefined) {
-  if (!value) return "";
-  const normalizedValue = value.trim().toUpperCase();
-  return GUIA_STATUS_FILTER_MAP[normalizedValue as keyof typeof GUIA_STATUS_FILTER_MAP] ?? normalizedValue;
-}
-
 function StatusIcon({ status, field, compareceu }: { status: string; field?: "compareceu" | "atend" | "aso"; compareceu?: string }) {
-  // Não compareceu: ícone de bloqueio para todos os campos
   if (compareceu === "NAO_COMPARECEU") {
     if (field === "compareceu") return <Ban className="h-4 w-4 text-destructive" />;
-    // Atend e ASO não se aplicam
     if (field === "atend" || field === "aso") return <Ban className="h-4 w-4 text-muted-foreground" />;
   }
-
-  // ASO pendente quando atendimento já lançado
   if (field === "aso" && (status === "NAO" || status === "NAO_INFORMADO") && compareceu && compareceu !== "NAO_COMPARECEU" && compareceu !== "NAO_INFORMADO") {
     return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
   }
-
   if (status === "SIM" || status === "COMPARECEU") return <Check className="h-4 w-4 text-green-600" />;
   if (status === "NAO" || status === "NAO_COMPARECEU") return <XIcon className="h-4 w-4 text-destructive" />;
   if (status === "PARCIAL") return <span className="text-xs text-orange-500 font-medium">PAR</span>;
   return <Minus className="h-4 w-4 text-muted-foreground" />;
 }
 
-const AGUARDANDO_ASO_LABELS: Record<string, string> = {
-  NAO_INFORMADO: "—",
-  CONTATO_REALIZADO: "Contato realizado",
-  RECEBIDO: "Recebido",
-  NAO_RECEBIDO: "Não recebido",
-};
-
-const AGUARDANDO_ASO_SHORT_LABELS: Record<string, string> = {
-  NAO_INFORMADO: "—",
-  CONTATO_REALIZADO: "Contato",
-  RECEBIDO: "Recebido",
-  NAO_RECEBIDO: "Não rec.",
-};
+const AGUARDANDO_ASO_LABELS: Record<string, string> = { NAO_INFORMADO: "—", CONTATO_REALIZADO: "Contato realizado", RECEBIDO: "Recebido", NAO_RECEBIDO: "Não recebido" };
+const AGUARDANDO_ASO_SHORT_LABELS: Record<string, string> = { NAO_INFORMADO: "—", CONTATO_REALIZADO: "Contato", RECEBIDO: "Recebido", NAO_RECEBIDO: "Não rec." };
 
 function AguardandoAsoLabel({ status, compact = false }: { status: string; compact?: boolean }) {
   const label = compact ? (AGUARDANDO_ASO_SHORT_LABELS[status] ?? "—") : (AGUARDANDO_ASO_LABELS[status] ?? "—");
   const textClassName = compact ? "text-[11px] font-medium whitespace-nowrap" : "text-xs font-medium";
-
   if (status === "RECEBIDO") return <span className={`${textClassName} text-green-600`}>{label}</span>;
   if (status === "NAO_RECEBIDO") return <span className={`${textClassName} text-destructive`}>{label}</span>;
   if (status === "CONTATO_REALIZADO") return <span className={`${textClassName} text-orange-500`}>{label}</span>;
@@ -156,23 +84,48 @@ function TruncatedCell({ text, maxW = "max-w-[180px]" }: { text: string | null; 
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={`block truncate ${maxW} text-xs`}>{display}</span>
-        </TooltipTrigger>
-        {text && text.length > 20 && (
-          <TooltipContent side="top" className="max-w-xs text-xs">{text}</TooltipContent>
-        )}
+        <TooltipTrigger asChild><span className={`block truncate ${maxW} text-xs`}>{display}</span></TooltipTrigger>
+        {text && text.length > 20 && (<TooltipContent side="top" className="max-w-xs text-xs">{text}</TooltipContent>)}
       </Tooltip>
     </TooltipProvider>
   );
 }
 
+function filtersToPayload(filters: GuiaFiltersState, search: string) {
+  const fmtDate = (d: Date | undefined) => (d ? format(d, "yyyy-MM-dd") : null);
+  return {
+    search: search || null,
+    dataGuiaInicio: fmtDate(filters.dataGuiaInicio),
+    dataGuiaFim: fmtDate(filters.dataGuiaFim),
+    dataAgendamentoInicio: fmtDate(filters.dataAgendamentoInicio),
+    dataAgendamentoFim: fmtDate(filters.dataAgendamentoFim),
+    semAgendamento: filters.semAgendamento || null,
+    empresas: filters.empresas.length ? filters.empresas : null,
+    prestadores: filters.prestadores.length ? filters.prestadores : null,
+    tipoExame: filters.tipoExame || null,
+    situacao: filters.situacao || null,
+    unidade: filters.unidade || null,
+    atendido: filters.atendido || null,
+    sla: filters.sla || null,
+    compareceu: filters.compareceu || null,
+    atendimentoLancado: filters.atendimentoLancado || null,
+    asoAnexado: filters.asoAnexado || null,
+    aguardandoAso: filters.aguardandoAso || null,
+    exame: filters.exame || null,
+    origemAgendamento: filters.origemAgendamento || null,
+    statusPrestador: filters.statusPrestador || null,
+    statusGuia: filters.statusGuia || null,
+  };
+}
+
+const SORT_FIELD_MAP: Record<string, SortField> = {
+  statusGuia: "status_guia",
+};
+
 export default function GuiasList({ readOnly = false, injectedFilters, onFiltersConsumed }: GuiasListProps) {
   const { user, profile, isAdmin } = useAuth();
   const queryClient = useQueryClient();
-  const { isPrestadorBloqueado } = usePrestadoresBloqueados();
 
-  // Restore persisted state from sessionStorage
   const persistedState = useMemo(() => {
     try {
       const raw = sessionStorage.getItem("guias-list-state");
@@ -182,6 +135,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
   }, []);
 
   const [search, setSearch] = useState(persistedState?.search ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<GuiaFiltersState>(() => {
     if (persistedState?.filters) {
@@ -192,17 +146,23 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         dataGuiaFim: f.dataGuiaFim ? new Date(f.dataGuiaFim) : undefined,
         dataAgendamentoInicio: f.dataAgendamentoInicio ? new Date(f.dataAgendamentoInicio) : undefined,
         dataAgendamentoFim: f.dataAgendamentoFim ? new Date(f.dataAgendamentoFim) : undefined,
-        statusGuia: normalizeStatusGuiaFilter(f.statusGuia),
       };
     }
     return { ...emptyFilters };
   });
   const [page, setPage] = useState(persistedState?.page ?? 0);
-  const [sortField, setSortField] = useState<SortField>(persistedState?.sortField ?? "data_guia");
+  const [sortField, setSortField] = useState<SortField>(
+    SORT_FIELD_MAP[persistedState?.sortField] ?? (persistedState?.sortField ?? "data_guia"),
+  );
   const [sortDir, setSortDir] = useState<SortDir>(persistedState?.sortDir ?? "desc");
-  const [drawerGuia, setDrawerGuia] = useState<GuiaWithGestao | null>(null);
+  const [drawerGuia, setDrawerGuia] = useState<GuiaRow | null>(null);
 
-  // Persist state to sessionStorage on changes
+  // Debounce search to avoid spamming the RPC on each keystroke
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(0); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   useEffect(() => {
     const state = { search, filters, page, sortField, sortDir };
     sessionStorage.setItem("guias-list-state", JSON.stringify(state));
@@ -218,138 +178,49 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
     }
   }, [injectedFilters, onFiltersConsumed]);
 
-  const { data: feriados } = useQuery({
-    queryKey: ["feriados"],
+  // Filter dropdowns options (server-side aggregation, cached)
+  const { data: filtersData } = useQuery({
+    queryKey: ["guias-filtros"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-      const { data } = await supabase.from("feriados").select("data");
-      return data?.map((f: any) => f.data) ?? [];
+      const { data, error } = await supabase.rpc("guias_filtros_disponiveis" as any);
+      if (error) throw error;
+      const d = (data ?? {}) as Record<string, string[]>;
+      return {
+        empresas: d.empresas ?? [],
+        prestadores: d.prestadores ?? [],
+        tipos_exame: d.tipos_exame ?? [],
+        situacoes: d.situacoes ?? [],
+        unidades: d.unidades ?? [],
+        exames: d.exames ?? [],
+      };
     },
   });
 
-  const { data: guiasAllRaw, isLoading } = useQuery({
-    queryKey: ["guias", search],
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+  // Main paginated query
+  const filterPayload = useMemo(() => filtersToPayload(filters, debouncedSearch), [filters, debouncedSearch]);
+
+  const { data: pageData, isLoading } = useQuery({
+    queryKey: ["guias", filterPayload, sortField, sortDir, page],
+    refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
-      const BATCH = 1000;
-      let allData: GuiaWithGestao[] = [];
-      let from = 0;
-
-      while (true) {
-        let query = supabase
-          .from("guias")
-          .select("id, guia_codigo, data_guia, empresa_nome, prestador_nome, funcionario_nome, funcionario_cpf, tipo_exame, atendido_texto, data_agendamento, hora_agendamento, situacao, solicitante_nome, unidade_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, aguardando_aso, sla_final)")
-          .gte("data_guia", "2026-01-01")
-          .order("data_guia", { ascending: false })
-          .range(from, from + BATCH - 1);
-
-        if (search) {
-          query = query.or(
-            `guia_codigo.ilike.%${search}%,funcionario_nome.ilike.%${search}%,funcionario_cpf.ilike.%${search}%,empresa_nome.ilike.%${search}%,prestador_nome.ilike.%${search}%`
-          );
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        allData = allData.concat(data as unknown as GuiaWithGestao[]);
-        if (data.length < BATCH) break;
-        from += BATCH;
-      }
-
-      return allData;
+      const { data, error } = await supabase.rpc("listar_guias" as any, {
+        _filters: filterPayload as any,
+        _sort_field: sortField,
+        _sort_dir: sortDir,
+        _page: page,
+        _page_size: PAGE_SIZE,
+      });
+      if (error) throw error;
+      const payload = (data ?? { rows: [], total: 0 }) as { rows: GuiaRow[]; total: number };
+      return payload;
     },
   });
 
-  const guiasRaw = useMemo(() => guiasAllRaw?.filter((g) => !isPrestadorBloqueado(g.prestador_nome)) ?? [], [guiasAllRaw, isPrestadorBloqueado]);
-
-  const { data: examesList } = useQuery({
-    queryKey: ["exames-list"],
-    queryFn: async () => {
-      const { data } = await supabase.from("guia_exames").select("exame_nome");
-      return [...new Set(data?.map((e: any) => e.exame_nome).filter(Boolean) as string[])].sort();
-    },
-  });
-
-  const empresas = useMemo(() => [...new Set(guiasRaw?.map((g) => g.empresa_nome).filter(Boolean) as string[])].sort(), [guiasRaw]);
-  const prestadores = useMemo(() => [...new Set(guiasRaw?.map((g) => g.prestador_nome).filter(Boolean) as string[])].sort(), [guiasRaw]);
-  const tiposExame = useMemo(() => [...new Set(guiasRaw?.map((g) => g.tipo_exame).filter(Boolean) as string[])].sort(), [guiasRaw]);
-  const situacoes = useMemo(() => [...new Set(guiasRaw?.map((g) => g.situacao).filter(Boolean) as string[])].sort(), [guiasRaw]);
-  const unidades = useMemo(() => [...new Set(guiasRaw?.map((g) => g.unidade_nome).filter(Boolean) as string[])].sort(), [guiasRaw]);
-
-  const guias = useMemo(() => {
-    if (!guiasRaw) return [];
-    const normalizedStatusGuiaFilter = normalizeStatusGuiaFilter(filters.statusGuia);
-
-    let result = guiasRaw.filter((g) => {
-      const f = filters;
-      if (f.dataGuiaInicio && g.data_guia && new Date(g.data_guia + "T00:00:00") < f.dataGuiaInicio) return false;
-      if (f.dataGuiaFim && g.data_guia && new Date(g.data_guia + "T00:00:00") > f.dataGuiaFim) return false;
-      if (f.dataAgendamentoInicio && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") < f.dataAgendamentoInicio) return false;
-      if (f.dataAgendamentoFim && g.data_agendamento && new Date(g.data_agendamento + "T00:00:00") > f.dataAgendamentoFim) return false;
-      if (f.semAgendamento) {
-        const semData = !g.data_agendamento;
-        const semHora = !g.hora_agendamento || g.hora_agendamento === "00:00";
-        if (!(semData && semHora)) return false;
-      }
-      if (f.empresas.length > 0 && !f.empresas.includes(g.empresa_nome ?? "")) return false;
-      if (f.prestadores.length > 0 && !f.prestadores.includes(g.prestador_nome ?? "")) return false;
-      if (f.tipoExame && g.tipo_exame !== f.tipoExame) return false;
-      if (f.situacao && g.situacao !== f.situacao) return false;
-      if (f.unidade && g.unidade_nome !== f.unidade) return false;
-      if (f.atendido) {
-        const isAtendido = g.atendido_texto?.toUpperCase() === "SIM";
-        if (f.atendido === "SIM" && !isAtendido) return false;
-        if (f.atendido === "NAO" && isAtendido) return false;
-      }
-      const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia } = getDerivedGuiaState(g.guia_gestao);
-      if (f.compareceu && compareceu !== f.compareceu) return false;
-      if (f.atendimentoLancado && atendimentoLancado !== f.atendimentoLancado) return false;
-      if (f.asoAnexado && asoAnexado !== f.asoAnexado) return false;
-      if (f.aguardandoAso && aguardandoAso !== f.aguardandoAso) return false;
-      if (f.sla) {
-        const dataBase = g.data_agendamento ?? g.data_guia;
-        const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
-        if (sla !== f.sla) return false;
-      }
-      if (!matchesStatusGuiaFilter(statusGuia, normalizedStatusGuiaFilter)) return false;
-      if (f.origemAgendamento) {
-        const origem = getOrigemAgendamento(g.solicitante_nome);
-        if (origem !== f.origemAgendamento) return false;
-      }
-      if (f.statusPrestador) {
-        const sp = getStatusPrestador(g.prestador_nome);
-        if (sp !== f.statusPrestador) return false;
-      }
-      return true;
-    });
-
-    const slaOrder = { EM_DIA: 0, ATENCAO: 1, ATRASADO: 2 };
-    const statusOrder = { PENDENTE: 0, INICIADA: 1, EM_ANDAMENTO: 2, FINALIZADA: 3 };
-
-    result.sort((a, b) => {
-      let valA: any, valB: any;
-      if (sortField === "sla") {
-        const guiaA = getDerivedGuiaState(a.guia_gestao);
-        const guiaB = getDerivedGuiaState(b.guia_gestao);
-        valA = slaOrder[getSlaStatus(a.data_agendamento ?? a.data_guia, guiaA.atendimentoLancado, feriados ?? [], guiaA.gestao?.sla_final)] ?? 0;
-        valB = slaOrder[getSlaStatus(b.data_agendamento ?? b.data_guia, guiaB.atendimentoLancado, feriados ?? [], guiaB.gestao?.sla_final)] ?? 0;
-      } else if (sortField === "statusGuia") {
-        valA = statusOrder[getDerivedGuiaState(a.guia_gestao).statusGuia] ?? 0;
-        valB = statusOrder[getDerivedGuiaState(b.guia_gestao).statusGuia] ?? 0;
-      } else {
-        valA = (a as any)[sortField] ?? "";
-        valB = (b as any)[sortField] ?? "";
-      }
-      const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-
-    return result;
-  }, [guiasRaw, filters, feriados, sortField, sortDir]);
-
-  const totalPages = Math.ceil((guias?.length ?? 0) / PAGE_SIZE);
-  const pagedGuias = guias.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pagedGuias: GuiaRow[] = pageData?.rows ?? [];
+  const total = pageData?.total ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const displayName = profile?.full_name ?? user?.email ?? "";
 
@@ -357,18 +228,20 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
     mutationFn: async ({ field, value }: { field: "compareceu_status" | "atendimento_lancado" | "aso_anexado"; value: string }) => {
       const codes = Array.from(selected);
       for (const code of codes) {
-        const guia = guias?.find((g) => g.guia_codigo === code);
-        const gestao = getGestao(guia?.guia_gestao ?? null);
-        const oldValue = gestao?.[field] ?? "NAO_INFORMADO";
+        const guia = pagedGuias.find((g) => g.guia_codigo === code);
+        const oldValue =
+          field === "compareceu_status" ? guia?.compareceu :
+          field === "atendimento_lancado" ? guia?.atendimento_lancado :
+          guia?.aso_anexado;
         const { error: updateError } = await supabase
           .from("guia_gestao")
           .update({ [field]: value, updated_by: user?.id })
           .eq("guia_codigo", code);
-
         if (updateError) throw updateError;
-
-        const { error: auditError } = await supabase.from("guia_audit_log").insert({ user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field, valor_antigo: oldValue, valor_novo: value });
-
+        const { error: auditError } = await supabase.from("guia_audit_log").insert({
+          user_id: user?.id, user_name: displayName, guia_codigo: code, campo: field,
+          valor_antigo: oldValue ?? "NAO_INFORMADO", valor_novo: value,
+        });
         if (auditError) throw auditError;
       }
     },
@@ -388,8 +261,8 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
   };
 
   const toggleAll = () => {
-    if (pagedGuias && selected.size === pagedGuias.length) setSelected(new Set());
-    else setSelected(new Set(pagedGuias?.map((g) => g.guia_codigo) ?? []));
+    if (pagedGuias.length && selected.size === pagedGuias.length) setSelected(new Set());
+    else setSelected(new Set(pagedGuias.map((g) => g.guia_codigo)));
   };
 
   const handleSort = useCallback((field: SortField) => {
@@ -415,14 +288,14 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       <GuiaFilters
         filters={filters}
         onChange={(f) => { setFilters(f); setPage(0); }}
-        empresas={empresas}
-        prestadores={prestadores}
-        tiposExame={tiposExame}
-        situacoes={situacoes}
-        unidades={unidades}
-        exames={examesList}
+        empresas={filtersData?.empresas ?? []}
+        prestadores={filtersData?.prestadores ?? []}
+        tiposExame={filtersData?.tipos_exame ?? []}
+        situacoes={filtersData?.situacoes ?? []}
+        unidades={filtersData?.unidades ?? []}
+        exames={filtersData?.exames ?? []}
         search={search}
-        onSearchChange={(v) => { setSearch(v); setPage(0); }}
+        onSearchChange={(v) => setSearch(v)}
       />
 
       {canEdit && selected.size > 0 && (
@@ -441,7 +314,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
       )}
 
       <div className="flex items-center justify-between py-2 text-xs text-muted-foreground">
-        <span>{guias.length} guias encontradas</span>
+        <span>{total.toLocaleString("pt-BR")} guias encontradas</span>
         <div className="flex items-center gap-2">
           <span>Página {totalPages > 0 ? page + 1 : 0} de {totalPages}</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
@@ -449,7 +322,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && pagedGuias.length === 0 ? (
         <div className="p-8 text-center text-muted-foreground">Carregando...</div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden flex-1 relative">
@@ -459,7 +332,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                 <tr className="border-b border-border">
                   {canEdit && (
                     <th className="sticky left-0 z-30 bg-muted/95 w-10 px-3 py-2 border-r border-border">
-                      <Checkbox checked={pagedGuias?.length ? selected.size === pagedGuias.length : false} onCheckedChange={toggleAll} />
+                      <Checkbox checked={pagedGuias.length ? selected.size === pagedGuias.length : false} onCheckedChange={toggleAll} />
                     </th>
                   )}
                   <SortHeader field="data_guia" className={`sticky ${canEdit ? "left-10" : "left-0"} z-30 bg-muted/95 border-r border-border min-w-[80px]`}>Data</SortHeader>
@@ -472,7 +345,7 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                   <SortHeader field="data_agendamento" className="min-w-[110px]">Agendamento</SortHeader>
                   <th className="h-10 px-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[70px]">Origem</th>
                   <SortHeader field="sla" className="min-w-[70px]">SLA</SortHeader>
-                  <SortHeader field="statusGuia" className="min-w-[90px]">Status</SortHeader>
+                  <SortHeader field="status_guia" className="min-w-[90px]">Status</SortHeader>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Comp.</th>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[90px]">Aguard. ASO</th>
                   <th className="h-10 px-3 text-center text-xs font-medium text-muted-foreground whitespace-nowrap min-w-[50px]">Atend.</th>
@@ -481,70 +354,59 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                 </tr>
               </thead>
               <tbody>
-                {pagedGuias.map((guia) => {
-                  const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia: derivedStatusGuia } = getDerivedGuiaState(guia.guia_gestao);
-                  const dataBase = guia.data_agendamento ?? guia.data_guia;
-                  const sla = getSlaStatus(dataBase, atendimentoLancado, feriados ?? [], gestao?.sla_final);
-                  const origem = getOrigemAgendamento(guia.solicitante_nome);
-
-                  return (
-                    <tr key={guia.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                      {canEdit && (
-                        <td className="sticky left-0 z-10 bg-background px-3 py-2 border-r border-border">
-                          <Checkbox checked={selected.has(guia.guia_codigo)} onCheckedChange={() => toggleSelect(guia.guia_codigo)} />
-                        </td>
-                      )}
-                      <td className={`sticky ${canEdit ? "left-10" : "left-0"} z-10 bg-background px-3 py-2 text-xs whitespace-nowrap border-r border-border`}>
-                        {guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yy") : "—"}
+                {pagedGuias.map((guia) => (
+                  <tr key={guia.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                    {canEdit && (
+                      <td className="sticky left-0 z-10 bg-background px-3 py-2 border-r border-border">
+                        <Checkbox checked={selected.has(guia.guia_codigo)} onCheckedChange={() => toggleSelect(guia.guia_codigo)} />
                       </td>
-                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <Link to={`/guias/${guia.guia_codigo}`} className="text-primary hover:underline font-mono text-xs font-medium">
-                          {guia.guia_codigo}
-                        </Link>
-                      </td>
-                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
-                      </td>
-                      <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                        <TruncatedCell text={toTitleCase(guia.prestador_nome)} maxW="max-w-[140px]" />
-                      </td>
-                      <td className="sticky z-10 bg-background px-3 py-2">
-                        <TruncatedCell text={toTitleCase(guia.funcionario_nome)} maxW="max-w-[130px]" />
-                      </td>
-                      <td className="px-3 py-2 text-xs whitespace-nowrap">{toTitleCase(guia.tipo_exame) ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs whitespace-nowrap">
-                        {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
-                        {guia.hora_agendamento && guia.hora_agendamento !== "00:00" ? ` ${guia.hora_agendamento}` : ""}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge variant={origem === "CLIENTE" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                          {origem === "CLIENTE" ? "Cliente" : "PreverMed"}
-                        </Badge>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(sla)}`}>{getSlaLabel(sla)}</Badge>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(derivedStatusGuia)}`}>{getGuiaStatusLabelShort(derivedStatusGuia)}</Badge>
-                      </td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} /></td>
-                      <td className="px-3 py-2 text-center"><AguardandoAsoLabel status={aguardandoAso} compact /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} /></td>
-                      <td className="px-3 py-2 text-center"><StatusIcon status={asoAnexado} field="aso" compareceu={compareceu} /></td>
-                      <td className="px-3 py-2 text-center">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                    )}
+                    <td className={`sticky ${canEdit ? "left-10" : "left-0"} z-10 bg-background px-3 py-2 text-xs whitespace-nowrap border-r border-border`}>
+                      {guia.data_guia ? format(new Date(guia.data_guia + "T00:00:00"), "dd/MM/yy") : "—"}
+                    </td>
+                    <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                      <Link to={`/guias/${guia.guia_codigo}`} className="text-primary hover:underline font-mono text-xs font-medium">{guia.guia_codigo}</Link>
+                    </td>
+                    <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                      <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
+                    </td>
+                    <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
+                      <TruncatedCell text={toTitleCase(guia.prestador_nome)} maxW="max-w-[140px]" />
+                    </td>
+                    <td className="sticky z-10 bg-background px-3 py-2">
+                      <TruncatedCell text={toTitleCase(guia.funcionario_nome)} maxW="max-w-[130px]" />
+                    </td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">{toTitleCase(guia.tipo_exame) ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs">{guia.atendido_texto ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs whitespace-nowrap">
+                      {guia.data_agendamento ? format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yy") : "—"}
+                      {guia.hora_agendamento && guia.hora_agendamento !== "00:00" ? ` ${guia.hora_agendamento}` : ""}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Badge variant={guia.origem === "CLIENTE" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
+                        {guia.origem === "CLIENTE" ? "Cliente" : "PreverMed"}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <Badge className={`text-[10px] px-1.5 py-0 ${getSlaColor(guia.sla)}`}>{getSlaLabel(guia.sla)}</Badge>
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <Badge className={`text-[10px] px-1.5 py-0 whitespace-nowrap ${getGuiaStatusColor(guia.status_guia)}`}>{getGuiaStatusLabelShort(guia.status_guia)}</Badge>
+                    </td>
+                    <td className="px-3 py-2 text-center"><StatusIcon status={guia.compareceu} field="compareceu" compareceu={guia.compareceu} /></td>
+                    <td className="px-3 py-2 text-center"><AguardandoAsoLabel status={guia.aguardando_aso} compact /></td>
+                    <td className="px-3 py-2 text-center"><StatusIcon status={guia.atendimento_lancado} field="atend" compareceu={guia.compareceu} /></td>
+                    <td className="px-3 py-2 text-center"><StatusIcon status={guia.aso_anexado} field="aso" compareceu={guia.compareceu} /></td>
+                    <td className="px-3 py-2 text-center">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setDrawerGuia(guia)}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
                 {pagedGuias.length === 0 && (
                   <tr>
-                      <td colSpan={canEdit ? 17 : 16} className="text-center py-12 text-muted-foreground">
-                      Nenhuma guia encontrada.
-                    </td>
+                    <td colSpan={canEdit ? 17 : 16} className="text-center py-12 text-muted-foreground">Nenhuma guia encontrada.</td>
                   </tr>
                 )}
               </tbody>
@@ -556,18 +418,16 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
 
       <Sheet open={!!drawerGuia} onOpenChange={(open) => !open && setDrawerGuia(null)}>
         <SheetContent className="sm:max-w-lg overflow-y-auto">
-          {drawerGuia && <GuiaDrawerContent guia={drawerGuia} feriados={feriados ?? []} />}
+          {drawerGuia && <GuiaDrawerContent guia={drawerGuia} />}
         </SheetContent>
       </Sheet>
     </div>
   );
 }
 
-function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados: string[] }) {
-  const { gestao, compareceu, atendimentoLancado, asoAnexado, aguardandoAso, statusGuia } = getDerivedGuiaState(guia.guia_gestao);
-  const sla = getSlaStatus(guia.data_agendamento ?? guia.data_guia, atendimentoLancado, feriados, gestao?.sla_final);
-  const origem = getOrigemAgendamento(guia.solicitante_nome);
-  const statusPrest = getStatusPrestador(guia.prestador_nome);
+function GuiaDrawerContent({ guia }: { guia: GuiaRow }) {
+  const origem = guia.origem === "CLIENTE" ? "Cliente" : "PreverMed";
+  const statusPrest = guia.status_prestador === "SEM PRESTADOR" ? "Sem prestador" : "Com prestador";
 
   const Field = ({ label, value }: { label: string; value: string | null }) => (
     <div>
@@ -581,8 +441,8 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
       <SheetHeader>
         <SheetTitle className="flex items-center gap-2 flex-wrap">
           Guia {guia.guia_codigo}
-          <Badge className={`text-xs ${getSlaColor(sla)}`}>SLA: {getSlaLabel(sla)}</Badge>
-          <Badge className={`text-xs ${getGuiaStatusColor(statusGuia)}`}>{getGuiaStatusLabel(statusGuia)}</Badge>
+          <Badge className={`text-xs ${getSlaColor(guia.sla)}`}>SLA: {getSlaLabel(guia.sla)}</Badge>
+          <Badge className={`text-xs ${getGuiaStatusColor(guia.status_guia)}`}>{getGuiaStatusLabel(guia.status_guia)}</Badge>
         </SheetTitle>
       </SheetHeader>
       <div className="mt-4 space-y-4">
@@ -596,9 +456,9 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
            <Field label="Empresa" value={toTitleCase(guia.empresa_nome)} />
            <Field label="Unidade" value={toTitleCase(guia.unidade_nome)} />
            <Field label="Prestador" value={toTitleCase(guia.prestador_nome)} />
-           <Field label="Status Prestador" value={statusPrest === "SEM PRESTADOR" ? "Sem prestador" : "Com prestador"} />
+           <Field label="Status Prestador" value={statusPrest} />
            <Field label="Agendamento" value={guia.data_agendamento ? `${format(new Date(guia.data_agendamento + "T00:00:00"), "dd/MM/yyyy")} ${guia.hora_agendamento ?? ""}` : null} />
-           <Field label="Origem Agendamento" value={origem === "CLIENTE" ? "Cliente" : "PreverMed"} />
+           <Field label="Origem Agendamento" value={origem} />
            <Field label="Solicitante" value={toTitleCase(guia.solicitante_nome)} />
         </div>
 
@@ -607,19 +467,19 @@ function GuiaDrawerContent({ guia, feriados }: { guia: GuiaWithGestao; feriados:
           <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Compareceu</p>
-              <StatusIcon status={compareceu} field="compareceu" compareceu={compareceu} />
+              <StatusIcon status={guia.compareceu} field="compareceu" compareceu={guia.compareceu} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Aguard. ASO</p>
-              <AguardandoAsoLabel status={aguardandoAso} />
+              <AguardandoAsoLabel status={guia.aguardando_aso} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">Atend. Lançado</p>
-              <StatusIcon status={atendimentoLancado} field="atend" compareceu={compareceu} />
+              <StatusIcon status={guia.atendimento_lancado} field="atend" compareceu={guia.compareceu} />
             </div>
             <div>
               <p className="text-[11px] text-muted-foreground mb-1">ASO</p>
-              <StatusIcon status={asoAnexado} field="aso" compareceu={compareceu} />
+              <StatusIcon status={guia.aso_anexado} field="aso" compareceu={guia.compareceu} />
             </div>
           </div>
         </div>
