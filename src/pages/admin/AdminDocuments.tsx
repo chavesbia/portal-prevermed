@@ -174,14 +174,13 @@ export default function AdminDocuments() {
 
       if (uploadError) throw new Error('Erro ao fazer upload do arquivo.');
 
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
-
       const folderValue = isCreatingFolder ? newFolderName.trim() : form.folder;
 
       const { data: insertedDoc, error: insertError } = await supabase.from('documents').insert({
         name: form.name,
         description: form.description || null,
-        file_url: urlData.publicUrl,
+        file_url: filePath, // legacy, mantemos para compatibilidade
+        file_path: filePath,
         file_type: uploadFile.type,
         file_size: uploadFile.size,
         is_public: form.visibility_mode === 'public',
