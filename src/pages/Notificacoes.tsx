@@ -93,15 +93,12 @@ export default function Notificacoes() {
     markAsRead(n.id);
     if (n.related_type === 'post' || n.notification_type === 'new_post' || n.notification_type === 'like' || n.notification_type === 'comment') {
       navigate('/social');
-    } else if (n.notification_type === 'chat_message') {
-      navigate('/chat');
     } else if (n.notification_type === 'new_announcement') {
       navigate('/comunicados');
     } else if (n.notification_type === 'new_document') {
       navigate('/documentos');
     } else if (n.notification_type === 'mention') {
-      if (n.related_type === 'chat') navigate('/chat');
-      else navigate('/social');
+      navigate('/social');
     } else if (n.notification_type === 'aso_retificacao') {
       navigate('/retificacao-asos');
     }
