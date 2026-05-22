@@ -145,7 +145,6 @@ const staticMenuSections: MenuSection[] = [
     title: 'Comunicação',
     items: [
       { label: 'Rede Social', icon: Users, path: '/social', requiresAuth: true },
-      { label: 'Chat', icon: MessageSquare, path: '/chat', requiresAuth: true },
       { label: 'Notificações', icon: Bell, path: '/notificacoes', requiresAuth: true },
     ],
   },
