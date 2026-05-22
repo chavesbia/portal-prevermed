@@ -118,6 +118,27 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     "% Atraso": m.total > 0 ? Number(((m.atrasado / m.total) * 100).toFixed(1)) : 0,
   }));
 
+  // Comparativos mensais por empresa/prestador
+  const buildComparativo = (raw: any) => {
+    const meses: { mes: string; mes_label: string }[] = raw?.meses ?? [];
+    const series: { name: string; pontos: { mes: string; count: number }[] }[] = raw?.series ?? [];
+    return meses.map((m) => {
+      const row: any = { mes: m.mes_label };
+      series.forEach((s) => {
+        const p = s.pontos?.find((pp) => pp.mes === m.mes);
+        row[s.name] = p?.count ?? 0;
+      });
+      return row;
+    });
+  };
+  const compEmpresaData = buildComparativo(data.comparativo_empresa);
+  const compEmpresaSeries: string[] = (data.comparativo_empresa?.series ?? []).map((s: any) => s.name);
+  const compPrestadorData = buildComparativo(data.comparativo_prestador);
+  const compPrestadorSeries: string[] = (data.comparativo_prestador?.series ?? []).map((s: any) => s.name);
+  const SERIES_COLORS = ["hsl(217,91%,60%)","hsl(142,71%,45%)","hsl(38,92%,50%)","hsl(280,70%,55%)","hsl(0,72%,51%)"];
+
+  const variacao = data.variacao ?? {};
+
   const slaData = [
     { name: "Em Dia", value: t.em_dia ?? 0, color: COLORS.EM_DIA },
     { name: "Atenção", value: t.em_atencao ?? 0, color: COLORS.ATENCAO },
