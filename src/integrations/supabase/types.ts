@@ -4132,6 +4132,10 @@ export type Database = {
         Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
+      dashboard_guias_agregado: {
+        Args: { _periodo_fim?: string; _periodo_ini?: string }
+        Returns: Json
+      }
       generate_occurrence_ticket_number: { Args: never; Returns: string }
       get_user_accessible_modules: {
         Args: { _user_id: string }

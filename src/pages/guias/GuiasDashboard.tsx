@@ -1,45 +1,28 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
-import { getSlaStatus, getGuiaStatus, type SlaStatus, type GuiaStatusType } from "@/lib/guias/sla";
-import { getOrigemAgendamento, getStatusPrestador } from "@/lib/guias/blocklist";
-import { usePrestadoresBloqueados } from "@/hooks/usePrestadoresBloqueados";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
-  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, ComposedChart,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { AlertTriangle, CheckCircle, Clock, FileText, XCircle, Activity, Users, Building, CircleDot, Play, Loader, CheckCheck } from "lucide-react";
-import { format, subDays, startOfDay, isWeekend } from "date-fns";
+import {
+  AlertTriangle, CheckCircle, Clock, FileText, XCircle, Activity, Users,
+  Building, CircleDot, Play, Loader, CheckCheck, CalendarIcon,
+} from "lucide-react";
+import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-type GuiaDash = {
-  id: string;
-  guia_codigo: string;
-  data_guia: string | null;
-  data_agendamento: string | null;
-  empresa_nome: string | null;
-  prestador_nome: string | null;
-  tipo_exame: string | null;
-  atendido_texto: string | null;
-  solicitante_nome: string | null;
-  guia_gestao: { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; aguardando_aso?: string; sla_final?: string | null } | { compareceu_status: string; atendimento_lancado: string; aso_anexado: string; aguardando_aso?: string; sla_final?: string | null }[] | null;
-};
-
-function getGestao(guia_gestao: GuiaDash["guia_gestao"]) {
-  if (!guia_gestao) return undefined;
-  if (Array.isArray(guia_gestao)) return guia_gestao[0] ?? undefined;
-  return guia_gestao;
-}
-
-type ExameDash = { guia_codigo: string; exame_nome: string | null };
+import type { DateRange } from "react-day-picker";
 
 const COLORS = {
   EM_DIA: "hsl(142, 71%, 45%)",
   ATENCAO: "hsl(38, 92%, 50%)",
   ATRASADO: "hsl(0, 72%, 51%)",
 };
-
 const STATUS_COLORS = {
   PENDENTE: "hsl(220, 9%, 60%)",
   INICIADA: "hsl(217, 91%, 60%)",
@@ -47,79 +30,43 @@ const STATUS_COLORS = {
   FINALIZADA: "hsl(142, 71%, 35%)",
 };
 
-function getPreviousBusinessDay(referenceDate: Date, feriados: string[] = []): Date {
-  let d = new Date(referenceDate);
-  d.setHours(0, 0, 0, 0);
-  do {
-    d = subDays(d, 1);
-  } while (isWeekend(d) || feriados.includes(format(d, "yyyy-MM-dd")));
-  return d;
-}
+type Preset = "7" | "15" | "30" | "custom";
 
 interface GuiasDashboardProps {
   onNavigateToList?: (filters: Record<string, any>) => void;
 }
 
+function fmtDate(d: Date) {
+  return format(d, "yyyy-MM-dd");
+}
+
 export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps) {
   const queryClient = useQueryClient();
-  const { isPrestadorBloqueado, isLoading: loadingBloqueados } = usePrestadoresBloqueados();
 
-  const { data: feriados } = useQuery({
-    queryKey: ["feriados"],
+  const [preset, setPreset] = useState<Preset>("30");
+  const [customRange, setCustomRange] = useState<DateRange | undefined>();
+
+  const { ini, fim } = useMemo(() => {
+    const today = startOfDay(new Date());
+    if (preset === "custom" && customRange?.from) {
+      return { ini: customRange.from, fim: customRange.to ?? customRange.from };
+    }
+    const days = preset === "7" ? 7 : preset === "15" ? 15 : 30;
+    return { ini: subDays(today, days - 1), fim: today };
+  }, [preset, customRange]);
+
+  const iniStr = fmtDate(ini);
+  const fimStr = fmtDate(fim);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-guias-agregado", iniStr, fimStr],
     queryFn: async () => {
-      const { data } = await supabase.from("feriados").select("data");
-      return data?.map((f: any) => f.data) ?? [];
-    },
-  });
-
-  const { data: lastImport } = useQuery({
-    queryKey: ["last-import"],
-    queryFn: async () => {
-      const { data } = await supabase.from("guia_imports").select("imported_at").order("imported_at", { ascending: false }).limit(1);
-      return data?.[0]?.imported_at ?? null;
-    },
-  });
-
-  const { data: guiasRaw, isLoading: loadingGuias } = useQuery({
-    queryKey: ["dashboard-guias"],
-    queryFn: async () => {
-      const allData: GuiaDash[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      while (true) {
-        const { data, error } = await supabase
-          .from("guias")
-          .select("id, guia_codigo, data_guia, data_agendamento, empresa_nome, prestador_nome, tipo_exame, atendido_texto, solicitante_nome, guia_gestao(compareceu_status, atendimento_lancado, aso_anexado, aguardando_aso, sla_final)")
-          .gte("data_guia", "2026-01-01")
-          .range(from, from + batchSize - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        allData.push(...(data as unknown as GuiaDash[]));
-        if (data.length < batchSize) break;
-        from += batchSize;
-      }
-      return allData;
-    },
-  });
-
-  const isLoading = loadingGuias || loadingBloqueados;
-  const guias = guiasRaw?.filter((g) => !isPrestadorBloqueado(g.prestador_nome)) ?? [];
-
-  const { data: exames } = useQuery({
-    queryKey: ["dashboard-exames"],
-    queryFn: async () => {
-      const allData: ExameDash[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      while (true) {
-        const { data, error } = await supabase.from("guia_exames").select("guia_codigo, exame_nome").range(from, from + batchSize - 1);
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        allData.push(...(data as ExameDash[]));
-        if (data.length < batchSize) break;
-        from += batchSize;
-      }
-      return allData;
+      const { data, error } = await supabase.rpc("dashboard_guias_agregado", {
+        _periodo_ini: iniStr,
+        _periodo_fim: fimStr,
+      });
+      if (error) throw error;
+      return data as any;
     },
   });
 
@@ -127,13 +74,13 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     const channel = supabase
       .channel("dashboard-gestao-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "guia_gestao" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["dashboard-guias"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-guias-agregado"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -142,157 +89,127 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     );
   }
 
-  const guiasWithData = guias.map((g) => {
-    const gestao = getGestao(g.guia_gestao);
-    const comp = gestao?.compareceu_status ?? "NAO_INFORMADO";
-    const atendLancado = gestao?.atendimento_lancado ?? "NAO_INFORMADO";
-    const asoAnexado = gestao?.aso_anexado ?? "NAO_INFORMADO";
-    const aguardandoAso = (gestao as any)?.aguardando_aso ?? "NAO_INFORMADO";
-    const dataBase = g.data_agendamento ?? g.data_guia;
-    const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], gestao?.sla_final);
-    const guiaStatus = getGuiaStatus(comp, atendLancado, asoAnexado, aguardandoAso);
-    const origem = getOrigemAgendamento(g.solicitante_nome);
-    const statusPrest = getStatusPrestador(g.prestador_nome);
-    return { ...g, sla, guiaStatus, gestao, origem, statusPrest };
-  });
+  const t = data.totais ?? {};
+  const total: number = t.total ?? 0;
+  const ultimoDiaUtil = data.ultimo_dia_util ? new Date(data.ultimo_dia_util + "T00:00:00") : new Date();
 
-  const today = startOfDay(new Date());
-  const thisWeekStart = subDays(today, 7);
-  const thisMonthStart = subDays(today, 30);
+  const dailyData = (data.daily ?? []).map((d: any) => ({
+    date: format(new Date(d.date + "T00:00:00"), "dd/MM", { locale: ptBR }),
+    guias: d.count,
+  }));
 
-  const lastImportDate = lastImport ? startOfDay(new Date(lastImport)) : today;
-  const lastBusinessDay = getPreviousBusinessDay(lastImportDate, feriados ?? []);
-  const lastBusinessDayStr = format(lastBusinessDay, "yyyy-MM-dd");
+  const prestadorData = (data.prestador_atrasos ?? []).map((p: any) => ({
+    name: p.name.length > 20 ? p.name.substring(0, 20) + "…" : p.name,
+    atrasos: p.count,
+  }));
+  const empresaData = (data.empresas ?? []).map((e: any) => ({
+    name: e.name.length > 20 ? e.name.substring(0, 20) + "…" : e.name,
+    guias: e.count,
+  }));
+  const exameData = (data.exames ?? []).map((e: any) => ({
+    name: e.name.length > 25 ? e.name.substring(0, 25) + "…" : e.name,
+    total: e.count,
+  }));
+  const slaMensal = (data.sla_mensal ?? []).map((m: any) => ({
+    mes: m.mes_label,
+    "Em Dia": m.em_dia,
+    "Atenção": m.atencao,
+    "Atrasado": m.atrasado,
+    "% Atraso": m.total > 0 ? Number(((m.atrasado / m.total) * 100).toFixed(1)) : 0,
+  }));
 
-  const guiasUltimas = guiasWithData.filter((g) => g.data_guia === lastBusinessDayStr).length;
-  const guiasSemana = guiasWithData.filter((g) => g.data_guia && new Date(g.data_guia + "T00:00:00") >= thisWeekStart).length;
-  const guiasMes = guiasWithData.filter((g) => g.data_guia && new Date(g.data_guia + "T00:00:00") >= thisMonthStart).length;
-  const atrasadas = guiasWithData.filter((g) => g.sla === "ATRASADO").length;
-  const emAtencao = guiasWithData.filter((g) => g.sla === "ATENCAO").length;
-  const semPrestador = guiasWithData.filter((g) => g.statusPrest === "SEM PRESTADOR").length;
-
-  // Status da Guia counts
-  const pendentes = guiasWithData.filter((g) => g.guiaStatus === "PENDENTE").length;
-  const iniciadas = guiasWithData.filter((g) => g.guiaStatus === "INICIADA").length;
-  const emAndamento = guiasWithData.filter((g) => g.guiaStatus === "EM_ANDAMENTO").length;
-  const finalizadas = guiasWithData.filter((g) => g.guiaStatus === "FINALIZADA").length;
-  const finalizadasComAtraso = guiasWithData.filter((g) => g.guiaStatus === "FINALIZADA" && g.sla === "ATRASADO").length;
-
-  const origemCliente = guiasWithData.filter((g) => g.origem === "CLIENTE").length;
-  const origemPreverMed = guiasWithData.filter((g) => g.origem === "PREVERMED").length;
-
-  // Daily chart
-  const dailyMap = new Map<string, number>();
-  for (let i = 29; i >= 0; i--) dailyMap.set(format(subDays(today, i), "yyyy-MM-dd"), 0);
-  guiasWithData.forEach((g) => { if (g.data_guia && dailyMap.has(g.data_guia)) dailyMap.set(g.data_guia, (dailyMap.get(g.data_guia) ?? 0) + 1); });
-  const dailyData = Array.from(dailyMap.entries()).map(([date, count]) => ({ date: format(new Date(date + "T00:00:00"), "dd/MM", { locale: ptBR }), guias: count }));
-
-  // Prestador atrasos
-  const prestadorAtrasos = new Map<string, number>();
-  guiasWithData.filter((g) => g.sla === "ATRASADO").forEach((g) => { const p = g.prestador_nome || "Sem prestador"; prestadorAtrasos.set(p, (prestadorAtrasos.get(p) ?? 0) + 1); });
-  const prestadorData = Array.from(prestadorAtrasos.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => ({ name: name.length > 20 ? name.substring(0, 20) + "…" : name, atrasos: count }));
-
-  // Empresa
-  const empresaMap = new Map<string, number>();
-  guiasWithData.forEach((g) => { const e = g.empresa_nome || "Sem empresa"; empresaMap.set(e, (empresaMap.get(e) ?? 0) + 1); });
-  const empresaData = Array.from(empresaMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => ({ name: name.length > 20 ? name.substring(0, 20) + "…" : name, guias: count }));
-
-  // Exames
-  const exameMap = new Map<string, number>();
-  exames?.forEach((e) => { const name = e.exame_nome || "Sem nome"; exameMap.set(name, (exameMap.get(name) ?? 0) + 1); });
-  const exameData = Array.from(exameMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => ({ name: name.length > 25 ? name.substring(0, 25) + "…" : name, total: count }));
-
-  // SLA pie
-  const slaCount = { EM_DIA: 0, ATENCAO: 0, ATRASADO: 0 };
-  guiasWithData.forEach((g) => { slaCount[g.sla]++; });
   const slaData = [
-    { name: "Em Dia", value: slaCount.EM_DIA, color: COLORS.EM_DIA },
-    { name: "Atenção", value: slaCount.ATENCAO, color: COLORS.ATENCAO },
-    { name: "Atrasado", value: slaCount.ATRASADO, color: COLORS.ATRASADO },
+    { name: "Em Dia", value: t.em_dia ?? 0, color: COLORS.EM_DIA },
+    { name: "Atenção", value: t.em_atencao ?? 0, color: COLORS.ATENCAO },
+    { name: "Atrasado", value: t.atrasadas ?? 0, color: COLORS.ATRASADO },
   ].filter((d) => d.value > 0);
-
-  // Status da Guia pie
-  const statusCount = { PENDENTE: 0, INICIADA: 0, EM_ANDAMENTO: 0, FINALIZADA: 0 };
-  guiasWithData.forEach((g) => { statusCount[g.guiaStatus]++; });
   const statusData = [
-    { name: "Pendente", value: statusCount.PENDENTE, color: STATUS_COLORS.PENDENTE },
-    { name: "Iniciada", value: statusCount.INICIADA, color: STATUS_COLORS.INICIADA },
-    { name: "Em Andamento", value: statusCount.EM_ANDAMENTO, color: STATUS_COLORS.EM_ANDAMENTO },
-    { name: "Finalizada", value: statusCount.FINALIZADA, color: STATUS_COLORS.FINALIZADA },
+    { name: "Pendente", value: t.pendentes ?? 0, color: STATUS_COLORS.PENDENTE },
+    { name: "Iniciada", value: t.iniciadas ?? 0, color: STATUS_COLORS.INICIADA },
+    { name: "Em Andamento", value: t.em_andamento ?? 0, color: STATUS_COLORS.EM_ANDAMENTO },
+    { name: "Finalizada", value: t.finalizadas ?? 0, color: STATUS_COLORS.FINALIZADA },
   ].filter((d) => d.value > 0);
-
-  // Origem pie
   const origemData = [
-    { name: "Cliente", value: origemCliente, color: "hsl(220, 70%, 55%)" },
-    { name: "PreverMed", value: origemPreverMed, color: "hsl(160, 60%, 45%)" },
+    { name: "Cliente", value: t.origem_cliente ?? 0, color: "hsl(220, 70%, 55%)" },
+    { name: "PreverMed", value: t.origem_prevermed ?? 0, color: "hsl(160, 60%, 45%)" },
   ].filter((d) => d.value > 0);
 
   const handleCardClick = (filterOverrides: Record<string, any>) => {
-    if (onNavigateToList) {
-      onNavigateToList(filterOverrides);
-    }
+    if (onNavigateToList) onNavigateToList({ ...filterOverrides, dataGuiaInicio: ini, dataGuiaFim: fim });
   };
 
+  const volumeCards = [
+    { label: `Últimas guias (${format(ultimoDiaUtil, "dd/MM")})`, value: t.ultimas ?? 0, icon: FileText, color: "text-primary",
+      onClick: () => onNavigateToList?.({ dataGuiaInicio: ultimoDiaUtil, dataGuiaFim: ultimoDiaUtil }) },
+    { label: "No período", value: total, icon: Activity, color: "text-primary",
+      onClick: () => handleCardClick({}) },
+    { label: "Sem prestador", value: t.sem_prestador ?? 0, icon: Users, color: "text-orange-500",
+      onClick: () => handleCardClick({ statusPrestador: "SEM PRESTADOR" }) },
+    { label: "Compareceram", value: t.compareceram ?? 0, icon: CheckCircle, color: "text-green-500",
+      onClick: () => handleCardClick({ compareceu: "COMPARECEU" }) },
+  ];
   const slaCards = [
-    { label: "Atrasadas (SLA)", value: atrasadas, icon: XCircle, color: "text-destructive",
+    { label: "Atrasadas (SLA)", value: t.atrasadas ?? 0, icon: XCircle, color: "text-destructive",
       onClick: () => handleCardClick({ sla: "ATRASADO" }) },
-    { label: "Em Atenção (SLA)", value: emAtencao, icon: AlertTriangle, color: "text-yellow-500",
+    { label: "Em Atenção (SLA)", value: t.em_atencao ?? 0, icon: AlertTriangle, color: "text-yellow-500",
       onClick: () => handleCardClick({ sla: "ATENCAO" }) },
-    { label: "Em Dia (SLA)", value: slaCount.EM_DIA, icon: CheckCircle, color: "text-green-500",
+    { label: "Em Dia (SLA)", value: t.em_dia ?? 0, icon: CheckCircle, color: "text-green-500",
       onClick: () => handleCardClick({ sla: "EM_DIA" }) },
   ];
-
   const statusCards = [
-    { label: "Pendentes", value: pendentes, icon: CircleDot, color: "text-muted-foreground",
+    { label: "Pendentes", value: t.pendentes ?? 0, icon: CircleDot, color: "text-muted-foreground",
       onClick: () => handleCardClick({ statusGuia: "PENDENTE" }) },
-    { label: "Iniciadas", value: iniciadas, icon: Play, color: "text-blue-500",
+    { label: "Iniciadas", value: t.iniciadas ?? 0, icon: Play, color: "text-blue-500",
       onClick: () => handleCardClick({ statusGuia: "INICIADA" }) },
-    { label: "Em Andamento", value: emAndamento, icon: Loader, color: "text-orange-500",
+    { label: "Em Andamento", value: t.em_andamento ?? 0, icon: Loader, color: "text-orange-500",
       onClick: () => handleCardClick({ statusGuia: "EM_ANDAMENTO" }) },
-    { label: "Finalizadas", value: finalizadas, icon: CheckCheck, color: "text-green-600",
+    { label: "Finalizadas", value: t.finalizadas ?? 0, icon: CheckCheck, color: "text-green-600",
       onClick: () => handleCardClick({ statusGuia: "FINALIZADA" }) },
-    { label: "Finalizadas c/ Atraso", value: finalizadasComAtraso, icon: AlertTriangle, color: "text-destructive",
+    { label: "Finalizadas c/ Atraso", value: t.finalizadas_com_atraso ?? 0, icon: AlertTriangle, color: "text-destructive",
       onClick: () => handleCardClick({ statusGuia: "FINALIZADA", sla: "ATRASADO" }) },
   ];
 
-  const volumeCards = [
-    { label: `Últimas guias (${format(lastBusinessDay, "dd/MM")})`, value: guiasUltimas, icon: FileText, color: "text-primary",
-      onClick: () => handleCardClick({ dataGuiaInicio: lastBusinessDay, dataGuiaFim: lastBusinessDay }) },
-    { label: "Últimos 7 dias", value: guiasSemana, icon: Activity, color: "text-primary",
-      onClick: () => handleCardClick({ dataGuiaInicio: thisWeekStart, dataGuiaFim: today }) },
-    { label: "Últimos 30 dias", value: guiasMes, icon: FileText, color: "text-primary",
-      onClick: () => handleCardClick({ dataGuiaInicio: thisMonthStart, dataGuiaFim: today }) },
-    { label: "Sem prestador", value: semPrestador, icon: Users, color: "text-orange-500",
-      onClick: () => handleCardClick({ statusPrestador: "SEM PRESTADOR" }) },
-  ];
-
-  const renderCards = (cards: typeof slaCards, title: string) => (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
-      <div className={`grid grid-cols-${Math.min(cards.length, 5)} gap-3`}>
-        {cards.map((c) => (
-          <Card key={c.label} className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={c.onClick}>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <c.icon className={`h-3.5 w-3.5 ${c.color}`} />
-                <span className="text-[11px] text-muted-foreground">{c.label}</span>
-              </div>
-              <p className="text-xl font-bold">{c.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard de Guias</h1>
-        <p className="text-muted-foreground">Visão geral — {guias.length} guias válidas</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard de Guias</h1>
+          <p className="text-muted-foreground text-sm">
+            {format(ini, "dd/MM/yyyy")} – {format(fim, "dd/MM/yyyy")} · {total} guias no período
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {(["7", "15", "30"] as const).map((p) => (
+            <Button key={p} size="sm" variant={preset === p ? "default" : "outline"} onClick={() => setPreset(p)}>
+              {p} dias
+            </Button>
+          ))}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant={preset === "custom" ? "default" : "outline"} className="gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                {preset === "custom" && customRange?.from
+                  ? `${format(customRange.from, "dd/MM")} – ${format(customRange.to ?? customRange.from, "dd/MM")}`
+                  : "Personalizado"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="range"
+                selected={customRange}
+                onSelect={(r) => {
+                  setCustomRange(r);
+                  if (r?.from && r?.to) setPreset("custom");
+                }}
+                numberOfMonths={2}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Volume cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {volumeCards.map((c) => (
           <Card key={c.label} className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={c.onClick}>
@@ -307,7 +224,6 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         ))}
       </div>
 
-      {/* SLA cards */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">SLA — Prazo da Ação do Setor</h3>
         <div className="grid grid-cols-3 gap-3">
@@ -325,7 +241,6 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         </div>
       </div>
 
-      {/* Status da Guia cards */}
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Status da Guia — Andamento Operacional</h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -343,56 +258,14 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         </div>
       </div>
 
-      {/* Origem agendamento */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ origemAgendamento: "CLIENTE" })}>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <Building className="h-3.5 w-3.5 text-blue-500" />
-              <span className="text-[11px] text-muted-foreground">Agend. Cliente</span>
-            </div>
-            <p className="text-xl font-bold">{origemCliente}</p>
-            <p className="text-[10px] text-muted-foreground">{guias.length > 0 ? ((origemCliente / guias.length) * 100).toFixed(1) : 0}%</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ origemAgendamento: "PREVERMED" })}>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-[11px] text-muted-foreground">Agend. PreverMed</span>
-            </div>
-            <p className="text-xl font-bold">{origemPreverMed}</p>
-            <p className="text-[10px] text-muted-foreground">{guias.length > 0 ? ((origemPreverMed / guias.length) * 100).toFixed(1) : 0}%</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ compareceu: "COMPARECEU" })}>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-[11px] text-muted-foreground">Compareceram</span>
-            </div>
-            <p className="text-xl font-bold">{guiasWithData.filter((g) => g.gestao?.compareceu_status === "COMPARECEU").length}</p>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => handleCardClick({ compareceu: "NAO_COMPARECEU" })}>
-          <CardContent className="p-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <XCircle className="h-3.5 w-3.5 text-destructive" />
-              <span className="text-[11px] text-muted-foreground">Não Compareceram</span>
-            </div>
-            <p className="text-xl font-bold">{guiasWithData.filter((g) => g.gestao?.compareceu_status === "NAO_COMPARECEU").length}</p>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Guias por Dia (últimos 30 dias)</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Guias por Dia (período)</CardTitle></CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4} />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={Math.max(0, Math.floor(dailyData.length / 10))} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip />
                 <Line type="monotone" dataKey="guias" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
@@ -419,6 +292,34 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
           </CardContent>
         </Card>
       </div>
+
+      {/* Comparativo mensal — SLA por mês (últimos 6 meses) */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">SLA — Comparativo mês a mês (últimos 6 meses)</CardTitle>
+          <p className="text-[11px] text-muted-foreground">Independe do período selecionado acima.</p>
+        </CardHeader>
+        <CardContent>
+          {slaMensal.length === 0 ? (
+            <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={slaMensal}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} unit="%" />
+                <Tooltip />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar yAxisId="left" dataKey="Em Dia" stackId="a" fill={COLORS.EM_DIA} />
+                <Bar yAxisId="left" dataKey="Atenção" stackId="a" fill={COLORS.ATENCAO} />
+                <Bar yAxisId="left" dataKey="Atrasado" stackId="a" fill={COLORS.ATRASADO} />
+                <Line yAxisId="right" type="monotone" dataKey="% Atraso" stroke="hsl(var(--foreground))" strokeWidth={2} dot />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
