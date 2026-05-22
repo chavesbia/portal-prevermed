@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import {
   AlertTriangle, CheckCircle, Clock, FileText, XCircle, Activity, Users,
-  Building, CircleDot, Play, Loader, CheckCheck, CalendarIcon,
+  Building, CircleDot, Play, Loader, CheckCheck, CalendarIcon, TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -117,6 +117,27 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
     "Atrasado": m.atrasado,
     "% Atraso": m.total > 0 ? Number(((m.atrasado / m.total) * 100).toFixed(1)) : 0,
   }));
+
+  // Comparativos mensais por empresa/prestador
+  const buildComparativo = (raw: any) => {
+    const meses: { mes: string; mes_label: string }[] = raw?.meses ?? [];
+    const series: { name: string; pontos: { mes: string; count: number }[] }[] = raw?.series ?? [];
+    return meses.map((m) => {
+      const row: any = { mes: m.mes_label };
+      series.forEach((s) => {
+        const p = s.pontos?.find((pp) => pp.mes === m.mes);
+        row[s.name] = p?.count ?? 0;
+      });
+      return row;
+    });
+  };
+  const compEmpresaData = buildComparativo(data.comparativo_empresa);
+  const compEmpresaSeries: string[] = (data.comparativo_empresa?.series ?? []).map((s: any) => s.name);
+  const compPrestadorData = buildComparativo(data.comparativo_prestador);
+  const compPrestadorSeries: string[] = (data.comparativo_prestador?.series ?? []).map((s: any) => s.name);
+  const SERIES_COLORS = ["hsl(217,91%,60%)","hsl(142,71%,45%)","hsl(38,92%,50%)","hsl(280,70%,55%)","hsl(0,72%,51%)"];
+
+  const variacao = data.variacao ?? {};
 
   const slaData = [
     { name: "Em Dia", value: t.em_dia ?? 0, color: COLORS.EM_DIA },
@@ -224,6 +245,53 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         ))}
       </div>
 
+      {/* Variação vs período anterior equivalente */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">
+          Variação vs. período anterior
+          {variacao.periodo_anterior_ini && variacao.periodo_anterior_fim && (
+            <span className="ml-2 text-[11px] font-normal">
+              ({format(new Date(variacao.periodo_anterior_ini + "T00:00:00"), "dd/MM/yyyy")} – {format(new Date(variacao.periodo_anterior_fim + "T00:00:00"), "dd/MM/yyyy")})
+            </span>
+          )}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {([
+            { key: "total", label: "Total de guias", invertColor: false },
+            { key: "atrasadas", label: "Atrasadas (SLA)", invertColor: true },
+            { key: "finalizadas", label: "Finalizadas", invertColor: false },
+          ] as const).map(({ key, label, invertColor }) => {
+            const v = variacao[key] ?? {};
+            const delta = v.delta ?? 0;
+            const pct = v.pct;
+            const up = delta > 0, down = delta < 0;
+            const goodUp = !invertColor;
+            const tone = delta === 0 ? "text-muted-foreground" : (up === goodUp ? "text-green-600" : "text-destructive");
+            const Icon = delta === 0 ? Minus : up ? TrendingUp : TrendingDown;
+            return (
+              <Card key={key}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground">{label}</span>
+                    <div className={`flex items-center gap-1 text-xs font-medium ${tone}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {pct === null || pct === undefined ? "—" : `${pct > 0 ? "+" : ""}${pct}%`}
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <p className="text-xl font-bold">{v.atual ?? 0}</p>
+                    <span className="text-[11px] text-muted-foreground">
+                      anterior: {v.anterior ?? 0} ({delta > 0 ? "+" : ""}{delta})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">SLA — Prazo da Ação do Setor</h3>
         <div className="grid grid-cols-3 gap-3">
@@ -320,6 +388,60 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
           )}
         </CardContent>
       </Card>
+
+      {/* Comparativo mensal — Top empresas e prestadores */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top empresas — volume mês a mês</CardTitle>
+            <p className="text-[11px] text-muted-foreground">Top 5 empresas nos últimos 6 meses.</p>
+          </CardHeader>
+          <CardContent>
+            {compEmpresaData.length === 0 || compEmpresaSeries.length === 0 ? (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={compEmpresaData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  {compEmpresaSeries.map((name, i) => (
+                    <Line key={name} type="monotone" dataKey={name} stroke={SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top prestadores — volume mês a mês</CardTitle>
+            <p className="text-[11px] text-muted-foreground">Top 5 prestadores nos últimos 6 meses.</p>
+          </CardHeader>
+          <CardContent>
+            {compPrestadorData.length === 0 || compPrestadorSeries.length === 0 ? (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={compPrestadorData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  {compPrestadorSeries.map((name, i) => (
+                    <Line key={name} type="monotone" dataKey={name} stroke={SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
