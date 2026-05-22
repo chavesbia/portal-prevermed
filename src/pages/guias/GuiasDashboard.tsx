@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import {
   AlertTriangle, CheckCircle, Clock, FileText, XCircle, Activity, Users,
-  Building, CircleDot, Play, Loader, CheckCheck, CalendarIcon,
+  Building, CircleDot, Play, Loader, CheckCheck, CalendarIcon, TrendingUp, TrendingDown, Minus,
 } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
