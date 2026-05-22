@@ -15,10 +15,33 @@ interface DocItem {
   name: string;
   description: string | null;
   file_url: string;
+  file_path: string | null;
   file_type: string | null;
   file_size: number | null;
   folder: string | null;
   created_at: string;
+}
+
+function extractStoragePath(doc: { file_path: string | null; file_url: string }) {
+  if (doc.file_path) return doc.file_path;
+  const m = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function openSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
+  const path = extractStoragePath(doc);
+  if (!path) {
+    window.open(doc.file_url, '_blank');
+    return;
+  }
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+  if (error || !data?.signedUrl) {
+    console.error('Signed URL error', error);
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
 }
 
 const getFileIcon = (fileType: string | null) => {
