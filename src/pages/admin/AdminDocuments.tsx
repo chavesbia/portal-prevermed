@@ -64,6 +64,7 @@ interface DocumentRow {
   name: string;
   description: string | null;
   file_url: string;
+  file_path: string | null;
   file_type: string | null;
   file_size: number | null;
   is_public: boolean | null;
