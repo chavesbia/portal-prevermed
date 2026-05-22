@@ -54,8 +54,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/alterar-senha" element={<ChangePassword />} />
             
-            {/* Portal routes with layout */}
-            <Route element={<PortalLayout />}>
+            {/* Portal routes with layout - all require authentication */}
+            <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
+
               <Route path="/" element={<Index />} />
               <Route path="/comunicados" element={<Comunicados />} />
               <Route path="/calendario" element={<Calendario />} />
