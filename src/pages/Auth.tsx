@@ -69,21 +69,18 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      // First, find the auth email from the login field
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email, must_change_password')
-        .eq('login', loginField.trim().toLowerCase())
-        .maybeSingle();
+      // Securely lookup auth email via SECURITY DEFINER RPC
+      const { data: emailLookup, error: lookupError } = await supabase
+        .rpc('lookup_email_by_login', { p_login: loginField.trim().toLowerCase() });
       
-      if (profileError || !profile) {
+      if (lookupError || !emailLookup) {
         setError('Usuário não encontrado');
         setIsLoading(false);
         return;
       }
       
       // Now sign in with the actual email
-      const { error } = await signIn(profile.email, loginPassword);
+      const { error } = await signIn(emailLookup as string, loginPassword);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
