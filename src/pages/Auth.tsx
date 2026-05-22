@@ -91,12 +91,8 @@ export default function Auth() {
           setError('Erro ao fazer login. Tente novamente.');
         }
       } else {
-        // Check if must change password
-        if (profile.must_change_password) {
-          navigate('/alterar-senha');
-        } else {
-          navigate('/');
-        }
+        // useEffect → checkMustChangePassword handles redirect with profile data
+        navigate('/');
       }
     } catch (err) {
       setError('Erro inesperado. Tente novamente.');
