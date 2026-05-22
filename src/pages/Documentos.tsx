@@ -73,7 +73,7 @@ export default function Documentos() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('documents')
-      .select('id, name, description, file_url, file_type, file_size, folder, created_at')
+      .select('id, name, description, file_url, file_path, file_type, file_size, folder, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
