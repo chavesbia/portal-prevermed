@@ -389,6 +389,60 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         </CardContent>
       </Card>
 
+      {/* Comparativo mensal — Top empresas e prestadores */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top empresas — volume mês a mês</CardTitle>
+            <p className="text-[11px] text-muted-foreground">Top 5 empresas nos últimos 6 meses.</p>
+          </CardHeader>
+          <CardContent>
+            {compEmpresaData.length === 0 || compEmpresaSeries.length === 0 ? (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={compEmpresaData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  {compEmpresaSeries.map((name, i) => (
+                    <Line key={name} type="monotone" dataKey={name} stroke={SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top prestadores — volume mês a mês</CardTitle>
+            <p className="text-[11px] text-muted-foreground">Top 5 prestadores nos últimos 6 meses.</p>
+          </CardHeader>
+          <CardContent>
+            {compPrestadorData.length === 0 || compPrestadorSeries.length === 0 ? (
+              <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={compPrestadorData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  {compPrestadorSeries.map((name, i) => (
+                    <Line key={name} type="monotone" dataKey={name} stroke={SERIES_COLORS[i % SERIES_COLORS.length]} strokeWidth={2} dot />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm">Status da Guia</CardTitle></CardHeader>
