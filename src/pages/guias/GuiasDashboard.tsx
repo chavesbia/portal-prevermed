@@ -304,7 +304,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
             <div className="flex items-center justify-center h-[260px] text-muted-foreground text-sm">Sem dados</div>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={slaMensal}>
+              <ComposedChart data={slaMensal}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="left" tick={{ fontSize: 10 }} allowDecimals={false} />
@@ -315,7 +315,7 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
                 <Bar yAxisId="left" dataKey="Atenção" stackId="a" fill={COLORS.ATENCAO} />
                 <Bar yAxisId="left" dataKey="Atrasado" stackId="a" fill={COLORS.ATRASADO} />
                 <Line yAxisId="right" type="monotone" dataKey="% Atraso" stroke="hsl(var(--foreground))" strokeWidth={2} dot />
-              </BarChart>
+              </ComposedChart>
             </ResponsiveContainer>
           )}
         </CardContent>
