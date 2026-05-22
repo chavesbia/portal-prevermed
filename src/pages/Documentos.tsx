@@ -225,22 +225,18 @@ export default function Documentos() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          asChild
                           title="Visualizar"
+                          onClick={() => openSignedUrl(doc)}
                         >
-                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          asChild
                           title="Baixar"
+                          onClick={() => openSignedUrl(doc, true)}
                         >
-                          <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
