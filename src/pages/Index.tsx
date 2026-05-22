@@ -324,25 +324,6 @@ export default function Index() {
           </CardContent>
         </Card>
 
-        <Card
-          className="card-elevated cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all"
-          onClick={() => navigate('/chat')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && navigate('/chat')}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <MessageSquare className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="stat-value text-lg">0</p>
-                <p className="stat-label text-xs">Mensagens</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Main Content Grid */}
