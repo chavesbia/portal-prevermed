@@ -245,6 +245,53 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
         ))}
       </div>
 
+      {/* Variação vs período anterior equivalente */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">
+          Variação vs. período anterior
+          {variacao.periodo_anterior_ini && variacao.periodo_anterior_fim && (
+            <span className="ml-2 text-[11px] font-normal">
+              ({format(new Date(variacao.periodo_anterior_ini + "T00:00:00"), "dd/MM/yyyy")} – {format(new Date(variacao.periodo_anterior_fim + "T00:00:00"), "dd/MM/yyyy")})
+            </span>
+          )}
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {([
+            { key: "total", label: "Total de guias", invertColor: false },
+            { key: "atrasadas", label: "Atrasadas (SLA)", invertColor: true },
+            { key: "finalizadas", label: "Finalizadas", invertColor: false },
+          ] as const).map(({ key, label, invertColor }) => {
+            const v = variacao[key] ?? {};
+            const delta = v.delta ?? 0;
+            const pct = v.pct;
+            const up = delta > 0, down = delta < 0;
+            const goodUp = !invertColor;
+            const tone = delta === 0 ? "text-muted-foreground" : (up === goodUp ? "text-green-600" : "text-destructive");
+            const Icon = delta === 0 ? Minus : up ? TrendingUp : TrendingDown;
+            return (
+              <Card key={key}>
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground">{label}</span>
+                    <div className={`flex items-center gap-1 text-xs font-medium ${tone}`}>
+                      <Icon className="h-3.5 w-3.5" />
+                      {pct === null || pct === undefined ? "—" : `${pct > 0 ? "+" : ""}${pct}%`}
+                    </div>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <p className="text-xl font-bold">{v.atual ?? 0}</p>
+                    <span className="text-[11px] text-muted-foreground">
+                      anterior: {v.anterior ?? 0} ({delta > 0 ? "+" : ""}{delta})
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+
       <div className="space-y-2">
         <h3 className="text-sm font-semibold text-muted-foreground">SLA — Prazo da Ação do Setor</h3>
         <div className="grid grid-cols-3 gap-3">
