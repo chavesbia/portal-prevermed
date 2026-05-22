@@ -64,6 +64,7 @@ interface DocumentRow {
   name: string;
   description: string | null;
   file_url: string;
+  file_path: string | null;
   file_type: string | null;
   file_size: number | null;
   is_public: boolean | null;
@@ -173,14 +174,13 @@ export default function AdminDocuments() {
 
       if (uploadError) throw new Error('Erro ao fazer upload do arquivo.');
 
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(filePath);
-
       const folderValue = isCreatingFolder ? newFolderName.trim() : form.folder;
 
       const { data: insertedDoc, error: insertError } = await supabase.from('documents').insert({
         name: form.name,
         description: form.description || null,
-        file_url: urlData.publicUrl,
+        file_url: filePath, // legacy, mantemos para compatibilidade
+        file_path: filePath,
         file_type: uploadFile.type,
         file_size: uploadFile.size,
         is_public: form.visibility_mode === 'public',
@@ -485,11 +485,14 @@ export default function AdminDocuments() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                              <Download className="h-4 w-4 mr-2" />
-                              Baixar
-                            </a>
+                          <DropdownMenuItem onClick={async () => {
+                            const path = doc.file_path || doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/)?.[1];
+                            if (!path) return;
+                            const { data } = await supabase.storage.from('documents').createSignedUrl(decodeURIComponent(path), 600, { download: true });
+                            if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+                          }}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Baixar
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(doc)}>
                             <Edit className="h-4 w-4 mr-2" />

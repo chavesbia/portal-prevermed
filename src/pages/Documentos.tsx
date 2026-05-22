@@ -15,10 +15,33 @@ interface DocItem {
   name: string;
   description: string | null;
   file_url: string;
+  file_path: string | null;
   file_type: string | null;
   file_size: number | null;
   folder: string | null;
   created_at: string;
+}
+
+function extractStoragePath(doc: { file_path: string | null; file_url: string }) {
+  if (doc.file_path) return doc.file_path;
+  const m = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+async function openSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
+  const path = extractStoragePath(doc);
+  if (!path) {
+    window.open(doc.file_url, '_blank');
+    return;
+  }
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+  if (error || !data?.signedUrl) {
+    console.error('Signed URL error', error);
+    return;
+  }
+  window.open(data.signedUrl, '_blank');
 }
 
 const getFileIcon = (fileType: string | null) => {
@@ -50,7 +73,7 @@ export default function Documentos() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('documents')
-      .select('id, name, description, file_url, file_type, file_size, folder, created_at')
+      .select('id, name, description, file_url, file_path, file_type, file_size, folder, created_at')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -202,22 +225,18 @@ export default function Documentos() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          asChild
                           title="Visualizar"
+                          onClick={() => openSignedUrl(doc)}
                         >
-                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
-                            <Eye className="h-4 w-4" />
-                          </a>
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          asChild
                           title="Baixar"
+                          onClick={() => openSignedUrl(doc, true)}
                         >
-                          <a href={doc.file_url} download target="_blank" rel="noopener noreferrer">
-                            <Download className="h-4 w-4" />
-                          </a>
+                          <Download className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>

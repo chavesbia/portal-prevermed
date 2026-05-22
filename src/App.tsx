@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import { AdminMasterRoute } from "@/components/layout/AdminMasterRoute";
+import { RequireAuth } from "@/components/layout/RequireAuth";
 import Index from "./pages/Index";
 import Organograma from "./pages/Organograma";
 import Auth from "./pages/Auth";
@@ -14,7 +15,6 @@ import ChangePassword from "./pages/ChangePassword";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import Social from "./pages/Social";
-import Chat from "./pages/Chat";
 import Comunicados from "./pages/Comunicados";
 import Calendario from "./pages/Calendario";
 import AdminUsers from "./pages/admin/AdminUsers";
@@ -54,8 +54,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/alterar-senha" element={<ChangePassword />} />
             
-            {/* Portal routes with layout */}
-            <Route element={<PortalLayout />}>
+            {/* Portal routes with layout - all require authentication */}
+            <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
+
               <Route path="/" element={<Index />} />
               <Route path="/comunicados" element={<Comunicados />} />
               <Route path="/calendario" element={<Calendario />} />
@@ -73,7 +74,7 @@ const App = () => (
               <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/social" element={<Social />} />
-              <Route path="/chat" element={<Chat />} />
+              
               <Route path="/notificacoes" element={<Notificacoes />} />
               <Route path="/departamentos/*" element={<Index />} />
               
