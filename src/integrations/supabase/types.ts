@@ -935,105 +935,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_messages: {
-        Row: {
-          chat_id: string
-          content: string
-          created_at: string
-          id: string
-          sender_id: string
-        }
-        Insert: {
-          chat_id: string
-          content: string
-          created_at?: string
-          id?: string
-          sender_id: string
-        }
-        Update: {
-          chat_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          sender_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_messages_chat_id_fkey"
-            columns: ["chat_id"]
-            isOneToOne: false
-            referencedRelation: "chats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_participants: {
-        Row: {
-          chat_id: string
-          id: string
-          joined_at: string
-          user_id: string
-        }
-        Insert: {
-          chat_id: string
-          id?: string
-          joined_at?: string
-          user_id: string
-        }
-        Update: {
-          chat_id?: string
-          id?: string
-          joined_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_participants_chat_id_fkey"
-            columns: ["chat_id"]
-            isOneToOne: false
-            referencedRelation: "chats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chats: {
-        Row: {
-          chat_type: Database["public"]["Enums"]["chat_type"]
-          created_at: string
-          created_by: string | null
-          department_id: string | null
-          id: string
-          name: string | null
-          updated_at: string
-        }
-        Insert: {
-          chat_type?: Database["public"]["Enums"]["chat_type"]
-          created_at?: string
-          created_by?: string | null
-          department_id?: string | null
-          id?: string
-          name?: string | null
-          updated_at?: string
-        }
-        Update: {
-          chat_type?: Database["public"]["Enums"]["chat_type"]
-          created_at?: string
-          created_by?: string | null
-          department_id?: string | null
-          id?: string
-          name?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chats_department_id_fkey"
-            columns: ["department_id"]
-            isOneToOne: false
-            referencedRelation: "departments"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       client_attachments: {
         Row: {
           client_id: string
@@ -1567,6 +1468,7 @@ export type Database = {
           created_at: string
           department_id: string | null
           description: string | null
+          file_path: string | null
           file_size: number | null
           file_type: string | null
           file_url: string
@@ -1581,6 +1483,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           file_url: string
@@ -1595,6 +1498,7 @@ export type Database = {
           created_at?: string
           department_id?: string | null
           description?: string | null
+          file_path?: string | null
           file_size?: number | null
           file_type?: string | null
           file_url?: string
@@ -2102,13 +2006,6 @@ export type Database = {
           post_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "mentions_chat_message_id_fkey"
-            columns: ["chat_message_id"]
-            isOneToOne: false
-            referencedRelation: "chat_messages"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "mentions_comment_id_fkey"
             columns: ["comment_id"]
@@ -4185,10 +4082,6 @@ export type Database = {
       is_adm_master: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_occurrence_manager: { Args: { _user_id: string }; Returns: boolean }
-      is_user_in_chat: {
-        Args: { _chat_id: string; _user_id: string }
-        Returns: boolean
-      }
       is_user_in_department: {
         Args: { _department_id: string; _user_id: string }
         Returns: boolean
@@ -4212,6 +4105,7 @@ export type Database = {
         }
         Returns: string
       }
+      lookup_email_by_login: { Args: { p_login: string }; Returns: string }
       reject_shadow_template: {
         Args: { _notes?: string; _shadow_id: string }
         Returns: undefined
