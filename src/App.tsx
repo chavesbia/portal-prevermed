@@ -74,7 +74,7 @@ const App = () => (
               <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/social" element={<Social />} />
-              <Route path="/chat" element={<Chat />} />
+              
               <Route path="/notificacoes" element={<Notificacoes />} />
               <Route path="/departamentos/*" element={<Index />} />
               
