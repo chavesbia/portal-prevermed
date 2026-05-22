@@ -528,13 +528,13 @@ export default function GuiasDashboard({ onNavigateToList }: GuiasDashboardProps
             {exameData.length === 0 ? (
               <div className="flex items-center justify-center h-[250px] text-muted-foreground text-sm">Sem dados de exames</div>
             ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={exameData} margin={{ bottom: 50 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" tick={{ fontSize: 9 }} height={70} />
-                  <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+              <ResponsiveContainer width="100%" height={Math.max(250, exameData.length * 32)}>
+                <BarChart data={exameData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={160} interval={0} />
                   <Tooltip />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} label={{ position: 'right', fontSize: 10, fill: 'hsl(var(--foreground))' }} />
                 </BarChart>
               </ResponsiveContainer>
             )}
