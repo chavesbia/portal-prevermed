@@ -4124,6 +4124,7 @@ export type Database = {
         | "RECEBIDO"
         | "NAO_RECEBIDO"
       aso_exame_status:
+        | "aguardando"
         | "pendente"
         | "recebido"
         | "datado_soc"
@@ -4131,6 +4132,7 @@ export type Database = {
         | "concluido"
         | "realizado"
         | "liberado"
+        | "nova_coleta"
       aso_exame_tipo: "imediato" | "complementar"
       aso_status:
         | "importado"
@@ -4167,6 +4169,7 @@ export type Database = {
         | "like"
         | "comment"
         | "aso_retificacao"
+        | "aso_alerta"
       occurrence_assignee_role: "principal" | "apoio"
       occurrence_comment_type:
         | "comentario_interno"
@@ -4362,6 +4365,7 @@ export const Constants = {
         "NAO_RECEBIDO",
       ],
       aso_exame_status: [
+        "aguardando",
         "pendente",
         "recebido",
         "datado_soc",
@@ -4369,6 +4373,7 @@ export const Constants = {
         "concluido",
         "realizado",
         "liberado",
+        "nova_coleta",
       ],
       aso_exame_tipo: ["imediato", "complementar"],
       aso_status: [
@@ -4409,6 +4414,7 @@ export const Constants = {
         "like",
         "comment",
         "aso_retificacao",
+        "aso_alerta",
       ],
       occurrence_assignee_role: ["principal", "apoio"],
       occurrence_comment_type: [
