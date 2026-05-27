@@ -119,6 +119,7 @@ export type Database = {
           salvo_socged: boolean | null
           setor: string | null
           setor_responsavel: string | null
+          signing_doctor_id: string | null
           status: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -184,6 +185,7 @@ export type Database = {
           salvo_socged?: boolean | null
           setor?: string | null
           setor_responsavel?: string | null
+          signing_doctor_id?: string | null
           status?: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura?:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -249,6 +251,7 @@ export type Database = {
           salvo_socged?: boolean | null
           setor?: string | null
           setor_responsavel?: string | null
+          signing_doctor_id?: string | null
           status?: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura?:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -271,18 +274,32 @@ export type Database = {
             referencedRelation: "aso_lotes_importacao"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "aso_atendimentos_signing_doctor_id_fkey"
+            columns: ["signing_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "aso_signing_doctors"
+            referencedColumns: ["id"]
+          },
         ]
       }
       aso_exames_atendimento: {
         Row: {
           atendimento_id: string
+          colaborador_chamado: boolean
+          colaborador_chamado_em: string | null
+          colaborador_chamado_por: string | null
           created_at: string
           data_conclusao: string | null
           data_datado_soc: string | null
           data_inserido_socged: string | null
           data_recebimento: string | null
           id: string
+          motivo_nova_coleta: string | null
+          motivo_pendencia: string | null
           nome_exame: string
+          nova_coleta_data_prevista_retorno: string | null
+          nova_coleta_data_retorno_efetivo: string | null
           observacao: string | null
           status: Database["public"]["Enums"]["aso_exame_status"]
           tipo: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -290,13 +307,20 @@ export type Database = {
         }
         Insert: {
           atendimento_id: string
+          colaborador_chamado?: boolean
+          colaborador_chamado_em?: string | null
+          colaborador_chamado_por?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_datado_soc?: string | null
           data_inserido_socged?: string | null
           data_recebimento?: string | null
           id?: string
+          motivo_nova_coleta?: string | null
+          motivo_pendencia?: string | null
           nome_exame: string
+          nova_coleta_data_prevista_retorno?: string | null
+          nova_coleta_data_retorno_efetivo?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -304,13 +328,20 @@ export type Database = {
         }
         Update: {
           atendimento_id?: string
+          colaborador_chamado?: boolean
+          colaborador_chamado_em?: string | null
+          colaborador_chamado_por?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_datado_soc?: string | null
           data_inserido_socged?: string | null
           data_recebimento?: string | null
           id?: string
+          motivo_nova_coleta?: string | null
+          motivo_pendencia?: string | null
           nome_exame?: string
+          nova_coleta_data_prevista_retorno?: string | null
+          nova_coleta_data_retorno_efetivo?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -719,6 +750,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      aso_signing_doctors: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          crm: string
+          crm_uf: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          crm: string
+          crm_uf?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          crm?: string
+          crm_uf?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       audit_log: {
         Row: {
@@ -4124,6 +4188,7 @@ export type Database = {
         | "RECEBIDO"
         | "NAO_RECEBIDO"
       aso_exame_status:
+        | "aguardando"
         | "pendente"
         | "recebido"
         | "datado_soc"
@@ -4131,6 +4196,7 @@ export type Database = {
         | "concluido"
         | "realizado"
         | "liberado"
+        | "nova_coleta"
       aso_exame_tipo: "imediato" | "complementar"
       aso_status:
         | "importado"
@@ -4167,6 +4233,7 @@ export type Database = {
         | "like"
         | "comment"
         | "aso_retificacao"
+        | "aso_alerta"
       occurrence_assignee_role: "principal" | "apoio"
       occurrence_comment_type:
         | "comentario_interno"
@@ -4362,6 +4429,7 @@ export const Constants = {
         "NAO_RECEBIDO",
       ],
       aso_exame_status: [
+        "aguardando",
         "pendente",
         "recebido",
         "datado_soc",
@@ -4369,6 +4437,7 @@ export const Constants = {
         "concluido",
         "realizado",
         "liberado",
+        "nova_coleta",
       ],
       aso_exame_tipo: ["imediato", "complementar"],
       aso_status: [
@@ -4409,6 +4478,7 @@ export const Constants = {
         "like",
         "comment",
         "aso_retificacao",
+        "aso_alerta",
       ],
       occurrence_assignee_role: ["principal", "apoio"],
       occurrence_comment_type: [

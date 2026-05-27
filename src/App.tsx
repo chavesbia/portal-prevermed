@@ -26,6 +26,7 @@ import AdminDocuments from "./pages/admin/AdminDocuments";
 import AdminLaudosServicos from "./pages/admin/AdminLaudosServicos";
 import AdminShadowReview from "./pages/admin/AdminShadowReview";
 import AdminInertLinksReview from "./pages/admin/AdminInertLinksReview";
+import AdminSigningDoctors from "./pages/admin/AdminSigningDoctors";
 
 import Documentos from "./pages/Documentos";
 import LinksUteis from "./pages/LinksUteis";
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
               <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
               <Route path="/admin/revisao-vinculos" element={<AdminMasterRoute><AdminInertLinksReview /></AdminMasterRoute>} />
+              <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
               
               
               <Route path="/perfil" element={<Profile />} />
