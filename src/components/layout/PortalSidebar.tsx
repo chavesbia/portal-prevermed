@@ -157,6 +157,7 @@ const adminSection: MenuSection = {
     { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
     { label: 'Documentos', icon: FolderOpen, path: '/admin/documentos', adminOnly: true },
     { label: 'Laudos e Serviços', icon: NotebookPen, path: '/admin/laudos-servicos', adminOnly: true },
+    { label: 'Médicos Assinantes', icon: Stethoscope, path: '/admin/medicos-aso', adminOnly: true },
     { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Revisão de Permissões', icon: Shield, path: '/admin/revisao-permissoes', adminOnly: true },
     { label: 'Revisão de Vínculos', icon: Network, path: '/admin/revisao-vinculos', adminOnly: true },
