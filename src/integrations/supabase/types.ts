@@ -119,6 +119,7 @@ export type Database = {
           salvo_socged: boolean | null
           setor: string | null
           setor_responsavel: string | null
+          signing_doctor_id: string | null
           status: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -184,6 +185,7 @@ export type Database = {
           salvo_socged?: boolean | null
           setor?: string | null
           setor_responsavel?: string | null
+          signing_doctor_id?: string | null
           status?: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura?:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -249,6 +251,7 @@ export type Database = {
           salvo_socged?: boolean | null
           setor?: string | null
           setor_responsavel?: string | null
+          signing_doctor_id?: string | null
           status?: Database["public"]["Enums"]["aso_status"]
           tipo_assinatura?:
             | Database["public"]["Enums"]["aso_tipo_assinatura"]
@@ -271,18 +274,32 @@ export type Database = {
             referencedRelation: "aso_lotes_importacao"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "aso_atendimentos_signing_doctor_id_fkey"
+            columns: ["signing_doctor_id"]
+            isOneToOne: false
+            referencedRelation: "aso_signing_doctors"
+            referencedColumns: ["id"]
+          },
         ]
       }
       aso_exames_atendimento: {
         Row: {
           atendimento_id: string
+          colaborador_chamado: boolean
+          colaborador_chamado_em: string | null
+          colaborador_chamado_por: string | null
           created_at: string
           data_conclusao: string | null
           data_datado_soc: string | null
           data_inserido_socged: string | null
           data_recebimento: string | null
           id: string
+          motivo_nova_coleta: string | null
+          motivo_pendencia: string | null
           nome_exame: string
+          nova_coleta_data_prevista_retorno: string | null
+          nova_coleta_data_retorno_efetivo: string | null
           observacao: string | null
           status: Database["public"]["Enums"]["aso_exame_status"]
           tipo: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -290,13 +307,20 @@ export type Database = {
         }
         Insert: {
           atendimento_id: string
+          colaborador_chamado?: boolean
+          colaborador_chamado_em?: string | null
+          colaborador_chamado_por?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_datado_soc?: string | null
           data_inserido_socged?: string | null
           data_recebimento?: string | null
           id?: string
+          motivo_nova_coleta?: string | null
+          motivo_pendencia?: string | null
           nome_exame: string
+          nova_coleta_data_prevista_retorno?: string | null
+          nova_coleta_data_retorno_efetivo?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -304,13 +328,20 @@ export type Database = {
         }
         Update: {
           atendimento_id?: string
+          colaborador_chamado?: boolean
+          colaborador_chamado_em?: string | null
+          colaborador_chamado_por?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_datado_soc?: string | null
           data_inserido_socged?: string | null
           data_recebimento?: string | null
           id?: string
+          motivo_nova_coleta?: string | null
+          motivo_pendencia?: string | null
           nome_exame?: string
+          nova_coleta_data_prevista_retorno?: string | null
+          nova_coleta_data_retorno_efetivo?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -719,6 +750,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      aso_signing_doctors: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          crm: string
+          crm_uf: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          crm: string
+          crm_uf?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          crm?: string
+          crm_uf?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       audit_log: {
         Row: {
