@@ -189,7 +189,6 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
         initial: {
           motivo_pendencia: ex.motivo_pendencia,
           motivo_nova_coleta: ex.motivo_nova_coleta,
-          nova_coleta_data_prevista_retorno: ex.nova_coleta_data_prevista_retorno,
         },
       });
       return;
