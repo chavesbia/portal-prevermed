@@ -75,7 +75,10 @@ export function parseExamesTexto(examesTexto: string | null): { nome_exame: stri
     return {
       nome_exame: nomeNormalizado,
       tipo: tipo === "clinico" ? "imediato" as const : tipo, // DB stores as imediato/complementar
-      status_inicial: tipo === "clinico" ? "realizado" : "pendente",
+      // Novo padrão: Exame Clínico já entra como "realizado"; demais exames entram como
+      // "aguardando" (aguardando resultado), sem motivo obrigatório. O status "pendente"
+      // agora é uma ação manual da enfermagem e exige motivo (validado por trigger).
+      status_inicial: tipo === "clinico" ? "realizado" : "aguardando",
     };
   });
 }
