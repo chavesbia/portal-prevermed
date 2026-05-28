@@ -21,6 +21,8 @@ import { useASOEtapaPermissions, type ASOEtapa } from "@/hooks/useASOEtapaPermis
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
 import ExameStatusDialog, { type ExameStatusPayload } from "@/components/aso/ExameStatusDialog";
+import { useASOSigningDoctors } from "@/hooks/useASOSigningDoctors";
+
 import {
   CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
@@ -139,6 +141,8 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [local, setLocal] = useState<any>(null);
   const [statusDialog, setStatusDialog] = useState<{ exameId: string; mode: "pendente" | "nova_coleta"; exameNome: string; initial: any } | null>(null);
   const etapaPerms = useASOEtapaPermissions();
+  const { data: signingDoctors = [] } = useASOSigningDoctors({ onlyActive: true });
+
   const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canAdvanceAssinatura;
   const canAccessLiberacao = etapaPerms.canEditLiberacao || etapaPerms.canAdvanceEtapa("liberacao");
 
@@ -193,14 +197,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       });
       return;
     }
-    // aguardando ou liberado: limpa motivos
+    // aguardando ou liberado: limpa motivo de pendência.
+    // IMPORTANTE: NÃO limpamos motivo_nova_coleta nem dados de convocação,
+    // para preservar o histórico de solicitações de nova coleta feitas pelo laboratório
+    // (usado no relatório "Novas Coletas" para quantificar e melhorar o processo).
     (async () => {
       const { error } = await supabase
         .from("aso_exames_atendimento")
         .update({
           status: novoStatus,
           motivo_pendencia: null,
-          motivo_nova_coleta: null,
         } as any)
         .eq("id", ex.id);
       if (error) {
@@ -210,6 +216,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       qc.invalidateQueries({ queryKey: ["aso-exames", a?.id] });
     })();
   };
+
 
   const confirmStatusDialog = async (payload: ExameStatusPayload) => {
     if (!statusDialog) return;
@@ -1332,6 +1339,34 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                   />
                 </div>
               </div>
+
+              <div>
+                <Label className="text-xs">Médico assinante</Label>
+                <Select
+                  value={a.signing_doctor_id || "__none__"}
+                  disabled={!canEditAssinatura}
+                  onValueChange={(v) => updateField("signing_doctor_id", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o médico que assinou..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Não definido —</SelectItem>
+                    {signingDoctors.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.full_name} — CRM {d.crm}{d.crm_uf ? `/${d.crm_uf}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {signingDoctors.length === 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Nenhum médico ativo cadastrado. ADM Master pode cadastrar em Admin → Médicos Assinantes.
+                  </p>
+                )}
+              </div>
+
+
 
               {/* Exame Clínico - somente leitura na assinatura */}
               {examesClinicos.length > 0 && (

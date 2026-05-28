@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDateBR } from "@/lib/utils";
-import { Syringe, AlertTriangle, CheckCircle, RefreshCcw, PhoneCall } from "lucide-react";
+import { Syringe, AlertTriangle, CheckCircle, RefreshCcw } from "lucide-react";
 import ConvocacaoColetaDialog from "@/components/aso/ConvocacaoColetaDialog";
 
 interface NovaColetaRow {
@@ -51,6 +51,9 @@ function useNovasColetas() {
   return useQuery({
     queryKey: ["aso-novas-coletas"],
     queryFn: async () => {
+      // Mostra TODO exame que já foi marcado como Nova Coleta em algum momento
+      // (mesmo que tenha sido posteriormente liberado), para permitir o
+      // acompanhamento e a quantificação das solicitações do laboratório.
       const { data, error } = await supabase
         .from("aso_exames_atendimento" as any)
         .select(`
@@ -72,9 +75,10 @@ function useNovasColetas() {
             id_interno, funcionario, empresa, agenda
           )
         `)
-        .eq("status", "nova_coleta")
+        .not("motivo_nova_coleta", "is", null)
         .order("updated_at", { ascending: false });
       if (error) throw error;
+
       return (data || []).map((row: any) => ({
         exame_id: row.id,
         atendimento_id: row.atendimento_id,
@@ -102,13 +106,15 @@ function useNovasColetas() {
 export default function ASONovasColetas() {
   const { data, isLoading, refetch, isFetching } = useNovasColetas();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "nao_chamado" | "chamado">("all");
+  const [filter, setFilter] = useState<"all" | "nao_chamado" | "chamado" | "ativos" | "resolvidos">("ativos");
   const [selected, setSelected] = useState<NovaColetaRow | null>(null);
 
   const filtered = useMemo(() => {
     let rows = data || [];
-    if (filter === "nao_chamado") rows = rows.filter((r) => !r.colaborador_chamado);
-    if (filter === "chamado") rows = rows.filter((r) => r.colaborador_chamado);
+    if (filter === "nao_chamado") rows = rows.filter((r) => !r.colaborador_chamado && r.status === "nova_coleta");
+    if (filter === "chamado") rows = rows.filter((r) => r.colaborador_chamado && r.status === "nova_coleta");
+    if (filter === "ativos") rows = rows.filter((r) => r.status === "nova_coleta");
+    if (filter === "resolvidos") rows = rows.filter((r) => r.status !== "nova_coleta");
     if (search.trim()) {
       const q = search.toLowerCase();
       rows = rows.filter(
@@ -122,8 +128,11 @@ export default function ASONovasColetas() {
     return rows;
   }, [data, filter, search]);
 
-  const totalNaoChamado = (data || []).filter((r) => !r.colaborador_chamado).length;
-  const totalChamado = (data || []).filter((r) => r.colaborador_chamado).length;
+  const ativos = (data || []).filter((r) => r.status === "nova_coleta");
+  const resolvidos = (data || []).filter((r) => r.status !== "nova_coleta");
+  const totalNaoChamado = ativos.filter((r) => !r.colaborador_chamado).length;
+  const totalChamado = ativos.filter((r) => r.colaborador_chamado).length;
+
 
   return (
     <div className="space-y-4">
@@ -132,20 +141,31 @@ export default function ASONovasColetas() {
           <Syringe className="h-4 w-4 text-orange-600" /> Novas Coletas Solicitadas
         </h3>
         <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-          {data?.length ?? 0} no total
+          {data?.length ?? 0} no total (histórico)
         </Badge>
-        {totalNaoChamado > 0 && (
+        {ativos.length > 0 && (
           <Badge variant="destructive">
             <AlertTriangle className="h-3 w-3 mr-1" />
+            {ativos.length} ativo(s)
+          </Badge>
+        )}
+        {totalNaoChamado > 0 && (
+          <Badge variant="destructive">
             {totalNaoChamado} aguardando convocação
           </Badge>
         )}
         {totalChamado > 0 && (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
             {totalChamado} convocado(s)
           </Badge>
         )}
+        {resolvidos.length > 0 && (
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {resolvidos.length} resolvida(s)
+          </Badge>
+        )}
+
         <Button
           variant="outline"
           size="sm"
@@ -173,16 +193,19 @@ export default function ASONovasColetas() {
           />
         </div>
         <div>
-          <Label className="text-xs">Status convocação</Label>
+          <Label className="text-xs">Filtro</Label>
           <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
-            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="nao_chamado">Aguardando convocação</SelectItem>
-              <SelectItem value="chamado">Já convocado</SelectItem>
+              <SelectItem value="ativos">Ativos (status = Nova Coleta)</SelectItem>
+              <SelectItem value="nao_chamado">Ativos · aguardando convocação</SelectItem>
+              <SelectItem value="chamado">Ativos · já convocados</SelectItem>
+              <SelectItem value="resolvidos">Resolvidos (histórico)</SelectItem>
+              <SelectItem value="all">Todos (ativos + histórico)</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
       </div>
 
       <Card className="p-0 overflow-hidden">
@@ -193,6 +216,7 @@ export default function ASONovasColetas() {
               <TableHead>Funcionário</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Exame</TableHead>
+              <TableHead>Status atual</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead>Convocação</TableHead>
               <TableHead>Prev. retorno</TableHead>
@@ -202,10 +226,11 @@ export default function ASONovasColetas() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Carregando...</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Nenhuma nova coleta encontrada.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Nenhuma nova coleta encontrada.</TableCell></TableRow>
+
             )}
             {filtered.map((r) => (
               <TableRow
@@ -217,9 +242,21 @@ export default function ASONovasColetas() {
                 <TableCell className="text-sm">{r.funcionario || "—"}</TableCell>
                 <TableCell className="text-sm">{r.empresa || "—"}</TableCell>
                 <TableCell className="text-sm font-medium">{r.nome_exame}</TableCell>
+                <TableCell className="text-xs">
+                  {r.status === "nova_coleta" ? (
+                    <Badge variant="destructive">Nova Coleta</Badge>
+                  ) : r.status === "liberado" ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Liberado</Badge>
+                  ) : r.status === "pendente" ? (
+                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pendente</Badge>
+                  ) : (
+                    <Badge variant="outline">{r.status}</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground max-w-[240px]">
                   {r.motivo_nova_coleta || "—"}
                 </TableCell>
+
                 <TableCell className="text-xs">
                   {r.colaborador_chamado ? (
                     <div className="space-y-0.5">
@@ -251,9 +288,9 @@ export default function ASONovasColetas() {
                     variant={r.colaborador_chamado ? "outline" : "default"}
                     onClick={(e) => { e.stopPropagation(); setSelected(r); }}
                   >
-                    <PhoneCall className="h-3 w-3 mr-1" />
                     {r.colaborador_chamado ? "Atualizar" : "Convocar"}
                   </Button>
+
                 </TableCell>
               </TableRow>
             ))}
