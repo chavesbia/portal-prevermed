@@ -301,8 +301,12 @@ export type Database = {
           motivo_nova_coleta: string | null
           motivo_pendencia: string | null
           nome_exame: string
+          nova_coleta_canal_contato: string | null
+          nova_coleta_contato_rh: string | null
+          nova_coleta_data_convocacao: string | null
           nova_coleta_data_prevista_retorno: string | null
           nova_coleta_data_retorno_efetivo: string | null
+          nova_coleta_observacoes_convocacao: string | null
           observacao: string | null
           status: Database["public"]["Enums"]["aso_exame_status"]
           tipo: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -322,8 +326,12 @@ export type Database = {
           motivo_nova_coleta?: string | null
           motivo_pendencia?: string | null
           nome_exame: string
+          nova_coleta_canal_contato?: string | null
+          nova_coleta_contato_rh?: string | null
+          nova_coleta_data_convocacao?: string | null
           nova_coleta_data_prevista_retorno?: string | null
           nova_coleta_data_retorno_efetivo?: string | null
+          nova_coleta_observacoes_convocacao?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
@@ -343,8 +351,12 @@ export type Database = {
           motivo_nova_coleta?: string | null
           motivo_pendencia?: string | null
           nome_exame?: string
+          nova_coleta_canal_contato?: string | null
+          nova_coleta_contato_rh?: string | null
+          nova_coleta_data_convocacao?: string | null
           nova_coleta_data_prevista_retorno?: string | null
           nova_coleta_data_retorno_efetivo?: string | null
+          nova_coleta_observacoes_convocacao?: string | null
           observacao?: string | null
           status?: Database["public"]["Enums"]["aso_exame_status"]
           tipo?: Database["public"]["Enums"]["aso_exame_tipo"]
