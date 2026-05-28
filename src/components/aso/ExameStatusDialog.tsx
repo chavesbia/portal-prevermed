@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export interface ExameStatusPayload {
@@ -26,7 +25,6 @@ interface Props {
   initial?: {
     motivo_pendencia?: string | null;
     motivo_nova_coleta?: string | null;
-    nova_coleta_data_prevista_retorno?: string | null;
   };
   onClose: () => void;
   onConfirm: (payload: ExameStatusPayload) => void;
@@ -41,16 +39,11 @@ export default function ExameStatusDialog({
   onConfirm,
 }: Props) {
   const [motivo, setMotivo] = useState("");
-  const [dataPrevista, setDataPrevista] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    if (mode === "pendente") {
-      setMotivo(initial?.motivo_pendencia || "");
-    } else if (mode === "nova_coleta") {
-      setMotivo(initial?.motivo_nova_coleta || "");
-      setDataPrevista(initial?.nova_coleta_data_prevista_retorno || "");
-    }
+    if (mode === "pendente") setMotivo(initial?.motivo_pendencia || "");
+    else if (mode === "nova_coleta") setMotivo(initial?.motivo_nova_coleta || "");
   }, [open, mode, initial]);
 
   if (!mode) return null;
@@ -69,7 +62,6 @@ export default function ExameStatusDialog({
       onConfirm({
         status: "nova_coleta",
         motivo_nova_coleta: motivo.trim(),
-        nova_coleta_data_prevista_retorno: dataPrevista || null,
         motivo_pendencia: null,
       });
     }
@@ -86,7 +78,7 @@ export default function ExameStatusDialog({
             {exameNome && <span className="font-medium">{exameNome}</span>}
             {isPendente
               ? " — Descreva o motivo pelo qual este exame está pendente. O exame ficará bloqueado para envio à Assinatura até ser liberado."
-              : " — O laboratório solicitou uma nova coleta. Descreva o motivo e, se possível, a data prevista para o retorno do colaborador."}
+              : " — O laboratório solicitou uma nova coleta. Descreva o motivo. A convocação do colaborador (canal, contato no RH e data prevista de retorno) será registrada depois, no relatório de Novas Coletas."}
           </DialogDescription>
         </DialogHeader>
 
@@ -107,20 +99,6 @@ export default function ExameStatusDialog({
               autoFocus
             />
           </div>
-
-          {!isPendente && (
-            <div>
-              <Label className="text-xs">Data prevista de retorno</Label>
-              <Input
-                type="date"
-                value={dataPrevista}
-                onChange={(e) => setDataPrevista(e.target.value)}
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Opcional — usada no relatório de Novas Coletas para acompanhar a previsão de retorno.
-              </p>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
