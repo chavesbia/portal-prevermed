@@ -141,20 +141,31 @@ export default function ASONovasColetas() {
           <Syringe className="h-4 w-4 text-orange-600" /> Novas Coletas Solicitadas
         </h3>
         <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-          {data?.length ?? 0} no total
+          {data?.length ?? 0} no total (histórico)
         </Badge>
-        {totalNaoChamado > 0 && (
+        {ativos.length > 0 && (
           <Badge variant="destructive">
             <AlertTriangle className="h-3 w-3 mr-1" />
+            {ativos.length} ativo(s)
+          </Badge>
+        )}
+        {totalNaoChamado > 0 && (
+          <Badge variant="destructive">
             {totalNaoChamado} aguardando convocação
           </Badge>
         )}
         {totalChamado > 0 && (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            <CheckCircle className="h-3 w-3 mr-1" />
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
             {totalChamado} convocado(s)
           </Badge>
         )}
+        {resolvidos.length > 0 && (
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {resolvidos.length} resolvida(s)
+          </Badge>
+        )}
+
         <Button
           variant="outline"
           size="sm"
