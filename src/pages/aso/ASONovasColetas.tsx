@@ -216,6 +216,7 @@ export default function ASONovasColetas() {
               <TableHead>Funcionário</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Exame</TableHead>
+              <TableHead>Status atual</TableHead>
               <TableHead>Motivo</TableHead>
               <TableHead>Convocação</TableHead>
               <TableHead>Prev. retorno</TableHead>
@@ -225,10 +226,11 @@ export default function ASONovasColetas() {
           </TableHeader>
           <TableBody>
             {isLoading && (
-              <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Carregando...</TableCell></TableRow>
             )}
             {!isLoading && filtered.length === 0 && (
-              <TableRow><TableCell colSpan={9} className="text-center py-6 text-muted-foreground">Nenhuma nova coleta encontrada.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="text-center py-6 text-muted-foreground">Nenhuma nova coleta encontrada.</TableCell></TableRow>
+
             )}
             {filtered.map((r) => (
               <TableRow
