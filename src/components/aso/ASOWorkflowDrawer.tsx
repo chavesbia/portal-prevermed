@@ -20,6 +20,7 @@ import { useASOExames, useASOExameMutations, useASOHistorico } from "@/hooks/use
 import { useASOEtapaPermissions, type ASOEtapa } from "@/hooks/useASOEtapaPermissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseExamesTexto, classifyExame, podeRecepcaoLiberar } from "@/lib/aso/examClassifier";
+import ExameStatusDialog, { type ExameStatusPayload } from "@/components/aso/ExameStatusDialog";
 import {
   CheckCircle, Clock, Plus, Trash2, FileText, AlertTriangle,
   ClipboardCheck, Stethoscope, ScanLine, Receipt, History,
