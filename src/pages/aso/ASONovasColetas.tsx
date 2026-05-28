@@ -111,8 +111,10 @@ export default function ASONovasColetas() {
 
   const filtered = useMemo(() => {
     let rows = data || [];
-    if (filter === "nao_chamado") rows = rows.filter((r) => !r.colaborador_chamado);
-    if (filter === "chamado") rows = rows.filter((r) => r.colaborador_chamado);
+    if (filter === "nao_chamado") rows = rows.filter((r) => !r.colaborador_chamado && r.status === "nova_coleta");
+    if (filter === "chamado") rows = rows.filter((r) => r.colaborador_chamado && r.status === "nova_coleta");
+    if (filter === "ativos") rows = rows.filter((r) => r.status === "nova_coleta");
+    if (filter === "resolvidos") rows = rows.filter((r) => r.status !== "nova_coleta");
     if (search.trim()) {
       const q = search.toLowerCase();
       rows = rows.filter(
@@ -126,8 +128,11 @@ export default function ASONovasColetas() {
     return rows;
   }, [data, filter, search]);
 
-  const totalNaoChamado = (data || []).filter((r) => !r.colaborador_chamado).length;
-  const totalChamado = (data || []).filter((r) => r.colaborador_chamado).length;
+  const ativos = (data || []).filter((r) => r.status === "nova_coleta");
+  const resolvidos = (data || []).filter((r) => r.status !== "nova_coleta");
+  const totalNaoChamado = ativos.filter((r) => !r.colaborador_chamado).length;
+  const totalChamado = ativos.filter((r) => r.colaborador_chamado).length;
+
 
   return (
     <div className="space-y-4">
