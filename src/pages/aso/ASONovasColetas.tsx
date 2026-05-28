@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDateBR } from "@/lib/utils";
-import { Syringe, AlertTriangle, CheckCircle, RefreshCcw, PhoneCall } from "lucide-react";
+import { Syringe, AlertTriangle, CheckCircle, RefreshCcw } from "lucide-react";
 import ConvocacaoColetaDialog from "@/components/aso/ConvocacaoColetaDialog";
 
 interface NovaColetaRow {
