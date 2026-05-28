@@ -1092,6 +1092,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
+                    {ex.status === "pendente" && ex.motivo_pendencia && (
+                      <div className="mt-2 rounded-md bg-orange-50 border border-orange-200 px-2 py-1 text-[11px] text-orange-800">
+                        <span className="font-semibold">Motivo (Pendente):</span> {ex.motivo_pendencia}
+                      </div>
+                    )}
+                    {ex.status === "nova_coleta" && (ex.motivo_nova_coleta || ex.nova_coleta_data_prevista_retorno) && (
+                      <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[11px] text-amber-800">
+                        {ex.motivo_nova_coleta && (<div><span className="font-semibold">Nova Coleta:</span> {ex.motivo_nova_coleta}</div>)}
+                        {ex.nova_coleta_data_prevista_retorno && (<div><span className="font-semibold">Prev. retorno:</span> {formatDateBR(ex.nova_coleta_data_prevista_retorno)}</div>)}
+                      </div>
+                    )}
+
                     {/* Digital → SOCGED | Físico → Impresso */}
                     {isFisico ? (
                       <div className="flex items-center gap-2 mt-2">
@@ -1166,6 +1178,18 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                         </Button>
                       </div>
                     </div>
+                    {ex.status === "pendente" && ex.motivo_pendencia && (
+                      <div className="mt-2 rounded-md bg-orange-50 border border-orange-200 px-2 py-1 text-[11px] text-orange-800">
+                        <span className="font-semibold">Motivo (Pendente):</span> {ex.motivo_pendencia}
+                      </div>
+                    )}
+                    {ex.status === "nova_coleta" && (ex.motivo_nova_coleta || ex.nova_coleta_data_prevista_retorno) && (
+                      <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 px-2 py-1 text-[11px] text-amber-800">
+                        {ex.motivo_nova_coleta && (<div><span className="font-semibold">Nova Coleta:</span> {ex.motivo_nova_coleta}</div>)}
+                        {ex.nova_coleta_data_prevista_retorno && (<div><span className="font-semibold">Prev. retorno:</span> {formatDateBR(ex.nova_coleta_data_prevista_retorno)}</div>)}
+                      </div>
+                    )}
+
                     {/* Digital → SOCGED | Físico → Impresso */}
                     {isFisico ? (
                       <div className="flex items-center gap-2 mt-2">
@@ -1217,10 +1241,27 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
               <div className={`p-3 rounded-lg text-sm ${allExamesLiberados ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"}`}>
                 {allExamesLiberados
                   ? "✅ Todos os exames liberados"
-                  : `⏳ ${examesPendentes.length} exame(s) pendente(s)`}
+                  : `⏳ ${examesPendentes.length} exame(s) não liberado(s)`}
               </div>
             )}
+
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1 block">Observação geral dos exames</Label>
+              <Textarea
+                rows={3}
+                value={a.observacoes_exames ?? ""}
+                disabled={!canManageExames}
+                placeholder="Anotações da enfermagem sobre o conjunto de exames deste atendimento..."
+                onChange={(e) => setLocal((prev: any) => prev ? { ...prev, observacoes_exames: e.target.value } : prev)}
+                onBlur={(e) => {
+                  if ((atendimento?.observacoes_exames ?? "") !== e.target.value) {
+                    updateField("observacoes_exames", e.target.value || null);
+                  }
+                }}
+              />
+            </div>
           </TabsContent>
+
 
           {/* ── TAB: Assinatura ── */}
           <TabsContent value="assinatura" className="space-y-4 pb-6">

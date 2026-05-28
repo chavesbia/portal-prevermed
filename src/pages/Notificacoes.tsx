@@ -30,7 +30,9 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string; label
   like: { icon: Heart, color: 'text-red-500', label: 'Curtida' },
   comment: { icon: MessageSquare, color: 'text-teal-500', label: 'Comentário' },
   aso_retificacao: { icon: FileEdit, color: 'text-amber-500', label: 'Retificação ASO' },
+  aso_alerta: { icon: FileEdit, color: 'text-orange-500', label: 'Alerta ASO' },
 };
+
 
 export default function Notificacoes() {
   const { user } = useAuth();
@@ -101,7 +103,10 @@ export default function Notificacoes() {
       navigate('/social');
     } else if (n.notification_type === 'aso_retificacao') {
       navigate('/retificacao-asos');
+    } else if (n.notification_type === 'aso_alerta' || n.related_type === 'aso_atendimento') {
+      navigate('/liberacao-asos?tab=novas-coletas');
     }
+
   };
 
   const filtered = activeTab === 'all' ? notifications

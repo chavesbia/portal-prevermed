@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useModulePermissions } from "@/hooks/useModulePermissions";
 import { useASOStats } from "@/hooks/useASOData";
+
+import { useASORealtimeSync } from "@/hooks/useASORealtimeSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown, Columns3, AlertTriangle, PackageCheck } from "lucide-react";
+import { FileText, Upload, List, BarChart3, ClipboardCheck, Clock, CheckCircle, FileDown, Columns3, AlertTriangle, PackageCheck, Syringe } from "lucide-react";
 import ASOImportacao from "./aso/ASOImportacao";
 import ASOListagem from "./aso/ASOListagem";
 import ASODashboard from "./aso/ASODashboard";
@@ -12,6 +15,8 @@ import ASORelatorio from "./aso/ASORelatorio";
 import ASOKanban from "./aso/ASOKanban";
 import ASOAlertas from "./aso/ASOAlertas";
 import ASOFechamento from "./aso/ASOFechamento";
+import ASONovasColetas from "./aso/ASONovasColetas";
+
 
 const STAT_CARDS = [
   { key: "total", label: "Total", icon: FileText, color: "text-foreground" },
@@ -24,9 +29,26 @@ const STAT_CARDS = [
 ] as const;
 
 export default function LiberacaoASOs() {
-  const [tab, setTab] = useState("listagem");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") || "listagem");
   const { hasPermission } = useModulePermissions();
   const { data: stats } = useASOStats();
+  useASORealtimeSync();
+
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && urlTab !== tab) setTab(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    setTab(v);
+    const next = new URLSearchParams(searchParams);
+    if (v === "listagem") next.delete("tab"); else next.set("tab", v);
+    setSearchParams(next, { replace: true });
+  };
+
+
 
   const canCreate = hasPermission("/liberacao-asos", "create");
 
@@ -64,7 +86,7 @@ export default function LiberacaoASOs() {
         </div>
       )}
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="listagem" className="gap-1">
             <List className="h-4 w-4" /> Listagem
@@ -80,9 +102,13 @@ export default function LiberacaoASOs() {
           <TabsTrigger value="alertas" className="gap-1">
             <AlertTriangle className="h-4 w-4" /> Alertas
           </TabsTrigger>
+          <TabsTrigger value="novas-coletas" className="gap-1">
+            <Syringe className="h-4 w-4" /> Novas Coletas
+          </TabsTrigger>
           <TabsTrigger value="fechamento" className="gap-1">
             <PackageCheck className="h-4 w-4" /> Fechamento
           </TabsTrigger>
+
           <TabsTrigger value="dashboard" className="gap-1">
             <BarChart3 className="h-4 w-4" /> Dashboard
           </TabsTrigger>
@@ -105,6 +131,10 @@ export default function LiberacaoASOs() {
         <TabsContent value="alertas">
           <ASOAlertas />
         </TabsContent>
+        <TabsContent value="novas-coletas">
+          <ASONovasColetas />
+        </TabsContent>
+
         <TabsContent value="fechamento">
           <ASOFechamento />
         </TabsContent>
