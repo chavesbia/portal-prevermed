@@ -553,6 +553,9 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           validate: () => {
             if (examesPendentes.length > 0)
               return { ok: false, msg: `${examesPendentes.length} exame(s) pendente(s)` };
+            const semSocged = todosExamesNaoClinicos.filter(e => !e.data_inserido_socged);
+            if (semSocged.length > 0)
+              return { ok: false, msg: `${semSocged.length} exame(s) sem marcação "Inserido no SOCGED"` };
             return { ok: true };
           },
         };
