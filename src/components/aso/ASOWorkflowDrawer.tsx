@@ -1340,6 +1340,34 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                 </div>
               </div>
 
+              <div>
+                <Label className="text-xs">Médico assinante</Label>
+                <Select
+                  value={a.signing_doctor_id || "__none__"}
+                  disabled={!canEditAssinatura}
+                  onValueChange={(v) => updateField("signing_doctor_id", v === "__none__" ? null : v)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o médico que assinou..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Não definido —</SelectItem>
+                    {signingDoctors.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.full_name} — CRM {d.crm}{d.crm_uf ? `/${d.crm_uf}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {signingDoctors.length === 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Nenhum médico ativo cadastrado. ADM Master pode cadastrar em Admin → Médicos Assinantes.
+                  </p>
+                )}
+              </div>
+
+
+
               {/* Exame Clínico - somente leitura na assinatura */}
               {examesClinicos.length > 0 && (
                 <>
