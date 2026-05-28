@@ -86,7 +86,7 @@ export default function LiberacaoASOs() {
         </div>
       )}
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="listagem" className="gap-1">
             <List className="h-4 w-4" /> Listagem
