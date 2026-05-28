@@ -242,9 +242,21 @@ export default function ASONovasColetas() {
                 <TableCell className="text-sm">{r.funcionario || "—"}</TableCell>
                 <TableCell className="text-sm">{r.empresa || "—"}</TableCell>
                 <TableCell className="text-sm font-medium">{r.nome_exame}</TableCell>
+                <TableCell className="text-xs">
+                  {r.status === "nova_coleta" ? (
+                    <Badge variant="destructive">Nova Coleta</Badge>
+                  ) : r.status === "liberado" ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Liberado</Badge>
+                  ) : r.status === "pendente" ? (
+                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pendente</Badge>
+                  ) : (
+                    <Badge variant="outline">{r.status}</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground max-w-[240px]">
                   {r.motivo_nova_coleta || "—"}
                 </TableCell>
+
                 <TableCell className="text-xs">
                   {r.colaborador_chamado ? (
                     <div className="space-y-0.5">
