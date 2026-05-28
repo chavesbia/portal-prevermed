@@ -193,14 +193,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       });
       return;
     }
-    // aguardando ou liberado: limpa motivos
+    // aguardando ou liberado: limpa motivo de pendência.
+    // IMPORTANTE: NÃO limpamos motivo_nova_coleta nem dados de convocação,
+    // para preservar o histórico de solicitações de nova coleta feitas pelo laboratório
+    // (usado no relatório "Novas Coletas" para quantificar e melhorar o processo).
     (async () => {
       const { error } = await supabase
         .from("aso_exames_atendimento")
         .update({
           status: novoStatus,
           motivo_pendencia: null,
-          motivo_nova_coleta: null,
         } as any)
         .eq("id", ex.id);
       if (error) {
@@ -210,6 +212,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
       qc.invalidateQueries({ queryKey: ["aso-exames", a?.id] });
     })();
   };
+
 
   const confirmStatusDialog = async (payload: ExameStatusPayload) => {
     if (!statusDialog) return;
