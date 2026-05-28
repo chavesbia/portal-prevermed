@@ -51,6 +51,9 @@ function useNovasColetas() {
   return useQuery({
     queryKey: ["aso-novas-coletas"],
     queryFn: async () => {
+      // Mostra TODO exame que já foi marcado como Nova Coleta em algum momento
+      // (mesmo que tenha sido posteriormente liberado), para permitir o
+      // acompanhamento e a quantificação das solicitações do laboratório.
       const { data, error } = await supabase
         .from("aso_exames_atendimento" as any)
         .select(`
@@ -72,9 +75,10 @@ function useNovasColetas() {
             id_interno, funcionario, empresa, agenda
           )
         `)
-        .eq("status", "nova_coleta")
+        .not("motivo_nova_coleta", "is", null)
         .order("updated_at", { ascending: false });
       if (error) throw error;
+
       return (data || []).map((row: any) => ({
         exame_id: row.id,
         atendimento_id: row.atendimento_id,
