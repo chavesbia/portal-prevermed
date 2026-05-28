@@ -137,6 +137,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const [novoExame, setNovoExame] = useState("");
   const [novoExameTipo, setNovoExameTipo] = useState<"imediato" | "complementar">("complementar");
   const [local, setLocal] = useState<any>(null);
+  const [statusDialog, setStatusDialog] = useState<{ exameId: string; mode: "pendente" | "nova_coleta"; exameNome: string; initial: any } | null>(null);
   const etapaPerms = useASOEtapaPermissions();
   const canAccessAssinatura = etapaPerms.canEditAssinatura || etapaPerms.canAdvanceAssinatura;
   const canAccessLiberacao = etapaPerms.canEditLiberacao || etapaPerms.canAdvanceEtapa("liberacao");
