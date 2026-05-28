@@ -106,7 +106,7 @@ function useNovasColetas() {
 export default function ASONovasColetas() {
   const { data, isLoading, refetch, isFetching } = useNovasColetas();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "nao_chamado" | "chamado">("all");
+  const [filter, setFilter] = useState<"all" | "nao_chamado" | "chamado" | "ativos" | "resolvidos">("ativos");
   const [selected, setSelected] = useState<NovaColetaRow | null>(null);
 
   const filtered = useMemo(() => {
