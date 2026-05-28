@@ -1410,6 +1410,14 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           </TabsContent>
         </Tabs>
       </SheetContent>
+      <ExameStatusDialog
+        open={!!statusDialog}
+        mode={statusDialog?.mode ?? null}
+        exameNome={statusDialog?.exameNome}
+        initial={statusDialog?.initial}
+        onClose={() => setStatusDialog(null)}
+        onConfirm={confirmStatusDialog}
+      />
     </Sheet>
   );
 }
