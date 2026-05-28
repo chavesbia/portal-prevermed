@@ -193,16 +193,19 @@ export default function ASONovasColetas() {
           />
         </div>
         <div>
-          <Label className="text-xs">Status convocação</Label>
+          <Label className="text-xs">Filtro</Label>
           <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
-            <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[260px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="nao_chamado">Aguardando convocação</SelectItem>
-              <SelectItem value="chamado">Já convocado</SelectItem>
+              <SelectItem value="ativos">Ativos (status = Nova Coleta)</SelectItem>
+              <SelectItem value="nao_chamado">Ativos · aguardando convocação</SelectItem>
+              <SelectItem value="chamado">Ativos · já convocados</SelectItem>
+              <SelectItem value="resolvidos">Resolvidos (histórico)</SelectItem>
+              <SelectItem value="all">Todos (ativos + histórico)</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
       </div>
 
       <Card className="p-0 overflow-hidden">
