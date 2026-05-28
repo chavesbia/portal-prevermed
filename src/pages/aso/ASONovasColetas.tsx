@@ -288,9 +288,9 @@ export default function ASONovasColetas() {
                     variant={r.colaborador_chamado ? "outline" : "default"}
                     onClick={(e) => { e.stopPropagation(); setSelected(r); }}
                   >
-                    <PhoneCall className="h-3 w-3 mr-1" />
                     {r.colaborador_chamado ? "Atualizar" : "Convocar"}
                   </Button>
+
                 </TableCell>
               </TableRow>
             ))}
