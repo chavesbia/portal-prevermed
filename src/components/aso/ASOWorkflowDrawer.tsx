@@ -1145,14 +1145,20 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
                       <p className="text-sm font-medium">{ex.nome_exame}</p>
                       <div className="flex items-center gap-2">
                         <Select
-                          value={ex.status === "concluido" ? "liberado" : (ex.status === "pendente" || ex.status === "liberado" ? ex.status : "pendente")}
+                          value={
+                            ex.status === "concluido" ? "liberado" :
+                            ex.status === "realizado" ? "liberado" :
+                            ["aguardando","pendente","liberado","nova_coleta"].includes(ex.status) ? ex.status : "aguardando"
+                          }
                           disabled={!canManageExames}
-                          onValueChange={(v) => exameMutations?.updateExame.mutate({ id: ex.id, field: "status", value: v })}
+                          onValueChange={(v) => handleExameStatusChange(ex, v)}
                         >
-                          <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-7 text-xs w-[130px]"><SelectValue /></SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="aguardando">Aguardando</SelectItem>
                             <SelectItem value="pendente">Pendente</SelectItem>
                             <SelectItem value="liberado">Liberado</SelectItem>
+                            <SelectItem value="nova_coleta">Nova Coleta</SelectItem>
                           </SelectContent>
                         </Select>
                         <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canManageExames} onClick={() => exameMutations?.deleteExame.mutate(ex.id)}>
