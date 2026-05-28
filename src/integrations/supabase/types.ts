@@ -106,6 +106,7 @@ export type Database = {
           medico: string | null
           observacoes_assinatura: string | null
           observacoes_escaneamento: string | null
+          observacoes_exames: string | null
           observacoes_faturamento: string | null
           observacoes_recepcao: string | null
           possui_exame_complementar: boolean | null
@@ -172,6 +173,7 @@ export type Database = {
           medico?: string | null
           observacoes_assinatura?: string | null
           observacoes_escaneamento?: string | null
+          observacoes_exames?: string | null
           observacoes_faturamento?: string | null
           observacoes_recepcao?: string | null
           possui_exame_complementar?: boolean | null
@@ -238,6 +240,7 @@ export type Database = {
           medico?: string | null
           observacoes_assinatura?: string | null
           observacoes_escaneamento?: string | null
+          observacoes_exames?: string | null
           observacoes_faturamento?: string | null
           observacoes_recepcao?: string | null
           possui_exame_complementar?: boolean | null

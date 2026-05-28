@@ -1,0 +1,1 @@
+ALTER TABLE public.aso_atendimentos ADD COLUMN IF NOT EXISTS observacoes_exames text;
