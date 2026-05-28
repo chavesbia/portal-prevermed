@@ -179,6 +179,58 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const { data: feriados } = useFeriados();
   const exameMutations = useASOExameMutations(a?.id ?? "");
 
+  // Handler para mudança de status de exame com novos status (aguardando/pendente/liberado/nova_coleta)
+  const handleExameStatusChange = (ex: any, novoStatus: string) => {
+    if (novoStatus === "pendente" || novoStatus === "nova_coleta") {
+      setStatusDialog({
+        exameId: ex.id,
+        mode: novoStatus,
+        exameNome: ex.nome_exame,
+        initial: {
+          motivo_pendencia: ex.motivo_pendencia,
+          motivo_nova_coleta: ex.motivo_nova_coleta,
+          nova_coleta_data_prevista_retorno: ex.nova_coleta_data_prevista_retorno,
+        },
+      });
+      return;
+    }
+    // aguardando ou liberado: limpa motivos
+    (async () => {
+      const { error } = await supabase
+        .from("aso_exames_atendimento")
+        .update({
+          status: novoStatus,
+          motivo_pendencia: null,
+          motivo_nova_coleta: null,
+        } as any)
+        .eq("id", ex.id);
+      if (error) {
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["aso-exames", a?.id] });
+    })();
+  };
+
+  const confirmStatusDialog = async (payload: ExameStatusPayload) => {
+    if (!statusDialog) return;
+    const { error } = await supabase
+      .from("aso_exames_atendimento")
+      .update({
+        status: payload.status,
+        motivo_pendencia: payload.motivo_pendencia ?? null,
+        motivo_nova_coleta: payload.motivo_nova_coleta ?? null,
+        nova_coleta_data_prevista_retorno: payload.nova_coleta_data_prevista_retorno ?? null,
+      } as any)
+      .eq("id", statusDialog.exameId);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    qc.invalidateQueries({ queryKey: ["aso-exames", a?.id] });
+    setStatusDialog(null);
+  };
+
   if (!a) return null;
 
   const ACTIVE_STATUSES = ["importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica", "em_escaneamento"];
