@@ -29,10 +29,25 @@ const STAT_CARDS = [
 ] as const;
 
 export default function LiberacaoASOs() {
-  const [tab, setTab] = useState("listagem");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [tab, setTab] = useState(searchParams.get("tab") || "listagem");
   const { hasPermission } = useModulePermissions();
   const { data: stats } = useASOStats();
   useASORealtimeSync();
+
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab && urlTab !== tab) setTab(urlTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (v: string) => {
+    setTab(v);
+    const next = new URLSearchParams(searchParams);
+    if (v === "listagem") next.delete("tab"); else next.set("tab", v);
+    setSearchParams(next, { replace: true });
+  };
+
 
 
   const canCreate = hasPermission("/liberacao-asos", "create");
