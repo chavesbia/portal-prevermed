@@ -213,14 +213,17 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
 
   const confirmStatusDialog = async (payload: ExameStatusPayload) => {
     if (!statusDialog) return;
+    const update: any = {
+      status: payload.status,
+      motivo_pendencia: payload.motivo_pendencia ?? null,
+      motivo_nova_coleta: payload.motivo_nova_coleta ?? null,
+    };
+    if (payload.nova_coleta_data_prevista_retorno !== undefined) {
+      update.nova_coleta_data_prevista_retorno = payload.nova_coleta_data_prevista_retorno;
+    }
     const { error } = await supabase
       .from("aso_exames_atendimento")
-      .update({
-        status: payload.status,
-        motivo_pendencia: payload.motivo_pendencia ?? null,
-        motivo_nova_coleta: payload.motivo_nova_coleta ?? null,
-        nova_coleta_data_prevista_retorno: payload.nova_coleta_data_prevista_retorno ?? null,
-      } as any)
+      .update(update)
       .eq("id", statusDialog.exameId);
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
