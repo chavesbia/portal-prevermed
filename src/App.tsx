@@ -1,48 +1,61 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
 import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import { AdminMasterRoute } from "@/components/layout/AdminMasterRoute";
 import { RequireAuth } from "@/components/layout/RequireAuth";
-import Index from "./pages/Index";
-import Organograma from "./pages/Organograma";
+
+// Auth (eager - small e necessário pra redirect)
 import Auth from "./pages/Auth";
 import ChangePassword from "./pages/ChangePassword";
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Profile from "./pages/Profile";
-import Social from "./pages/Social";
-import Comunicados from "./pages/Comunicados";
-import Calendario from "./pages/Calendario";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminDepartments from "./pages/admin/AdminDepartments";
-import AdminPermissions from "./pages/admin/AdminPermissions";
-import AdminAudit from "./pages/admin/AdminAudit";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminDocuments from "./pages/admin/AdminDocuments";
-import AdminLaudosServicos from "./pages/admin/AdminLaudosServicos";
-import AdminShadowReview from "./pages/admin/AdminShadowReview";
-import AdminInertLinksReview from "./pages/admin/AdminInertLinksReview";
-import AdminSigningDoctors from "./pages/admin/AdminSigningDoctors";
 
-import Documentos from "./pages/Documentos";
-import LinksUteis from "./pages/LinksUteis";
-import Diretorio from "./pages/Diretorio";
-import Notificacoes from "./pages/Notificacoes";
-import Precificacao from "./pages/Precificacao";
-import GestaoGuias from "./pages/GestaoGuias";
-import GuiaDetalhe from "./pages/guias/GuiaDetalhe";
-import CarteiraComercial from "./pages/CarteiraComercial";
-import GestaoOS from "./pages/GestaoOS";
-import LiberacaoASOs from "./pages/LiberacaoASOs";
-import GestaoOcorrencias from "./pages/GestaoOcorrencias";
-import RetificacaoASOs from "./pages/RetificacaoASOs";
-import GestaoPassivos from "./pages/GestaoPassivos";
+// Lazy-loaded pages (code-splitting por rota)
+const Organograma = lazy(() => import("./pages/Organograma"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Social = lazy(() => import("./pages/Social"));
+const Comunicados = lazy(() => import("./pages/Comunicados"));
+const Calendario = lazy(() => import("./pages/Calendario"));
+const Documentos = lazy(() => import("./pages/Documentos"));
+const LinksUteis = lazy(() => import("./pages/LinksUteis"));
+const Diretorio = lazy(() => import("./pages/Diretorio"));
+const Notificacoes = lazy(() => import("./pages/Notificacoes"));
+const Precificacao = lazy(() => import("./pages/Precificacao"));
+const GestaoGuias = lazy(() => import("./pages/GestaoGuias"));
+const GuiaDetalhe = lazy(() => import("./pages/guias/GuiaDetalhe"));
+const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial"));
+const GestaoOS = lazy(() => import("./pages/GestaoOS"));
+const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
+const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
+const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
+const GestaoPassivos = lazy(() => import("./pages/GestaoPassivos"));
+
+// Admin (lazy - só carregados pelo ADM Master)
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminDepartments = lazy(() => import("./pages/admin/AdminDepartments"));
+const AdminPermissions = lazy(() => import("./pages/admin/AdminPermissions"));
+const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminDocuments = lazy(() => import("./pages/admin/AdminDocuments"));
+const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos"));
+const AdminShadowReview = lazy(() => import("./pages/admin/AdminShadowReview"));
+const AdminInertLinksReview = lazy(() => import("./pages/admin/AdminInertLinksReview"));
+const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 
 const queryClient = new QueryClient();
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -51,53 +64,55 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Auth routes - no layout */}
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/alterar-senha" element={<ChangePassword />} />
-            
-            {/* Portal routes with layout - all require authentication */}
-            <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              {/* Auth routes - no layout */}
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/alterar-senha" element={<ChangePassword />} />
 
-              <Route path="/" element={<Index />} />
-              <Route path="/comunicados" element={<Comunicados />} />
-              <Route path="/calendario" element={<Calendario />} />
-              <Route path="/documentos" element={<Documentos />} />
-              
-              <Route path="/links" element={<LinksUteis />} />
-              <Route path="/diretorio" element={<Diretorio />} />
-              <Route path="/organograma" element={<Organograma />} />
-              <Route path="/precificacao" element={<Precificacao />} />
-              <Route path="/gestao-guias" element={<GestaoGuias />} />
-              <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
-              <Route path="/carteira-comercial" element={<CarteiraComercial />} />
-              <Route path="/gestao-os" element={<GestaoOS />} />
-              <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
-              <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
-              <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
-              <Route path="/gestao-passivos" element={<GestaoPassivos />} />
-              <Route path="/social" element={<Social />} />
-              
-              <Route path="/notificacoes" element={<Notificacoes />} />
-              <Route path="/departamentos/*" element={<Index />} />
-              
-              {/* Admin routes - exclusivo ADM Master */}
-              <Route path="/admin/usuarios" element={<AdminMasterRoute><AdminUsers /></AdminMasterRoute>} />
-              <Route path="/admin/departamentos" element={<AdminMasterRoute><AdminDepartments /></AdminMasterRoute>} />
-              <Route path="/admin/permissoes" element={<AdminMasterRoute><AdminPermissions /></AdminMasterRoute>} />
-              <Route path="/admin/auditoria" element={<AdminMasterRoute><AdminAudit /></AdminMasterRoute>} />
-              <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
-              <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
-              <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
-              <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
-              <Route path="/admin/revisao-vinculos" element={<AdminMasterRoute><AdminInertLinksReview /></AdminMasterRoute>} />
-              <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
-              
-              
-              <Route path="/perfil" element={<Profile />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Portal routes with layout - all require authentication */}
+              <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
+
+                <Route path="/" element={<Index />} />
+                <Route path="/comunicados" element={<Comunicados />} />
+                <Route path="/calendario" element={<Calendario />} />
+                <Route path="/documentos" element={<Documentos />} />
+
+                <Route path="/links" element={<LinksUteis />} />
+                <Route path="/diretorio" element={<Diretorio />} />
+                <Route path="/organograma" element={<Organograma />} />
+                <Route path="/precificacao" element={<Precificacao />} />
+                <Route path="/gestao-guias" element={<GestaoGuias />} />
+                <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
+                <Route path="/carteira-comercial" element={<CarteiraComercial />} />
+                <Route path="/gestao-os" element={<GestaoOS />} />
+                <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
+                <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
+                <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
+                <Route path="/gestao-passivos" element={<GestaoPassivos />} />
+                <Route path="/social" element={<Social />} />
+
+                <Route path="/notificacoes" element={<Notificacoes />} />
+                <Route path="/departamentos/*" element={<Index />} />
+
+                {/* Admin routes - exclusivo ADM Master */}
+                <Route path="/admin/usuarios" element={<AdminMasterRoute><AdminUsers /></AdminMasterRoute>} />
+                <Route path="/admin/departamentos" element={<AdminMasterRoute><AdminDepartments /></AdminMasterRoute>} />
+                <Route path="/admin/permissoes" element={<AdminMasterRoute><AdminPermissions /></AdminMasterRoute>} />
+                <Route path="/admin/auditoria" element={<AdminMasterRoute><AdminAudit /></AdminMasterRoute>} />
+                <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
+                <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
+                <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
+                <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
+                <Route path="/admin/revisao-vinculos" element={<AdminMasterRoute><AdminInertLinksReview /></AdminMasterRoute>} />
+                <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
+
+
+                <Route path="/perfil" element={<Profile />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
