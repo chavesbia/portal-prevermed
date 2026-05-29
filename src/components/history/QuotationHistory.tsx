@@ -956,6 +956,17 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
                               </Button>
                             </>
                           )}
+                          {q.status === "rejeitado" && isApprover && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-warning hover:text-warning"
+                              onClick={() => handleRevertRejection(q)}
+                              title="Reverter rejeição (devolver ao vendedor para ajustes)"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          )}
                           {q.status === "aguardando_aprovacao" && isApprover && (
                             <>
                               <Button
