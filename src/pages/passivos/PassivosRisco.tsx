@@ -407,3 +407,12 @@ function RiskKpi({ label, value, tone }: { label: string; value: number; tone: '
     </Card>
   );
 }
+
+function SimStat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-md border p-3 ${highlight ? 'border-primary/40 bg-primary/5' : 'bg-muted/30'}`}>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-xl font-bold tabular-nums ${highlight ? 'text-primary' : ''}`}>{value}</div>
+    </div>
+  );
+}
