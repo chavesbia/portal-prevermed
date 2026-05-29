@@ -231,7 +231,15 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                     </span>
                   </TableCell>
                   <TableCell className={`text-right ${r.parcelas_em_atraso > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
-                    {r.parcelas_em_atraso}
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span>{r.parcelas_em_atraso}</span>
+                      {r.status !== 'encerrado' && risk !== 'ok' && (
+                        <span className={`inline-flex items-center px-1.5 py-0 rounded border text-[10px] font-medium ${RISK_BADGE[risk]}`}>
+                          {RISK_LABEL[risk]}
+                          {risk === 'critico' && ' · risco cancel.'}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {fmtDateTime(r.last_updated_at)}
@@ -249,7 +257,8 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
