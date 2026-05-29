@@ -170,6 +170,10 @@ export default function PassivosRisco() {
           <CardTitle className="text-base flex items-center gap-2">
             <Calculator className="h-4 w-4 text-primary" /> Simulador de regularização
           </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Compara o que a empresa <strong>pagará todo mês</strong> mantendo o ritmo atual (apenas a parcela do mês,
+            sem reduzir o atraso) versus <strong>antecipar parcelas atrasadas</strong> para sair da zona de risco.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {sim.totalAtrasados === 0 ? (
@@ -181,15 +185,15 @@ export default function PassivosRisco() {
               <div className="grid gap-3 md:grid-cols-4">
                 <SimStat label="Parcelamentos em atraso" value={String(sim.totalAtrasados)} />
                 <SimStat label="Parcelas atrasadas (soma)" value={String(sim.totalParcelasAtraso)} />
-                <SimStat label="Meses até regularizar" value={`${sim.mesesParaRegularizar}`} highlight />
-                <SimStat label="Custo extra total" value={brl(sim.totalExtra)} />
+                <SimStat label="Meses até regularizar tudo" value={`${sim.mesesParaRegularizar}`} highlight />
+                <SimStat label="Desembolso extra total" value={brl(sim.totalExtra)} />
               </div>
 
               <div className="rounded-md border p-4 bg-muted/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-amber-500" />
-                    Parcelas extras por mês (em cada parcelamento atrasado)
+                    Parcelas extras pagas por mês em cada acordo atrasado
                   </Label>
                   <span className="text-lg font-bold tabular-nums">+{extrasPerMonth}</span>
                 </div>
@@ -201,10 +205,20 @@ export default function PassivosRisco() {
                   onValueChange={(v) => setExtrasPerMonth(v[0])}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Cenário: pagar a parcela do mês <strong>+ {extrasPerMonth}</strong> parcela(s) atrasada(s) em cada acordo
-                  com pendência, até zerar o atraso. Pior caso ({sim.maxAtraso} parcelas atrasadas) regulariza
-                  em <strong>{sim.mesesParaRegularizar} mês(es)</strong>.
+                  Cenário: em cada acordo em atraso, pagar a parcela do mês <strong>+ {extrasPerMonth}</strong> parcela(s)
+                  atrasada(s), até zerar o atraso. Pior caso atual ({sim.maxAtraso} parcelas atrasadas)
+                  ficará em dia em <strong>{sim.mesesParaRegularizar} mês(es)</strong>.
                 </p>
+              </div>
+
+              {/* Legenda explicativa */}
+              <div className="rounded-md border bg-blue-50/50 border-blue-200 p-3 text-xs space-y-1.5">
+                <div className="font-semibold text-blue-900 mb-1">Como ler os números abaixo</div>
+                <div><span className="inline-block w-3 h-3 rounded-sm bg-muted-foreground/40 mr-2 align-middle" /><strong>Saída sem ação:</strong> valor que sairá do caixa mantendo o pagamento atual (1 parcela/mês por acordo). O atraso <em>não diminui</em>.</div>
+                <div><span className="inline-block w-3 h-3 rounded-sm bg-primary mr-2 align-middle" /><strong>Saída com regularização:</strong> valor que sairá do caixa pagando a parcela do mês <em>+ as extras</em> de cada acordo atrasado.</div>
+                <div><span className="text-amber-700 font-semibold">Extra no mês:</span> diferença entre os dois cenários — quanto a empresa precisa desembolsar a mais naquele mês para colocar os acordos em dia.</div>
+                <div><span className="text-emerald-700 font-semibold">Regularizados acum.:</span> quantos acordos já saíram do atraso até aquele mês. Quando atinge {sim.totalAtrasados}, todos os parcelamentos estão em dia.</div>
+                <div className="pt-1 text-blue-900">Quando o esforço termina, a saída mensal volta ao valor normal (apenas a parcela corrente de cada acordo).</div>
               </div>
 
               <div className="h-72">
@@ -247,10 +261,60 @@ export default function PassivosRisco() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Plano de ação recomendado */}
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <ShieldAlert className="h-4 w-4" /> Plano de ação recomendado para a diretoria
+                </div>
+                <ol className="text-xs space-y-2 list-decimal pl-5 text-foreground/90">
+                  <li>
+                    <strong>Reservar caixa de {brl(sim.series[0]?.comAcao ?? 0)}</strong> no primeiro mês de execução
+                    (saída total com regularização) e {brl(sim.totalExtra)} acumulados ao longo de {sim.mesesParaRegularizar} mês(es).
+                  </li>
+                  <li>
+                    <strong>Priorizar os {sim.alvos.filter(a => a.risk === 'critico').length} acordo(s) críticos</strong>{' '}
+                    (3+ parcelas em atraso) — são os que correm risco de <em>rescisão</em> pelo órgão e perda do parcelamento.
+                  </li>
+                  <li>
+                    Pagar <strong>{extrasPerMonth} parcela(s) extra por mês</strong> em cada acordo em atraso, junto com a parcela corrente,
+                    até zerar o atraso. Depois desse período, a saída mensal volta ao patamar normal.
+                  </li>
+                  <li>
+                    Após regularização, monitorar mensalmente nesta tela para evitar reincidência — qualquer acordo que volte
+                    a 2 parcelas em atraso já entra em <span className="text-amber-700 font-semibold">Atenção</span>.
+                  </li>
+                  <li>
+                    Se o caixa não comportar +{extrasPerMonth} parcela(s) por mês em todos os acordos, reduzir o slider para{' '}
+                    <strong>+1</strong> e concentrar o esforço apenas nos críticos, renegociando os demais com o órgão.
+                  </li>
+                </ol>
+
+                {sim.alvos.filter(a => a.risk === 'critico').length > 0 && (
+                  <div className="pt-2 border-t border-primary/20">
+                    <div className="text-xs font-semibold mb-1.5 text-primary">Acordos críticos para atacar primeiro:</div>
+                    <ul className="text-xs space-y-1">
+                      {sim.alvos
+                        .filter(a => a.risk === 'critico')
+                        .sort((a, b) => b.atrasoInicial - a.atrasoInicial)
+                        .slice(0, 5)
+                        .map(a => (
+                          <li key={a.id} className="flex justify-between gap-2 border-b border-primary/10 pb-1">
+                            <span className="truncate"><strong>{a.empresa}</strong> · acordo {a.acordo}</span>
+                            <span className="tabular-nums whitespace-nowrap text-red-700 font-semibold">
+                              {a.atrasoInicial} atrasadas · {brl(a.valor * a.atrasoInicial)} para zerar
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </CardContent>
       </Card>
+
 
 
       <div className="grid gap-4 lg:grid-cols-2">
