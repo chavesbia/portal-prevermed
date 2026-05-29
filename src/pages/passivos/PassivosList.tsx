@@ -170,8 +170,10 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
               {!isLoading && filtered.length === 0 && (
                 <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">Nenhum parcelamento encontrado.</TableCell></TableRow>
               )}
-              {filtered.map(r => (
-                <TableRow key={r.id}>
+              {filtered.map(r => {
+                const risk = r.status === 'encerrado' ? 'ok' : getRiskLevel(r.parcelas_em_atraso);
+                return (
+                <TableRow key={r.id} className={RISK_ROW_CLASS[risk]}>
                   <TableCell className="font-mono text-xs">{formatCnpj(r.cnpj)}</TableCell>
                   <TableCell className="font-medium">{r.empresa_nome}</TableCell>
                   <TableCell>
