@@ -17,6 +17,12 @@ export interface Passivo {
   parcelas_em_atraso: number;
   observacoes: string | null;
   link_acesso: string | null;
+  pagamento_baixado: boolean;
+  guia_recebida: boolean;
+  guia_conferida: boolean;
+  link_segunda_via: string | null;
+  last_updated_by: string | null;
+  last_updated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +59,7 @@ export function useUpsertPassivo() {
         parcelas_em_atraso: input.parcelas_em_atraso ?? 0,
         observacoes: input.observacoes ?? null,
         link_acesso: input.link_acesso ?? null,
+        link_segunda_via: input.link_segunda_via ?? null,
       };
       if (input.id) {
         const { error } = await supabase
@@ -66,6 +73,20 @@ export function useUpsertPassivo() {
           .insert(payload);
         if (error) throw error;
       }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['passivos'] }),
+  });
+}
+
+export function useUpdatePassivoFields() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: Partial<Passivo> }) => {
+      const { error } = await supabase
+        .from('passivos_parcelamentos')
+        .update(patch as any)
+        .eq('id', id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['passivos'] }),
   });

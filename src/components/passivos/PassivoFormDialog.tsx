@@ -106,6 +106,10 @@ export function PassivoFormDialog({ open, onOpenChange, initial }: Props) {
             <Input value={form.link_acesso ?? ''} onChange={e => setF('link_acesso', e.target.value)} placeholder="https://..." />
           </div>
           <div className="col-span-2">
+            <Label>Link da 2ª via</Label>
+            <Input value={form.link_segunda_via ?? ''} onChange={e => setF('link_segunda_via', e.target.value)} placeholder="https://..." />
+          </div>
+          <div className="col-span-2">
             <Label>Observações</Label>
             <Textarea rows={3} value={form.observacoes ?? ''} onChange={e => setF('observacoes', e.target.value)} />
           </div>

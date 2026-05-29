@@ -2883,10 +2883,16 @@ export type Database = {
           created_by: string | null
           dia_vencimento: number | null
           empresa_nome: string
+          guia_conferida: boolean
+          guia_recebida: boolean
           id: string
+          last_updated_at: string | null
+          last_updated_by: string | null
           link_acesso: string | null
+          link_segunda_via: string | null
           numero_acordo: string
           observacoes: string | null
+          pagamento_baixado: boolean
           parcelas_em_atraso: number
           parcelas_pagas: number
           parcelas_restantes: number | null
@@ -2903,10 +2909,16 @@ export type Database = {
           created_by?: string | null
           dia_vencimento?: number | null
           empresa_nome: string
+          guia_conferida?: boolean
+          guia_recebida?: boolean
           id?: string
+          last_updated_at?: string | null
+          last_updated_by?: string | null
           link_acesso?: string | null
+          link_segunda_via?: string | null
           numero_acordo: string
           observacoes?: string | null
+          pagamento_baixado?: boolean
           parcelas_em_atraso?: number
           parcelas_pagas?: number
           parcelas_restantes?: number | null
@@ -2923,10 +2935,16 @@ export type Database = {
           created_by?: string | null
           dia_vencimento?: number | null
           empresa_nome?: string
+          guia_conferida?: boolean
+          guia_recebida?: boolean
           id?: string
+          last_updated_at?: string | null
+          last_updated_by?: string | null
           link_acesso?: string | null
+          link_segunda_via?: string | null
           numero_acordo?: string
           observacoes?: string | null
+          pagamento_baixado?: boolean
           parcelas_em_atraso?: number
           parcelas_pagas?: number
           parcelas_restantes?: number | null
