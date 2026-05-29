@@ -2876,6 +2876,50 @@ export type Database = {
           },
         ]
       }
+      passivos_historico_mensal: {
+        Row: {
+          ano: number
+          created_at: string
+          id: string
+          mes: number
+          observacoes: string | null
+          passivo_id: string
+          status: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          id?: string
+          mes: number
+          observacoes?: string | null
+          passivo_id: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          id?: string
+          mes?: number
+          observacoes?: string | null
+          passivo_id?: string
+          status?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "passivos_historico_mensal_passivo_id_fkey"
+            columns: ["passivo_id"]
+            isOneToOne: false
+            referencedRelation: "passivos_parcelamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       passivos_parcelamentos: {
         Row: {
           cnpj: string
