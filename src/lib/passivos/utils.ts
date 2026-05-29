@@ -32,3 +32,37 @@ export function onlyDigits(s: string): string {
 export function brl(v: number | null | undefined): string {
   return Number(v ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+// ===== Análise de risco =====
+// Limiares configuráveis futuramente via painel administrativo
+export const RISK_THRESHOLDS = {
+  atencao: 2,       // >= 2 parcelas em atraso → amarelo
+  critico: 3,       // >= 3 parcelas em atraso → vermelho
+  cancelamento: 3,  // risco de cancelamento do parcelamento
+} as const;
+
+export type RiskLevel = 'ok' | 'atencao' | 'critico';
+
+export function getRiskLevel(parcelasEmAtraso: number): RiskLevel {
+  if (parcelasEmAtraso >= RISK_THRESHOLDS.critico) return 'critico';
+  if (parcelasEmAtraso >= RISK_THRESHOLDS.atencao) return 'atencao';
+  return 'ok';
+}
+
+export const RISK_LABEL: Record<RiskLevel, string> = {
+  ok: 'Regular',
+  atencao: 'Atenção',
+  critico: 'Crítico',
+};
+
+export const RISK_ROW_CLASS: Record<RiskLevel, string> = {
+  ok: '',
+  atencao: 'bg-amber-50 hover:bg-amber-100/70',
+  critico: 'bg-red-50 hover:bg-red-100/70',
+};
+
+export const RISK_BADGE: Record<RiskLevel, string> = {
+  ok: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  atencao: 'bg-amber-100 text-amber-900 border-amber-300',
+  critico: 'bg-red-100 text-red-800 border-red-300',
+};
