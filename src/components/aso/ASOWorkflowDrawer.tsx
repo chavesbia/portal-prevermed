@@ -553,10 +553,12 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           validate: () => {
             if (examesPendentes.length > 0)
               return { ok: false, msg: `${examesPendentes.length} exame(s) pendente(s)` };
-            const semSocged = todosExamesNaoClinicos.filter(e => !e.data_inserido_socged);
-            if (semSocged.length > 0) {
-              const marca = isFisico ? "Impresso" : "Inserido no SOCGED";
-              return { ok: false, msg: `${semSocged.length} exame(s) sem marcação "${marca}"` };
+            const marca = isFisico ? "Impresso" : "Inserido no SOCGED";
+            const semMarca = todosExamesNaoClinicos.filter(e =>
+              isFisico ? !e.data_recebimento : !e.data_inserido_socged
+            );
+            if (semMarca.length > 0) {
+              return { ok: false, msg: `${semMarca.length} exame(s) sem marcação "${marca}"` };
             }
             return { ok: true };
           },
