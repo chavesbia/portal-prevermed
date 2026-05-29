@@ -42,12 +42,30 @@ function parseDia(raw: any): number | null {
 
 function parseNumber(raw: any): number {
   if (raw == null || raw === '') return 0;
-  if (typeof raw === 'number') return raw;
+  if (typeof raw === 'number') return isNaN(raw) ? 0 : raw;
   let s = String(raw).trim();
   if (!s) return 0;
   s = s.replace(/R\$\s?/i, '').replace(/\s/g, '');
-  // pt-BR: 1.234,56 → 1234.56
-  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const hasDot = s.includes('.');
+  const hasComma = s.includes(',');
+  if (hasDot && hasComma) {
+    // último símbolo é o decimal
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.'); // pt-BR: 1.304,60
+    } else {
+      s = s.replace(/,/g, ''); // en-US: 1,304.60
+    }
+  } else if (hasComma) {
+    s = s.replace(',', '.'); // 1234,56
+  } else if (hasDot) {
+    // só ponto: pode ser milhar (1.304) ou decimal (1304.60)
+    const parts = s.split('.');
+    const last = parts[parts.length - 1];
+    if (parts.length > 1 && last.length === 3 && parts.slice(0, -1).every(p => p.length <= 3)) {
+      s = s.replace(/\./g, ''); // milhar
+    }
+    // senão mantém como decimal
+  }
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
 }
@@ -125,7 +143,7 @@ export function parsePassivosWorkbook(buffer: ArrayBuffer): ParsedPassivo[] {
 
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
-    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
 
     let currentCnpj = '';
     let currentEmpresa = '';

@@ -105,7 +105,7 @@ export default function PassivosImportDialog({ open, onOpenChange }: Props) {
                   <TableHead className="text-right">Valor mensal</TableHead>
                   <TableHead className="text-center">Venc.</TableHead>
                   <TableHead className="text-right">Atraso</TableHead>
-                  <TableHead className="text-right">Meses</TableHead>
+                  <TableHead className="text-right" title="Quantidade de meses do histórico com valor pago identificado na planilha">Meses c/ valor</TableHead>
                   <TableHead>Link</TableHead>
                 </TableRow>
               </TableHeader>
@@ -123,7 +123,13 @@ export default function PassivosImportDialog({ open, onOpenChange }: Props) {
                       {p.parcelas_em_atraso}
                     </TableCell>
                     <TableCell className="text-right">{p.historico.length}</TableCell>
-                    <TableCell className="text-xs truncate max-w-[180px]">{p.link_acesso ?? '—'}</TableCell>
+                    <TableCell className="text-xs truncate max-w-[200px]">
+                      {p.link_acesso ? (
+                        <a href={p.link_acesso} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" title={p.link_acesso}>
+                          {p.link_acesso}
+                        </a>
+                      ) : '—'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
