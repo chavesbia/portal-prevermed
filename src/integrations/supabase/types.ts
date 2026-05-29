@@ -2876,6 +2876,69 @@ export type Database = {
           },
         ]
       }
+      passivos_parcelamentos: {
+        Row: {
+          cnpj: string
+          created_at: string
+          created_by: string | null
+          dia_vencimento: number | null
+          empresa_nome: string
+          id: string
+          link_acesso: string | null
+          numero_acordo: string
+          observacoes: string | null
+          parcelas_em_atraso: number
+          parcelas_pagas: number
+          parcelas_restantes: number | null
+          parcelas_totais: number
+          status: Database["public"]["Enums"]["passivo_status"]
+          tipo_parcelamento: string
+          updated_at: string
+          updated_by: string | null
+          valor_mensal: number
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          created_by?: string | null
+          dia_vencimento?: number | null
+          empresa_nome: string
+          id?: string
+          link_acesso?: string | null
+          numero_acordo: string
+          observacoes?: string | null
+          parcelas_em_atraso?: number
+          parcelas_pagas?: number
+          parcelas_restantes?: number | null
+          parcelas_totais: number
+          status?: Database["public"]["Enums"]["passivo_status"]
+          tipo_parcelamento: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_mensal?: number
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          created_by?: string | null
+          dia_vencimento?: number | null
+          empresa_nome?: string
+          id?: string
+          link_acesso?: string | null
+          numero_acordo?: string
+          observacoes?: string | null
+          parcelas_em_atraso?: number
+          parcelas_pagas?: number
+          parcelas_restantes?: number | null
+          parcelas_totais?: number
+          status?: Database["public"]["Enums"]["passivo_status"]
+          tipo_parcelamento?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_mensal?: number
+        }
+        Relationships: []
+      }
       permission_template_shadow: {
         Row: {
           computed_at: string
@@ -4293,6 +4356,12 @@ export type Database = {
         | "duvida"
         | "sugestao"
         | "ocorrencia"
+      passivo_status:
+        | "em_dia"
+        | "atrasado"
+        | "encerrado"
+        | "novo_acordo"
+        | "suspenso"
       quotation_status:
         | "rascunho"
         | "aguardando_aprovacao"
@@ -4543,6 +4612,13 @@ export const Constants = {
         "duvida",
         "sugestao",
         "ocorrencia",
+      ],
+      passivo_status: [
+        "em_dia",
+        "atrasado",
+        "encerrado",
+        "novo_acordo",
+        "suspenso",
       ],
       quotation_status: [
         "rascunho",
