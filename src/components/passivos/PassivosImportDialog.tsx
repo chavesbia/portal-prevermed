@@ -105,7 +105,7 @@ export default function PassivosImportDialog({ open, onOpenChange }: Props) {
                   <TableHead className="text-right">Valor mensal</TableHead>
                   <TableHead className="text-center">Venc.</TableHead>
                   <TableHead className="text-right">Atraso</TableHead>
-                  <TableHead className="text-right">Meses</TableHead>
+                  <TableHead className="text-right" title="Quantidade de meses do histórico com valor pago identificado na planilha">Meses c/ valor</TableHead>
                   <TableHead>Link</TableHead>
                 </TableRow>
               </TableHeader>
