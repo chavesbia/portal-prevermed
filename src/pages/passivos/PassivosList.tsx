@@ -6,10 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Pencil, Trash2, ExternalLink, Search, CircleDollarSign, FileCheck2, ClipboardCheck, Link2, Pencil as PencilIcon, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, ExternalLink, Search, CircleDollarSign, FileCheck2, ClipboardCheck, Link2, Pencil as PencilIcon, Check, X, Upload } from 'lucide-react';
 import { usePassivos, useDeletePassivo, useUpdatePassivoFields, type Passivo } from '@/hooks/usePassivos';
 import { brl, formatCnpj, STATUS_BADGE, STATUS_LABELS, getRiskLevel, RISK_ROW_CLASS, RISK_BADGE, RISK_LABEL } from '@/lib/passivos/utils';
 import { PassivoFormDialog } from '@/components/passivos/PassivoFormDialog';
+import PassivosImportDialog from '@/components/passivos/PassivosImportDialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
@@ -98,6 +99,7 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Passivo | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -137,9 +139,14 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
           <Input className="pl-8" placeholder="Buscar por CNPJ, empresa, acordo ou tipo…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         {canEdit && (
-          <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo parcelamento
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+              <Upload className="h-4 w-4" /> Importar planilha
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo parcelamento
+            </Button>
+          </>
         )}
       </div>
 
@@ -265,6 +272,7 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
       </Card>
 
       <PassivoFormDialog open={open} onOpenChange={setOpen} initial={editing} />
+      <PassivosImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
