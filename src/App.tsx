@@ -40,6 +40,7 @@ import GestaoOS from "./pages/GestaoOS";
 import LiberacaoASOs from "./pages/LiberacaoASOs";
 import GestaoOcorrencias from "./pages/GestaoOcorrencias";
 import RetificacaoASOs from "./pages/RetificacaoASOs";
+import GestaoPassivos from "./pages/GestaoPassivos";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
               <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
               <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
               <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
+              <Route path="/gestao-passivos" element={<GestaoPassivos />} />
               <Route path="/social" element={<Social />} />
               
               <Route path="/notificacoes" element={<Notificacoes />} />
