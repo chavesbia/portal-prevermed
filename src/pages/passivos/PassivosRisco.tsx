@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, ShieldAlert, TrendingDown } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, ShieldAlert, TrendingDown, Calculator, Sparkles } from 'lucide-react';
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart,
+  Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart,
   ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis,
 } from 'recharts';
 import { usePassivos, type Passivo } from '@/hooks/usePassivos';
@@ -81,6 +83,66 @@ export default function PassivosRisco() {
       .sort((a, b) => b.maxAtraso - a.maxAtraso || b.atraso - a.atraso);
   }, [ativos]);
 
+  // ===== Simulador de regularização =====
+  // Premissa: pagar X parcela(s) extra por mês nos parcelamentos com atraso (atenção + crítico)
+  // até zerar o atraso de cada um.
+  const [extrasPerMonth, setExtrasPerMonth] = useState(1);
+
+  const sim = useMemo(() => {
+    const alvos = ativos
+      .filter(r => r.parcelas_em_atraso > 0)
+      .map(r => ({
+        id: r.id,
+        empresa: r.empresa_nome,
+        acordo: r.numero_acordo,
+        valor: Number(r.valor_mensal || 0),
+        atrasoInicial: r.parcelas_em_atraso,
+        risk: getRiskLevel(r.parcelas_em_atraso),
+      }));
+
+    const maxAtraso = alvos.reduce((m, a) => Math.max(m, a.atrasoInicial), 0);
+    const mesesParaRegularizar = extrasPerMonth > 0 ? Math.ceil(maxAtraso / extrasPerMonth) : 0;
+    const horizon = Math.max(mesesParaRegularizar, 1);
+
+    const today = new Date();
+    const remaining = new Map(alvos.map(a => [a.id, a.atrasoInicial]));
+    const series: { mes: string; baseline: number; comAcao: number; extra: number; regularizados: number }[] = [];
+    let totalExtra = 0;
+    let totalRegularizadosAcum = 0;
+
+    for (let i = 0; i < horizon; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      let baseline = 0, comAcao = 0, extra = 0, regularizadosMes = 0;
+      alvos.forEach(a => {
+        const rem = remaining.get(a.id) ?? 0;
+        if (rem <= 0) return;
+        // Cenário sem ação: paga apenas 1 parcela/mês (acumula sem reduzir atraso)
+        baseline += a.valor;
+        // Cenário com ação: paga 1 (do mês corrente) + extras (até zerar atraso)
+        const pagasExtras = Math.min(extrasPerMonth, rem);
+        const totalPagasNoMes = 1 + pagasExtras;
+        comAcao += a.valor * totalPagasNoMes;
+        extra += a.valor * pagasExtras;
+        const novoRem = Math.max(0, rem - extrasPerMonth);
+        if (novoRem === 0 && rem > 0) regularizadosMes += 1;
+        remaining.set(a.id, novoRem);
+      });
+      totalExtra += extra;
+      totalRegularizadosAcum += regularizadosMes;
+      series.push({
+        mes: `${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][d.getMonth()]}/${String(d.getFullYear()).slice(2)}`,
+        baseline, comAcao, extra,
+        regularizados: totalRegularizadosAcum,
+      });
+    }
+
+    return {
+      alvos, maxAtraso, mesesParaRegularizar, series, totalExtra,
+      totalAtrasados: alvos.length,
+      totalParcelasAtraso: alvos.reduce((s, a) => s + a.atrasoInicial, 0),
+    };
+  }, [ativos, extrasPerMonth]);
+
   if (isLoading) return <div className="text-sm text-muted-foreground">Carregando…</div>;
 
   return (
@@ -101,6 +163,95 @@ export default function PassivosRisco() {
         <RiskKpi label={`Atenção (≥${RISK_THRESHOLDS.atencao})`} value={riskCounts.atencao} tone="atencao" />
         <RiskKpi label={`Crítico (≥${RISK_THRESHOLDS.critico})`} value={riskCounts.critico} tone="critico" />
       </div>
+
+      {/* Simulador de regularização */}
+      <Card className="border-primary/30">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Calculator className="h-4 w-4 text-primary" /> Simulador de regularização
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {sim.totalAtrasados === 0 ? (
+            <div className="text-sm text-muted-foreground py-4 text-center">
+              Nenhum parcelamento em atraso para regularizar. 🎉
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-3 md:grid-cols-4">
+                <SimStat label="Parcelamentos em atraso" value={String(sim.totalAtrasados)} />
+                <SimStat label="Parcelas atrasadas (soma)" value={String(sim.totalParcelasAtraso)} />
+                <SimStat label="Meses até regularizar" value={`${sim.mesesParaRegularizar}`} highlight />
+                <SimStat label="Custo extra total" value={brl(sim.totalExtra)} />
+              </div>
+
+              <div className="rounded-md border p-4 bg-muted/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Parcelas extras por mês (em cada parcelamento atrasado)
+                  </Label>
+                  <span className="text-lg font-bold tabular-nums">+{extrasPerMonth}</span>
+                </div>
+                <Slider
+                  value={[extrasPerMonth]}
+                  min={1}
+                  max={5}
+                  step={1}
+                  onValueChange={(v) => setExtrasPerMonth(v[0])}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Cenário: pagar a parcela do mês <strong>+ {extrasPerMonth}</strong> parcela(s) atrasada(s) em cada acordo
+                  com pendência, até zerar o atraso. Pior caso ({sim.maxAtraso} parcelas atrasadas) regulariza
+                  em <strong>{sim.mesesParaRegularizar} mês(es)</strong>.
+                </p>
+              </div>
+
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={sim.series} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 11 }} tickFormatter={(v) => `R$ ${(v/1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <RTooltip formatter={(v: number, n: string) => n === 'Regularizados (acum.)' ? v : brl(v)} />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="baseline" name="Pagamento normal (sem ação)" fill="hsl(var(--muted-foreground) / 0.4)" />
+                    <Bar yAxisId="left" dataKey="comAcao" name="Com regularização" fill="hsl(var(--primary))" />
+                    <Line yAxisId="right" type="monotone" dataKey="regularizados" name="Regularizados (acum.)" stroke="hsl(142 71% 45%)" strokeWidth={2} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mês</TableHead>
+                      <TableHead className="text-right">Saída sem ação</TableHead>
+                      <TableHead className="text-right">Saída com regularização</TableHead>
+                      <TableHead className="text-right">Extra no mês</TableHead>
+                      <TableHead className="text-right">Regularizados acum.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sim.series.map((m, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{m.mes}</TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">{brl(m.baseline)}</TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">{brl(m.comAcao)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-amber-700">{brl(m.extra)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-emerald-700">{m.regularizados}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -254,5 +405,14 @@ function RiskKpi({ label, value, tone }: { label: string; value: number; tone: '
         <div className="mt-1 text-3xl font-bold">{value}</div>
       </CardContent>
     </Card>
+  );
+}
+
+function SimStat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-md border p-3 ${highlight ? 'border-primary/40 bg-primary/5' : 'bg-muted/30'}`}>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-xl font-bold tabular-nums ${highlight ? 'text-primary' : ''}`}>{value}</div>
+    </div>
   );
 }
