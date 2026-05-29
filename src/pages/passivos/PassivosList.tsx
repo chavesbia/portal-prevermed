@@ -272,6 +272,7 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
       </Card>
 
       <PassivoFormDialog open={open} onOpenChange={setOpen} initial={editing} />
+      <PassivosImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }
