@@ -139,9 +139,14 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
           <Input className="pl-8" placeholder="Buscar por CNPJ, empresa, acordo ou tipo…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         {canEdit && (
-          <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo parcelamento
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-1.5">
+              <Upload className="h-4 w-4" /> Importar planilha
+            </Button>
+            <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo parcelamento
+            </Button>
+          </>
         )}
       </div>
 
