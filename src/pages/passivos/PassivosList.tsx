@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Pencil, Trash2, ExternalLink, Search, CircleDollarSign, FileCheck2, ClipboardCheck, Link2, Pencil as PencilIcon, Check, X } from 'lucide-react';
 import { usePassivos, useDeletePassivo, useUpdatePassivoFields, type Passivo } from '@/hooks/usePassivos';
-import { brl, formatCnpj, STATUS_BADGE, STATUS_LABELS } from '@/lib/passivos/utils';
+import { brl, formatCnpj, STATUS_BADGE, STATUS_LABELS, getRiskLevel, RISK_ROW_CLASS, RISK_BADGE, RISK_LABEL } from '@/lib/passivos/utils';
 import { PassivoFormDialog } from '@/components/passivos/PassivoFormDialog';
 import { useToast } from '@/hooks/use-toast';
 
