@@ -1,7 +1,17 @@
 import * as XLSX from 'xlsx';
 
+// Layout fixo da planilha Prevermed (linha-a-linha):
+// A: CNPJ | B: Razão Social | C: N° Parcelamento/Acordo | D: Tipo
+// E: Parcelas (formato "54-145") | F: Vencimento (dia)
+// G..: meses do ano corrente de controle (Fevereiro, Março, Abril, Maio, ...)
+// Antes de "Observações" | Penúltima: Observações | Última: Link de acesso
+//
+// O controle iniciou em Fevereiro/2026, portanto o histórico mensal usa ano = 2026.
+
+const ANO_CONTROLE = 2026;
+
 const MESES_PT: Record<string, number> = {
-  janeiro: 1, fevereiro: 2, marco: 3, março: 3, abril: 4, maio: 5, junho: 6,
+  janeiro: 1, fevereiro: 2, marco: 3, abril: 4, maio: 5, junho: 6,
   julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
   jan: 1, fev: 2, mar: 3, abr: 4, mai: 5, jun: 6, jul: 7, ago: 8, set: 9, out: 10, nov: 11, dez: 12,
 };
@@ -9,20 +19,15 @@ const MESES_PT: Record<string, number> = {
 function norm(s: any): string {
   return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
-
 function onlyDigits(s: any): string { return String(s ?? '').replace(/\D/g, ''); }
-
-function isCnpj(s: any): boolean {
-  return onlyDigits(s).length === 14;
-}
+function isCnpj(s: any): boolean { return onlyDigits(s).length === 14; }
+function isUrl(s: any): boolean { return /^https?:\/\//i.test(String(s ?? '').trim()); }
 
 function parseParcelas(raw: any): { pagas: number; totais: number } | null {
   const s = String(raw ?? '').trim();
   if (!s) return null;
-  const m = s.match(/(\d+)\s*[-\/de]+\s*(\d+)/i);
+  const m = s.match(/(\d+)\s*[-\/]\s*(\d+)/);
   if (m) return { pagas: parseInt(m[1], 10), totais: parseInt(m[2], 10) };
-  const n = parseInt(s, 10);
-  if (!isNaN(n)) return { pagas: 0, totais: n };
   return null;
 }
 
@@ -33,50 +38,33 @@ function parseAtrasadas(raw: any): number {
 }
 
 function parseDia(raw: any): number | null {
-  const s = String(raw ?? '');
-  const m = s.match(/(\d{1,2})/);
-  if (!m) return null;
-  const d = parseInt(m[1], 10);
-  return d >= 1 && d <= 31 ? d : null;
+  if (raw == null || raw === '') return null;
+  const n = parseInt(String(raw).match(/\d{1,2}/)?.[0] ?? '', 10);
+  return !isNaN(n) && n >= 1 && n <= 31 ? n : null;
 }
 
 function parseNumber(raw: any): number {
   if (raw == null || raw === '') return 0;
   if (typeof raw === 'number') return isNaN(raw) ? 0 : raw;
   let s = String(raw).trim();
-  if (!s) return 0;
+  if (!s || s === '—' || s === '-') return 0;
   s = s.replace(/R\$\s?/i, '').replace(/\s/g, '');
   const hasDot = s.includes('.');
   const hasComma = s.includes(',');
   if (hasDot && hasComma) {
-    // último símbolo é o decimal
-    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
-      s = s.replace(/\./g, '').replace(',', '.'); // pt-BR: 1.304,60
-    } else {
-      s = s.replace(/,/g, ''); // en-US: 1,304.60
-    }
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/,/g, '');
   } else if (hasComma) {
-    s = s.replace(',', '.'); // 1234,56
+    s = s.replace(',', '.');
   } else if (hasDot) {
-    // só ponto: pode ser milhar (1.304) ou decimal (1304.60)
     const parts = s.split('.');
     const last = parts[parts.length - 1];
     if (parts.length > 1 && last.length === 3 && parts.slice(0, -1).every(p => p.length <= 3)) {
-      s = s.replace(/\./g, ''); // milhar
+      s = s.replace(/\./g, '');
     }
-    // senão mantém como decimal
   }
   const n = parseFloat(s);
   return isNaN(n) ? 0 : n;
-}
-
-function findUrl(row: any[]): string | null {
-  for (const cell of row) {
-    const s = String(cell ?? '');
-    const m = s.match(/https?:\/\/\S+/i);
-    if (m) return m[0];
-  }
-  return null;
 }
 
 export interface ParsedHistorico {
@@ -100,116 +88,103 @@ export interface ParsedPassivo {
   historico: ParsedHistorico[];
 }
 
-interface HeaderMap {
-  numero?: number;
-  tipo?: number;
-  parcelas?: number;
-  vencimento?: number;
-  observacoes?: number;
-  link?: number;
-  meses: Array<{ col: number; mes: number; ano: number }>;
+interface ColMap {
+  cnpj: number;
+  empresa: number;
+  numero: number;
+  tipo: number;
+  parcelas: number;
+  vencimento: number;
+  observacoes: number;
+  link: number;
+  meses: Array<{ col: number; mes: number }>;
 }
 
-function detectHeader(row: any[], defaultAno: number): HeaderMap | null {
-  const map: HeaderMap = { meses: [] };
-  let matched = 0;
-  for (let i = 0; i < row.length; i++) {
-    const n = norm(row[i]);
+function detectColumns(header: any[]): ColMap | null {
+  const cols: Partial<ColMap> & { meses: ColMap['meses'] } = { meses: [] };
+  for (let i = 0; i < header.length; i++) {
+    const n = norm(header[i]);
     if (!n) continue;
-    if (/numero|acordo|parcelamento/.test(n) && map.numero == null && !/parcelas/.test(n)) { map.numero = i; matched++; continue; }
-    if (/^tipo/.test(n) && map.tipo == null) { map.tipo = i; matched++; continue; }
-    if (/parcelas/.test(n) && map.parcelas == null) { map.parcelas = i; matched++; continue; }
-    if (/vencimento|venc\b/.test(n) && map.vencimento == null) { map.vencimento = i; matched++; continue; }
-    if (/observ/.test(n) && map.observacoes == null) { map.observacoes = i; matched++; continue; }
-    if (/link|acesso|url/.test(n) && map.link == null) { map.link = i; matched++; continue; }
-    // mês
-    const tokens = n.split(/[\s\/_-]+/);
-    for (const t of tokens) {
-      if (t in MESES_PT) {
-        const anoMatch = n.match(/(20\d{2})/);
-        map.meses.push({ col: i, mes: MESES_PT[t], ano: anoMatch ? parseInt(anoMatch[1], 10) : defaultAno });
-        matched++;
-        break;
-      }
-    }
+    if (cols.cnpj == null && /cnpj/.test(n)) { cols.cnpj = i; continue; }
+    if (cols.empresa == null && /(razao|empresa|nome)/.test(n)) { cols.empresa = i; continue; }
+    if (cols.numero == null && /(parcelamento|acordo|numero|n[°ºo°])/.test(n) && !/parcelas/.test(n)) { cols.numero = i; continue; }
+    if (cols.tipo == null && /^tipo/.test(n)) { cols.tipo = i; continue; }
+    if (cols.parcelas == null && /parcelas/.test(n)) { cols.parcelas = i; continue; }
+    if (cols.vencimento == null && /vencimento|venc\b/.test(n)) { cols.vencimento = i; continue; }
+    if (cols.observacoes == null && /observ/.test(n)) { cols.observacoes = i; continue; }
+    if (cols.link == null && /(link|acesso|url)/.test(n)) { cols.link = i; continue; }
+    // mês isolado
+    const token = n.split(/[\s\/_-]+/)[0];
+    if (token in MESES_PT) cols.meses.push({ col: i, mes: MESES_PT[token] });
   }
-  return matched >= 2 ? map : null;
+  if (cols.cnpj == null || cols.numero == null || cols.parcelas == null) return null;
+  // valores padrão
+  if (cols.empresa == null) cols.empresa = cols.cnpj + 1;
+  if (cols.tipo == null) cols.tipo = cols.numero + 1;
+  if (cols.vencimento == null) cols.vencimento = cols.parcelas + 1;
+  if (cols.observacoes == null) cols.observacoes = header.length - 2;
+  if (cols.link == null) cols.link = header.length - 1;
+  return cols as ColMap;
 }
 
 export function parsePassivosWorkbook(buffer: ArrayBuffer): ParsedPassivo[] {
   const wb = XLSX.read(buffer, { type: 'array' });
   const results: ParsedPassivo[] = [];
-  const defaultAno = new Date().getFullYear();
 
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
     const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    if (rows.length < 2) continue;
 
-    let currentCnpj = '';
-    let currentEmpresa = '';
-    let header: HeaderMap | null = null;
+    // localizar linha de cabeçalho (primeira linha com "CNPJ" + "Parcelas")
+    let headerIdx = -1;
+    let cols: ColMap | null = null;
+    for (let r = 0; r < Math.min(rows.length, 10); r++) {
+      const c = detectColumns(rows[r]);
+      if (c) { headerIdx = r; cols = c; break; }
+    }
+    if (!cols || headerIdx < 0) continue;
 
-    for (let r = 0; r < rows.length; r++) {
+    for (let r = headerIdx + 1; r < rows.length; r++) {
       const row = rows[r];
       if (!row || row.every(c => String(c ?? '').trim() === '')) continue;
 
-      // detectar CNPJ no início do bloco
-      const cnpjCell = row.find(c => isCnpj(c));
-      if (cnpjCell) {
-        currentCnpj = onlyDigits(cnpjCell);
-        // empresa = primeira célula não-vazia que não seja o CNPJ
-        currentEmpresa = String(
-          row.find(c => {
-            const s = String(c ?? '').trim();
-            return s && !isCnpj(c) && !/^cnpj/i.test(s);
-          }) ?? ''
-        ).trim();
-        header = null;
-        continue;
-      }
+      const cnpjRaw = row[cols.cnpj];
+      if (!isCnpj(cnpjRaw)) continue;
 
-      // tentar detectar cabeçalho
-      const maybeHeader = detectHeader(row, defaultAno);
-      if (maybeHeader && (maybeHeader.numero != null || maybeHeader.parcelas != null)) {
-        header = maybeHeader;
-        continue;
-      }
+      const cnpj = onlyDigits(cnpjRaw);
+      const empresa = String(row[cols.empresa] ?? '').trim() || '—';
+      const numero = String(row[cols.numero] ?? '').trim();
+      const tipo = (String(row[cols.tipo] ?? '').trim() || 'OUTROS').toUpperCase().slice(0, 60);
+      const p = parseParcelas(row[cols.parcelas]);
+      const dia = parseDia(row[cols.vencimento]);
+      const obs = String(row[cols.observacoes] ?? '').trim();
+      const linkRaw = String(row[cols.link] ?? '').trim();
+      const link = isUrl(linkRaw) ? linkRaw : null;
 
-      // linha de dados — precisa ter CNPJ e cabeçalho ativos
-      if (!currentCnpj || !header) continue;
-
-      const numero = header.numero != null ? String(row[header.numero] ?? '').trim() : '';
-      const parcelasRaw = header.parcelas != null ? row[header.parcelas] : '';
-      const p = parseParcelas(parcelasRaw);
-      if (!numero && !p) continue; // linha vazia/ruído
-
-      const obs = header.observacoes != null ? String(row[header.observacoes] ?? '').trim() : '';
-      const link = (header.link != null ? String(row[header.link] ?? '').trim() : '') || findUrl(row) || '';
-      const tipo = (header.tipo != null ? String(row[header.tipo] ?? '').trim() : '') || 'OUTROS';
-      const dia = header.vencimento != null ? parseDia(row[header.vencimento]) : null;
-
+      // histórico mensal — apenas valores > 0
       const historico: ParsedHistorico[] = [];
-      let valorMensal = 0;
-      for (const m of header.meses) {
+      for (const m of cols.meses) {
         const v = parseNumber(row[m.col]);
-        if (v > 0) {
-          historico.push({ ano: m.ano, mes: m.mes, valor: v });
-          if (v > valorMensal) valorMensal = v;
-        }
+        if (v > 0) historico.push({ ano: ANO_CONTROLE, mes: m.mes, valor: v });
       }
+      // valor mensal de referência = último mês com valor (mais recente)
+      const valorMensal = historico.length ? historico[historico.length - 1].valor : 0;
+
+      if (!numero) continue;
 
       results.push({
-        cnpj: currentCnpj,
-        empresa_nome: currentEmpresa || '—',
-        numero_acordo: numero || `${tipo}-${currentCnpj.slice(-4)}`,
-        tipo_parcelamento: tipo.toUpperCase().slice(0, 60),
+        cnpj,
+        empresa_nome: empresa,
+        numero_acordo: numero,
+        tipo_parcelamento: tipo,
         parcelas_pagas: p?.pagas ?? 0,
         parcelas_totais: p?.totais ?? 1,
         valor_mensal: valorMensal,
         dia_vencimento: dia,
         parcelas_em_atraso: parseAtrasadas(obs),
         observacoes: obs || null,
-        link_acesso: link || null,
+        link_acesso: link,
         historico,
       });
     }
