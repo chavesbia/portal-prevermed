@@ -143,7 +143,7 @@ export function parsePassivosWorkbook(buffer: ArrayBuffer): ParsedPassivo[] {
 
   for (const sheetName of wb.SheetNames) {
     const ws = wb.Sheets[sheetName];
-    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+    const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
 
     let currentCnpj = '';
     let currentEmpresa = '';
