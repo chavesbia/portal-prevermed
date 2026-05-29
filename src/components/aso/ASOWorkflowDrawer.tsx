@@ -591,7 +591,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           label: "Liberar Prontuário",
           action: () => advanceStatus("liberado_faturamento", "Faturamento"),
           validate: () => {
-            if (!a.escaneado) return { ok: false, msg: "Prontuário não escaneado" };
+            // Para prontuário físico, apenas "Conferência final" é obrigatória para liberar
             if (!a.conferencia_final_ok) return { ok: false, msg: "Conferência final pendente" };
             return { ok: true };
           },
