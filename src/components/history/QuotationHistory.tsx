@@ -264,6 +264,36 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
     }
   };
 
+  const handleRevertRejection = async (quotation: Quotation) => {
+    try {
+      const prevReason = quotation.rejection_reason;
+      const stamp = format(new Date(), "dd/MM/yy HH:mm", { locale: ptBR });
+      const revertNote = `[Rejeição revertida em ${stamp} por ${profile?.full_name || "Admin"}${prevReason ? ` — motivo original: ${prevReason}` : ""}]`;
+      const newNotes = quotation.notes
+        ? `${quotation.notes}\n${revertNote}`
+        : revertNote;
+
+      const { error } = await supabase
+        .from("quotations")
+        .update({
+          status: "aguardando_aprovacao",
+          approved_by: null,
+          approved_at: null,
+          rejection_reason: null,
+          notes: newNotes,
+        })
+        .eq("id", quotation.id);
+
+      if (error) throw error;
+      toast.success("Rejeição revertida. O vendedor pode ajustar e reenviar.");
+      fetchQuotations();
+      setIsDetailOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao reverter rejeição");
+    }
+  };
+
   const handleDeleteClick = (quotation: Quotation) => {
     setQuotationToDelete(quotation);
     setDeleteDialogOpen(true);
