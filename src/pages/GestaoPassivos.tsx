@@ -1,11 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, List } from 'lucide-react';
+import { LayoutDashboard, List, ShieldAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import PassivosDashboard from './passivos/PassivosDashboard';
 import PassivosList from './passivos/PassivosList';
+import PassivosRisco from './passivos/PassivosRisco';
 
 const MODULE_ROUTE = '/gestao-passivos';
 
