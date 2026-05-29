@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Pencil, Trash2, ExternalLink, Search, CircleDollarSign, FileCheck2, ClipboardCheck, Link2, Pencil as PencilIcon, Check, X } from 'lucide-react';
 import { usePassivos, useDeletePassivo, useUpdatePassivoFields, type Passivo } from '@/hooks/usePassivos';
-import { brl, formatCnpj, STATUS_BADGE, STATUS_LABELS } from '@/lib/passivos/utils';
+import { brl, formatCnpj, STATUS_BADGE, STATUS_LABELS, getRiskLevel, RISK_ROW_CLASS, RISK_BADGE, RISK_LABEL } from '@/lib/passivos/utils';
 import { PassivoFormDialog } from '@/components/passivos/PassivoFormDialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -170,8 +170,10 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
               {!isLoading && filtered.length === 0 && (
                 <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground py-6">Nenhum parcelamento encontrado.</TableCell></TableRow>
               )}
-              {filtered.map(r => (
-                <TableRow key={r.id}>
+              {filtered.map(r => {
+                const risk = r.status === 'encerrado' ? 'ok' : getRiskLevel(r.parcelas_em_atraso);
+                return (
+                <TableRow key={r.id} className={RISK_ROW_CLASS[risk]}>
                   <TableCell className="font-mono text-xs">{formatCnpj(r.cnpj)}</TableCell>
                   <TableCell className="font-medium">{r.empresa_nome}</TableCell>
                   <TableCell>
@@ -229,7 +231,15 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                     </span>
                   </TableCell>
                   <TableCell className={`text-right ${r.parcelas_em_atraso > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
-                    {r.parcelas_em_atraso}
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span>{r.parcelas_em_atraso}</span>
+                      {r.status !== 'encerrado' && risk !== 'ok' && (
+                        <span className={`inline-flex items-center px-1.5 py-0 rounded border text-[10px] font-medium ${RISK_BADGE[risk]}`}>
+                          {RISK_LABEL[risk]}
+                          {risk === 'critico' && ' · risco cancel.'}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                     {fmtDateTime(r.last_updated_at)}
@@ -247,7 +257,8 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

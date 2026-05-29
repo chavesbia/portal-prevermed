@@ -1,11 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LayoutDashboard, List } from 'lucide-react';
+import { LayoutDashboard, List, ShieldAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useAuth } from '@/contexts/AuthContext';
 import PassivosDashboard from './passivos/PassivosDashboard';
 import PassivosList from './passivos/PassivosList';
+import PassivosRisco from './passivos/PassivosRisco';
 
 const MODULE_ROUTE = '/gestao-passivos';
 
@@ -29,10 +30,12 @@ export default function GestaoPassivos() {
           <TabsList>
             <TabsTrigger value="dashboard" className="gap-1.5"><LayoutDashboard className="h-4 w-4" /> Dashboard</TabsTrigger>
             <TabsTrigger value="parcelamentos" className="gap-1.5"><List className="h-4 w-4" /> Parcelamentos</TabsTrigger>
+            <TabsTrigger value="risco" className="gap-1.5"><ShieldAlert className="h-4 w-4" /> Risco</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard"><PassivosDashboard /></TabsContent>
           <TabsContent value="parcelamentos"><PassivosList canEdit={canEdit} canDelete={canDelete} /></TabsContent>
+          <TabsContent value="risco"><PassivosRisco /></TabsContent>
         </Tabs>
       </div>
     </ProtectedModuleRoute>
