@@ -4233,6 +4233,10 @@ export type Database = {
         Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_module_route: {
+        Args: { _route: string; _user_id: string }
+        Returns: boolean
+      }
       dashboard_guias_agregado: {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
