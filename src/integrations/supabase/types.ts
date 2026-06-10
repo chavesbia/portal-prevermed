@@ -1017,6 +1017,7 @@ export type Database = {
       client_attachments: {
         Row: {
           client_id: string
+          contract_id: string | null
           created_at: string
           created_by: string | null
           file_name: string | null
@@ -1026,6 +1027,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          contract_id?: string | null
           created_at?: string
           created_by?: string | null
           file_name?: string | null
@@ -1035,6 +1037,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          contract_id?: string | null
           created_at?: string
           created_by?: string | null
           file_name?: string | null
@@ -1048,6 +1051,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "commercial_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_attachments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_contracts"
             referencedColumns: ["id"]
           },
         ]
@@ -1259,6 +1269,95 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      commercial_contracts: {
+        Row: {
+          auto_renewal: boolean
+          client_id: string
+          contract_number: string | null
+          contract_year: number | null
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          has_exam_table: boolean
+          has_service_table: boolean
+          id: string
+          is_current: boolean
+          modelo_contratual:
+            | Database["public"]["Enums"]["modelo_contratual"]
+            | null
+          notes: string | null
+          proposal_number: string | null
+          prospect_status: string | null
+          renewal_term_months: number | null
+          revisao_pendente: boolean
+          signed: boolean
+          start_date: string | null
+          status_derivado: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          auto_renewal?: boolean
+          client_id: string
+          contract_number?: string | null
+          contract_year?: number | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          has_exam_table?: boolean
+          has_service_table?: boolean
+          id?: string
+          is_current?: boolean
+          modelo_contratual?:
+            | Database["public"]["Enums"]["modelo_contratual"]
+            | null
+          notes?: string | null
+          proposal_number?: string | null
+          prospect_status?: string | null
+          renewal_term_months?: number | null
+          revisao_pendente?: boolean
+          signed?: boolean
+          start_date?: string | null
+          status_derivado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          auto_renewal?: boolean
+          client_id?: string
+          contract_number?: string | null
+          contract_year?: number | null
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          has_exam_table?: boolean
+          has_service_table?: boolean
+          id?: string
+          is_current?: boolean
+          modelo_contratual?:
+            | Database["public"]["Enums"]["modelo_contratual"]
+            | null
+          notes?: string | null
+          proposal_number?: string | null
+          prospect_status?: string | null
+          renewal_term_months?: number | null
+          revisao_pendente?: boolean
+          signed?: boolean
+          start_date?: string | null
+          status_derivado?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commercial_service_components: {
         Row: {
@@ -4367,6 +4466,7 @@ export type Database = {
         | "coordinator"
         | "leader"
         | "team_member"
+      modelo_contratual: "Gestão Ocupacional" | "Parceira" | "Por Uso"
       module_app_type: "internal" | "external" | "iframe"
       notification_type:
         | "mention"
@@ -4618,6 +4718,7 @@ export const Constants = {
         "leader",
         "team_member",
       ],
+      modelo_contratual: ["Gestão Ocupacional", "Parceira", "Por Uso"],
       module_app_type: ["internal", "external", "iframe"],
       notification_type: [
         "mention",
