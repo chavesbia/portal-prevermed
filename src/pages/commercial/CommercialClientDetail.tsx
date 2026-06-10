@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format, parseISO } from 'date-fns';
 import { formatRiskGrade } from '@/lib/commercial-constants';
 import ClientPackageModules from '@/components/commercial/ClientPackageModules';
+import ContractsHistory from '@/components/commercial/ContractsHistory';
 
 function formatDateBR(dateStr: string | null | undefined): string | null {
   if (!dateStr) return null;
