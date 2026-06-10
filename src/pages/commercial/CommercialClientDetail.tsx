@@ -153,12 +153,18 @@ export default function CommercialClientDetail({ clientId, onBack, readOnly }: P
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="dados">Dados Gerais</TabsTrigger>
-          <TabsTrigger value="contrato">Contrato</TabsTrigger>
+          <TabsTrigger value="contratos">Contratos</TabsTrigger>
+          <TabsTrigger value="contrato">Contrato Atual</TabsTrigger>
           <TabsTrigger value="proposta">Proposta</TabsTrigger>
           <TabsTrigger value="operacional">Operacional</TabsTrigger>
           <TabsTrigger value="anexos">Anexos ({attachments.length})</TabsTrigger>
           <TabsTrigger value="observacoes">Observações</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="contratos">
+          <ContractsHistory clientId={clientId} readOnly={readOnly} />
+        </TabsContent>
+
 
         <TabsContent value="dados">
           <Card>
