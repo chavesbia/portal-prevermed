@@ -183,6 +183,35 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
   const { data: feriados } = useFeriados();
   const exameMutations = useASOExameMutations(a?.id ?? "");
 
+  // Backfill: se o atendimento já passou da etapa "importado" mas não possui exames
+  // cadastrados (ex.: inserção falhou no Iniciar Conferência por RLS antiga), recria
+  // automaticamente a partir do exames_texto.
+  const backfilledRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!a?.id || !a?.exames_texto) return;
+    if (a.status === "importado") return;
+    if (exames === undefined) return;
+    if (exames.length > 0) return;
+    if (backfilledRef.current.has(a.id)) return;
+    const parsed = parseExamesTexto(a.exames_texto);
+    if (parsed.length === 0) return;
+    backfilledRef.current.add(a.id);
+    (async () => {
+      const records = parsed.map(e => ({
+        atendimento_id: a.id,
+        nome_exame: e.nome_exame,
+        tipo: e.tipo,
+        status: e.status_inicial,
+      }));
+      const { error } = await supabase.from("aso_exames_atendimento").insert(records as any);
+      if (error) {
+        backfilledRef.current.delete(a.id);
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+    })();
+  }, [a?.id, a?.status, a?.exames_texto, exames, qc]);
+
   // Handler para mudança de status de exame com novos status (aguardando/pendente/liberado/nova_coleta)
   const handleExameStatusChange = (ex: any, novoStatus: string) => {
     if (novoStatus === "pendente" || novoStatus === "nova_coleta") {
