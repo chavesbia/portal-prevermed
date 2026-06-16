@@ -2,6 +2,10 @@
 const EXAMES_LIBERACAO_IMEDIATA = [
   "acuidade visual",
   "audiometria",
+  "beta hcg",
+  "beta-hcg",
+  "betahcg",
+  "teste de gravidez",
 ];
 
 // Exame Clínico - tratamento especial (status inicial: realizado)
