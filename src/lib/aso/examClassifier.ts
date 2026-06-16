@@ -5,6 +5,7 @@ const EXAMES_LIBERACAO_IMEDIATA = [
   "beta hcg",
   "beta-hcg",
   "betahcg",
+  "bhcg",
   "teste de gravidez",
 ];
 
