@@ -100,6 +100,11 @@ export async function parseASOFile(file: File): Promise<ASOParsedRow[]> {
     const norm = normalizeHeader(h);
     if (COLUMN_MAP[norm]) {
       mapping[h] = COLUMN_MAP[norm];
+      continue;
+    }
+    const key = normalizeKey(h);
+    if (NORMALIZED_COLUMN_MAP[key]) {
+      mapping[h] = NORMALIZED_COLUMN_MAP[key];
     }
   }
 
