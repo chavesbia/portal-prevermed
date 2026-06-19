@@ -50,6 +50,18 @@ function normalizeHeader(h: string): string {
   return h.replace(/[\r\n]+/g, " ").trim();
 }
 
+function normalizeKey(h: string): string {
+  return h
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+const NORMALIZED_COLUMN_MAP: Record<string, keyof ASOParsedRow> = Object.fromEntries(
+  Object.entries(COLUMN_MAP).map(([k, v]) => [normalizeKey(k), v])
+) as any;
+
 function parseDate(val: any): string | null {
   if (!val) return null;
   if (typeof val === "number") {
@@ -88,6 +100,11 @@ export async function parseASOFile(file: File): Promise<ASOParsedRow[]> {
     const norm = normalizeHeader(h);
     if (COLUMN_MAP[norm]) {
       mapping[h] = COLUMN_MAP[norm];
+      continue;
+    }
+    const key = normalizeKey(h);
+    if (NORMALIZED_COLUMN_MAP[key]) {
+      mapping[h] = NORMALIZED_COLUMN_MAP[key];
     }
   }
 

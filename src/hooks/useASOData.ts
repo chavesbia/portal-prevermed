@@ -64,7 +64,7 @@ export function useASOStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("aso_atendimentos")
-        .select("status, agenda");
+        .select("status, agenda, unidade, id_interno");
       if (error) throw error;
 
       const stats = {
@@ -84,8 +84,9 @@ export function useASOStats() {
       for (const row of data || []) {
         const s = row.status as keyof typeof stats;
         if (s in stats) (stats as any)[s]++;
-        if (row.agenda?.toLowerCase().includes("lapa")) stats.lapa++;
-        else if (row.agenda?.toLowerCase().includes("osasco")) stats.osasco++;
+        const hay = `${row.agenda ?? ""} ${row.unidade ?? ""} ${row.id_interno ?? ""}`.toLowerCase();
+        if (hay.includes("osasco")) stats.osasco++;
+        else if (hay.includes("lapa")) stats.lapa++;
       }
       return stats;
     },
