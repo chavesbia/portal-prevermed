@@ -64,7 +64,7 @@ export function useASOStats() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("aso_atendimentos")
-        .select("status, agenda");
+        .select("status, agenda, unidade, id_interno");
       if (error) throw error;
 
       const stats = {
