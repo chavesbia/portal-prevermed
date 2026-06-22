@@ -16,13 +16,16 @@ import {
 import {
   useColaboradores, useSetores, useStatusColaboradores, useCompetencias, useNiveis,
   useUpsertColaborador, useUpsertSetor, useUpdateNivelDescricao, usePlanosConsolidados,
-  useUpdateAcaoStatus, useUpsertColaboradorByUser,
+  useUpdateAcaoStatus, useUpsertColaboradorByUser, useReabrirAvaliacao, useAvaliacaoDetalhe,
   CLASS_LABELS, CLASS_COLORS, RISCO_LABELS,
   type FbStatusColab, type FbColaborador, type FbAcaoStatus,
 } from "@/hooks/useFeedback";
 import { Switch } from "@/components/ui/switch";
 import { NovaAvaliacaoDrawer } from "@/components/feedback/NovaAvaliacaoDrawer";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateFeedbackPDF } from "@/lib/feedback-pdf";
+import { FileDown, Lock, Eye } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar,
   PieChart, Pie, Cell, Legend,
