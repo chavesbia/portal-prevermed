@@ -123,7 +123,7 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
 
   // ============ AUTOSAVE (debounced) ============
   useEffect(() => {
-    if (!open || !colaboradorId || skipAutosaveRef.current) return;
+    if (!open || !colaboradorId || skipAutosaveRef.current || readOnly) return;
     const t = setTimeout(async () => {
       try {
         setSaveStatus("saving");
