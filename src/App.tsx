@@ -91,6 +91,7 @@ const App = () => (
                 <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
                 <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
                 <Route path="/gestao-passivos" element={<GestaoPassivos />} />
+                <Route path="/gestao-feedback" element={<ProtectedModuleRoute route="/gestao-feedback"><GestaoFeedback /></ProtectedModuleRoute>} />
                 <Route path="/social" element={<Social />} />
 
                 <Route path="/notificacoes" element={<Notificacoes />} />
