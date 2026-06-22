@@ -11,14 +11,19 @@ export interface FbSetor { id: string; nome: string; ativo: boolean }
 export interface FbCompetencia { id: string; ordem: number; nome: string; ativo: boolean }
 export interface FbNivel { id: string; competencia_id: string; nota: number; descricao_oficial: string }
 export interface FbColaborador {
-  id: string; user_id: string | null; nome: string; matricula: string | null; cpf: string | null;
+  id: string; user_id: string | null; nome: string | null; matricula: string | null; cpf: string | null;
   cargo: string | null; setor_id: string | null; gestor_id: string | null;
   data_admissao: string | null; status: FbColabStatus; periodicidade_dias: number;
+  incluido_no_ciclo: boolean;
 }
 export interface FbStatusColab {
-  colaborador_id: string; nome: string; matricula: string | null; cargo: string | null;
+  colaborador_id: string;
+  fb_colaborador_id: string | null;
+  user_id: string | null;
+  nome: string; matricula: string | null; cpf: string | null; cargo: string | null;
   setor_id: string | null; setor_nome: string | null; gestor_id: string | null;
-  status: FbColabStatus; periodicidade_dias: number;
+  unit: string | null; data_admissao: string | null;
+  status: FbColabStatus; periodicidade_dias: number; incluido_no_ciclo: boolean;
   ultima_avaliacao_id: string | null; ultimo_feedback: string | null; proximo_feedback: string | null;
   pontuacao_total: number | null; classificacao: FbClassificacao | null;
   status_feedback: "em_dia" | "proximo" | "atrasado" | "sem_feedback"; risco: FbRisco;
@@ -167,6 +172,26 @@ export function useUpsertColaborador() {
     onError: (e: any) => toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" }),
   });
 }
+
+/** Upsert por user_id — usado para vincular usuário do portal ao ciclo de feedback */
+export function useUpsertColaboradorByUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { user_id: string } & Partial<FbColaborador>) => {
+      const { error } = await supabase
+        .from("fb_colaboradores")
+        .upsert(input as any, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fb_colaboradores"] });
+      qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
+      toast({ title: "Dados atualizados" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+}
+
 
 export function useUpsertSetor() {
   const qc = useQueryClient();
