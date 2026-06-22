@@ -22,6 +22,7 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   colaboradorId: string | null;
   avaliacaoId?: string | null;
+  mode?: "edit" | "view";
 }
 
 interface AcaoLinha { acao: string; responsavel: string; prazo: string; status: FbAcaoStatus; competencia_id?: string | null }
