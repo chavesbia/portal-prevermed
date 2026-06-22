@@ -535,7 +535,7 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
             <TableBody>
               {data.pdi.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>{p.fb_avaliacoes?.fb_colaboradores?.nome}</TableCell>
+                  <TableCell className="font-medium">{p.colaborador_nome}</TableCell>
                   <TableCell>{p.fb_competencias?.nome ?? "Geral"}</TableCell>
                   <TableCell className="max-w-md">{p.acao}</TableCell>
                   <TableCell>{p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
