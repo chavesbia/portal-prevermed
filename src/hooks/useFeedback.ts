@@ -344,14 +344,45 @@ export function usePlanosConsolidados() {
   return useQuery({
     queryKey: ["fb_planos_consolidados"],
     queryFn: async () => {
-      const [ff, pdi] = await Promise.all([
-        supabase.from("fb_feedforward").select("*, fb_avaliacoes!inner(colaborador_id, fb_colaboradores!inner(nome))"),
-        supabase.from("fb_pdi").select("*, fb_avaliacoes!inner(colaborador_id, fb_colaboradores!inner(nome)), fb_competencias(nome)"),
+      const [ff, pdi, statusRows] = await Promise.all([
+        supabase.from("fb_feedforward").select("*, fb_avaliacoes!inner(colaborador_id)"),
+        supabase.from("fb_pdi").select("*, fb_avaliacoes!inner(colaborador_id), fb_competencias(nome)"),
+        supabase.from("fb_v_status_colaborador").select("colaborador_id, nome, setor_nome"),
       ]);
+      const nameMap = new Map<string, { nome: string; setor: string | null }>();
+      (statusRows.data ?? []).forEach((r: any) =>
+        nameMap.set(r.colaborador_id, { nome: r.nome, setor: r.setor_nome }),
+      );
+      const enrich = (rows: any[]) =>
+        rows.map((r) => {
+          const info = nameMap.get(r.fb_avaliacoes?.colaborador_id);
+          return { ...r, colaborador_nome: info?.nome ?? "—", setor_nome: info?.setor ?? "—" };
+        });
       return {
-        feedforward: (ff.data ?? []) as any[],
-        pdi: (pdi.data ?? []) as any[],
+        feedforward: enrich(ff.data ?? []),
+        pdi: enrich(pdi.data ?? []),
       };
     },
+  });
+}
+
+/** Reabre uma avaliação concluída (apenas ADM Master / RH). */
+export function useReabrirAvaliacao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (avaliacaoId: string) => {
+      const { error } = await supabase
+        .from("fb_avaliacoes")
+        .update({ concluida: false })
+        .eq("id", avaliacaoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fb_avaliacoes"] });
+      qc.invalidateQueries({ queryKey: ["fb_avaliacao_detalhe"] });
+      qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
+      toast({ title: "Avaliação reaberta para edição" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 }

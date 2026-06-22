@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,16 @@ import {
 import {
   useColaboradores, useSetores, useStatusColaboradores, useCompetencias, useNiveis,
   useUpsertColaborador, useUpsertSetor, useUpdateNivelDescricao, usePlanosConsolidados,
-  useUpdateAcaoStatus, useUpsertColaboradorByUser,
+  useUpdateAcaoStatus, useUpsertColaboradorByUser, useReabrirAvaliacao, useAvaliacaoDetalhe,
   CLASS_LABELS, CLASS_COLORS, RISCO_LABELS,
   type FbStatusColab, type FbColaborador, type FbAcaoStatus,
 } from "@/hooks/useFeedback";
 import { Switch } from "@/components/ui/switch";
 import { NovaAvaliacaoDrawer } from "@/components/feedback/NovaAvaliacaoDrawer";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateFeedbackPDF } from "@/lib/feedback-pdf";
+import { FileDown, Lock, Eye } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar,
   PieChart, Pie, Cell, Legend,
@@ -55,6 +58,7 @@ export default function GestaoFeedback() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selColab, setSelColab] = useState<string | null>(null);
   const [selAvaliacao, setSelAvaliacao] = useState<string | null>(null);
+  const [drawerMode, setDrawerMode] = useState<"edit" | "view">("edit");
 
   // KPIs consideram apenas colaboradores incluídos no ciclo
   const noCiclo = useMemo(() => status.filter((s) => s.incluido_no_ciclo), [status]);
@@ -107,10 +111,9 @@ export default function GestaoFeedback() {
       .sort((a, b) => b.media - a.media);
   }, [status]);
 
-  const handleNovaAvaliacao = async (colabId: string, avalId?: string) => {
+  const handleNovaAvaliacao = async (colabId: string, avalId?: string, mode: "edit" | "view" = "edit") => {
     let idToOpen = avalId ?? null;
-    // Ao clicar em "Avaliar", retomar rascunho em andamento (não concluído) se existir,
-    // em vez de criar uma nova avaliação em branco a cada clique.
+    // Ao clicar em "Avaliar", retomar rascunho em andamento (não concluído) se existir.
     if (!idToOpen) {
       const { data } = await supabase
         .from("fb_avaliacoes")
@@ -122,7 +125,7 @@ export default function GestaoFeedback() {
         .maybeSingle();
       if (data?.id) idToOpen = data.id;
     }
-    setSelColab(colabId); setSelAvaliacao(idToOpen); setDrawerOpen(true);
+    setSelColab(colabId); setSelAvaliacao(idToOpen); setDrawerMode(mode); setDrawerOpen(true);
   };
 
   return (
@@ -259,7 +262,7 @@ export default function GestaoFeedback() {
 
         {/* ============= FEEDBACKS ============= */}
         <TabsContent value="feedbacks">
-          <FeedbacksRecentes status={status} onAbrir={(c, a) => handleNovaAvaliacao(c, a)} />
+          <FeedbacksRecentes status={status} onAbrir={(c, a) => handleNovaAvaliacao(c, a, "view")} />
         </TabsContent>
 
         {/* ============= PLANOS ============= */}
@@ -279,7 +282,7 @@ export default function GestaoFeedback() {
       </Tabs>
 
       <NovaAvaliacaoDrawer open={drawerOpen} onOpenChange={setDrawerOpen}
-                           colaboradorId={selColab} avaliacaoId={selAvaliacao} />
+                           colaboradorId={selColab} avaliacaoId={selAvaliacao} mode={drawerMode} />
     </div>
   );
 }
@@ -333,8 +336,8 @@ function ColabRow({ s, setores, onAvaliar, onAbrir }: {
       <TableCell className="text-center">
         {s.pontuacao_total != null && s.classificacao ? (
           <Badge
-            className="font-semibold justify-center min-w-[96px] px-3 py-1"
-            style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}
+            className="font-semibold justify-center min-w-[110px] px-3 py-1 text-white border-transparent"
+            style={{ backgroundColor: CLASS_COLORS[s.classificacao] }}
           >
             {s.pontuacao_total} · {CLASS_LABELS[s.classificacao]}
           </Badge>
@@ -424,15 +427,22 @@ function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
 
 function FeedbacksRecentes({ status, onAbrir }: { status: FbStatusColab[]; onAbrir: (colab: string, aval: string) => void }) {
   const comAvaliacao = status.filter((s) => s.ultima_avaliacao_id).sort((a, b) => (b.ultimo_feedback ?? "").localeCompare(a.ultimo_feedback ?? ""));
+  const [pdfAvalId, setPdfAvalId] = useState<string | null>(null);
   return (
     <Card>
-      <CardHeader><CardTitle>Avaliações Concluídas</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Avaliações Concluídas</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Clique em <strong>Visualizar</strong> para revisar a avaliação (somente leitura). Use <strong>PDF</strong> para gerar o documento com o logo da PreverMed.
+          Avaliações concluídas só podem ser reabertas para edição por ADM Master / RH.
+        </p>
+      </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Colaborador</TableHead><TableHead>Setor</TableHead>
-              <TableHead>Data</TableHead><TableHead>Pontuação</TableHead><TableHead>Classificação</TableHead><TableHead></TableHead>
+              <TableHead>Data</TableHead><TableHead>Pontuação</TableHead><TableHead>Classificação</TableHead><TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -441,23 +451,49 @@ function FeedbacksRecentes({ status, onAbrir }: { status: FbStatusColab[]; onAbr
                 <TableCell className="font-medium">{s.nome}</TableCell>
                 <TableCell>{s.setor_nome}</TableCell>
                 <TableCell>{s.ultimo_feedback && new Date(s.ultimo_feedback).toLocaleDateString("pt-BR")}</TableCell>
-                <TableCell>{s.pontuacao_total}</TableCell>
+                <TableCell className="font-semibold">{s.pontuacao_total}</TableCell>
                 <TableCell>
                   {s.classificacao && (
-                    <Badge style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}>
+                    <Badge
+                      className="text-white border-transparent font-semibold px-3 py-1"
+                      style={{ backgroundColor: CLASS_COLORS[s.classificacao] }}
+                    >
                       {CLASS_LABELS[s.classificacao]}
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell><Button size="sm" variant="outline" onClick={() => onAbrir(s.colaborador_id, s.ultima_avaliacao_id!)}>Abrir</Button></TableCell>
+                <TableCell className="text-right space-x-1 whitespace-nowrap">
+                  <Button size="sm" variant="outline" onClick={() => onAbrir(s.colaborador_id, s.ultima_avaliacao_id!)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" />Visualizar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPdfAvalId(s.ultima_avaliacao_id!)}>
+                    <FileDown className="h-3.5 w-3.5 mr-1" />PDF
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
             {comAvaliacao.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Nenhuma avaliação concluída ainda.</TableCell></TableRow>}
           </TableBody>
         </Table>
       </CardContent>
+      {pdfAvalId && <PDFGenerator avaliacaoId={pdfAvalId} onDone={() => setPdfAvalId(null)} />}
     </Card>
   );
+}
+
+function PDFGenerator({ avaliacaoId, onDone }: { avaliacaoId: string; onDone: () => void }) {
+  const { data: detalhe } = useAvaliacaoDetalhe(avaliacaoId);
+  const { data: status = [] } = useStatusColaboradores();
+  const { data: comps = [] } = useCompetencias();
+  useEffect(() => {
+    if (!detalhe) return;
+    const colab = status.find((s) => s.colaborador_id === detalhe.avaliacao.colaborador_id);
+    if (!colab) return;
+    generateFeedbackPDF({ avaliacao: detalhe.avaliacao, notas: detalhe.notas, feedforward: detalhe.feedforward, pdi: detalhe.pdi, colaborador: colab, competencias: comps });
+    onDone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detalhe, status, comps]);
+  return null;
 }
 
 function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
@@ -473,7 +509,7 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
             <TableBody>
               {data.feedforward.map((f) => (
                 <TableRow key={f.id}>
-                  <TableCell>{f.fb_avaliacoes?.fb_colaboradores?.nome}</TableCell>
+                  <TableCell className="font-medium">{f.colaborador_nome}</TableCell>
                   <TableCell className="max-w-md">{f.acao}</TableCell>
                   <TableCell>{f.responsavel ?? "—"}</TableCell>
                   <TableCell>{f.prazo ? new Date(f.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
@@ -499,7 +535,7 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
             <TableBody>
               {data.pdi.map((p) => (
                 <TableRow key={p.id}>
-                  <TableCell>{p.fb_avaliacoes?.fb_colaboradores?.nome}</TableCell>
+                  <TableCell className="font-medium">{p.colaborador_nome}</TableCell>
                   <TableCell>{p.fb_competencias?.nome ?? "Geral"}</TableCell>
                   <TableCell className="max-w-md">{p.acao}</TableCell>
                   <TableCell>{p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
@@ -534,11 +570,20 @@ function IndicadoresTab({ status, setores, comps }: { status: FbStatusColab[]; s
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle>Matriz de Risco por Setor</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Matriz de Risco por Setor</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Conta, por setor, quantos colaboradores estão em cada faixa de risco. O <strong>risco</strong> é derivado da última avaliação:
+            {" "}<span className="font-semibold" style={{ color: "hsl(0 84% 50%)" }}>Alto</span> = pontuação baixa ou feedback muito atrasado,
+            {" "}<span className="font-semibold" style={{ color: "hsl(48 96% 53%)" }}>Médio</span> = atenção (pontuação intermediária ou próximo do vencimento),
+            {" "}<span className="font-semibold" style={{ color: "hsl(142 76% 40%)" }}>Baixo</span> = colaborador em dia e com bom desempenho.
+            Use para priorizar PDIs e ações de RH nos setores mais críticos.
+          </p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={matriz}>
-              <XAxis dataKey="nome" /><YAxis /><Tooltip /><Legend />
+              <XAxis dataKey="nome" /><YAxis allowDecimals={false} /><Tooltip /><Legend />
               <Bar dataKey="alto" stackId="r" fill="hsl(0 84% 50%)" name="Alto Risco" />
               <Bar dataKey="medio" stackId="r" fill="hsl(48 96% 53%)" name="Médio Risco" />
               <Bar dataKey="baixo" stackId="r" fill="hsl(142 76% 40%)" name="Baixo Risco" />
