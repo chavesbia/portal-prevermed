@@ -173,24 +173,55 @@ export function useUpsertColaborador() {
   });
 }
 
-/** Upsert por user_id — usado para vincular usuário do portal ao ciclo de feedback */
+/** Upsert por user_id — vincula um usuário do portal ao ciclo de feedback.
+ *  Usa optimistic update no cache de `fb_status_colab` para manter o toggle
+ *  consistente mesmo com cliques rápidos / latência. Em caso de erro
+ *  (ex: violação de unique), restaura o estado anterior. */
 export function useUpsertColaboradorByUser() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { user_id: string } & Partial<FbColaborador>) => {
+      if (!input.user_id) throw new Error("Usuário inválido.");
       const { error } = await supabase
         .from("fb_colaboradores")
         .upsert(input as any, { onConflict: "user_id" });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") {
+          throw new Error("Este colaborador já está cadastrado no ciclo de feedback.");
+        }
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: ["fb_status_colab"] });
+      const prev = qc.getQueryData<FbStatusColab[]>(["fb_status_colab"]);
+      if (prev) {
+        qc.setQueryData<FbStatusColab[]>(["fb_status_colab"], prev.map((r) =>
+          r.user_id === input.user_id
+            ? {
+                ...r,
+                incluido_no_ciclo: input.incluido_no_ciclo ?? r.incluido_no_ciclo,
+                matricula: input.matricula !== undefined ? input.matricula ?? null : r.matricula,
+                cpf: input.cpf !== undefined ? input.cpf ?? null : r.cpf,
+                setor_id: input.setor_id !== undefined ? input.setor_id ?? null : r.setor_id,
+                periodicidade_dias: input.periodicidade_dias ?? r.periodicidade_dias,
+              }
+            : r,
+        ));
+      }
+      return { prev };
+    },
+    onError: (e: any, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["fb_status_colab"], ctx.prev);
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["fb_colaboradores"] });
       qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
-      toast({ title: "Dados atualizados" });
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 }
+
 
 
 export function useUpsertSetor() {

@@ -1833,7 +1833,7 @@ export type Database = {
           setor_id: string | null
           status: Database["public"]["Enums"]["fb_colaborador_status"]
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           cargo?: string | null
@@ -1849,7 +1849,7 @@ export type Database = {
           setor_id?: string | null
           status?: Database["public"]["Enums"]["fb_colaborador_status"]
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           cargo?: string | null
@@ -1865,7 +1865,7 @@ export type Database = {
           setor_id?: string | null
           status?: Database["public"]["Enums"]["fb_colaborador_status"]
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: [
           {
