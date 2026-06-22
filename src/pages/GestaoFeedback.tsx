@@ -282,11 +282,33 @@ function KpiCard({ icon: Icon, label, value, color }: any) {
   );
 }
 
-function ColabRow({ s, onAvaliar, onAbrir }: { s: FbStatusColab; onAvaliar: () => void; onAbrir: () => void }) {
+function ColabRow({ s, setores, onAvaliar, onAbrir }: {
+  s: FbStatusColab; setores: { id: string; nome: string }[];
+  onAvaliar: () => void; onAbrir: () => void;
+}) {
   const st = STATUS_LABELS[s.status_feedback];
+  const upsertByUser = useUpsertColaboradorByUser();
+  const [editOpen, setEditOpen] = useState(false);
+
+  const toggleCiclo = async (checked: boolean) => {
+    if (!s.user_id) return;
+    await upsertByUser.mutateAsync({
+      user_id: s.user_id,
+      incluido_no_ciclo: checked,
+      periodicidade_dias: s.periodicidade_dias ?? 90,
+    });
+  };
+
   return (
-    <TableRow>
-      <TableCell className="font-medium">{s.nome}<div className="text-xs text-muted-foreground">{s.matricula}</div></TableCell>
+    <TableRow className={!s.incluido_no_ciclo ? "opacity-60" : ""}>
+      <TableCell>
+        <Switch checked={s.incluido_no_ciclo} disabled={!s.user_id || upsertByUser.isPending}
+                onCheckedChange={toggleCiclo} />
+      </TableCell>
+      <TableCell className="font-medium">
+        {s.nome}
+        <div className="text-xs text-muted-foreground">{s.matricula ?? "sem matrícula"}</div>
+      </TableCell>
       <TableCell>{s.setor_nome ?? "—"}</TableCell>
       <TableCell>{s.cargo ?? "—"}</TableCell>
       <TableCell>{s.ultimo_feedback ? new Date(s.ultimo_feedback).toLocaleDateString("pt-BR") : "—"}</TableCell>
@@ -304,55 +326,85 @@ function ColabRow({ s, onAvaliar, onAbrir }: { s: FbStatusColab; onAvaliar: () =
           {RISCO_LABELS[s.risco]}
         </Badge>
       </TableCell>
-      <TableCell className="text-right space-x-1">
+      <TableCell className="text-right space-x-1 whitespace-nowrap">
+        <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} disabled={!s.user_id}>
+          <Edit className="h-3.5 w-3.5 mr-1" />Dados
+        </Button>
         {s.ultima_avaliacao_id && (
           <Button size="sm" variant="ghost" onClick={onAbrir}><Edit className="h-3.5 w-3.5" /></Button>
         )}
-        <Button size="sm" onClick={onAvaliar}><Plus className="h-3.5 w-3.5 mr-1" />Avaliar</Button>
+        {s.incluido_no_ciclo && s.fb_colaborador_id && (
+          <Button size="sm" onClick={onAvaliar}><Plus className="h-3.5 w-3.5 mr-1" />Avaliar</Button>
+        )}
       </TableCell>
+      <EditColaboradorDialog open={editOpen} onOpenChange={setEditOpen} s={s} setores={setores} />
     </TableRow>
   );
 }
 
-function NovoColaboradorBtn() {
-  const [open, setOpen] = useState(false);
-  const { data: setores = [] } = useSetores();
-  const upsert = useUpsertColaborador();
-  const [form, setForm] = useState<Partial<FbColaborador> & { nome: string }>({ nome: "", periodicidade_dias: 90, status: "ativo" });
+function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
+  open: boolean; onOpenChange: (b: boolean) => void; s: FbStatusColab;
+  setores: { id: string; nome: string }[];
+}) {
+  const upsert = useUpsertColaboradorByUser();
+  const [form, setForm] = useState({
+    matricula: s.matricula ?? "",
+    cpf: s.cpf ?? "",
+    setor_id: s.setor_id ?? "_",
+    periodicidade_dias: s.periodicidade_dias ?? 90,
+  });
+
+  const save = async () => {
+    if (!s.user_id) return;
+    await upsert.mutateAsync({
+      user_id: s.user_id,
+      matricula: form.matricula || null,
+      cpf: form.cpf || null,
+      setor_id: form.setor_id === "_" ? null : form.setor_id,
+      periodicidade_dias: form.periodicidade_dias,
+      incluido_no_ciclo: s.incluido_no_ciclo,
+    });
+    onOpenChange(false);
+  };
 
   return (
-    <>
-      <Button onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Novo Colaborador</Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Colaborador</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2"><Label>Nome Completo *</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
-            <div><Label>Matrícula</Label><Input value={form.matricula ?? ""} onChange={(e) => setForm({ ...form, matricula: e.target.value })} /></div>
-            <div><Label>CPF</Label><Input value={form.cpf ?? ""} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></div>
-            <div><Label>Cargo</Label><Input value={form.cargo ?? ""} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
-            <div>
-              <Label>Setor</Label>
-              <Select value={form.setor_id ?? "_"} onValueChange={(v) => setForm({ ...form, setor_id: v === "_" ? null : v })}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_">—</SelectItem>
-                  {setores.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Data de Admissão</Label><Input type="date" value={form.data_admissao ?? ""} onChange={(e) => setForm({ ...form, data_admissao: e.target.value })} /></div>
-            <div><Label>Periodicidade (dias)</Label><Input type="number" value={form.periodicidade_dias ?? 90} onChange={(e) => setForm({ ...form, periodicidade_dias: parseInt(e.target.value) || 90 })} /></div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Complementar dados — {s.nome}</DialogTitle>
+        </DialogHeader>
+        <div className="text-xs text-muted-foreground mb-2">
+          Nome, cargo, unidade e data de admissão vêm de Gerenciar Usuários.
+          Aqui você complementa as informações específicas do módulo de feedback.
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Matrícula</Label><Input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} /></div>
+          <div><Label>CPF</Label><Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></div>
+          <div>
+            <Label>Setor (para feedback)</Label>
+            <Select value={form.setor_id} onValueChange={(v) => setForm({ ...form, setor_id: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_">—</SelectItem>
+                {setores.map((s2) => <SelectItem key={s2.id} value={s2.id}>{s2.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button disabled={!form.nome || upsert.isPending} onClick={async () => { await upsert.mutateAsync(form); setOpen(false); setForm({ nome: "", periodicidade_dias: 90, status: "ativo" }); }}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div>
+            <Label>Periodicidade (dias)</Label>
+            <Input type="number" value={form.periodicidade_dias}
+                   onChange={(e) => setForm({ ...form, periodicidade_dias: parseInt(e.target.value) || 90 })} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={upsert.isPending} onClick={save}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
+
 
 function FeedbacksRecentes({ status, onAbrir }: { status: FbStatusColab[]; onAbrir: (colab: string, aval: string) => void }) {
   const comAvaliacao = status.filter((s) => s.ultima_avaliacao_id).sort((a, b) => (b.ultimo_feedback ?? "").localeCompare(a.ultimo_feedback ?? ""));
