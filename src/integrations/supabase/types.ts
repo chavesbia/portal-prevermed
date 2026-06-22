@@ -4705,7 +4705,10 @@ export type Database = {
           data_admissao: string | null
           fb_colaborador_id: string | null
           gestor_id: string | null
+          gestor_nome: string | null
           incluido_no_ciclo: boolean | null
+          lider_id: string | null
+          lider_nome: string | null
           matricula: string | null
           nome: string | null
           periodicidade_dias: number | null
@@ -4723,10 +4726,38 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fb_colaboradores_setor_id_fkey"
+            foreignKeyName: "profiles_direct_leader_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_leader_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_manager_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_manager_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_departments_department_id_fkey"
             columns: ["setor_id"]
             isOneToOne: false
-            referencedRelation: "fb_setores"
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
