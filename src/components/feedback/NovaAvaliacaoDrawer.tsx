@@ -101,9 +101,10 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
       setNotas(map);
       setFeedforward(detalhe.feedforward.map((f) => ({ acao: f.acao, responsavel: f.responsavel ?? "", prazo: f.prazo ?? "", status: f.status })));
       setPdi(detalhe.pdi.map((p) => ({ acao: p.acao, responsavel: p.responsavel ?? "", prazo: p.prazo ?? "", status: p.status, competencia_id: (p as any).competencia_id })));
+      if (mode === "view") setStep(5);
       setTimeout(() => { skipAutosaveRef.current = false; }, 500);
     }
-  }, [detalhe]);
+  }, [detalhe, mode]);
 
   const total = useMemo(() => Object.values(notas).reduce((s, n) => s + (n || 0), 0), [notas]);
   const todasNotas = comps.length > 0 && comps.every((c) => notas[c.id]);
