@@ -107,8 +107,22 @@ export default function GestaoFeedback() {
       .sort((a, b) => b.media - a.media);
   }, [status]);
 
-  const handleNovaAvaliacao = (colabId: string, avalId?: string) => {
-    setSelColab(colabId); setSelAvaliacao(avalId ?? null); setDrawerOpen(true);
+  const handleNovaAvaliacao = async (colabId: string, avalId?: string) => {
+    let idToOpen = avalId ?? null;
+    // Ao clicar em "Avaliar", retomar rascunho em andamento (não concluído) se existir,
+    // em vez de criar uma nova avaliação em branco a cada clique.
+    if (!idToOpen) {
+      const { data } = await supabase
+        .from("fb_avaliacoes")
+        .select("id")
+        .eq("colaborador_id", colabId)
+        .eq("concluida", false)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.id) idToOpen = data.id;
+    }
+    setSelColab(colabId); setSelAvaliacao(idToOpen); setDrawerOpen(true);
   };
 
   return (
