@@ -1697,6 +1697,399 @@ export type Database = {
           },
         ]
       }
+      fb_avaliacao_notas: {
+        Row: {
+          avaliacao_id: string
+          comentario: string | null
+          competencia_id: string
+          created_at: string
+          id: string
+          nota: number
+        }
+        Insert: {
+          avaliacao_id: string
+          comentario?: string | null
+          competencia_id: string
+          created_at?: string
+          id?: string
+          nota: number
+        }
+        Update: {
+          avaliacao_id?: string
+          comentario?: string | null
+          competencia_id?: string
+          created_at?: string
+          id?: string
+          nota?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_avaliacao_notas_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fb_avaliacao_notas_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["ultima_avaliacao_id"]
+          },
+          {
+            foreignKeyName: "fb_avaliacao_notas_competencia_id_fkey"
+            columns: ["competencia_id"]
+            isOneToOne: false
+            referencedRelation: "fb_competencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fb_avaliacoes: {
+        Row: {
+          acoes_melhoria: string | null
+          atividades: string | null
+          classificacao: Database["public"]["Enums"]["fb_classificacao"] | null
+          colaborador_id: string
+          concluida: boolean
+          created_at: string
+          created_by: string | null
+          data_avaliacao: string
+          data_proximo_feedback: string | null
+          gestor_id: string | null
+          id: string
+          observacoes: string | null
+          pontos_melhora: string | null
+          pontos_positivos: string | null
+          pontuacao_total: number | null
+          updated_at: string
+        }
+        Insert: {
+          acoes_melhoria?: string | null
+          atividades?: string | null
+          classificacao?: Database["public"]["Enums"]["fb_classificacao"] | null
+          colaborador_id: string
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_avaliacao?: string
+          data_proximo_feedback?: string | null
+          gestor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          pontos_melhora?: string | null
+          pontos_positivos?: string | null
+          pontuacao_total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          acoes_melhoria?: string | null
+          atividades?: string | null
+          classificacao?: Database["public"]["Enums"]["fb_classificacao"] | null
+          colaborador_id?: string
+          concluida?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_avaliacao?: string
+          data_proximo_feedback?: string | null
+          gestor_id?: string | null
+          id?: string
+          observacoes?: string | null
+          pontos_melhora?: string | null
+          pontos_positivos?: string | null
+          pontuacao_total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_avaliacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "fb_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fb_avaliacoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["colaborador_id"]
+          },
+        ]
+      }
+      fb_colaboradores: {
+        Row: {
+          cargo: string | null
+          cpf: string | null
+          created_at: string
+          data_admissao: string | null
+          gestor_id: string | null
+          id: string
+          matricula: string | null
+          nome: string
+          periodicidade_dias: number
+          setor_id: string | null
+          status: Database["public"]["Enums"]["fb_colaborador_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          gestor_id?: string | null
+          id?: string
+          matricula?: string | null
+          nome: string
+          periodicidade_dias?: number
+          setor_id?: string | null
+          status?: Database["public"]["Enums"]["fb_colaborador_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          data_admissao?: string | null
+          gestor_id?: string | null
+          id?: string
+          matricula?: string | null
+          nome?: string
+          periodicidade_dias?: number
+          setor_id?: string | null
+          status?: Database["public"]["Enums"]["fb_colaborador_status"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_colaboradores_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "fb_setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fb_competencia_niveis: {
+        Row: {
+          competencia_id: string
+          created_at: string
+          descricao_oficial: string
+          id: string
+          nota: number
+          updated_at: string
+        }
+        Insert: {
+          competencia_id: string
+          created_at?: string
+          descricao_oficial?: string
+          id?: string
+          nota: number
+          updated_at?: string
+        }
+        Update: {
+          competencia_id?: string
+          created_at?: string
+          descricao_oficial?: string
+          id?: string
+          nota?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_competencia_niveis_competencia_id_fkey"
+            columns: ["competencia_id"]
+            isOneToOne: false
+            referencedRelation: "fb_competencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fb_competencias: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          ordem: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fb_config: {
+        Row: {
+          alertas_dias: number[]
+          id: number
+          periodicidade_padrao_dias: number
+          updated_at: string
+        }
+        Insert: {
+          alertas_dias?: number[]
+          id?: number
+          periodicidade_padrao_dias?: number
+          updated_at?: string
+        }
+        Update: {
+          alertas_dias?: number[]
+          id?: number
+          periodicidade_padrao_dias?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fb_feedforward: {
+        Row: {
+          acao: string
+          avaliacao_id: string
+          created_at: string
+          id: string
+          prazo: string | null
+          responsavel: string | null
+          status: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at: string
+        }
+        Insert: {
+          acao: string
+          avaliacao_id: string
+          created_at?: string
+          id?: string
+          prazo?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at?: string
+        }
+        Update: {
+          acao?: string
+          avaliacao_id?: string
+          created_at?: string
+          id?: string
+          prazo?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_feedforward_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fb_feedforward_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["ultima_avaliacao_id"]
+          },
+        ]
+      }
+      fb_pdi: {
+        Row: {
+          acao: string
+          avaliacao_id: string
+          competencia_id: string | null
+          created_at: string
+          evidencia: string | null
+          id: string
+          prazo: string | null
+          responsavel: string | null
+          status: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at: string
+        }
+        Insert: {
+          acao: string
+          avaliacao_id: string
+          competencia_id?: string | null
+          created_at?: string
+          evidencia?: string | null
+          id?: string
+          prazo?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at?: string
+        }
+        Update: {
+          acao?: string
+          avaliacao_id?: string
+          competencia_id?: string | null
+          created_at?: string
+          evidencia?: string | null
+          id?: string
+          prazo?: string | null
+          responsavel?: string | null
+          status?: Database["public"]["Enums"]["fb_acao_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_pdi_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fb_pdi_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["ultima_avaliacao_id"]
+          },
+          {
+            foreignKeyName: "fb_pdi_competencia_id_fkey"
+            columns: ["competencia_id"]
+            isOneToOne: false
+            referencedRelation: "fb_competencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fb_setores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feriados: {
         Row: {
           created_at: string
@@ -4286,7 +4679,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      fb_v_status_colaborador: {
+        Row: {
+          cargo: string | null
+          classificacao: Database["public"]["Enums"]["fb_classificacao"] | null
+          colaborador_id: string | null
+          gestor_id: string | null
+          matricula: string | null
+          nome: string | null
+          periodicidade_dias: number | null
+          pontuacao_total: number | null
+          proximo_feedback: string | null
+          risco: Database["public"]["Enums"]["fb_risco"] | null
+          setor_id: string | null
+          setor_nome: string | null
+          status: Database["public"]["Enums"]["fb_colaborador_status"] | null
+          status_feedback: string | null
+          ultima_avaliacao_id: string | null
+          ultimo_feedback: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fb_colaboradores_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "fb_setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       apply_shadow_template: {
@@ -4340,6 +4761,11 @@ export type Database = {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
       }
+      fb_is_gestor_de: {
+        Args: { _colaborador_id: string; _user_id: string }
+        Returns: boolean
+      }
+      fb_is_rh: { Args: { _user_id: string }; Returns: boolean }
       generate_occurrence_ticket_number: { Args: never; Returns: string }
       get_user_accessible_modules: {
         Args: { _user_id: string }
@@ -4460,6 +4886,15 @@ export type Database = {
         | "NAO_COMPARECEU"
         | "REMARCADO"
         | "PARCIAL"
+      fb_acao_status: "nao_iniciado" | "em_andamento" | "concluido" | "atrasado"
+      fb_classificacao:
+        | "insuficiente"
+        | "fraco"
+        | "razoavel"
+        | "bom"
+        | "excelente"
+      fb_colaborador_status: "ativo" | "inativo" | "ferias" | "afastado"
+      fb_risco: "baixo" | "medio" | "alto"
       hierarchy_position:
         | "director"
         | "manager"
@@ -4711,6 +5146,16 @@ export const Constants = {
         "REMARCADO",
         "PARCIAL",
       ],
+      fb_acao_status: ["nao_iniciado", "em_andamento", "concluido", "atrasado"],
+      fb_classificacao: [
+        "insuficiente",
+        "fraco",
+        "razoavel",
+        "bom",
+        "excelente",
+      ],
+      fb_colaborador_status: ["ativo", "inativo", "ferias", "afastado"],
+      fb_risco: ["baixo", "medio", "alto"],
       hierarchy_position: [
         "director",
         "manager",
