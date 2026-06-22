@@ -485,7 +485,7 @@ function PDFGenerator({ avaliacaoId, onDone }: { avaliacaoId: string; onDone: ()
   const { data: detalhe } = useAvaliacaoDetalhe(avaliacaoId);
   const { data: status = [] } = useStatusColaboradores();
   const { data: comps = [] } = useCompetencias();
-  useMemo(() => {
+  useEffect(() => {
     if (!detalhe) return;
     const colab = status.find((s) => s.colaborador_id === detalhe.avaliacao.colaborador_id);
     if (!colab) return;
