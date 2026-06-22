@@ -278,8 +278,8 @@ export interface SaveAvaliacaoInput {
 export function useSaveAvaliacao() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SaveAvaliacaoInput) => {
-      const { notas, feedforward, pdi, id, ...header } = input;
+    mutationFn: async (input: SaveAvaliacaoInput & { silent?: boolean }) => {
+      const { notas, feedforward, pdi, id, silent, ...header } = input;
       let avalId = id;
       if (avalId) {
         const { error } = await supabase.from("fb_avaliacoes").update(header).eq("id", avalId);
@@ -293,7 +293,6 @@ export function useSaveAvaliacao() {
         avalId = data.id;
       }
 
-      // Replace notas
       await supabase.from("fb_avaliacao_notas").delete().eq("avaliacao_id", avalId!);
       if (notas.length) {
         const { error: en } = await supabase.from("fb_avaliacao_notas")
@@ -301,7 +300,6 @@ export function useSaveAvaliacao() {
         if (en) throw en;
       }
 
-      // Replace feedforward
       await supabase.from("fb_feedforward").delete().eq("avaliacao_id", avalId!);
       if (feedforward?.length) {
         const { error: ef } = await supabase.from("fb_feedforward")
@@ -309,20 +307,19 @@ export function useSaveAvaliacao() {
         if (ef) throw ef;
       }
 
-      // Replace PDI
       await supabase.from("fb_pdi").delete().eq("avaliacao_id", avalId!);
       if (pdi?.length) {
         const { error: ep } = await supabase.from("fb_pdi")
           .insert(pdi.map(p => ({ ...p, avaliacao_id: avalId! })));
         if (ep) throw ep;
       }
-      return avalId!;
+      return { id: avalId!, silent: !!silent };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ["fb_avaliacoes"] });
       qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
       qc.invalidateQueries({ queryKey: ["fb_avaliacao_detalhe"] });
-      toast({ title: "Avaliação salva" });
+      if (!result.silent) toast({ title: "Avaliação salva" });
     },
     onError: (e: any) => toast({ title: "Erro ao salvar avaliação", description: e.message, variant: "destructive" }),
   });
