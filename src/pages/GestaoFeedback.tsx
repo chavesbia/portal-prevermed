@@ -427,15 +427,22 @@ function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
 
 function FeedbacksRecentes({ status, onAbrir }: { status: FbStatusColab[]; onAbrir: (colab: string, aval: string) => void }) {
   const comAvaliacao = status.filter((s) => s.ultima_avaliacao_id).sort((a, b) => (b.ultimo_feedback ?? "").localeCompare(a.ultimo_feedback ?? ""));
+  const [pdfAvalId, setPdfAvalId] = useState<string | null>(null);
   return (
     <Card>
-      <CardHeader><CardTitle>Avaliações Concluídas</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Avaliações Concluídas</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Clique em <strong>Visualizar</strong> para revisar a avaliação (somente leitura). Use <strong>PDF</strong> para gerar o documento com o logo da PreverMed.
+          Avaliações concluídas só podem ser reabertas para edição por ADM Master / RH.
+        </p>
+      </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Colaborador</TableHead><TableHead>Setor</TableHead>
-              <TableHead>Data</TableHead><TableHead>Pontuação</TableHead><TableHead>Classificação</TableHead><TableHead></TableHead>
+              <TableHead>Data</TableHead><TableHead>Pontuação</TableHead><TableHead>Classificação</TableHead><TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -444,23 +451,49 @@ function FeedbacksRecentes({ status, onAbrir }: { status: FbStatusColab[]; onAbr
                 <TableCell className="font-medium">{s.nome}</TableCell>
                 <TableCell>{s.setor_nome}</TableCell>
                 <TableCell>{s.ultimo_feedback && new Date(s.ultimo_feedback).toLocaleDateString("pt-BR")}</TableCell>
-                <TableCell>{s.pontuacao_total}</TableCell>
+                <TableCell className="font-semibold">{s.pontuacao_total}</TableCell>
                 <TableCell>
                   {s.classificacao && (
-                    <Badge style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}>
+                    <Badge
+                      className="text-white border-transparent font-semibold px-3 py-1"
+                      style={{ backgroundColor: CLASS_COLORS[s.classificacao] }}
+                    >
                       {CLASS_LABELS[s.classificacao]}
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell><Button size="sm" variant="outline" onClick={() => onAbrir(s.colaborador_id, s.ultima_avaliacao_id!)}>Abrir</Button></TableCell>
+                <TableCell className="text-right space-x-1 whitespace-nowrap">
+                  <Button size="sm" variant="outline" onClick={() => onAbrir(s.colaborador_id, s.ultima_avaliacao_id!)}>
+                    <Eye className="h-3.5 w-3.5 mr-1" />Visualizar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPdfAvalId(s.ultima_avaliacao_id!)}>
+                    <FileDown className="h-3.5 w-3.5 mr-1" />PDF
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
             {comAvaliacao.length === 0 && <TableRow><TableCell colSpan={6} className="text-center py-6 text-muted-foreground">Nenhuma avaliação concluída ainda.</TableCell></TableRow>}
           </TableBody>
         </Table>
       </CardContent>
+      {pdfAvalId && <PDFGenerator avaliacaoId={pdfAvalId} onDone={() => setPdfAvalId(null)} />}
     </Card>
   );
+}
+
+function PDFGenerator({ avaliacaoId, onDone }: { avaliacaoId: string; onDone: () => void }) {
+  const { data: detalhe } = useAvaliacaoDetalhe(avaliacaoId);
+  const { data: status = [] } = useStatusColaboradores();
+  const { data: comps = [] } = useCompetencias();
+  useMemo(() => {
+    if (!detalhe) return;
+    const colab = status.find((s) => s.colaborador_id === detalhe.avaliacao.colaborador_id);
+    if (!colab) return;
+    generateFeedbackPDF({ avaliacao: detalhe.avaliacao, notas: detalhe.notas, feedforward: detalhe.feedforward, pdi: detalhe.pdi, colaborador: colab, competencias: comps });
+    onDone();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detalhe, status, comps]);
+  return null;
 }
 
 function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
