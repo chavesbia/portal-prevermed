@@ -1814,7 +1814,7 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "fb_v_status_colaborador"
-            referencedColumns: ["colaborador_id"]
+            referencedColumns: ["fb_colaborador_id"]
           },
         ]
       }
@@ -1826,8 +1826,9 @@ export type Database = {
           data_admissao: string | null
           gestor_id: string | null
           id: string
+          incluido_no_ciclo: boolean
           matricula: string | null
-          nome: string
+          nome: string | null
           periodicidade_dias: number
           setor_id: string | null
           status: Database["public"]["Enums"]["fb_colaborador_status"]
@@ -1841,8 +1842,9 @@ export type Database = {
           data_admissao?: string | null
           gestor_id?: string | null
           id?: string
+          incluido_no_ciclo?: boolean
           matricula?: string | null
-          nome: string
+          nome?: string | null
           periodicidade_dias?: number
           setor_id?: string | null
           status?: Database["public"]["Enums"]["fb_colaborador_status"]
@@ -1856,8 +1858,9 @@ export type Database = {
           data_admissao?: string | null
           gestor_id?: string | null
           id?: string
+          incluido_no_ciclo?: boolean
           matricula?: string | null
-          nome?: string
+          nome?: string | null
           periodicidade_dias?: number
           setor_id?: string | null
           status?: Database["public"]["Enums"]["fb_colaborador_status"]
@@ -3922,7 +3925,21 @@ export type Database = {
             foreignKeyName: "profiles_direct_leader_id_fkey"
             columns: ["direct_leader_id"]
             isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_leader_id_fkey"
+            columns: ["direct_leader_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "profiles_direct_manager_id_fkey"
+            columns: ["direct_manager_id"]
+            isOneToOne: false
+            referencedRelation: "fb_v_status_colaborador"
             referencedColumns: ["user_id"]
           },
           {
@@ -4684,7 +4701,11 @@ export type Database = {
           cargo: string | null
           classificacao: Database["public"]["Enums"]["fb_classificacao"] | null
           colaborador_id: string | null
+          cpf: string | null
+          data_admissao: string | null
+          fb_colaborador_id: string | null
           gestor_id: string | null
+          incluido_no_ciclo: boolean | null
           matricula: string | null
           nome: string | null
           periodicidade_dias: number | null
@@ -4697,6 +4718,8 @@ export type Database = {
           status_feedback: string | null
           ultima_avaliacao_id: string | null
           ultimo_feedback: string | null
+          unit: Database["public"]["Enums"]["unit_type"] | null
+          user_id: string | null
         }
         Relationships: [
           {
