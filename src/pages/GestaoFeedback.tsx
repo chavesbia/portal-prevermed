@@ -262,7 +262,7 @@ export default function GestaoFeedback() {
 
         {/* ============= FEEDBACKS ============= */}
         <TabsContent value="feedbacks">
-          <FeedbacksRecentes status={status} onAbrir={(c, a) => handleNovaAvaliacao(c, a)} />
+          <FeedbacksRecentes status={status} onAbrir={(c, a) => handleNovaAvaliacao(c, a, "view")} />
         </TabsContent>
 
         {/* ============= PLANOS ============= */}
@@ -282,7 +282,7 @@ export default function GestaoFeedback() {
       </Tabs>
 
       <NovaAvaliacaoDrawer open={drawerOpen} onOpenChange={setDrawerOpen}
-                           colaboradorId={selColab} avaliacaoId={selAvaliacao} />
+                           colaboradorId={selColab} avaliacaoId={selAvaliacao} mode={drawerMode} />
     </div>
   );
 }
