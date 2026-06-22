@@ -58,6 +58,7 @@ export default function GestaoFeedback() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selColab, setSelColab] = useState<string | null>(null);
   const [selAvaliacao, setSelAvaliacao] = useState<string | null>(null);
+  const [drawerMode, setDrawerMode] = useState<"edit" | "view">("edit");
 
   // KPIs consideram apenas colaboradores incluídos no ciclo
   const noCiclo = useMemo(() => status.filter((s) => s.incluido_no_ciclo), [status]);
