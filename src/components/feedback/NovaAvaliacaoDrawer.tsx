@@ -183,12 +183,29 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
           </SheetTitle>
         </SheetHeader>
 
+        {readOnly && (
+          <div className="mt-3 mb-2 flex items-start gap-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold">Modo Visualização — somente leitura</div>
+              <div className="text-xs">
+                {concluida
+                  ? "Esta avaliação está concluída e não pode ser editada. Caso haja equívoco, o ADM Master / RH pode reabrir."
+                  : "Você está apenas visualizando esta avaliação."}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stepper */}
-        <div className="flex items-center gap-1 my-4">
+        <div className={`flex items-center gap-1 my-4 ${readOnly ? "opacity-70" : ""}`}>
           {steps.map((s, i) => (
             <div key={s} className={`h-1.5 flex-1 rounded ${i <= step ? "bg-primary" : "bg-muted"}`} />
           ))}
         </div>
+
+        <fieldset disabled={readOnly} className="border-0 p-0 m-0 min-w-0 disabled:opacity-95">
+
 
         {step === 0 && (
           <div className="space-y-4">
