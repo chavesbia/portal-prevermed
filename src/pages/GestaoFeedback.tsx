@@ -22,6 +22,7 @@ import {
 } from "@/hooks/useFeedback";
 import { Switch } from "@/components/ui/switch";
 import { NovaAvaliacaoDrawer } from "@/components/feedback/NovaAvaliacaoDrawer";
+import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar,
   PieChart, Pie, Cell, Legend,
