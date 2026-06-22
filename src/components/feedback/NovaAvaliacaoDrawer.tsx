@@ -31,12 +31,16 @@ const STATUS_LABELS: Record<FbAcaoStatus, string> = {
   nao_iniciado: "Não Iniciado", em_andamento: "Em Andamento", concluido: "Concluído", atrasado: "Atrasado",
 };
 
-export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliacaoId }: Props) {
+export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliacaoId, mode = "edit" }: Props) {
   const { data: comps = [] } = useCompetencias();
   const { data: niveis = [] } = useNiveis();
   const { data: status = [] } = useStatusColaboradores();
   const { data: detalhe } = useAvaliacaoDetalhe(avaliacaoId ?? null);
   const save = useSaveAvaliacao();
+  const reabrir = useReabrirAvaliacao();
+  const { isAdmMaster } = useAuth();
+  const concluida = !!detalhe?.avaliacao?.concluida;
+  const readOnly = mode === "view" || concluida;
 
   const colab = status.find((c) => c.colaborador_id === colaboradorId);
 
