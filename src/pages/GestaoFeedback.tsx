@@ -570,11 +570,20 @@ function IndicadoresTab({ status, setores, comps }: { status: FbStatusColab[]; s
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle>Matriz de Risco por Setor</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Matriz de Risco por Setor</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Conta, por setor, quantos colaboradores estão em cada faixa de risco. O <strong>risco</strong> é derivado da última avaliação:
+            {" "}<span className="font-semibold" style={{ color: "hsl(0 84% 50%)" }}>Alto</span> = pontuação baixa ou feedback muito atrasado,
+            {" "}<span className="font-semibold" style={{ color: "hsl(48 96% 53%)" }}>Médio</span> = atenção (pontuação intermediária ou próximo do vencimento),
+            {" "}<span className="font-semibold" style={{ color: "hsl(142 76% 40%)" }}>Baixo</span> = colaborador em dia e com bom desempenho.
+            Use para priorizar PDIs e ações de RH nos setores mais críticos.
+          </p>
+        </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={matriz}>
-              <XAxis dataKey="nome" /><YAxis /><Tooltip /><Legend />
+              <XAxis dataKey="nome" /><YAxis allowDecimals={false} /><Tooltip /><Legend />
               <Bar dataKey="alto" stackId="r" fill="hsl(0 84% 50%)" name="Alto Risco" />
               <Bar dataKey="medio" stackId="r" fill="hsl(48 96% 53%)" name="Médio Risco" />
               <Bar dataKey="baixo" stackId="r" fill="hsl(142 76% 40%)" name="Baixo Risco" />
