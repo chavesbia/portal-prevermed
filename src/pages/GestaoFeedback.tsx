@@ -49,37 +49,42 @@ export default function GestaoFeedback() {
   const [tab, setTab] = useState("dashboard");
   const [filtroSetor, setFiltroSetor] = useState<string>("_");
   const [filtroStatus, setFiltroStatus] = useState<string>("_");
+  const [filtroCiclo, setFiltroCiclo] = useState<"ciclo" | "todos" | "fora">("ciclo");
   const [busca, setBusca] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selColab, setSelColab] = useState<string | null>(null);
   const [selAvaliacao, setSelAvaliacao] = useState<string | null>(null);
 
-  // ============= KPIs =============
+  // KPIs consideram apenas colaboradores incluídos no ciclo
+  const noCiclo = useMemo(() => status.filter((s) => s.incluido_no_ciclo), [status]);
+
   const kpis = useMemo(() => {
     const hoje = new Date();
     const mesAtual = hoje.toISOString().slice(0, 7);
     return {
-      total: status.length,
-      pendentes: status.filter((s) => s.status_feedback === "sem_feedback").length,
-      atrasados: status.filter((s) => s.status_feedback === "atrasado").length,
-      proximos: status.filter((s) => s.status_feedback === "proximo").length,
-      noMes: status.filter((s) => s.ultimo_feedback?.startsWith(mesAtual)).length,
+      total: noCiclo.length,
+      pendentes: noCiclo.filter((s) => s.status_feedback === "sem_feedback").length,
+      atrasados: noCiclo.filter((s) => s.status_feedback === "atrasado").length,
+      proximos: noCiclo.filter((s) => s.status_feedback === "proximo").length,
+      noMes: noCiclo.filter((s) => s.ultimo_feedback?.startsWith(mesAtual)).length,
       mediaGeral: (() => {
-        const com = status.filter((s) => s.pontuacao_total);
+        const com = noCiclo.filter((s) => s.pontuacao_total);
         return com.length ? Math.round((com.reduce((sum, s) => sum + (s.pontuacao_total || 0), 0) / com.length) * 10) / 10 : 0;
       })(),
-      emRisco: status.filter((s) => s.risco === "alto").length,
+      emRisco: noCiclo.filter((s) => s.risco === "alto").length,
     };
-  }, [status]);
+  }, [noCiclo]);
 
   const filtrados = useMemo(() => {
     return status.filter((s) => {
+      if (filtroCiclo === "ciclo" && !s.incluido_no_ciclo) return false;
+      if (filtroCiclo === "fora" && s.incluido_no_ciclo) return false;
       if (filtroSetor !== "_" && s.setor_id !== filtroSetor) return false;
       if (filtroStatus !== "_" && s.status_feedback !== filtroStatus) return false;
       if (busca && !s.nome.toLowerCase().includes(busca.toLowerCase())) return false;
       return true;
     });
-  }, [status, filtroSetor, filtroStatus, busca]);
+  }, [status, filtroCiclo, filtroSetor, filtroStatus, busca]);
 
   const distClassif = useMemo(() => {
     const counts: Record<string, number> = { insuficiente: 0, fraco: 0, razoavel: 0, bom: 0, excelente: 0 };
