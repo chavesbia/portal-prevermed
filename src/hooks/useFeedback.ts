@@ -316,10 +316,11 @@ export function useSaveAvaliacao() {
       return { id: avalId!, silent: !!silent };
     },
     onSuccess: (result) => {
+      if (result.silent) return;
       qc.invalidateQueries({ queryKey: ["fb_avaliacoes"] });
       qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
       qc.invalidateQueries({ queryKey: ["fb_avaliacao_detalhe"] });
-      if (!result.silent) toast({ title: "Avaliação salva" });
+      toast({ title: "Avaliação salva" });
     },
     onError: (e: any) => toast({ title: "Erro ao salvar avaliação", description: e.message, variant: "destructive" }),
   });
