@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Save, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Trash2, Plus, Save, ChevronLeft, ChevronRight, Sparkles, Check, Loader2, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useCompetencias, useNiveis, useStatusColaboradores, useSaveAvaliacao,
