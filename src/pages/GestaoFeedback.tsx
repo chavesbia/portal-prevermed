@@ -79,7 +79,7 @@ export default function GestaoFeedback() {
     return status.filter((s) => {
       if (filtroCiclo === "ciclo" && !s.incluido_no_ciclo) return false;
       if (filtroCiclo === "fora" && s.incluido_no_ciclo) return false;
-      if (filtroSetor !== "_" && s.setor_id !== filtroSetor) return false;
+      if (filtroSetor !== "_" && s.setor_nome !== filtroSetor) return false;
       if (filtroStatus !== "_" && s.status_feedback !== filtroStatus) return false;
       if (busca && !s.nome.toLowerCase().includes(busca.toLowerCase())) return false;
       return true;
@@ -190,7 +190,9 @@ export default function GestaoFeedback() {
                 <SelectTrigger className="w-48"><SelectValue placeholder="Setor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_">Todos os setores</SelectItem>
-                  {setores.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                  {Array.from(new Set(status.map((s) => s.setor_nome).filter(Boolean) as string[])).sort().map((nome) => (
+                    <SelectItem key={nome} value={nome}>{nome}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={filtroStatus} onValueChange={setFiltroStatus}>
