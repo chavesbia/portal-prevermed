@@ -16,9 +16,11 @@ import {
 import {
   useColaboradores, useSetores, useStatusColaboradores, useCompetencias, useNiveis,
   useUpsertColaborador, useUpsertSetor, useUpdateNivelDescricao, usePlanosConsolidados,
-  useUpdateAcaoStatus, CLASS_LABELS, CLASS_COLORS, RISCO_LABELS,
+  useUpdateAcaoStatus, useUpsertColaboradorByUser,
+  CLASS_LABELS, CLASS_COLORS, RISCO_LABELS,
   type FbStatusColab, type FbColaborador, type FbAcaoStatus,
 } from "@/hooks/useFeedback";
+import { Switch } from "@/components/ui/switch";
 import { NovaAvaliacaoDrawer } from "@/components/feedback/NovaAvaliacaoDrawer";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadialBarChart, RadialBar,
