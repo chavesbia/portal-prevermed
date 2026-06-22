@@ -10,8 +10,11 @@ import { Trash2, Plus, Save, ChevronLeft, ChevronRight, Sparkles, Check, Loader2
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   useCompetencias, useNiveis, useStatusColaboradores, useSaveAvaliacao,
-  useAvaliacaoDetalhe, CLASS_COLORS, classificar, type FbAcaoStatus,
+  useAvaliacaoDetalhe, useReabrirAvaliacao, CLASS_COLORS, classificar, type FbAcaoStatus,
 } from "@/hooks/useFeedback";
+import { useAuth } from "@/contexts/AuthContext";
+import { generateFeedbackPDF } from "@/lib/feedback-pdf";
+import { FileDown, Lock, Unlock } from "lucide-react";
 import { VelocimetroDesempenho } from "./VelocimetroDesempenho";
 
 interface Props {
