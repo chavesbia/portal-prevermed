@@ -336,8 +336,8 @@ function ColabRow({ s, setores, onAvaliar, onAbrir }: {
       <TableCell className="text-center">
         {s.pontuacao_total != null && s.classificacao ? (
           <Badge
-            className="font-semibold justify-center min-w-[96px] px-3 py-1"
-            style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}
+            className="font-semibold justify-center min-w-[110px] px-3 py-1 text-white border-transparent"
+            style={{ backgroundColor: CLASS_COLORS[s.classificacao] }}
           >
             {s.pontuacao_total} · {CLASS_LABELS[s.classificacao]}
           </Badge>
