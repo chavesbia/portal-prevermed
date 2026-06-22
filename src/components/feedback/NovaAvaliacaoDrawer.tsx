@@ -48,9 +48,14 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
   const [feedforward, setFeedforward] = useState<AcaoLinha[]>([]);
   const [pdi, setPdi] = useState<AcaoLinha[]>([]);
 
+  // Reset when drawer opens for a brand-new evaluation
   useEffect(() => {
     if (open && colab && !avaliacaoId) {
+      skipAutosaveRef.current = true;
       setStep(0);
+      setCurrentId(null);
+      setSaveStatus("idle");
+      setLastSavedAt(null);
       setNotas({});
       setCampos({ atividades: "", pontos_positivos: "", pontos_melhora: "", acoes_melhoria: "", observacoes: "" });
       setFeedforward([]);
@@ -59,11 +64,21 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
       const periodo = colab.periodicidade_dias || 90;
       const prox = new Date(); prox.setDate(prox.getDate() + periodo);
       setDataProx(prox.toISOString().slice(0, 10));
+      // Permitir autosave após hidratação inicial
+      setTimeout(() => { skipAutosaveRef.current = false; }, 500);
+    }
+    if (open && avaliacaoId) {
+      skipAutosaveRef.current = true;
+      setCurrentId(avaliacaoId);
+    }
+    if (!open) {
+      skipAutosaveRef.current = true;
     }
   }, [open, colab, avaliacaoId]);
 
   useEffect(() => {
     if (detalhe) {
+      skipAutosaveRef.current = true;
       setDataAval(detalhe.avaliacao.data_avaliacao);
       setDataProx(detalhe.avaliacao.data_proximo_feedback ?? "");
       setCampos({
@@ -78,6 +93,7 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
       setNotas(map);
       setFeedforward(detalhe.feedforward.map((f) => ({ acao: f.acao, responsavel: f.responsavel ?? "", prazo: f.prazo ?? "", status: f.status })));
       setPdi(detalhe.pdi.map((p) => ({ acao: p.acao, responsavel: p.responsavel ?? "", prazo: p.prazo ?? "", status: p.status, competencia_id: (p as any).competencia_id })));
+      setTimeout(() => { skipAutosaveRef.current = false; }, 500);
     }
   }, [detalhe]);
 
@@ -97,19 +113,48 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
     }
   }, [step, comps, notas]);
 
-  const handleSave = async (concluir: boolean) => {
+  // ============ AUTOSAVE (debounced) ============
+  useEffect(() => {
+    if (!open || !colaboradorId || skipAutosaveRef.current) return;
+    const t = setTimeout(async () => {
+      try {
+        setSaveStatus("saving");
+        const res = await save.mutateAsync({
+          id: currentId ?? undefined,
+          colaborador_id: colaboradorId,
+          data_avaliacao: dataAval,
+          data_proximo_feedback: dataProx || null,
+          ...campos,
+          concluida: false,
+          notas: Object.entries(notas).map(([competencia_id, nota]) => ({ competencia_id, nota })),
+          feedforward: feedforward.filter((f) => f.acao.trim()).map((f) => ({ acao: f.acao, responsavel: f.responsavel || null, prazo: f.prazo || null, status: f.status })),
+          pdi: pdi.filter((p) => p.acao.trim()).map((p) => ({ competencia_id: p.competencia_id ?? null, acao: p.acao, responsavel: p.responsavel || null, prazo: p.prazo || null, status: p.status })),
+          silent: true,
+        });
+        if (!currentId) setCurrentId(res.id);
+        setSaveStatus("saved");
+        setLastSavedAt(new Date());
+      } catch {
+        setSaveStatus("error");
+      }
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataAval, dataProx, campos, notas, feedforward, pdi]);
+
+  const handleConcluir = async () => {
     if (!colaboradorId) return;
-    if (concluir && !todasNotas) {
+    if (!todasNotas) {
       alert("Para concluir, é necessário avaliar todas as 10 competências.");
       return;
     }
     await save.mutateAsync({
-      id: avaliacaoId ?? undefined,
+      id: currentId ?? undefined,
       colaborador_id: colaboradorId,
       data_avaliacao: dataAval,
       data_proximo_feedback: dataProx || null,
       ...campos,
-      concluida: concluir,
+      concluida: true,
       notas: Object.entries(notas).map(([competencia_id, nota]) => ({ competencia_id, nota })),
       feedforward: feedforward.filter((f) => f.acao.trim()).map((f) => ({ acao: f.acao, responsavel: f.responsavel || null, prazo: f.prazo || null, status: f.status })),
       pdi: pdi.filter((p) => p.acao.trim()).map((p) => ({ competencia_id: p.competencia_id ?? null, acao: p.acao, responsavel: p.responsavel || null, prazo: p.prazo || null, status: p.status })),
