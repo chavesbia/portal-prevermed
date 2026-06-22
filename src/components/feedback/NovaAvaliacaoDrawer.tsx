@@ -136,11 +136,22 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Colaborador</Label><Input value={colab?.nome ?? ""} disabled /></div>
-              <div><Label>Setor</Label><Input value={colab?.setor_nome ?? ""} disabled /></div>
+              <div><Label>Setor (lotação)</Label><Input value={colab?.setor_nome ?? "—"} disabled /></div>
               <div><Label>Cargo</Label><Input value={colab?.cargo ?? ""} disabled /></div>
               <div><Label>Periodicidade (dias)</Label><Input value={String(colab?.periodicidade_dias ?? "")} disabled /></div>
+              <div><Label>Líder Direto</Label><Input value={colab?.lider_nome ?? "—"} disabled /></div>
+              <div><Label>Gestor Direto</Label><Input value={colab?.gestor_nome ?? "—"} disabled /></div>
               <div><Label>Data do Feedback *</Label><Input type="date" value={dataAval} onChange={(e) => setDataAval(e.target.value)} /></div>
               <div><Label>Próximo Feedback</Label><Input type="date" value={dataProx} onChange={(e) => setDataProx(e.target.value)} /></div>
+            </div>
+            <div>
+              <Label>Atividades Realizadas</Label>
+              <Textarea
+                value={campos.atividades}
+                onChange={(e) => setCampos({ ...campos, atividades: e.target.value })}
+                rows={4}
+                placeholder="Descreva as principais atividades realizadas no período avaliado..."
+              />
             </div>
           </div>
         )}
@@ -185,7 +196,6 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
         {step === 2 && (
           <div className="space-y-3">
             {([
-              ["atividades", "Atividades Realizadas"],
               ["pontos_positivos", "Pontos Positivos"],
               ["pontos_melhora", "Pontos de Melhora"],
               ["acoes_melhoria", "Ações de Melhoria"],

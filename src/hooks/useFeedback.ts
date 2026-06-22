@@ -21,7 +21,9 @@ export interface FbStatusColab {
   fb_colaborador_id: string | null;
   user_id: string | null;
   nome: string; matricula: string | null; cpf: string | null; cargo: string | null;
-  setor_id: string | null; setor_nome: string | null; gestor_id: string | null;
+  setor_id: string | null; setor_nome: string | null;
+  lider_id: string | null; lider_nome: string | null;
+  gestor_id: string | null; gestor_nome: string | null;
   unit: string | null; data_admissao: string | null;
   status: FbColabStatus; periodicidade_dias: number; incluido_no_ciclo: boolean;
   ultima_avaliacao_id: string | null; ultimo_feedback: string | null; proximo_feedback: string | null;

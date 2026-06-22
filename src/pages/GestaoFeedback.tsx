@@ -79,7 +79,7 @@ export default function GestaoFeedback() {
     return status.filter((s) => {
       if (filtroCiclo === "ciclo" && !s.incluido_no_ciclo) return false;
       if (filtroCiclo === "fora" && s.incluido_no_ciclo) return false;
-      if (filtroSetor !== "_" && s.setor_id !== filtroSetor) return false;
+      if (filtroSetor !== "_" && s.setor_nome !== filtroSetor) return false;
       if (filtroStatus !== "_" && s.status_feedback !== filtroStatus) return false;
       if (busca && !s.nome.toLowerCase().includes(busca.toLowerCase())) return false;
       return true;
@@ -190,7 +190,9 @@ export default function GestaoFeedback() {
                 <SelectTrigger className="w-48"><SelectValue placeholder="Setor" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_">Todos os setores</SelectItem>
-                  {setores.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
+                  {Array.from(new Set(status.map((s) => s.setor_nome).filter(Boolean) as string[])).sort().map((nome) => (
+                    <SelectItem key={nome} value={nome}>{nome}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={filtroStatus} onValueChange={setFiltroStatus}>
@@ -350,7 +352,6 @@ function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
   const [form, setForm] = useState({
     matricula: s.matricula ?? "",
     cpf: s.cpf ?? "",
-    setor_id: s.setor_id ?? "_",
     periodicidade_dias: s.periodicidade_dias ?? 90,
   });
 
@@ -360,7 +361,6 @@ function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
       user_id: s.user_id,
       matricula: form.matricula || null,
       cpf: form.cpf || null,
-      setor_id: form.setor_id === "_" ? null : form.setor_id,
       periodicidade_dias: form.periodicidade_dias,
       incluido_no_ciclo: s.incluido_no_ciclo,
     });
@@ -374,23 +374,17 @@ function EditColaboradorDialog({ open, onOpenChange, s, setores }: {
           <DialogTitle>Complementar dados — {s.nome}</DialogTitle>
         </DialogHeader>
         <div className="text-xs text-muted-foreground mb-2">
-          Nome, cargo, unidade e data de admissão vêm de Gerenciar Usuários.
-          Aqui você complementa as informações específicas do módulo de feedback.
+          Nome, cargo, unidade, setor (lotação), líder e gestor vêm de <strong>Gerenciar Usuários</strong>.
+          Aqui você complementa apenas matrícula, CPF e periodicidade do ciclo.
         </div>
         <div className="grid grid-cols-2 gap-3">
+          <div><Label>Setor (lotação)</Label><Input value={s.setor_nome ?? "—"} disabled /></div>
+          <div><Label>Cargo</Label><Input value={s.cargo ?? "—"} disabled /></div>
+          <div><Label>Líder Direto</Label><Input value={s.lider_nome ?? "—"} disabled /></div>
+          <div><Label>Gestor Direto</Label><Input value={s.gestor_nome ?? "—"} disabled /></div>
           <div><Label>Matrícula</Label><Input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} /></div>
           <div><Label>CPF</Label><Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: e.target.value })} /></div>
-          <div>
-            <Label>Setor (para feedback)</Label>
-            <Select value={form.setor_id} onValueChange={(v) => setForm({ ...form, setor_id: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_">—</SelectItem>
-                {setores.map((s2) => <SelectItem key={s2.id} value={s2.id}>{s2.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
+          <div className="col-span-2">
             <Label>Periodicidade (dias)</Label>
             <Input type="number" value={form.periodicidade_dias}
                    onChange={(e) => setForm({ ...form, periodicidade_dias: parseInt(e.target.value) || 90 })} />
