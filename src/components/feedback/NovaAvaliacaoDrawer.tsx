@@ -37,6 +37,10 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
   const colab = status.find((c) => c.colaborador_id === colaboradorId);
 
   const [step, setStep] = useState(0);
+  const [currentId, setCurrentId] = useState<string | null>(avaliacaoId ?? null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const skipAutosaveRef = useRef(true);
   const [dataAval, setDataAval] = useState<string>(new Date().toISOString().slice(0, 10));
   const [dataProx, setDataProx] = useState<string>("");
   const [notas, setNotas] = useState<Record<string, number>>({});
