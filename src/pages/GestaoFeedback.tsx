@@ -111,10 +111,9 @@ export default function GestaoFeedback() {
       .sort((a, b) => b.media - a.media);
   }, [status]);
 
-  const handleNovaAvaliacao = async (colabId: string, avalId?: string) => {
+  const handleNovaAvaliacao = async (colabId: string, avalId?: string, mode: "edit" | "view" = "edit") => {
     let idToOpen = avalId ?? null;
-    // Ao clicar em "Avaliar", retomar rascunho em andamento (não concluído) se existir,
-    // em vez de criar uma nova avaliação em branco a cada clique.
+    // Ao clicar em "Avaliar", retomar rascunho em andamento (não concluído) se existir.
     if (!idToOpen) {
       const { data } = await supabase
         .from("fb_avaliacoes")
@@ -126,7 +125,7 @@ export default function GestaoFeedback() {
         .maybeSingle();
       if (data?.id) idToOpen = data.id;
     }
-    setSelColab(colabId); setSelAvaliacao(idToOpen); setDrawerOpen(true);
+    setSelColab(colabId); setSelAvaliacao(idToOpen); setDrawerMode(mode); setDrawerOpen(true);
   };
 
   return (
