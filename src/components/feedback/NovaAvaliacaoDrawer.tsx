@@ -284,14 +284,17 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
           <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>
             <ChevronLeft className="h-4 w-4 mr-1" />Voltar
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => handleSave(false)} disabled={save.isPending}>
-              <Save className="h-4 w-4 mr-1" />Salvar rascunho
-            </Button>
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-w-[120px] justify-end">
+              {saveStatus === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" />Salvando…</>)}
+              {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" />Salvo automaticamente{lastSavedAt ? ` às ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</>)}
+              {saveStatus === "error" && (<><AlertCircle className="h-3 w-3 text-destructive" />Falha ao salvar — tentando novamente</>)}
+              {saveStatus === "idle" && <span className="opacity-0">.</span>}
+            </div>
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(step + 1)}>Próximo<ChevronRight className="h-4 w-4 ml-1" /></Button>
             ) : (
-              <Button onClick={() => handleSave(true)} disabled={!todasNotas || save.isPending}>
+              <Button onClick={handleConcluir} disabled={!todasNotas || save.isPending}>
                 Concluir Avaliação
               </Button>
             )}
