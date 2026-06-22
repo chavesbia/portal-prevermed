@@ -173,6 +173,26 @@ export function useUpsertColaborador() {
   });
 }
 
+/** Upsert por user_id — usado para vincular usuário do portal ao ciclo de feedback */
+export function useUpsertColaboradorByUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { user_id: string } & Partial<FbColaborador>) => {
+      const { error } = await supabase
+        .from("fb_colaboradores")
+        .upsert(input as any, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fb_colaboradores"] });
+      qc.invalidateQueries({ queryKey: ["fb_status_colab"] });
+      toast({ title: "Dados atualizados" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+}
+
+
 export function useUpsertSetor() {
   const qc = useQueryClient();
   return useMutation({
