@@ -330,14 +330,21 @@ function ColabRow({ s, setores, onAvaliar, onAbrir }: {
       <TableCell>{s.cargo ?? "—"}</TableCell>
       <TableCell>{s.ultimo_feedback ? new Date(s.ultimo_feedback).toLocaleDateString("pt-BR") : "—"}</TableCell>
       <TableCell>{s.proximo_feedback ? new Date(s.proximo_feedback).toLocaleDateString("pt-BR") : "—"}</TableCell>
-      <TableCell>
+      <TableCell className="text-center">
         {s.pontuacao_total != null && s.classificacao ? (
-          <Badge style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}>
+          <Badge
+            className="font-semibold justify-center min-w-[96px] px-3 py-1"
+            style={{ backgroundColor: CLASS_COLORS[s.classificacao] + "22", color: CLASS_COLORS[s.classificacao] }}
+          >
             {s.pontuacao_total} · {CLASS_LABELS[s.classificacao]}
           </Badge>
         ) : "—"}
       </TableCell>
-      <TableCell><span className={`px-2 py-1 rounded text-xs ${st.color}`}>{st.icon} {st.label}</span></TableCell>
+      <TableCell>
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs whitespace-nowrap ${st.color}`}>
+          {st.icon} {st.label}
+        </span>
+      </TableCell>
       <TableCell>
         <Badge variant={s.risco === "alto" ? "destructive" : s.risco === "medio" ? "default" : "secondary"}>
           {RISCO_LABELS[s.risco]}
