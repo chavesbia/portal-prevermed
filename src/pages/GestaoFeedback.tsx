@@ -173,11 +173,19 @@ export default function GestaoFeedback() {
           </div>
         </TabsContent>
 
-        {/* ============= COLABORADORES (substitui planilha) ============= */}
+        {/* ============= COLABORADORES (vinculados aos usuários do portal) ============= */}
         <TabsContent value="colaboradores" className="space-y-3">
           <Card>
-            <CardContent className="pt-4 flex flex-wrap gap-2">
+            <CardContent className="pt-4 flex flex-wrap gap-2 items-center">
               <Input placeholder="Buscar colaborador..." value={busca} onChange={(e) => setBusca(e.target.value)} className="max-w-xs" />
+              <Select value={filtroCiclo} onValueChange={(v: any) => setFiltroCiclo(v)}>
+                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ciclo">No ciclo de feedback</SelectItem>
+                  <SelectItem value="fora">Fora do ciclo</SelectItem>
+                  <SelectItem value="todos">Todos os usuários</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={filtroSetor} onValueChange={setFiltroSetor}>
                 <SelectTrigger className="w-48"><SelectValue placeholder="Setor" /></SelectTrigger>
                 <SelectContent>
@@ -195,7 +203,9 @@ export default function GestaoFeedback() {
                   <SelectItem value="sem_feedback">⚪ Sem Feedback</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="ml-auto"><NovoColaboradorBtn /></div>
+              <div className="ml-auto text-xs text-muted-foreground max-w-sm">
+                Os colaboradores vêm de <strong>Gerenciar Usuários</strong>. Aqui o RH escolhe quem entra no ciclo e complementa matrícula, CPF e periodicidade.
+              </div>
             </CardContent>
           </Card>
 
@@ -203,6 +213,7 @@ export default function GestaoFeedback() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>No ciclo</TableHead>
                   <TableHead>Colaborador</TableHead>
                   <TableHead>Setor</TableHead>
                   <TableHead>Cargo</TableHead>
@@ -216,16 +227,18 @@ export default function GestaoFeedback() {
               </TableHeader>
               <TableBody>
                 {filtrados.map((s) => (
-                  <ColabRow key={s.colaborador_id} s={s} onAvaliar={() => handleNovaAvaliacao(s.colaborador_id)}
+                  <ColabRow key={s.colaborador_id} s={s} setores={setores}
+                            onAvaliar={() => handleNovaAvaliacao(s.colaborador_id)}
                             onAbrir={() => s.ultima_avaliacao_id && handleNovaAvaliacao(s.colaborador_id, s.ultima_avaliacao_id)} />
                 ))}
                 {filtrados.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground">Nenhum colaborador encontrado.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
           </Card>
         </TabsContent>
+
 
         {/* ============= FEEDBACKS ============= */}
         <TabsContent value="feedbacks">
