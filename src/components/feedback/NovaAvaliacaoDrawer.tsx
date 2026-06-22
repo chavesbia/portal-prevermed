@@ -302,27 +302,51 @@ export function NovaAvaliacaoDrawer({ open, onOpenChange, colaboradorId, avaliac
                 <div className="mt-4 text-sm text-muted-foreground">Data: {new Date(dataAval).toLocaleDateString("pt-BR")}</div>
               </CardContent>
             </Card>
-            {!todasNotas && <p className="text-sm text-destructive">Avalie todas as {comps.length} competências para concluir.</p>}
+            {!todasNotas && !readOnly && <p className="text-sm text-destructive">Avalie todas as {comps.length} competências para concluir.</p>}
           </div>
         )}
+        </fieldset>
 
-        <div className="flex items-center justify-between mt-6 pt-4 border-t sticky bottom-0 bg-background">
+        <div className="flex items-center justify-between mt-6 pt-4 border-t sticky bottom-0 bg-background gap-2 flex-wrap">
           <Button variant="outline" disabled={step === 0} onClick={() => setStep(step - 1)}>
             <ChevronLeft className="h-4 w-4 mr-1" />Voltar
           </Button>
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-w-[120px] justify-end">
-              {saveStatus === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" />Salvando…</>)}
-              {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" />Salvo automaticamente{lastSavedAt ? ` às ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</>)}
-              {saveStatus === "error" && (<><AlertCircle className="h-3 w-3 text-destructive" />Falha ao salvar — tentando novamente</>)}
-              {saveStatus === "idle" && <span className="opacity-0">.</span>}
-            </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            {!readOnly && (
+              <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-w-[120px] justify-end">
+                {saveStatus === "saving" && (<><Loader2 className="h-3 w-3 animate-spin" />Salvando…</>)}
+                {saveStatus === "saved" && (<><Check className="h-3 w-3 text-green-600" />Salvo automaticamente{lastSavedAt ? ` às ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}</>)}
+                {saveStatus === "error" && (<><AlertCircle className="h-3 w-3 text-destructive" />Falha ao salvar — tentando novamente</>)}
+                {saveStatus === "idle" && <span className="opacity-0">.</span>}
+              </div>
+            )}
+            {readOnly && colab && detalhe && (
+              <Button variant="outline" onClick={() => generateFeedbackPDF({
+                avaliacao: detalhe.avaliacao, notas: detalhe.notas,
+                feedforward: detalhe.feedforward, pdi: detalhe.pdi,
+                colaborador: colab, competencias: comps,
+              })}>
+                <FileDown className="h-4 w-4 mr-1" />Gerar PDF
+              </Button>
+            )}
+            {readOnly && concluida && isAdmMaster && currentId && (
+              <Button variant="destructive" disabled={reabrir.isPending}
+                onClick={async () => {
+                  if (!confirm("Reabrir esta avaliação concluída para edição? Esta ação será registrada.")) return;
+                  await reabrir.mutateAsync(currentId);
+                  onOpenChange(false);
+                }}>
+                <Unlock className="h-4 w-4 mr-1" />Reabrir para edição
+              </Button>
+            )}
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(step + 1)}>Próximo<ChevronRight className="h-4 w-4 ml-1" /></Button>
-            ) : (
+            ) : !readOnly ? (
               <Button onClick={handleConcluir} disabled={!todasNotas || save.isPending}>
                 Concluir Avaliação
               </Button>
+            ) : (
+              <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
             )}
           </div>
         </div>
