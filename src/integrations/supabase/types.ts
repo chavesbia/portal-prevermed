@@ -1475,6 +1475,393 @@ export type Database = {
           },
         ]
       }
+      contract_assinaturas: {
+        Row: {
+          autentique_signer_id: string | null
+          contrato_id: string
+          cpf: string | null
+          created_at: string
+          data_assinatura: string | null
+          email: string | null
+          id: string
+          ip_assinatura: string | null
+          nome: string
+          status: Database["public"]["Enums"]["contract_signer_status"]
+          tipo: Database["public"]["Enums"]["contract_signer_type"]
+          updated_at: string
+        }
+        Insert: {
+          autentique_signer_id?: string | null
+          contrato_id: string
+          cpf?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          email?: string | null
+          id?: string
+          ip_assinatura?: string | null
+          nome: string
+          status?: Database["public"]["Enums"]["contract_signer_status"]
+          tipo: Database["public"]["Enums"]["contract_signer_type"]
+          updated_at?: string
+        }
+        Update: {
+          autentique_signer_id?: string | null
+          contrato_id?: string
+          cpf?: string | null
+          created_at?: string
+          data_assinatura?: string | null
+          email?: string | null
+          id?: string
+          ip_assinatura?: string | null
+          nome?: string
+          status?: Database["public"]["Enums"]["contract_signer_status"]
+          tipo?: Database["public"]["Enums"]["contract_signer_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_assinaturas_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contract_contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_clientes: {
+        Row: {
+          ativo: boolean
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnae_principal: string | null
+          cnpj: string
+          complemento: string | null
+          cpf_representante: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          estado: string | null
+          id: string
+          logradouro: string | null
+          nome_fantasia: string | null
+          numero: string | null
+          observacoes: string | null
+          razao_social: string
+          representante_legal: string | null
+          situacao_cadastral: string | null
+          telefone: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnae_principal?: string | null
+          cnpj: string
+          complemento?: string | null
+          cpf_representante?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social: string
+          representante_legal?: string | null
+          situacao_cadastral?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnae_principal?: string | null
+          cnpj?: string
+          complemento?: string | null
+          cpf_representante?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          estado?: string | null
+          id?: string
+          logradouro?: string | null
+          nome_fantasia?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          representante_legal?: string | null
+          situacao_cadastral?: string | null
+          telefone?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      contract_contratos: {
+        Row: {
+          autentique_document_id: string | null
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          data_fim: string | null
+          data_inicio: string
+          dia_cobranca: number | null
+          html_final: string | null
+          id: string
+          indice_reajuste: string | null
+          juros: number | null
+          multa: number | null
+          numero_contrato: string | null
+          numero_proposta: string | null
+          observacoes: string | null
+          pdf_url: string | null
+          prazo_aviso: number | null
+          qtd_vidas: number | null
+          rep_cpf: string | null
+          rep_nome: string | null
+          status: Database["public"]["Enums"]["contract_status"]
+          template_id: string | null
+          template_version_id: string | null
+          testemunha1_cpf: string | null
+          testemunha1_nome: string | null
+          testemunha2_cpf: string | null
+          testemunha2_nome: string | null
+          updated_at: string
+          updated_by: string | null
+          valor_excedente: number | null
+          valor_km: number | null
+          valor_mensal: number | null
+          vigencia_meses: number
+        }
+        Insert: {
+          autentique_document_id?: string | null
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio: string
+          dia_cobranca?: number | null
+          html_final?: string | null
+          id?: string
+          indice_reajuste?: string | null
+          juros?: number | null
+          multa?: number | null
+          numero_contrato?: string | null
+          numero_proposta?: string | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          prazo_aviso?: number | null
+          qtd_vidas?: number | null
+          rep_cpf?: string | null
+          rep_nome?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          template_id?: string | null
+          template_version_id?: string | null
+          testemunha1_cpf?: string | null
+          testemunha1_nome?: string | null
+          testemunha2_cpf?: string | null
+          testemunha2_nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valor_excedente?: number | null
+          valor_km?: number | null
+          valor_mensal?: number | null
+          vigencia_meses?: number
+        }
+        Update: {
+          autentique_document_id?: string | null
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          dia_cobranca?: number | null
+          html_final?: string | null
+          id?: string
+          indice_reajuste?: string | null
+          juros?: number | null
+          multa?: number | null
+          numero_contrato?: string | null
+          numero_proposta?: string | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          prazo_aviso?: number | null
+          qtd_vidas?: number | null
+          rep_cpf?: string | null
+          rep_nome?: string | null
+          status?: Database["public"]["Enums"]["contract_status"]
+          template_id?: string | null
+          template_version_id?: string | null
+          testemunha1_cpf?: string | null
+          testemunha1_nome?: string | null
+          testemunha2_cpf?: string | null
+          testemunha2_nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valor_excedente?: number | null
+          valor_km?: number | null
+          valor_mensal?: number | null
+          vigencia_meses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_contratos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "contract_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_contratos_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_contratos_template_version_id_fkey"
+            columns: ["template_version_id"]
+            isOneToOne: false
+            referencedRelation: "contract_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_eventos: {
+        Row: {
+          contrato_id: string
+          created_at: string
+          descricao: string | null
+          detalhes: Json | null
+          id: string
+          performed_by: string | null
+          tipo: string
+        }
+        Insert: {
+          contrato_id: string
+          created_at?: string
+          descricao?: string | null
+          detalhes?: Json | null
+          id?: string
+          performed_by?: string | null
+          tipo: string
+        }
+        Update: {
+          contrato_id?: string
+          created_at?: string
+          descricao?: string | null
+          detalhes?: Json | null
+          id?: string
+          performed_by?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_eventos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contract_contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_template_versions: {
+        Row: {
+          changelog: string | null
+          conteudo_html: string
+          created_at: string
+          created_by: string | null
+          id: string
+          template_id: string
+          versao: number
+        }
+        Insert: {
+          changelog?: string | null
+          conteudo_html: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          template_id: string
+          versao: number
+        }
+        Update: {
+          changelog?: string | null
+          conteudo_html?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          template_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_templates: {
+        Row: {
+          ativo: boolean
+          categoria: Database["public"]["Enums"]["contract_template_categoria"]
+          created_at: string
+          created_by: string | null
+          current_version_id: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+          updated_by: string | null
+          versao_atual: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["contract_template_categoria"]
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          updated_by?: string | null
+          versao_atual?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["contract_template_categoria"]
+          created_at?: string
+          created_by?: string | null
+          current_version_id?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          updated_by?: string | null
+          versao_atual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_current_version_fk"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "contract_template_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dashboards: {
         Row: {
           created_at: string
@@ -4811,6 +5198,14 @@ export type Database = {
         Args: { _route: string; _user_id: string }
         Returns: boolean
       }
+      contract_calc_status: {
+        Args: {
+          _data_inicio: string
+          _status_atual: Database["public"]["Enums"]["contract_status"]
+          _vigencia_meses: number
+        }
+        Returns: Database["public"]["Enums"]["contract_status"]
+      }
       dashboard_guias_agregado: {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
@@ -4940,6 +5335,32 @@ export type Database = {
         | "NAO_COMPARECEU"
         | "REMARCADO"
         | "PARCIAL"
+      contract_signer_status:
+        | "pendente"
+        | "enviado"
+        | "assinado"
+        | "recusado"
+        | "cancelado"
+      contract_signer_type: "representante" | "testemunha_1" | "testemunha_2"
+      contract_status:
+        | "rascunho"
+        | "aguardando_assinatura"
+        | "parcialmente_assinado"
+        | "assinado"
+        | "ativo"
+        | "vencendo_60"
+        | "vencendo_30"
+        | "vencendo_15"
+        | "vencido"
+        | "encerrado"
+        | "cancelado"
+      contract_template_categoria:
+        | "gestao_ocupacional"
+        | "contrato_por_uso"
+        | "contrato_por_uso_drps_lgpd"
+        | "contrato_pontual"
+        | "treinamentos"
+        | "outros"
       fb_acao_status: "nao_iniciado" | "em_andamento" | "concluido" | "atrasado"
       fb_classificacao:
         | "insuficiente"
@@ -5199,6 +5620,35 @@ export const Constants = {
         "NAO_COMPARECEU",
         "REMARCADO",
         "PARCIAL",
+      ],
+      contract_signer_status: [
+        "pendente",
+        "enviado",
+        "assinado",
+        "recusado",
+        "cancelado",
+      ],
+      contract_signer_type: ["representante", "testemunha_1", "testemunha_2"],
+      contract_status: [
+        "rascunho",
+        "aguardando_assinatura",
+        "parcialmente_assinado",
+        "assinado",
+        "ativo",
+        "vencendo_60",
+        "vencendo_30",
+        "vencendo_15",
+        "vencido",
+        "encerrado",
+        "cancelado",
+      ],
+      contract_template_categoria: [
+        "gestao_ocupacional",
+        "contrato_por_uso",
+        "contrato_por_uso_drps_lgpd",
+        "contrato_pontual",
+        "treinamentos",
+        "outros",
       ],
       fb_acao_status: ["nao_iniciado", "em_andamento", "concluido", "atrasado"],
       fb_classificacao: [
