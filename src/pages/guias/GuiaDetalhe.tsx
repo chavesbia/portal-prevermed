@@ -158,7 +158,7 @@ export default function GuiaDetalhe() {
       if (changes.length === 0) return;
 
       // Calculate SLA to freeze if atendimento is being set to SIM
-      const dataBase = guia?.data_agendamento ?? guia?.data_guia ?? null;
+      const dataBase = guia?.data_agendamento ?? null;
       let slaFinalValue = (gestao as any).sla_final ?? null;
 
       if (atendLancado === "SIM" && gestao.atendimento_lancado !== "SIM") {
@@ -215,7 +215,7 @@ export default function GuiaDetalhe() {
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Carregando...</div>;
   if (!guia) return <div className="p-8 text-center text-muted-foreground">Guia não encontrada.</div>;
 
-  const dataBase = guia.data_agendamento ?? guia.data_guia;
+  const dataBase = guia.data_agendamento;
   const sla = getSlaStatus(dataBase, atendLancado, feriados ?? [], (gestao as any)?.sla_final);
   const guiaStatus = getGuiaStatus(compareceu, atendLancado, asoAnexado, aguardandoAso);
 
