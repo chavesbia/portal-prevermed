@@ -33,6 +33,23 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
 export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Props) {
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const enviarAutentique = async () => {
+    if (!contratoId) return;
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('autentique-send', {
+        body: { contrato_id: contratoId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast.success('Contrato enviado para Autentique');
+      qc.invalidateQueries({ queryKey: ['contract-contrato', contratoId] });
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao enviar para Autentique');
+    } finally { setSending(false); }
+  };
 
   const { data: contrato, refetch } = useQuery({
     queryKey: ['contract-contrato', contratoId],
@@ -93,6 +110,17 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   Regenerar PDF
                 </Button>
               )}
+              {canEdit && contrato.status === 'rascunho' && (
+                <Button size="sm" onClick={enviarAutentique} disabled={sending || !contrato.pdf_url}>
+                  {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
+                  Enviar para Autentique
+                </Button>
+              )}
+              {contrato.autentique_document_id && (
+                <Badge variant="outline" className="text-xs self-center">
+                  Autentique: {contrato.autentique_document_id.slice(0, 8)}…
+                </Badge>
+              )}
             </div>
 
             <Tabs defaultValue="dados">
@@ -147,9 +175,6 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                 {(!contrato.assinaturas || contrato.assinaturas.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-6">Nenhum assinante registrado.</p>
                 )}
-                <p className="text-xs text-muted-foreground italic pt-2 border-t">
-                  Integração com Autentique será ativada na próxima fase.
-                </p>
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-3 space-y-2">
