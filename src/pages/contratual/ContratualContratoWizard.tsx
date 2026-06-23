@@ -8,8 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
-import { buildPlaceholderValues, renderTemplate } from '@/lib/contractual/render';
+import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
+import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
 
 interface Props {
   open: boolean;
@@ -22,20 +23,27 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   const [clienteId, setClienteId] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
+  const today = new Date().toISOString().slice(0, 10);
   const [form, setForm] = useState<any>({
     numero_proposta: '', valor_mensal: '', qtd_vidas: '', valor_excedente: '',
     dia_cobranca: '', multa: '', juros: '', vigencia_meses: '12',
     indice_reajuste: 'IPCA', prazo_aviso: '', valor_km: '',
-    data_inicio: new Date().toISOString().slice(0, 10),
+    data_emissao: today,
+    data_assinatura: '',
+    data_inicio: today,
     rep_nome: '', rep_cpf: '',
     testemunha1_nome: '', testemunha1_cpf: '',
     testemunha2_nome: '', testemunha2_cpf: '',
   });
+  const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
+
+  const { data: placeholders = [] } = useContractPlaceholders(true);
 
   useEffect(() => {
     if (!open) {
       setStep(1); setClienteId(''); setTemplateId(''); setVersionId('');
+      setManualValues({});
     }
   }, [open]);
 
@@ -88,20 +96,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cliente]);
 
+  // Placeholders sem origem mapeada que aparecem no template ativo
+  const manuaisPendentes = useMemo(() => {
+    if (!version?.conteudo_html) return [];
+    const usados = new Set<string>();
+    String(version.conteudo_html).replace(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g, (_m, k) => { usados.add(k); return _m; });
+    return placeholdersManuais(placeholders).filter(p => usados.has(p.chave));
+  }, [version, placeholders]);
+
   const previewHtml = useMemo(() => {
     if (!cliente || !version) return '';
     const dataFim = form.data_inicio && form.vigencia_meses
       ? new Date(new Date(form.data_inicio + 'T00:00:00').getTime() + Number(form.vigencia_meses) * 30 * 86400000).toISOString().slice(0, 10)
       : null;
-    const values = buildPlaceholderValues({
+    const values = buildPlaceholderValues(placeholders, {
       cliente,
       contrato: { ...form, data_fim: dataFim },
+      manual: manualValues,
     });
     return renderTemplate(version.conteudo_html, values);
-  }, [cliente, version, form]);
+  }, [cliente, version, form, placeholders, manualValues]);
 
   const canGoStep2 = !!clienteId && !!templateId && !!versionId;
-  const canGoStep3 = canGoStep2 && !!form.data_inicio && !!form.vigencia_meses;
+  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses;
 
   const confirmar = async () => {
     setGenerating(true);
@@ -112,6 +129,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         template_id: templateId,
         template_version_id: versionId,
         status: 'rascunho',
+        data_emissao: form.data_emissao || null,
+        data_assinatura: form.data_assinatura || null,
         data_inicio: form.data_inicio,
         vigencia_meses: Number(form.vigencia_meses) || 12,
         numero_proposta: form.numero_proposta || null,
@@ -133,7 +152,6 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       const { data: ctr, error } = await supabase.from('contract_contratos').insert(payload).select().single();
       if (error) throw error;
 
-      // Cria assinaturas
       const signers = [
         { tipo: 'representante', nome: form.rep_nome, cpf: form.rep_cpf },
         { tipo: 'testemunha_1', nome: form.testemunha1_nome, cpf: form.testemunha1_cpf },
@@ -143,7 +161,6 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         await supabase.from('contract_assinaturas').insert(signers.map(s => ({ contrato_id: ctr.id, ...s, tipo: s.tipo as any })));
       }
 
-      // Gera PDF e faz upload
       try {
         const path = await generateAndUploadPdf({
           contratoId: ctr.id, numero: ctr.numero_contrato, html: previewHtml,
@@ -206,20 +223,32 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
         {step === 2 && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <F label="Nº Proposta" v={form.numero_proposta} on={v => set('numero_proposta', v)} />
-              <F label="Data de início *" type="date" v={form.data_inicio} on={v => set('data_inicio', v)} />
-              <F label="Vigência (meses) *" type="number" v={form.vigencia_meses} on={v => set('vigencia_meses', v)} />
-              <F label="Valor mensal (R$)" type="number" v={form.valor_mensal} on={v => set('valor_mensal', v)} />
-              <F label="Qtd. vidas" type="number" v={form.qtd_vidas} on={v => set('qtd_vidas', v)} />
-              <F label="Valor vida excedente (R$)" type="number" v={form.valor_excedente} on={v => set('valor_excedente', v)} />
-              <F label="Dia cobrança" type="number" v={form.dia_cobranca} on={v => set('dia_cobranca', v)} />
-              <F label="Multa (%)" type="number" v={form.multa} on={v => set('multa', v)} />
-              <F label="Juros (%)" type="number" v={form.juros} on={v => set('juros', v)} />
-              <F label="Índice de reajuste" v={form.indice_reajuste} on={v => set('indice_reajuste', v)} />
-              <F label="Prazo aviso prévio (dias)" type="number" v={form.prazo_aviso} on={v => set('prazo_aviso', v)} />
-              <F label="Valor KM rodado (R$)" type="number" v={form.valor_km} on={v => set('valor_km', v)} />
+            <div>
+              <h4 className="text-sm font-medium mb-2">Datas do contrato</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <F label="Data de emissão *" type="date" v={form.data_emissao} on={v => set('data_emissao', v)} />
+                <F label="Data de assinatura" type="date" v={form.data_assinatura} on={v => set('data_assinatura', v)} />
+                <F label="Início da vigência *" type="date" v={form.data_inicio} on={v => set('data_inicio', v)} />
+              </div>
             </div>
+
+            <div className="pt-3 border-t">
+              <h4 className="text-sm font-medium mb-2">Dados comerciais</h4>
+              <div className="grid grid-cols-3 gap-3">
+                <F label="Nº Proposta" v={form.numero_proposta} on={v => set('numero_proposta', v)} />
+                <F label="Vigência (meses) *" type="number" v={form.vigencia_meses} on={v => set('vigencia_meses', v)} />
+                <F label="Índice de reajuste" v={form.indice_reajuste} on={v => set('indice_reajuste', v)} />
+                <F label="Valor mensal (R$)" type="number" v={form.valor_mensal} on={v => set('valor_mensal', v)} />
+                <F label="Qtd. vidas" type="number" v={form.qtd_vidas} on={v => set('qtd_vidas', v)} />
+                <F label="Valor vida excedente (R$)" type="number" v={form.valor_excedente} on={v => set('valor_excedente', v)} />
+                <F label="Dia cobrança" type="number" v={form.dia_cobranca} on={v => set('dia_cobranca', v)} />
+                <F label="Multa (%)" type="number" v={form.multa} on={v => set('multa', v)} />
+                <F label="Juros (%)" type="number" v={form.juros} on={v => set('juros', v)} />
+                <F label="Prazo aviso prévio (dias)" type="number" v={form.prazo_aviso} on={v => set('prazo_aviso', v)} />
+                <F label="Valor KM rodado (R$)" type="number" v={form.valor_km} on={v => set('valor_km', v)} />
+              </div>
+            </div>
+
             <div className="pt-3 border-t">
               <h4 className="text-sm font-medium mb-2">Assinantes</h4>
               <div className="grid grid-cols-2 gap-3">
@@ -231,6 +260,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
                 <F label="CPF testemunha 2" v={form.testemunha2_cpf} on={v => set('testemunha2_cpf', v)} />
               </div>
             </div>
+
+            {manuaisPendentes.length > 0 && (
+              <div className="pt-3 border-t">
+                <h4 className="text-sm font-medium mb-1">Campos personalizados</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Estes placeholders aparecem no modelo mas não possuem origem mapeada. Preencha manualmente.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {manuaisPendentes.map(p => (
+                    <div key={p.id} className="space-y-1">
+                      <Label className="text-xs">
+                        {p.label} <code className="text-[10px] text-muted-foreground">{`{{${p.chave}}}`}</code>
+                      </Label>
+                      <Input
+                        value={manualValues[p.chave] || ''}
+                        onChange={e => setManualValues(v => ({ ...v, [p.chave]: e.target.value }))}
+                        placeholder={p.descricao || ''}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
