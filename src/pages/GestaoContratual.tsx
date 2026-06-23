@@ -1,12 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, Users, FileText, FileCode } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, FileCode, ShieldCheck } from 'lucide-react';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import ContratualDashboard from './contratual/ContratualDashboard';
 import ContratualClientes from './contratual/ContratualClientes';
 import ContratualModelos from './contratual/ContratualModelos';
 import ContratualContratos from './contratual/ContratualContratos';
+import ContratualAuditoria from './contratual/ContratualAuditoria';
 
 const MODULE_ROUTE = '/gestao-contratual';
 
