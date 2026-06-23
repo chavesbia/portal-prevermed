@@ -12,10 +12,9 @@ import { formatDateBR } from '@/lib/contractual/format';
 
 const CATEGORIAS: Record<string, string> = {
   gestao_ocupacional: 'Gestão Ocupacional',
-  contrato_por_uso: 'Contrato por Uso',
-  contrato_por_uso_drps_lgpd: 'Contrato por Uso + DRPS + LGPD',
+  contrato_por_uso: 'Contrato Por Uso',
   contrato_pontual: 'Contrato Pontual',
-  treinamentos: 'Treinamentos',
+  contrato_parceiras: 'Contrato Parceiras',
   outros: 'Outros',
 };
 

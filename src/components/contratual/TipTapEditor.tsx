@@ -11,7 +11,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CONTRACT_PLACEHOLDERS } from '@/lib/contractual/placeholders';
+import { useContractPlaceholders, PLACEHOLDER_GRUPOS } from '@/hooks/useContractPlaceholders';
 import { useEffect } from 'react';
 
 interface Props {
@@ -22,6 +22,7 @@ interface Props {
 }
 
 export function TipTapEditor({ value, onChange, placeholder, minHeight = 400 }: Props) {
+  const { data: placeholders = [] } = useContractPlaceholders(true);
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -103,14 +104,26 @@ export function TipTapEditor({ value, onChange, placeholder, minHeight = 400 }: 
               <Code className="h-4 w-4" /> Placeholder
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-72">
-            {CONTRACT_PLACEHOLDERS.map(p => (
-              <DropdownMenuItem key={p.key}
-                onClick={() => editor.chain().focus().insertContent(`{{${p.key}}}`).run()}>
-                <code className="text-primary text-xs mr-2">{`{{${p.key}}}`}</code>
-                <span className="text-xs text-muted-foreground">{p.label}</span>
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-80">
+            {PLACEHOLDER_GRUPOS.map(g => {
+              const items = placeholders.filter(p => p.grupo === g.key);
+              if (items.length === 0) return null;
+              return (
+                <div key={g.key}>
+                  <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground bg-muted/40">{g.label}</div>
+                  {items.map(p => (
+                    <DropdownMenuItem key={p.id}
+                      onClick={() => editor.chain().focus().insertContent(`{{${p.chave}}}`).run()}>
+                      <code className="text-primary text-xs mr-2">{`{{${p.chave}}}`}</code>
+                      <span className="text-xs text-muted-foreground">{p.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              );
+            })}
+            {placeholders.length === 0 && (
+              <div className="px-3 py-4 text-xs text-muted-foreground">Nenhum placeholder ativo.</div>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
