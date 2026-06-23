@@ -8,14 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Pencil, Power, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useContractPlaceholders, PLACEHOLDER_GRUPOS, type ContractPlaceholder } from '@/hooks/useContractPlaceholders';
+import {
+  useContractPlaceholders, PLACEHOLDER_GRUPOS, PLACEHOLDER_FORMATOS, PLACEHOLDER_FONTES,
+  type ContractPlaceholder,
+} from '@/hooks/useContractPlaceholders';
 import { useAuth } from '@/contexts/AuthContext';
 
-const grupoLabel = (g: string) => PLACEHOLDER_GRUPOS.find(x => x.key === g)?.label || g;
+const MANUAL_VALUE = '__manual__';
 
 export default function ContratualPlaceholders() {
   const { isAdmMaster } = useAuth() as any;
@@ -38,6 +41,12 @@ export default function ContratualPlaceholders() {
       qc.invalidateQueries({ queryKey: ['contract_placeholders'] });
     }
   };
+
+  const fonteLabel = (k: string | null) => {
+    if (!k) return <span className="text-amber-700">Manual</span>;
+    return PLACEHOLDER_FONTES.find(f => f.key === k)?.label || k;
+  };
+  const formatoLabel = (k: string) => PLACEHOLDER_FORMATOS.find(f => f.key === k)?.label || k;
 
   return (
     <div className="space-y-3">
@@ -64,11 +73,11 @@ export default function ContratualPlaceholders() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-72">Chave</TableHead>
+                  <TableHead className="w-64">Chave</TableHead>
                   <TableHead>Label</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="w-20">Ordem</TableHead>
-                  <TableHead className="w-24">Status</TableHead>
+                  <TableHead>Origem do valor</TableHead>
+                  <TableHead className="w-40">Formato</TableHead>
+                  <TableHead className="w-20">Status</TableHead>
                   <TableHead className="w-24 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -77,8 +86,8 @@ export default function ContratualPlaceholders() {
                   <TableRow key={p.id} className={!p.ativo ? 'opacity-60' : ''}>
                     <TableCell><code className="text-primary text-xs">{`{{${p.chave}}}`}</code></TableCell>
                     <TableCell className="font-medium">{p.label}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.descricao || '—'}</TableCell>
-                    <TableCell className="font-mono text-xs">{p.ordem}</TableCell>
+                    <TableCell className="text-xs">{fonteLabel(p.fonte)}</TableCell>
+                    <TableCell className="text-xs">{formatoLabel(p.formato)}</TableCell>
                     <TableCell>
                       <Badge variant="secondary" className={p.ativo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200'}>
                         {p.ativo ? 'Ativo' : 'Inativo'}
@@ -119,7 +128,15 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
   const [descricao, setDescricao] = useState('');
   const [grupo, setGrupo] = useState('outros');
   const [ordem, setOrdem] = useState<number>(0);
+  const [fonte, setFonte] = useState<string>(MANUAL_VALUE);
+  const [formato, setFormato] = useState<string>('texto');
   const [loading, setLoading] = useState(false);
+
+  const reset = () => {
+    setChave(''); setLabel(''); setDescricao('');
+    setGrupo('outros'); setOrdem(0);
+    setFonte(MANUAL_VALUE); setFormato('texto');
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -129,15 +146,15 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
       setDescricao(placeholder.descricao || '');
       setGrupo(placeholder.grupo);
       setOrdem(placeholder.ordem);
+      setFonte(placeholder.fonte || MANUAL_VALUE);
+      setFormato(placeholder.formato || 'texto');
     } else {
-      setChave(''); setLabel(''); setDescricao(''); setGrupo('outros'); setOrdem(0);
+      reset();
     }
   }, [open, placeholder]);
 
   const handleOpenChange = (b: boolean) => {
-    if (!b) {
-      setChave(''); setLabel(''); setDescricao(''); setGrupo('outros'); setOrdem(0);
-    }
+    if (!b) reset();
     onOpenChange(b);
   };
 
@@ -150,7 +167,10 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
       const { data: { user } } = await supabase.auth.getUser();
       const payload = {
         chave: normChave, label: label.trim(), descricao: descricao.trim() || null,
-        grupo, ordem: Number(ordem) || 0, updated_by: user?.id,
+        grupo, ordem: Number(ordem) || 0,
+        fonte: fonte === MANUAL_VALUE ? null : fonte,
+        formato,
+        updated_by: user?.id,
       };
       if (placeholder?.id) {
         const { error } = await supabase.from('contract_placeholders').update(payload).eq('id', placeholder.id);
@@ -170,9 +190,14 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
     }
   };
 
+  const fontesAgrupadas = PLACEHOLDER_FONTES.reduce<Record<string, typeof PLACEHOLDER_FONTES>>((acc, f) => {
+    (acc[f.grupo] ||= []).push(f);
+    return acc;
+  }, {});
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{placeholder ? 'Editar placeholder' : 'Novo placeholder'}</DialogTitle>
         </DialogHeader>
@@ -205,9 +230,43 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
             </div>
           </div>
           <div className="space-y-1">
+            <Label>Origem do valor</Label>
+            <Select value={fonte} onValueChange={setFonte}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent className="max-h-80">
+                <SelectItem value={MANUAL_VALUE}>Manual (preenchido na geração)</SelectItem>
+                {Object.entries(fontesAgrupadas).map(([g, items]) => (
+                  <SelectGroup key={g}>
+                    <SelectLabel>{g}</SelectLabel>
+                    {items.map(f => (
+                      <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Se não houver origem, o valor será solicitado durante a geração do contrato.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label>Formato de saída</Label>
+            <Select value={formato} onValueChange={setFormato}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {PLACEHOLDER_FORMATOS.map(f => (
+                  <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Use "por extenso" para gerar 203 → duzentos e três, ou R$ 5.230 → cinco mil duzentos e trinta reais.
+            </p>
+          </div>
+          <div className="space-y-1">
             <Label>Descrição</Label>
             <Textarea rows={2} value={descricao} onChange={e => setDescricao(e.target.value)}
-              placeholder="Explique de onde vem o valor (opcional)" />
+              placeholder="Ajuda exibida para quem preenche o valor manualmente (opcional)" />
           </div>
         </div>
         <DialogFooter>
