@@ -1774,6 +1774,48 @@ export type Database = {
           },
         ]
       }
+      contract_placeholders: {
+        Row: {
+          ativo: boolean
+          chave: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          grupo: string
+          id: string
+          label: string
+          ordem: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          chave: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          grupo?: string
+          id?: string
+          label: string
+          ordem?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          chave?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          grupo?: string
+          id?: string
+          label?: string
+          ordem?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       contract_template_versions: {
         Row: {
           changelog: string | null
@@ -1815,7 +1857,7 @@ export type Database = {
       contract_templates: {
         Row: {
           ativo: boolean
-          categoria: Database["public"]["Enums"]["contract_template_categoria"]
+          categoria: Database["public"]["Enums"]["contract_categoria"]
           created_at: string
           created_by: string | null
           current_version_id: string | null
@@ -1828,7 +1870,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
-          categoria?: Database["public"]["Enums"]["contract_template_categoria"]
+          categoria?: Database["public"]["Enums"]["contract_categoria"]
           created_at?: string
           created_by?: string | null
           current_version_id?: string | null
@@ -1841,7 +1883,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
-          categoria?: Database["public"]["Enums"]["contract_template_categoria"]
+          categoria?: Database["public"]["Enums"]["contract_categoria"]
           created_at?: string
           created_by?: string | null
           current_version_id?: string | null
@@ -5336,6 +5378,12 @@ export type Database = {
         | "NAO_COMPARECEU"
         | "REMARCADO"
         | "PARCIAL"
+      contract_categoria:
+        | "gestao_ocupacional"
+        | "contrato_por_uso"
+        | "contrato_pontual"
+        | "contrato_parceiras"
+        | "outros"
       contract_signer_status:
         | "pendente"
         | "enviado"
@@ -5621,6 +5669,13 @@ export const Constants = {
         "NAO_COMPARECEU",
         "REMARCADO",
         "PARCIAL",
+      ],
+      contract_categoria: [
+        "gestao_ocupacional",
+        "contrato_por_uso",
+        "contrato_pontual",
+        "contrato_parceiras",
+        "outros",
       ],
       contract_signer_status: [
         "pendente",
