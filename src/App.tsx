@@ -94,6 +94,7 @@ const App = () => (
                 <Route path="/gestao-passivos" element={<GestaoPassivos />} />
                 <Route path="/gestao-feedback" element={<ProtectedModuleRoute route="/gestao-feedback"><GestaoFeedback /></ProtectedModuleRoute>} />
                 <Route path="/social" element={<Social />} />
+                <Route path="/gestao-contratual" element={<GestaoContratual />} />
 
                 <Route path="/notificacoes" element={<Notificacoes />} />
                 <Route path="/departamentos/*" element={<Index />} />
