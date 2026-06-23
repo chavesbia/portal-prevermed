@@ -98,10 +98,9 @@ export function ContratualModeloDialog({ open, onOpenChange, template, onSaved }
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="gestao_ocupacional">Gestão Ocupacional</SelectItem>
-                  <SelectItem value="contrato_por_uso">Contrato por Uso</SelectItem>
-                  <SelectItem value="contrato_por_uso_drps_lgpd">Contrato por Uso + DRPS + LGPD</SelectItem>
+                  <SelectItem value="contrato_por_uso">Contrato Por Uso</SelectItem>
                   <SelectItem value="contrato_pontual">Contrato Pontual</SelectItem>
-                  <SelectItem value="treinamentos">Treinamentos</SelectItem>
+                  <SelectItem value="contrato_parceiras">Contrato Parceiras</SelectItem>
                   <SelectItem value="outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
