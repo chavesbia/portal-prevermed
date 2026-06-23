@@ -5206,6 +5206,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["contract_status"]
       }
+      contract_recalc_vigencia: { Args: never; Returns: Json }
       dashboard_guias_agregado: {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
