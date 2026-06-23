@@ -1,0 +1,124 @@
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Eye, FileDown } from 'lucide-react';
+import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
+import { Input } from '@/components/ui/input';
+import { ContratualContratoWizard } from './ContratualContratoWizard';
+import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
+
+const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
+  rascunho: { label: 'Rascunho', tone: 'bg-slate-100 text-slate-700' },
+  aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
+  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-amber-100 text-amber-800' },
+  assinado: { label: 'Assinado', tone: 'bg-emerald-100 text-emerald-800' },
+  ativo: { label: 'Ativo', tone: 'bg-emerald-100 text-emerald-800' },
+  vencendo_60: { label: 'Vence 60d', tone: 'bg-yellow-100 text-yellow-800' },
+  vencendo_30: { label: 'Vence 30d', tone: 'bg-orange-100 text-orange-800' },
+  vencendo_15: { label: 'Vence 15d', tone: 'bg-red-100 text-red-700' },
+  vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
+  encerrado: { label: 'Encerrado', tone: 'bg-slate-200 text-slate-700' },
+  cancelado: { label: 'Cancelado', tone: 'bg-slate-200 text-slate-700' },
+};
+
+interface Props { canEdit: boolean }
+
+export default function ContratualContratos({ canEdit }: Props) {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState('');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  const { data: contratos = [], isLoading } = useQuery({
+    queryKey: ['contract-contratos', search],
+    queryFn: async () => {
+      let q = supabase.from('contract_contratos')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, cliente:contract_clientes(razao_social, cnpj)')
+        .order('created_at', { ascending: false });
+      const { data, error } = await q;
+      if (error) throw error;
+      const arr = data || [];
+      if (!search) return arr;
+      const s = search.toLowerCase();
+      return arr.filter((c: any) =>
+        c.numero_contrato?.toLowerCase().includes(s) ||
+        c.cliente?.razao_social?.toLowerCase().includes(s) ||
+        c.cliente?.cnpj?.includes(s.replace(/\D/g, ''))
+      );
+    },
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Input placeholder="Buscar por número, empresa ou CNPJ…" className="max-w-md"
+          value={search} onChange={e => setSearch(e.target.value)} />
+        {canEdit && (
+          <Button onClick={() => setWizardOpen(true)} className="gap-1.5">
+            <Plus className="h-4 w-4" /> Novo Contrato
+          </Button>
+        )}
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nº</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>CNPJ</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Vigência</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Carregando…</TableCell></TableRow>}
+                {!isLoading && contratos.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nenhum contrato encontrado.</TableCell></TableRow>
+                )}
+                {contratos.map((c: any) => {
+                  const st = STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
+                      <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
+                      <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
+                      <TableCell><Badge variant="secondary" className={st.tone}>{st.label}</Badge></TableCell>
+                      <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
+                      <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDetailId(c.id)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ContratualContratoWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: ['contract-contratos'] }); setWizardOpen(false); setDetailId(id); }}
+      />
+
+      <ContratualContratoDetalhe
+        contratoId={detailId}
+        onClose={() => { setDetailId(null); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); }}
+        canEdit={canEdit}
+      />
+    </div>
+  );
+}

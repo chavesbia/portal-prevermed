@@ -1,149 +1,106 @@
-# Módulo de Gestão de Feedback
 
-Novo módulo `/gestao-feedback` integrado ao portal, com perfis RH e Gestor, dashboards executivos, formulário oficial de feedback, PDI, feedforward, matriz de risco e alertas. Substitui os controles atuais em Word/Excel.
+# Módulo Gestão Contratual
 
-## Escopo desta entrega (Fase 1)
+Implementação em **4 fases**. Confirmando o plano, eu já começo pela Fase 1 e sigo até o fim sem novas perguntas (peço o token da Autentique no momento de ativar a Fase 3).
 
-Inclui tudo do brief, exceto:
-- **Visão Colaborador** (marcada como "fase futura" no próprio brief).
-- **Notificações por e-mail externo**: alertas serão exibidos via sistema de notificações interno já existente (sino + banner), com agendamento via pg_cron. E-mail externo pode ser adicionado depois.
-- **Exportação PDF/Excel**: incluída, mas o PDF será uma versão imprimível otimizada (window.print com layout dedicado), não geração server-side.
+---
 
-## Estrutura do módulo
+## Estrutura geral
 
-```
-/gestao-feedback
-├── Dashboard         → KPIs corporativos / do gestor (conforme perfil)
-├── Colaboradores     → Lista filtrável + status de feedback (substitui planilha)
-├── Feedbacks         → Lista de avaliações realizadas + nova avaliação
-├── Planos de Ação    → PDI + Feedforward consolidados
-├── Histórico         → Linha do tempo por colaborador (drawer)
-├── Indicadores       → Radar, mapa de calor, ranking, evolução
-└── Configurações     → (RH) competências, descrições oficiais, periodicidade, setores
-```
+- **Rota raiz**: `/gestao-contratual` (registrada no menu lateral dinâmico via tabela `modules`).
+- **Sub-rotas**:
+  - `/gestao-contratual` — Dashboard
+  - `/gestao-contratual/clientes` — Cadastro de clientes
+  - `/gestao-contratual/contratos` — Lista + Novo Contrato + Detalhe
+  - `/gestao-contratual/modelos` — Gestor de modelos e versões
+  - `/gestao-contratual/assinaturas` — Painel de status Autentique
+- **Permissões**: granulares por rota (`can_view / can_edit / can_approve`), exatamente como os outros módulos. Sem novas roles. O adm_master configura na tela de Permissões.
+- **Padrão visual**: azul institucional PreverMed, ícones lucide, tabelas com cabeçalho sticky e drawer lateral para detalhes, datas em DD/MM/YYYY, nomes em "Title Case".
 
-## Perfis e permissões
+---
 
-Usa o sistema RBAC existente (`get_user_accessible_modules`, `can_edit_module_route`, etc.). Rotas registradas:
+## Fase 1 — Banco de dados + Clientes
 
-| Rota | RH/ADM | Gestor |
-|------|:------:|:------:|
-| `/gestao-feedback` | ver | ver |
-| `/gestao-feedback/colaboradores` | ver/editar | ver (escopo equipe) |
-| `/gestao-feedback/feedbacks` | ver/editar | ver/criar/editar (equipe) |
-| `/gestao-feedback/planos-acao` | ver/editar | ver/editar (equipe) |
-| `/gestao-feedback/indicadores` | ver | ver (equipe) |
-| `/gestao-feedback/configuracoes` | ver/editar | — |
+**Tabelas novas** (todas com RLS + GRANTs + audit em `audit_log`):
 
-Escopo "equipe do gestor" via função `is_gestor_de(_user_id, _colaborador_id)` baseada em `colaboradores.gestor_id`.
+| Tabela | Função |
+|---|---|
+| `contract_clientes` | Cadastro independente (CNPJ único). Campos do prompt + `situacao_cadastral`, `cnae_principal`. |
+| `contract_templates` | Modelo de contrato (nome, categoria, descrição, status, versão atual). |
+| `contract_template_versions` | Conteúdo HTML imutável por versão (nunca sobrescreve — nova versão = nova linha). |
+| `contract_contratos` | Contrato gerado (cliente_id, template_version_id congelado, todos os campos configuráveis, `data_inicio`, `data_fim` calculado, `status`, `pdf_url`, `autentique_document_id`). |
+| `contract_assinaturas` | Linha por signatário (representante + 2 testemunhas), status individual, data/hora. |
+| `contract_eventos` | Timeline imutável (criado, editado, gerado PDF, enviado p/ Autentique, assinado, vencendo, vencido). |
 
-## Modelo de dados (Lovable Cloud / Postgres)
+**Trigger de vigência**: função `contract_calc_status(data_inicio, vigencia_meses)` retorna `ativo / vencendo_60 / vencendo_30 / vencendo_15 / vencido / encerrado`. Usada em views.
 
-```text
-fb_setores(id, nome, ativo)
-fb_colaboradores(id, user_id?, nome, matricula, cpf, cargo, setor_id, gestor_id→profiles, data_admissao, status, periodicidade_dias)
-fb_competencias(id, ordem, nome, ativo)                       -- 10 fatores oficiais
-fb_competencia_niveis(id, competencia_id, nota 1..4, descricao_oficial)  -- texto exato PreverMed
-fb_avaliacoes(id, colaborador_id, gestor_id, data_avaliacao, data_proximo_feedback,
-              atividades, pontos_positivos, pontos_melhora, acoes_melhoria, observacoes,
-              pontuacao_total, classificacao, criada_em, atualizada_em)
-fb_avaliacao_notas(id, avaliacao_id, competencia_id, nota 1..4, comentario)
-fb_feedforward(id, avaliacao_id, acao, responsavel, prazo, status)        -- não_iniciado/em_andamento/concluido
-fb_pdi(id, avaliacao_id, competencia_id, acao, responsavel, prazo, evidencia, status)
-fb_config(id singleton, periodicidade_padrao_dias, alertas_dias int[])
-fb_audit(id, entidade, entidade_id, acao, user_id, payload, created_at)
-```
+**Edge function `cnpj-lookup`** — proxy para BrasilAPI (`https://brasilapi.com.br/api/cnpj/v1/{cnpj}`), evita CORS e permite cache.
 
-Triggers:
-- `fb_avaliacoes`: recalcula `pontuacao_total` (soma de `fb_avaliacao_notas`) e `classificacao` (faixas oficiais) antes de salvar.
-- Validação: exige 10 notas (uma por competência ativa) ao concluir.
-- `fb_audit`: log imutável de inserts/updates relevantes.
+**Tela Clientes**: lista + busca por CNPJ/razão social, drawer de detalhe, modal "+ Novo Cliente" (digitou CNPJ → chama edge function → preenche campos → completa email/telefone/representante → salva).
 
-Views:
-- `fb_v_status_colaborador`: por colaborador devolve último feedback, próximo feedback, status (🟢🟡🔴), pontuação, classificação, nível de risco.
-- `fb_v_indicadores_empresa`: distribuição, ranking setor/gestor, médias por competência.
+---
 
-RLS:
-- RH (`adm_master` / `can_edit /gestao-feedback/configuracoes`): acesso total.
-- Gestor: SELECT/INSERT/UPDATE apenas quando `is_gestor_de(auth.uid(), colaborador_id)`.
-- Descrições oficiais: SELECT para autenticados, UPDATE só RH.
+## Fase 2 — Modelos + Editor de cláusulas + Contrato
 
-Grants: `SELECT/INSERT/UPDATE/DELETE TO authenticated` + `ALL TO service_role` em todas as tabelas `fb_*`.
+**Editor rich-text WYSIWYG** com **TipTap** (já React-friendly, leve):
+- Toolbar: negrito, itálico, sublinhado, listas, títulos H1–H3, alinhamento, tabela simples.
+- Botão **"Inserir placeholder"** com dropdown listando os 22 placeholders do prompt (`{{RAZAO_SOCIAL}}`, etc.).
+- Placeholders renderizados como chips coloridos no editor, salvos como texto no HTML.
 
-## Cálculo e classificação
+**Tela Modelos**: lista por categoria, ações Novo / Editar / Duplicar / Visualizar / Desativar / Histórico de versões. Editar gera **nova versão** automaticamente — contratos antigos continuam apontando para a versão antiga.
 
-```
-pontuacao = soma(notas)   ∈ [10..40]
-10–18 → INSUFICIENTE  (vermelho)
-19–23 → FRACO          (laranja)
-24–28 → RAZOÁVEL       (amarelo)
-29–34 → BOM            (azul)
-35–40 → EXCELENTE      (verde)
-```
+**Tela Novo Contrato** (wizard 3 passos):
+1. Selecionar cliente (autocomplete) + modelo + versão (default: ativa).
+2. Preencher todos os campos configuráveis + dados dos signatários.
+3. **Preview do contrato renderizado** (HTML do template com placeholders substituídos) + botões "Voltar / Confirmar e gerar PDF".
 
-Risco (view derivada):
-- ALTO: pontuação < 24 **ou** >3 competências com nota 1 **ou** queda em 2 avaliações consecutivas
-- MÉDIO: 24–28
-- BAIXO: ≥29
+**Geração de PDF**: edge function `contract-generate-pdf` usando **Puppeteer (Browserless)** ou — para simplicidade e zero-config — **html-to-pdf via `@react-pdf/renderer` no client + upload ao Storage**. Vou usar a abordagem client-side com `html2pdf.js` (rápida, sem custos extras, suficiente para contratos). Bucket privado `contract-pdfs`, RLS por contrato_id.
 
-## Formulário de feedback (UX)
+---
 
-Drawer multi-step:
-1. **Cabeçalho** — colaborador, setor, gestor, data, data próximo feedback.
-2. **Avaliação por competências** — para cada uma das 10:
-   - Seletor de nota 1–4
-   - Painel lateral mostra automaticamente a **Descrição Oficial** cadastrada (texto fixo, não editável).
-3. **Campos qualitativos** — atividades, pontos positivos/melhora, ações, observações. Botão "✨ Assistente de redação" chama Lovable AI Gateway (`google/gemini-3-flash-preview`) apenas para sugerir texto; jamais altera notas nem descrições.
-4. **Feedforward** — combinados próximo ciclo (linhas: ação, responsável, prazo, status).
-5. **PDI** — automaticamente sugere linha para cada competência com nota ≤2.
-6. **Resumo** — velocímetro Recharts, pontuação total, classificação, botão Concluir.
+## Fase 3 — Autentique + Webhook
 
-## Dashboards
+**Secret**: `AUTENTIQUE_API_TOKEN` (vou pedir via add_secret após você aprovar o plano).
 
-- **Principal (RH)**: cards (total, pendentes, do mês, vencidos, próximos vencer, média geral, em risco) + distribuição de classificação (donut) + ranking setores/gestores + evolução mensal/trimestral/anual (line).
-- **Gestor**: cards da equipe + lista de pendentes/vencidos + planos pendentes + evolução da equipe.
-- **Indicadores**: radar (atual × anterior por colaborador), mapa de calor competências × setor com destaque <2.5, matriz de risco.
+**Edge functions**:
+- `autentique-send` — recebe `contrato_id`, baixa PDF do Storage, chama `POST https://api.autentique.com.br/v2/graphql` criando o documento com os 3 signatários, salva `autentique_document_id` + status `enviado`.
+- `autentique-webhook` (público, sem JWT) — recebe eventos da Autentique, atualiza `contract_assinaturas` e `contract_contratos.status` (rascunho → enviado → parcialmente_assinado → assinado / cancelado), grava em `contract_eventos`.
 
-## Alertas
+A URL do webhook é gerada e exibida na tela de configurações para você colar no painel da Autentique.
 
-`pg_cron` diário às 06:00 (insert tool, não migration):
-- Para cada colaborador, calcula dias até `data_proximo_feedback`.
-- Em 30/15/7 dias e quando vencido → cria `notifications` para o gestor.
-- Planos vencidos e colaboradores ALTO RISCO → notificação adicional ao gestor + RH.
+---
 
-## Configurações (RH)
+## Fase 4 — Vigência, alertas e dashboard
 
-Tela com abas:
-- **Competências e Níveis** — CRUD das 10 competências e 4 descrições oficiais cada (40 linhas). Importação inicial via seed SQL com placeholders `[INSERIR DESCRIÇÃO OFICIAL]` — RH preenche os textos exatos do documento. **Nenhuma descrição é gerada por IA.**
-- **Setores** — CRUD.
-- **Colaboradores** — CRUD + vínculo com gestor (usuário do portal).
-- **Periodicidade** — dias padrão entre feedbacks + janelas de alerta.
+**Cron job (`pg_cron`)** diário 06:00 BRT:
+- Recalcula `status` de todos contratos ativos.
+- Cria notificações no `notifications` para responsáveis quando entrar em 60/30/15 dias e quando vencer.
+- Grava evento em `contract_eventos`.
 
-## Tecnologia
+**Dashboard** (`/gestao-contratual`):
+- Cards: Ativos, Aguardando assinatura, Vencendo 30d, Vencidos, **Valor mensal total contratado** (SUM).
+- Tabela resumida com filtros (Ativo / Assinado / Pendente / Vencido / Encerrado).
+- Gráfico mensal: contratos criados x encerrados.
 
-- React + TypeScript + Tailwind + shadcn (já no projeto).
-- Recharts para gráficos.
-- Lovable Cloud (Supabase) com RLS.
-- Lovable AI Gateway para assistente de redação (opt-in, somente campos qualitativos).
-- Realtime sync nos dashboards via canal Supabase.
+**Auditoria**: todo INSERT/UPDATE relevante grava em `audit_log` (já existente) + `contract_eventos` para a timeline do contrato.
 
-## Plano de implementação (ordem)
+---
 
-1. **Migration**: enums, tabelas `fb_*`, views, triggers, RLS, grants, função `is_gestor_de`. Seed das 10 competências com 4 níveis (descrições em branco para RH preencher).
-2. **Registro do módulo** em `modules` + rotas em `App.tsx` + sidebar.
-3. **Hooks**: `useFeedbackData`, `useFeedbackPermissions`, `useColaboradores`, `useAvaliacoes`.
-4. **Páginas**: Dashboard, Colaboradores, Feedbacks (listagem), Indicadores, Configurações.
-5. **Drawer de avaliação** (multi-step) + velocímetro.
-6. **PDI/Feedforward** consolidados.
-7. **Histórico** (drawer linha do tempo).
-8. **Cron de alertas** + integração com `notifications`.
-9. **Exportação**: print-friendly PDF + Excel via SheetJS (já no projeto).
-10. **Auditoria** + smoke test.
+## Detalhes técnicos
 
-## Confirmações antes de começar
+- **Stack**: React + TipTap + react-hook-form + zod + tanstack-query (padrão do projeto).
+- **Validações**: CNPJ com dígito verificador, CPF dos signatários idem, valores monetários com 2 casas.
+- **PDF**: logo PreverMed no cabeçalho, rodapé com número da proposta + página X de Y.
+- **Versionamento congelado**: `contract_contratos.template_version_id` referencia `contract_template_versions.id` — editar o modelo nunca altera contratos já gerados.
+- **Permissões na UI**: hook `useModulePermissions('/gestao-contratual/...')` gateia botões; RLS gateia o banco.
 
-1. **Descrições oficiais**: você fornecerá o documento PreverMed com os 40 textos (10 competências × 4 níveis) para eu cadastrar via seed, ou prefere que eu deixe os campos vazios na config para o RH preencher pela tela? *(Recomendo a segunda opção para garantir fidelidade ao documento.)*
-2. **Cadastro de colaboradores**: vinculo opcional ao `profiles` (usuário do portal) ou são cadastros 100% independentes? *(Recomendo opcional — habilita fase futura do colaborador sem retrabalho.)*
-3. **Gestor**: é sempre um usuário do portal (perfil existente) ou pode ser texto livre? *(Recomendo usuário do portal — necessário para RLS e alertas.)*
+---
 
-Posso seguir já assumindo as recomendações acima se você preferir não responder agora.
+## O que NÃO entra nesta entrega
+
+- Geração de PDF server-side com renderização pixel-perfect tipo Word (uso html2pdf no client — fica ótimo, mas se você quiser PDF/A ou layout complexo de cláusulas posso trocar por Puppeteer/Browserless numa fase extra).
+- Importação em massa de contratos existentes (posso adicionar depois se precisar).
+
+---
+
+**Confirma o plano para eu começar pela Fase 1 (migration + tela de Clientes + lookup BrasilAPI)?**
