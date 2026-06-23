@@ -1612,6 +1612,8 @@ export type Database = {
           cliente_id: string
           created_at: string
           created_by: string | null
+          data_assinatura: string | null
+          data_emissao: string | null
           data_fim: string | null
           data_inicio: string
           dia_cobranca: number | null
@@ -1647,6 +1649,8 @@ export type Database = {
           cliente_id: string
           created_at?: string
           created_by?: string | null
+          data_assinatura?: string | null
+          data_emissao?: string | null
           data_fim?: string | null
           data_inicio: string
           dia_cobranca?: number | null
@@ -1682,6 +1686,8 @@ export type Database = {
           cliente_id?: string
           created_at?: string
           created_by?: string | null
+          data_assinatura?: string | null
+          data_emissao?: string | null
           data_fim?: string | null
           data_inicio?: string
           dia_cobranca?: number | null
@@ -1781,6 +1787,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           descricao: string | null
+          fonte: string | null
+          formato: string
           grupo: string
           id: string
           label: string
@@ -1794,6 +1802,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
+          fonte?: string | null
+          formato?: string
           grupo?: string
           id?: string
           label: string
@@ -1807,6 +1817,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           descricao?: string | null
+          fonte?: string | null
+          formato?: string
           grupo?: string
           id?: string
           label?: string
