@@ -15,6 +15,7 @@ const MODULE_ROUTE = '/gestao-contratual';
 
 export default function GestaoContratual() {
   const { hasPermission } = useModulePermissions();
+  const { isAdmMaster } = useAuth() as any;
   const canEditClientes = hasPermission(`${MODULE_ROUTE}/clientes`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
   const canEditModelos = hasPermission(`${MODULE_ROUTE}/modelos`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
   const canEditContratos = hasPermission(`${MODULE_ROUTE}/contratos`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
@@ -49,6 +50,11 @@ export default function GestaoContratual() {
             <TabsTrigger value="auditoria" className="gap-1.5">
               <ShieldCheck className="h-4 w-4" /> Auditoria
             </TabsTrigger>
+            {isAdmMaster && (
+              <TabsTrigger value="placeholders" className="gap-1.5">
+                <Braces className="h-4 w-4" /> Placeholders
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-4">
@@ -66,6 +72,11 @@ export default function GestaoContratual() {
           <TabsContent value="auditoria" className="mt-4">
             <ContratualAuditoria />
           </TabsContent>
+          {isAdmMaster && (
+            <TabsContent value="placeholders" className="mt-4">
+              <ContratualPlaceholders />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </ProtectedModuleRoute>
