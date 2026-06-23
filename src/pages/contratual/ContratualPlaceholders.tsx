@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -121,19 +121,18 @@ function PlaceholderDialog({ open, onOpenChange, placeholder, onSaved }: {
   const [ordem, setOrdem] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
-  // reset on open
-  useState(() => {});
-  // simple effect via key
-  if (open && placeholder && chave !== placeholder.chave) {
-    setChave(placeholder.chave);
-    setLabel(placeholder.label);
-    setDescricao(placeholder.descricao || '');
-    setGrupo(placeholder.grupo);
-    setOrdem(placeholder.ordem);
-  }
-  if (open && !placeholder && chave && !label) {
-    // editing -> creating transition handled below
-  }
+  useEffect(() => {
+    if (!open) return;
+    if (placeholder) {
+      setChave(placeholder.chave);
+      setLabel(placeholder.label);
+      setDescricao(placeholder.descricao || '');
+      setGrupo(placeholder.grupo);
+      setOrdem(placeholder.ordem);
+    } else {
+      setChave(''); setLabel(''); setDescricao(''); setGrupo('outros'); setOrdem(0);
+    }
+  }, [open, placeholder]);
 
   const handleOpenChange = (b: boolean) => {
     if (!b) {
