@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2 } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { toast } from 'sonner';
@@ -34,6 +35,27 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const excluirContrato = async () => {
+    if (!contratoId) return;
+    setDeleting(true);
+    try {
+      // remover pdf do storage se houver
+      if (contrato?.pdf_url) {
+        await supabase.storage.from('contract-pdfs').remove([contrato.pdf_url]).catch(() => {});
+      }
+      await supabase.from('contract_assinaturas').delete().eq('contrato_id', contratoId);
+      await supabase.from('contract_eventos').delete().eq('contrato_id', contratoId);
+      const { error } = await supabase.from('contract_contratos').delete().eq('id', contratoId);
+      if (error) throw error;
+      toast.success('Contrato excluído');
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir contrato');
+    } finally { setDeleting(false); }
+  };
 
   const enviarAutentique = async () => {
     if (!contratoId) return;
@@ -121,7 +143,31 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   Autentique: {contrato.autentique_document_id.slice(0, 8)}…
                 </Badge>
               )}
+              {canEdit && ['rascunho', 'cancelado'].includes(contrato.status) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="ml-auto" disabled={deleting}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir contrato {contrato.numero_contrato}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação remove o contrato, seus assinantes, eventos e o PDF. Não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={excluirContrato} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
+
 
             <Tabs defaultValue="dados">
               <TabsList>
