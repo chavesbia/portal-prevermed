@@ -93,6 +93,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     if (cliente && !form.rep_nome) {
       set('rep_nome', cliente.representante_legal || '');
       set('rep_cpf', cliente.cpf_representante || '');
+      set('rep_email', cliente.email || '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cliente]);
