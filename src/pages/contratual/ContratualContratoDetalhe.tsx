@@ -35,6 +35,27 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const excluirContrato = async () => {
+    if (!contratoId) return;
+    setDeleting(true);
+    try {
+      // remover pdf do storage se houver
+      if (contrato?.pdf_url) {
+        await supabase.storage.from('contract-pdfs').remove([contrato.pdf_url]).catch(() => {});
+      }
+      await supabase.from('contract_assinaturas').delete().eq('contrato_id', contratoId);
+      await supabase.from('contract_eventos').delete().eq('contrato_id', contratoId);
+      const { error } = await supabase.from('contract_contratos').delete().eq('id', contratoId);
+      if (error) throw error;
+      toast.success('Contrato excluído');
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir contrato');
+    } finally { setDeleting(false); }
+  };
 
   const enviarAutentique = async () => {
     if (!contratoId) return;
