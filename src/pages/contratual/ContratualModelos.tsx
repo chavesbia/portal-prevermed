@@ -64,6 +64,25 @@ export default function ContratualModelos({ canEdit }: Props) {
     else { toast.success(t.ativo ? 'Modelo desativado' : 'Modelo ativado'); qc.invalidateQueries({ queryKey: ['contract-templates'] }); }
   };
 
+  const handleDelete = async (t: any) => {
+    try {
+      const { count } = await supabase.from('contract_contratos')
+        .select('id', { count: 'exact', head: true }).eq('template_id', t.id);
+      if ((count || 0) > 0) {
+        toast.error(`Modelo em uso por ${count} contrato(s). Desative em vez de excluir.`);
+        return;
+      }
+      await supabase.from('contract_templates').update({ current_version_id: null }).eq('id', t.id);
+      await supabase.from('contract_template_versions').delete().eq('template_id', t.id);
+      const { error } = await supabase.from('contract_templates').delete().eq('id', t.id);
+      if (error) throw error;
+      toast.success('Modelo excluído');
+      qc.invalidateQueries({ queryKey: ['contract-templates'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir modelo');
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
