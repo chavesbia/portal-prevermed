@@ -166,6 +166,8 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+            </div>
+
 
             <Tabs defaultValue="dados">
               <TabsList>
