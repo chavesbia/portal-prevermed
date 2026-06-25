@@ -145,9 +145,10 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         indice_reajuste: form.indice_reajuste || null,
         prazo_aviso: form.prazo_aviso ? Number(form.prazo_aviso) : null,
         valor_km: form.valor_km ? Number(form.valor_km) : null,
-        rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null,
-        testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null,
-        testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null,
+        rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null, rep_email: form.rep_email || null,
+        testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
+        testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
+        prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
         html_final: previewHtml,
         created_by: user?.id, updated_by: user?.id,
       };
@@ -155,9 +156,10 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       if (error) throw error;
 
       const signers = [
-        { tipo: 'representante', nome: form.rep_nome, cpf: form.rep_cpf },
-        { tipo: 'testemunha_1', nome: form.testemunha1_nome, cpf: form.testemunha1_cpf },
-        { tipo: 'testemunha_2', nome: form.testemunha2_nome, cpf: form.testemunha2_cpf },
+        { tipo: 'representante', nome: form.rep_nome, cpf: form.rep_cpf, email: form.rep_email },
+        { tipo: 'contratada', nome: form.prevermed_nome, cpf: form.prevermed_cpf, email: form.prevermed_email },
+        { tipo: 'testemunha_1', nome: form.testemunha1_nome, cpf: form.testemunha1_cpf, email: form.testemunha1_email },
+        { tipo: 'testemunha_2', nome: form.testemunha2_nome, cpf: form.testemunha2_cpf, email: form.testemunha2_email },
       ].filter(s => s.nome);
       if (signers.length) {
         await supabase.from('contract_assinaturas').insert(signers.map(s => ({ contrato_id: ctr.id, ...s, tipo: s.tipo as any })));
