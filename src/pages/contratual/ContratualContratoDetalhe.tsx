@@ -143,7 +143,29 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   Autentique: {contrato.autentique_document_id.slice(0, 8)}…
                 </Badge>
               )}
-            </div>
+              {canEdit && ['rascunho', 'cancelado'].includes(contrato.status) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="ml-auto" disabled={deleting}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir contrato {contrato.numero_contrato}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação remove o contrato, seus assinantes, eventos e o PDF. Não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={excluirContrato} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
 
             <Tabs defaultValue="dados">
               <TabsList>
