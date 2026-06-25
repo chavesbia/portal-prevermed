@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Copy, Power } from 'lucide-react';
+import { Plus, Pencil, Copy, Power, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ContratualModeloDialog } from './ContratualModeloDialog';
 import { toast } from 'sonner';
 import { formatDateBR } from '@/lib/contractual/format';
@@ -61,6 +62,25 @@ export default function ContratualModelos({ canEdit }: Props) {
     const { error } = await supabase.from('contract_templates').update({ ativo: !t.ativo }).eq('id', t.id);
     if (error) toast.error(error.message);
     else { toast.success(t.ativo ? 'Modelo desativado' : 'Modelo ativado'); qc.invalidateQueries({ queryKey: ['contract-templates'] }); }
+  };
+
+  const handleDelete = async (t: any) => {
+    try {
+      const { count } = await supabase.from('contract_contratos')
+        .select('id', { count: 'exact', head: true }).eq('template_id', t.id);
+      if ((count || 0) > 0) {
+        toast.error(`Modelo em uso por ${count} contrato(s). Desative em vez de excluir.`);
+        return;
+      }
+      await supabase.from('contract_templates').update({ current_version_id: null }).eq('id', t.id);
+      await supabase.from('contract_template_versions').delete().eq('template_id', t.id);
+      const { error } = await supabase.from('contract_templates').delete().eq('id', t.id);
+      if (error) throw error;
+      toast.success('Modelo excluído');
+      qc.invalidateQueries({ queryKey: ['contract-templates'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir modelo');
+    }
   };
 
   return (
@@ -121,6 +141,27 @@ export default function ContratualModelos({ canEdit }: Props) {
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => toggleAtivo(t)}>
                             <Power className="h-4 w-4" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir modelo "{t.nome}"?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Todas as versões serão removidas. Se o modelo já estiver vinculado a contratos, a exclusão será bloqueada — desative em vez de excluir.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(t)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
                       )}
                     </TableCell>
