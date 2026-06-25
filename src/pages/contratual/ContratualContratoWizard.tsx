@@ -31,9 +31,10 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     data_emissao: today,
     data_assinatura: '',
     data_inicio: today,
-    rep_nome: '', rep_cpf: '',
-    testemunha1_nome: '', testemunha1_cpf: '',
-    testemunha2_nome: '', testemunha2_cpf: '',
+    rep_nome: '', rep_cpf: '', rep_email: '',
+    testemunha1_nome: '', testemunha1_cpf: '', testemunha1_email: '',
+    testemunha2_nome: '', testemunha2_cpf: '', testemunha2_email: '',
+    prevermed_nome: '', prevermed_cpf: '', prevermed_email: '',
   });
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
