@@ -1627,15 +1627,21 @@ export type Database = {
           observacoes: string | null
           pdf_url: string | null
           prazo_aviso: number | null
+          prevermed_cpf: string | null
+          prevermed_email: string | null
+          prevermed_nome: string | null
           qtd_vidas: number | null
           rep_cpf: string | null
+          rep_email: string | null
           rep_nome: string | null
           status: Database["public"]["Enums"]["contract_status"]
           template_id: string | null
           template_version_id: string | null
           testemunha1_cpf: string | null
+          testemunha1_email: string | null
           testemunha1_nome: string | null
           testemunha2_cpf: string | null
+          testemunha2_email: string | null
           testemunha2_nome: string | null
           updated_at: string
           updated_by: string | null
@@ -1664,15 +1670,21 @@ export type Database = {
           observacoes?: string | null
           pdf_url?: string | null
           prazo_aviso?: number | null
+          prevermed_cpf?: string | null
+          prevermed_email?: string | null
+          prevermed_nome?: string | null
           qtd_vidas?: number | null
           rep_cpf?: string | null
+          rep_email?: string | null
           rep_nome?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           template_id?: string | null
           template_version_id?: string | null
           testemunha1_cpf?: string | null
+          testemunha1_email?: string | null
           testemunha1_nome?: string | null
           testemunha2_cpf?: string | null
+          testemunha2_email?: string | null
           testemunha2_nome?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1701,15 +1713,21 @@ export type Database = {
           observacoes?: string | null
           pdf_url?: string | null
           prazo_aviso?: number | null
+          prevermed_cpf?: string | null
+          prevermed_email?: string | null
+          prevermed_nome?: string | null
           qtd_vidas?: number | null
           rep_cpf?: string | null
+          rep_email?: string | null
           rep_nome?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           template_id?: string | null
           template_version_id?: string | null
           testemunha1_cpf?: string | null
+          testemunha1_email?: string | null
           testemunha1_nome?: string | null
           testemunha2_cpf?: string | null
+          testemunha2_email?: string | null
           testemunha2_nome?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -5402,7 +5420,11 @@ export type Database = {
         | "assinado"
         | "recusado"
         | "cancelado"
-      contract_signer_type: "representante" | "testemunha_1" | "testemunha_2"
+      contract_signer_type:
+        | "representante"
+        | "testemunha_1"
+        | "testemunha_2"
+        | "contratada"
       contract_status:
         | "rascunho"
         | "aguardando_assinatura"
@@ -5696,7 +5718,12 @@ export const Constants = {
         "recusado",
         "cancelado",
       ],
-      contract_signer_type: ["representante", "testemunha_1", "testemunha_2"],
+      contract_signer_type: [
+        "representante",
+        "testemunha_1",
+        "testemunha_2",
+        "contratada",
+      ],
       contract_status: [
         "rascunho",
         "aguardando_assinatura",
