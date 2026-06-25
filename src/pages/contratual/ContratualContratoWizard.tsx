@@ -254,14 +254,45 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
             </div>
 
             <div className="pt-3 border-t">
-              <h4 className="text-sm font-medium mb-2">Assinantes</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <F label="Representante legal" v={form.rep_nome} on={v => set('rep_nome', v)} />
-                <F label="CPF representante" v={form.rep_cpf} on={v => set('rep_cpf', v)} />
-                <F label="Testemunha 1" v={form.testemunha1_nome} on={v => set('testemunha1_nome', v)} />
-                <F label="CPF testemunha 1" v={form.testemunha1_cpf} on={v => set('testemunha1_cpf', v)} />
-                <F label="Testemunha 2" v={form.testemunha2_nome} on={v => set('testemunha2_nome', v)} />
-                <F label="CPF testemunha 2" v={form.testemunha2_cpf} on={v => set('testemunha2_cpf', v)} />
+              <h4 className="text-sm font-medium mb-1">Assinantes</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                O e-mail é obrigatório para envio à Autentique. Sem e-mail o signatário não recebe o convite.
+              </p>
+
+              <div className="space-y-1 mb-3">
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Contratante (Cliente)</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <F label="Representante legal" v={form.rep_nome} on={v => set('rep_nome', v)} />
+                  <F label="CPF representante" v={form.rep_cpf} on={v => set('rep_cpf', v)} />
+                  <F label="E-mail representante *" type="email" v={form.rep_email} on={v => set('rep_email', v)} />
+                </div>
+              </div>
+
+              <div className="space-y-1 mb-3">
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Contratada (PreverMed)</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <F label="Responsável PreverMed" v={form.prevermed_nome} on={v => set('prevermed_nome', v)} />
+                  <F label="CPF responsável" v={form.prevermed_cpf} on={v => set('prevermed_cpf', v)} />
+                  <F label="E-mail responsável *" type="email" v={form.prevermed_email} on={v => set('prevermed_email', v)} />
+                </div>
+              </div>
+
+              <div className="space-y-1 mb-3">
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 1</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <F label="Nome" v={form.testemunha1_nome} on={v => set('testemunha1_nome', v)} />
+                  <F label="CPF" v={form.testemunha1_cpf} on={v => set('testemunha1_cpf', v)} />
+                  <F label="E-mail" type="email" v={form.testemunha1_email} on={v => set('testemunha1_email', v)} />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 2</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <F label="Nome" v={form.testemunha2_nome} on={v => set('testemunha2_nome', v)} />
+                  <F label="CPF" v={form.testemunha2_cpf} on={v => set('testemunha2_cpf', v)} />
+                  <F label="E-mail" type="email" v={form.testemunha2_email} on={v => set('testemunha2_email', v)} />
+                </div>
               </div>
             </div>
 
