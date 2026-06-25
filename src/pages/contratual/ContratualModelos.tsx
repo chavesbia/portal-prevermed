@@ -141,6 +141,27 @@ export default function ContratualModelos({ canEdit }: Props) {
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => toggleAtivo(t)}>
                             <Power className="h-4 w-4" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir modelo "{t.nome}"?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Todas as versões serão removidas. Se o modelo já estiver vinculado a contratos, a exclusão será bloqueada — desative em vez de excluir.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(t)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
                       )}
                     </TableCell>
