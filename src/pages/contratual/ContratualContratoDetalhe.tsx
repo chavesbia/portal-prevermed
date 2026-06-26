@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2 } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -36,6 +36,24 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const [regen, setRegen] = useState(false);
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const sincronizarAutentique = async () => {
+    if (!contratoId) return;
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('autentique-sync', {
+        body: { contrato_id: contratoId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      const d = data as any;
+      toast.success(`Sincronizado: ${d.assinadas}/${d.total} assinaturas`);
+      qc.invalidateQueries({ queryKey: ['contract-contrato', contratoId] });
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao sincronizar');
+    } finally { setSyncing(false); }
+  };
 
   const excluirContrato = async () => {
     if (!contratoId) return;
@@ -139,9 +157,15 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                 </Button>
               )}
               {contrato.autentique_document_id && (
-                <Badge variant="outline" className="text-xs self-center">
-                  Autentique: {contrato.autentique_document_id.slice(0, 8)}…
-                </Badge>
+                <>
+                  <Button variant="outline" size="sm" onClick={sincronizarAutentique} disabled={syncing}>
+                    {syncing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                    Sincronizar status
+                  </Button>
+                  <Badge variant="outline" className="text-xs self-center">
+                    Autentique: {contrato.autentique_document_id.slice(0, 8)}…
+                  </Badge>
+                </>
               )}
               {canEdit && ['rascunho', 'cancelado'].includes(contrato.status) && (
                 <AlertDialog>
