@@ -117,10 +117,33 @@ Deno.serve(async (req) => {
     }
 
     const publicIds = resolved.map((a) => a.autentique_signer_id).filter(Boolean);
+    const contratoIdFinal = assinaturas[0].contrato_id;
+
+    const logEvento = async (tipo: string, descricao: string, detalhes: Record<string, unknown>) => {
+      const { error: evErr } = await admin.from('contract_eventos').insert({
+        contrato_id: contratoIdFinal,
+        tipo,
+        descricao,
+        detalhes,
+        performed_by: claims.claims.sub,
+      });
+      if (evErr) console.error('Falha ao registrar evento:', evErr);
+    };
+
     if (!publicIds.length) {
       if (atualizados.length) {
+        await logEvento(
+          'autentique_reenvio_ignorado',
+          `Reenvio ignorado: ${atualizados.join(', ')} já constava(m) como assinado(s).`,
+          { atualizados, nao_encontrados: naoEncontrados },
+        );
         return json({ ok: true, reenviados: 0, atualizados, message: 'Assinatura já constava como assinada no Autentique.' });
       }
+      await logEvento(
+        'autentique_reenvio_falhou',
+        `Não foi possível reenviar: ${naoEncontrados.join(', ') || 'signatário não localizado no Autentique'}.`,
+        { nao_encontrados: naoEncontrados },
+      );
       return json({ error: 'Nenhum signatário pendente encontrado no Autentique para reenvio', nao_encontrados: naoEncontrados }, 404);
     }
 
@@ -135,20 +158,23 @@ Deno.serve(async (req) => {
     });
     const respJson = await resp.json();
     if (!resp.ok || respJson.errors) {
+      await logEvento(
+        'autentique_reenvio_falhou',
+        `Erro ao reenviar e-mail no Autentique`,
+        { public_ids: publicIds, details: respJson },
+      );
       return json({ error: 'Autentique error', details: respJson }, 502);
     }
 
-    const contratoIdFinal = resolved[0].contrato_id;
     const nomes = resolved.map((a) => a.nome).join(', ');
-    await admin.from('contract_eventos').insert({
-      contrato_id: contratoIdFinal,
-      tipo: 'autentique_reenviado',
-      descricao: `E-mail de assinatura reenviado para: ${nomes}`,
-      detalhes: { public_ids: publicIds, atualizados, nao_encontrados: naoEncontrados },
-      performed_by: claims.claims.sub,
-    });
+    await logEvento(
+      'autentique_reenviado',
+      `E-mail de assinatura reenviado para: ${nomes}`,
+      { public_ids: publicIds, atualizados, nao_encontrados: naoEncontrados },
+    );
 
     return json({ ok: true, reenviados: resolved.length, signatarios: resolved.map((a) => a.nome), atualizados, nao_encontrados: naoEncontrados });
+
   } catch (e) {
     return json({ error: String(e?.message || e) }, 500);
   }
