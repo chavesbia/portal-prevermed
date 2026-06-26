@@ -1846,6 +1846,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_signatarios: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          cpf: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          nome: string
+          tipo: Database["public"]["Enums"]["contract_signatario_tipo"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          cpf: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          tipo: Database["public"]["Enums"]["contract_signatario_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          cpf?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          tipo?: Database["public"]["Enums"]["contract_signatario_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       contract_template_versions: {
         Row: {
           changelog: string | null
@@ -5414,6 +5456,7 @@ export type Database = {
         | "contrato_pontual"
         | "contrato_parceiras"
         | "outros"
+      contract_signatario_tipo: "responsavel_prevermed" | "testemunha"
       contract_signer_status:
         | "pendente"
         | "enviado"
@@ -5711,6 +5754,7 @@ export const Constants = {
         "contrato_parceiras",
         "outros",
       ],
+      contract_signatario_tipo: ["responsavel_prevermed", "testemunha"],
       contract_signer_status: [
         "pendente",
         "enviado",
