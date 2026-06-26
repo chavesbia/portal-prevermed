@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -37,6 +37,21 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+
+  const reenviarEmail = async (assinaturaId: string) => {
+    setResendingId(assinaturaId);
+    try {
+      const { data, error } = await supabase.functions.invoke('autentique-resend', {
+        body: { assinatura_id: assinaturaId },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      toast.success('E-mail reenviado');
+      qc.invalidateQueries({ queryKey: ['contract-contrato', contratoId] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao reenviar e-mail');
+    } finally { setResendingId(null); }
+  };
 
   const sincronizarAutentique = async () => {
     if (!contratoId) return;
@@ -246,16 +261,32 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                       <div className="font-medium">{a.nome}</div>
                       <div className="text-xs text-muted-foreground">{formatCPF(a.cpf)}</div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className={
-                        a.status === 'assinado' ? 'bg-emerald-100 text-emerald-800' :
-                        a.status === 'pendente' ? 'bg-amber-100 text-amber-800' :
-                        a.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
-                        'bg-slate-100 text-slate-700'
-                      }>{a.status}</Badge>
-                      {a.data_assinatura && (
-                        <div className="text-xs text-muted-foreground mt-1">{formatDateBR(a.data_assinatura)}</div>
+                    <div className="flex items-center gap-2">
+                      {a.status === 'pendente' && a.autentique_signer_id && contrato.autentique_document_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => reenviarEmail(a.id)}
+                          disabled={resendingId === a.id || !a.email}
+                          title={!a.email ? 'Signatário sem e-mail cadastrado' : 'Reenviar e-mail de assinatura'}
+                        >
+                          {resendingId === a.id
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Mail className="h-4 w-4 mr-1" />}
+                          {resendingId === a.id ? '' : 'Reenviar e-mail'}
+                        </Button>
                       )}
+                      <div className="text-right">
+                        <Badge variant="secondary" className={
+                          a.status === 'assinado' ? 'bg-emerald-100 text-emerald-800' :
+                          a.status === 'pendente' ? 'bg-amber-100 text-amber-800' :
+                          a.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
+                          'bg-slate-100 text-slate-700'
+                        }>{a.status}</Badge>
+                        {a.data_assinatura && (
+                          <div className="text-xs text-muted-foreground mt-1">{formatDateBR(a.data_assinatura)}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
