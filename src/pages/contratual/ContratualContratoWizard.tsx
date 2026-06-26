@@ -183,8 +183,21 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     (!form.testemunha2_cpf || isValidCPF(form.testemunha2_cpf))
   );
 
+  // Placeholders ainda presentes no HTML renderizado (não substituídos)
+  const placeholdersFaltando = useMemo(() => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    String(previewHtml).replace(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g, (_m, k) => {
+      if (!seen.has(k)) { seen.add(k); out.push(k); }
+      return _m;
+    });
+    return out;
+  }, [previewHtml]);
+
   const canGoStep2 = !!clienteId && !!templateId && !!versionId;
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
+  const canConfirm = placeholdersFaltando.length === 0;
+
 
   const aplicarSignatario = (id: string, kind: 'prev' | 't1' | 't2') => {
     const list = kind === 'prev' ? respPrevermed : testemunhas;
