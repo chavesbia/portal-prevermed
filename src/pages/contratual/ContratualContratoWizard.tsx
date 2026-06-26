@@ -452,28 +452,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
             </div>
 
-            {manuaisPendentes.length > 0 && (
-              <div className="pt-3 border-t">
-                <h4 className="text-sm font-medium mb-1">Campos personalizados</h4>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Estes placeholders aparecem no modelo mas não possuem origem mapeada. Preencha manualmente.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {manuaisPendentes.map(p => (
-                    <div key={p.id} className="space-y-1">
-                      <Label className="text-xs">
-                        {p.label} <code className="text-[10px] text-muted-foreground">{`{{${p.chave}}}`}</code>
-                      </Label>
-                      <Input
-                        value={manualValues[p.chave] || ''}
-                        onChange={e => setManualValues(v => ({ ...v, [p.chave]: e.target.value }))}
-                        placeholder={p.descricao || ''}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Campos manuais agora aparecem antes dos Assinantes */}
+
 
             {!cpfsValidos && (
               <p className="text-xs text-destructive">Há CPF(s) inválido(s). Corrija antes de avançar.</p>
