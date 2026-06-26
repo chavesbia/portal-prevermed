@@ -342,7 +342,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
             )}
 
+            {manuaisPendentes.length > 0 && (
+              <div className="pt-3 border-t">
+                <h4 className="text-sm font-medium mb-1">Campos do contrato</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Campos do modelo sem origem mapeada no banco — preenchidos a cada contrato.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {manuaisPendentes.map(p => (
+                    <div key={p.id} className="space-y-1">
+                      <Label className="text-xs">{p.label} *</Label>
+                      <Input
+                        value={manualValues[p.chave] || ''}
+                        onChange={e => setManualValues(v => ({ ...v, [p.chave]: e.target.value }))}
+                        placeholder={p.descricao || ''}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="pt-3 border-t">
+
               <h4 className="text-sm font-medium mb-1">Assinantes</h4>
               <p className="text-xs text-muted-foreground mb-3">
                 O e-mail é obrigatório para envio à Autentique. Sem e-mail o signatário não recebe o convite.
