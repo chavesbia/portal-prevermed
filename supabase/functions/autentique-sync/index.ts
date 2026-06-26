@@ -63,13 +63,22 @@ Deno.serve(async (req) => {
     if (!doc) return json({ error: 'Documento não encontrado no Autentique' }, 404);
 
     let updated = 0;
+    const usedAssinaturaIds = new Set<string>();
     for (const sig of doc.signatures || []) {
-      const match = (contrato.assinaturas || []).find(
-        (a: any) =>
-          a.autentique_signer_id === sig.public_id ||
-          a.email?.toLowerCase() === sig.email?.toLowerCase(),
+      // 1) match by stored signer_id, 2) fallback: first unused row with same email
+      let match = (contrato.assinaturas || []).find(
+        (a: any) => a.autentique_signer_id === sig.public_id && !usedAssinaturaIds.has(a.id),
       );
+      if (!match) {
+        match = (contrato.assinaturas || []).find(
+          (a: any) =>
+            !usedAssinaturaIds.has(a.id) &&
+            !a.autentique_signer_id &&
+            a.email?.toLowerCase() === sig.email?.toLowerCase(),
+        );
+      }
       if (!match) continue;
+      usedAssinaturaIds.add(match.id);
       const signed = sig.signed?.created_at;
       const rejected = sig.rejected?.created_at;
       const newStatus = signed ? 'assinado' : rejected ? 'rejeitado' : 'pendente';
@@ -81,6 +90,7 @@ Deno.serve(async (req) => {
       }).eq('id', match.id);
       updated++;
     }
+
 
     // Recalcula status do contrato
     const { data: assinaturas } = await admin
