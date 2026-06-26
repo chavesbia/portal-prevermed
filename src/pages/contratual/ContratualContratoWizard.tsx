@@ -239,6 +239,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
         testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
         prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+        campos_personalizados: manualValues,
         html_final: previewHtml,
         created_by: user?.id, updated_by: user?.id,
       };
