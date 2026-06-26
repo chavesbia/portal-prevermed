@@ -104,26 +104,41 @@ export function TipTapEditor({ value, onChange, placeholder, minHeight = 400 }: 
               <Code className="h-4 w-4" /> Placeholder
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-80">
+          <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto w-96">
             {PLACEHOLDER_GRUPOS.map(g => {
               const items = placeholders.filter(p => p.grupo === g.key);
               if (items.length === 0) return null;
               return (
                 <div key={g.key}>
                   <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground bg-muted/40">{g.label}</div>
-                  {items.map(p => (
-                    <DropdownMenuItem key={p.id}
-                      onClick={() => editor.chain().focus().insertContent(`{{${p.chave}}}`).run()}>
-                      <code className="text-primary text-xs mr-2">{`{{${p.chave}}}`}</code>
-                      <span className="text-xs text-muted-foreground">{p.label}</span>
-                    </DropdownMenuItem>
-                  ))}
+                  {items.map(p => {
+                    const hasExtenso = ['numero', 'moeda', 'data'].includes(p.formato);
+                    return (
+                      <div key={p.id}>
+                        <DropdownMenuItem
+                          onClick={() => editor.chain().focus().insertContent(`{{${p.chave}}}`).run()}>
+                          <code className="text-primary text-xs mr-2">{`{{${p.chave}}}`}</code>
+                          <span className="text-xs text-muted-foreground">{p.label}</span>
+                        </DropdownMenuItem>
+                        {hasExtenso && (
+                          <DropdownMenuItem
+                            onClick={() => editor.chain().focus().insertContent(`{{${p.chave}_EXTENSO}}`).run()}>
+                            <code className="text-emerald-700 text-xs mr-2">{`{{${p.chave}_EXTENSO}}`}</code>
+                            <span className="text-xs text-muted-foreground">{p.label} (por extenso)</span>
+                          </DropdownMenuItem>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
             {placeholders.length === 0 && (
               <div className="px-3 py-4 text-xs text-muted-foreground">Nenhum placeholder ativo.</div>
             )}
+            <div className="px-3 py-2 text-[10px] text-muted-foreground border-t bg-muted/20">
+              Dica: <code>{`{{CHAVE_EXTENSO}}`}</code> é gerado automaticamente para placeholders de número, moeda e data.
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

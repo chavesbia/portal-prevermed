@@ -49,6 +49,13 @@ function applyFormato(raw: any, formato: string): string {
   }
 }
 
+const EXTENSO_BASE_FORMATS = ['numero', 'moeda', 'data'] as const;
+const EXTENSO_VARIANT: Record<string, string> = {
+  numero: 'extenso_numero',
+  moeda: 'extenso_moeda',
+  data: 'extenso_data',
+};
+
 export function buildPlaceholderValues(
   placeholders: ContractPlaceholder[],
   { cliente, contrato, manual = {} }: ContractRenderData,
@@ -57,11 +64,18 @@ export function buildPlaceholderValues(
   for (const p of placeholders) {
     const raw = resolveFonte(p.fonte, { cliente, contrato });
     let valor = applyFormato(raw, p.formato);
+    let rawForExtenso: any = raw;
     if (!valor && manual[p.chave]) {
       // Aplica formato sobre valor manual (ex.: usuário digita 1500 para moeda)
       valor = applyFormato(manual[p.chave], p.formato) || manual[p.chave];
+      rawForExtenso = manual[p.chave];
     }
     result[p.chave] = valor;
+
+    // Variante automática {{CHAVE_EXTENSO}} para formatos numéricos/moeda/data
+    if ((EXTENSO_BASE_FORMATS as readonly string[]).includes(p.formato) && rawForExtenso != null && rawForExtenso !== '') {
+      result[`${p.chave}_EXTENSO`] = applyFormato(rawForExtenso, EXTENSO_VARIANT[p.formato]);
+    }
   }
   return result;
 }
