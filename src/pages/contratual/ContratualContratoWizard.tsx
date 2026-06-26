@@ -183,8 +183,21 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     (!form.testemunha2_cpf || isValidCPF(form.testemunha2_cpf))
   );
 
+  // Placeholders ainda presentes no HTML renderizado (não substituídos)
+  const placeholdersFaltando = useMemo(() => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    String(previewHtml).replace(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g, (_m, k) => {
+      if (!seen.has(k)) { seen.add(k); out.push(k); }
+      return _m;
+    });
+    return out;
+  }, [previewHtml]);
+
   const canGoStep2 = !!clienteId && !!templateId && !!versionId;
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
+  const canConfirm = placeholdersFaltando.length === 0;
+
 
   const aplicarSignatario = (id: string, kind: 'prev' | 't1' | 't2') => {
     const list = kind === 'prev' ? respPrevermed : testemunhas;
@@ -226,6 +239,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
         testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
         prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+        campos_personalizados: manualValues,
         html_final: previewHtml,
         created_by: user?.id, updated_by: user?.id,
       };
@@ -328,7 +342,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
             )}
 
+            {manuaisPendentes.length > 0 && (
+              <div className="pt-3 border-t">
+                <h4 className="text-sm font-medium mb-1">Campos do contrato</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Campos do modelo sem origem mapeada no banco — preenchidos a cada contrato.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {manuaisPendentes.map(p => (
+                    <div key={p.id} className="space-y-1">
+                      <Label className="text-xs">{p.label} *</Label>
+                      <Input
+                        value={manualValues[p.chave] || ''}
+                        onChange={e => setManualValues(v => ({ ...v, [p.chave]: e.target.value }))}
+                        placeholder={p.descricao || ''}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="pt-3 border-t">
+
               <h4 className="text-sm font-medium mb-1">Assinantes</h4>
               <p className="text-xs text-muted-foreground mb-3">
                 O e-mail é obrigatório para envio à Autentique. Sem e-mail o signatário não recebe o convite.
@@ -416,28 +452,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
             </div>
 
-            {manuaisPendentes.length > 0 && (
-              <div className="pt-3 border-t">
-                <h4 className="text-sm font-medium mb-1">Campos personalizados</h4>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Estes placeholders aparecem no modelo mas não possuem origem mapeada. Preencha manualmente.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {manuaisPendentes.map(p => (
-                    <div key={p.id} className="space-y-1">
-                      <Label className="text-xs">
-                        {p.label} <code className="text-[10px] text-muted-foreground">{`{{${p.chave}}}`}</code>
-                      </Label>
-                      <Input
-                        value={manualValues[p.chave] || ''}
-                        onChange={e => setManualValues(v => ({ ...v, [p.chave]: e.target.value }))}
-                        placeholder={p.descricao || ''}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Campos manuais agora aparecem antes dos Assinantes */}
+
 
             {!cpfsValidos && (
               <p className="text-xs text-destructive">Há CPF(s) inválido(s). Corrija antes de avançar.</p>
@@ -448,10 +464,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         {step === 3 && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Pré-visualização do contrato. Confirme para gerar o PDF.</p>
+            {placeholdersFaltando.length > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                <p className="font-medium mb-1">Não é possível gerar o contrato — há campos sem preenchimento:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {placeholdersFaltando.map(k => (
+                    <li key={k}><code>{`{{${k}}}`}</code></li>
+                  ))}
+                </ul>
+                <p className="mt-1">Volte ao passo 2 e preencha esses campos.</p>
+              </div>
+            )}
             <div className="border rounded-lg bg-white p-6 prose prose-sm max-w-none max-h-[60vh] overflow-y-auto"
               dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
         )}
+
 
         <DialogFooter className="flex sm:justify-between gap-2">
           <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
@@ -464,11 +492,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
             </Button>
           )}
           {step === 3 && (
-            <Button onClick={confirmar} disabled={generating}>
+            <Button onClick={confirmar} disabled={generating || !canConfirm}>
               {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
               Confirmar e gerar PDF
             </Button>
           )}
+
         </DialogFooter>
       </DialogContent>
     </Dialog>

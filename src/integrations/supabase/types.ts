@@ -1609,6 +1609,7 @@ export type Database = {
       contract_contratos: {
         Row: {
           autentique_document_id: string | null
+          campos_personalizados: Json
           cliente_id: string
           created_at: string
           created_by: string | null
@@ -1652,6 +1653,7 @@ export type Database = {
         }
         Insert: {
           autentique_document_id?: string | null
+          campos_personalizados?: Json
           cliente_id: string
           created_at?: string
           created_by?: string | null
@@ -1695,6 +1697,7 @@ export type Database = {
         }
         Update: {
           autentique_document_id?: string | null
+          campos_personalizados?: Json
           cliente_id?: string
           created_at?: string
           created_by?: string | null
