@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.autentique-webhook]
 verify_jwt = false
+
+[functions.autentique-sync-all]
+verify_jwt = false
