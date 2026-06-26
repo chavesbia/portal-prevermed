@@ -262,7 +262,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                       <div className="text-xs text-muted-foreground">{formatCPF(a.cpf)}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {a.status === 'pendente' && a.autentique_signer_id && contrato.autentique_document_id && (
+                      {a.status === 'pendente' && contrato.autentique_document_id && (
                         <Button
                           variant="outline"
                           size="sm"
