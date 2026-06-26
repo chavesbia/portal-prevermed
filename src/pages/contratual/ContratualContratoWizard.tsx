@@ -492,11 +492,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
             </Button>
           )}
           {step === 3 && (
-            <Button onClick={confirmar} disabled={generating}>
+            <Button onClick={confirmar} disabled={generating || !canConfirm}>
               {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
               Confirmar e gerar PDF
             </Button>
           )}
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
