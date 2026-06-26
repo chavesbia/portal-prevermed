@@ -33,17 +33,29 @@ export async function generateAndUploadPdf(opts: {
     .from(container)
     .outputPdf('blob');
 
-  const path = `${opts.contratoId}/${opts.numero}.pdf`;
-  const { error } = await supabase.storage.from('contract-pdfs').upload(path, blob, {
-    upsert: true,
-    contentType: 'application/pdf',
+  const pdfBase64 = await blobToBase64(blob);
+  const { data, error } = await supabase.functions.invoke('contract-pdf-upload', {
+    body: {
+      contrato_id: opts.contratoId,
+      numero_contrato: opts.numero,
+      pdf_base64: pdfBase64,
+    },
   });
-  if (error) throw error;
-  return path;
+  if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message || 'Erro ao enviar PDF');
+  return (data as any).path;
 }
 
 export async function getSignedPdfUrl(path: string): Promise<string | null> {
   const { data, error } = await supabase.storage.from('contract-pdfs').createSignedUrl(path, 3600);
   if (error) return null;
   return data.signedUrl;
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || '').split(',')[1] || '');
+    reader.onerror = () => reject(reader.error || new Error('Erro ao ler PDF'));
+    reader.readAsDataURL(blob);
+  });
 }
