@@ -11,12 +11,33 @@ import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
 import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
+import { useContractSignatarios } from '@/hooks/useContractSignatarios';
+import { CPFInput } from '@/components/contratual/CPFInput';
+import { isValidCPF } from '@/lib/contractual/cpf';
 
 interface Props {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   onCreated: (id: string) => void;
 }
+
+const MANUAL_SIGNER = '__manual__';
+
+// Mapeamento dos campos comerciais fixos do wizard para a fonte do placeholder.
+// Só exibimos o campo se houver placeholder ativo apontando para essa fonte E
+// esse placeholder (ou sua variante _EXTENSO) for usado no template selecionado.
+const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: string; cls?: string }[] = [
+  { key: 'numero_proposta', label: 'Nº Proposta', fonte: 'contrato.numero_proposta' },
+  { key: 'indice_reajuste', label: 'Índice de reajuste', fonte: 'contrato.indice_reajuste' },
+  { key: 'valor_mensal', label: 'Valor mensal (R$)', type: 'number', fonte: 'contrato.valor_mensal' },
+  { key: 'qtd_vidas', label: 'Qtd. vidas', type: 'number', fonte: 'contrato.qtd_vidas' },
+  { key: 'valor_excedente', label: 'Valor vida excedente (R$)', type: 'number', fonte: 'contrato.valor_excedente' },
+  { key: 'dia_cobranca', label: 'Dia cobrança', type: 'number', fonte: 'contrato.dia_cobranca' },
+  { key: 'multa', label: 'Multa (%)', type: 'number', fonte: 'contrato.multa' },
+  { key: 'juros', label: 'Juros (%)', type: 'number', fonte: 'contrato.juros' },
+  { key: 'prazo_aviso', label: 'Prazo aviso prévio (dias)', type: 'number', fonte: 'contrato.prazo_aviso' },
+  { key: 'valor_km', label: 'Valor KM rodado (R$)', type: 'number', fonte: 'contrato.valor_km' },
+];
 
 export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
   const [step, setStep] = useState(1);
@@ -38,13 +59,19 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   });
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
+  const [prevermedId, setPrevermedId] = useState(MANUAL_SIGNER);
+  const [test1Id, setTest1Id] = useState(MANUAL_SIGNER);
+  const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
 
   const { data: placeholders = [] } = useContractPlaceholders(true);
+  const { data: respPrevermed = [] } = useContractSignatarios('responsavel_prevermed', true);
+  const { data: testemunhas = [] } = useContractSignatarios('testemunha', true);
 
   useEffect(() => {
     if (!open) {
       setStep(1); setClienteId(''); setTemplateId(''); setVersionId('');
       setManualValues({});
+      setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
     }
   }, [open]);
 
@@ -92,19 +119,49 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   useEffect(() => {
     if (cliente && !form.rep_nome) {
       set('rep_nome', cliente.representante_legal || '');
-      set('rep_cpf', cliente.cpf_representante || '');
+      set('rep_cpf', String(cliente.cpf_representante || '').replace(/\D/g, ''));
       set('rep_email', cliente.email || '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cliente]);
 
-  // Placeholders sem origem mapeada que aparecem no template ativo
+  // Chaves de placeholders usadas no template (inclui variantes _EXTENSO)
+  const usadasNoTemplate = useMemo(() => {
+    const set = new Set<string>();
+    if (version?.conteudo_html) {
+      String(version.conteudo_html).replace(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g, (_m, k) => { set.add(k); return _m; });
+    }
+    return set;
+  }, [version]);
+
+  // Fontes (cliente.xxx / contrato.xxx) efetivamente referenciadas no template
+  const fontesUsadas = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of placeholders) {
+      if (!p.fonte) continue;
+      if (usadasNoTemplate.has(p.chave) || usadasNoTemplate.has(`${p.chave}_EXTENSO`)) {
+        set.add(p.fonte);
+      }
+    }
+    return set;
+  }, [placeholders, usadasNoTemplate]);
+
+  // Campos comerciais que devem aparecer no wizard
+  const camposComerciais = useMemo(
+    () => COMMERCIAL_FIELDS.filter(f => fontesUsadas.has(f.fonte)),
+    [fontesUsadas],
+  );
+
+  // Placeholders manuais pendentes (excluindo variantes _EXTENSO, que se derivam automaticamente)
   const manuaisPendentes = useMemo(() => {
-    if (!version?.conteudo_html) return [];
-    const usados = new Set<string>();
-    String(version.conteudo_html).replace(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g, (_m, k) => { usados.add(k); return _m; });
-    return placeholdersManuais(placeholders).filter(p => usados.has(p.chave));
-  }, [version, placeholders]);
+    const chavesBase = new Set(placeholders.map(p => p.chave));
+    return placeholdersManuais(placeholders).filter(p => {
+      if (!usadasNoTemplate.has(p.chave)) return false;
+      // se a chave é uma variante _EXTENSO e há base, ignora
+      if (p.chave.endsWith('_EXTENSO') && chavesBase.has(p.chave.replace(/_EXTENSO$/, ''))) return false;
+      return true;
+    });
+  }, [placeholders, usadasNoTemplate]);
 
   const previewHtml = useMemo(() => {
     if (!cliente || !version) return '';
@@ -119,8 +176,28 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     return renderTemplate(version.conteudo_html, values);
   }, [cliente, version, form, placeholders, manualValues]);
 
+  const cpfsValidos = (
+    (!form.rep_cpf || isValidCPF(form.rep_cpf)) &&
+    (!form.prevermed_cpf || isValidCPF(form.prevermed_cpf)) &&
+    (!form.testemunha1_cpf || isValidCPF(form.testemunha1_cpf)) &&
+    (!form.testemunha2_cpf || isValidCPF(form.testemunha2_cpf))
+  );
+
   const canGoStep2 = !!clienteId && !!templateId && !!versionId;
-  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses;
+  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
+
+  const aplicarSignatario = (id: string, kind: 'prev' | 't1' | 't2') => {
+    const list = kind === 'prev' ? respPrevermed : testemunhas;
+    const s = list.find(x => x.id === id);
+    if (!s) return;
+    if (kind === 'prev') {
+      set('prevermed_nome', s.nome); set('prevermed_cpf', s.cpf); set('prevermed_email', s.email || '');
+    } else if (kind === 't1') {
+      set('testemunha1_nome', s.nome); set('testemunha1_cpf', s.cpf); set('testemunha1_email', s.email || '');
+    } else {
+      set('testemunha2_nome', s.nome); set('testemunha2_cpf', s.cpf); set('testemunha2_email', s.email || '');
+    }
+  };
 
   const confirmar = async () => {
     setGenerating(true);
@@ -233,25 +310,23 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
                 <F label="Data de emissão *" type="date" v={form.data_emissao} on={v => set('data_emissao', v)} />
                 <F label="Data de assinatura" type="date" v={form.data_assinatura} on={v => set('data_assinatura', v)} />
                 <F label="Início da vigência *" type="date" v={form.data_inicio} on={v => set('data_inicio', v)} />
+                <F label="Vigência (meses) *" type="number" v={form.vigencia_meses} on={v => set('vigencia_meses', v)} />
               </div>
             </div>
 
-            <div className="pt-3 border-t">
-              <h4 className="text-sm font-medium mb-2">Dados comerciais</h4>
-              <div className="grid grid-cols-3 gap-3">
-                <F label="Nº Proposta" v={form.numero_proposta} on={v => set('numero_proposta', v)} />
-                <F label="Vigência (meses) *" type="number" v={form.vigencia_meses} on={v => set('vigencia_meses', v)} />
-                <F label="Índice de reajuste" v={form.indice_reajuste} on={v => set('indice_reajuste', v)} />
-                <F label="Valor mensal (R$)" type="number" v={form.valor_mensal} on={v => set('valor_mensal', v)} />
-                <F label="Qtd. vidas" type="number" v={form.qtd_vidas} on={v => set('qtd_vidas', v)} />
-                <F label="Valor vida excedente (R$)" type="number" v={form.valor_excedente} on={v => set('valor_excedente', v)} />
-                <F label="Dia cobrança" type="number" v={form.dia_cobranca} on={v => set('dia_cobranca', v)} />
-                <F label="Multa (%)" type="number" v={form.multa} on={v => set('multa', v)} />
-                <F label="Juros (%)" type="number" v={form.juros} on={v => set('juros', v)} />
-                <F label="Prazo aviso prévio (dias)" type="number" v={form.prazo_aviso} on={v => set('prazo_aviso', v)} />
-                <F label="Valor KM rodado (R$)" type="number" v={form.valor_km} on={v => set('valor_km', v)} />
+            {camposComerciais.length > 0 && (
+              <div className="pt-3 border-t">
+                <h4 className="text-sm font-medium mb-1">Dados comerciais</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Exibindo apenas campos referenciados no modelo selecionado.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {camposComerciais.map(c => (
+                    <F key={c.key} label={c.label} type={c.type} v={form[c.key]} on={v => set(c.key, v)} />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="pt-3 border-t">
               <h4 className="text-sm font-medium mb-1">Assinantes</h4>
@@ -263,34 +338,79 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
                 <Label className="text-xs font-semibold uppercase text-muted-foreground">Contratante (Cliente)</Label>
                 <div className="grid grid-cols-3 gap-3">
                   <F label="Representante legal" v={form.rep_nome} on={v => set('rep_nome', v)} />
-                  <F label="CPF representante" v={form.rep_cpf} on={v => set('rep_cpf', v)} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">CPF representante</Label>
+                    <CPFInput value={form.rep_cpf} onChange={v => set('rep_cpf', v)} />
+                  </div>
                   <F label="E-mail representante *" type="email" v={form.rep_email} on={v => set('rep_email', v)} />
                 </div>
               </div>
 
-              <div className="space-y-1 mb-3">
+              <div className="space-y-2 mb-3">
                 <Label className="text-xs font-semibold uppercase text-muted-foreground">Contratada (PreverMed)</Label>
+                {respPrevermed.length > 0 && (
+                  <Select value={prevermedId} onValueChange={(v) => { setPrevermedId(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 'prev'); }}>
+                    <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
+                      {respPrevermed.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}{s.cargo ? ` — ${s.cargo}` : ''}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <div className="grid grid-cols-3 gap-3">
                   <F label="Responsável PreverMed" v={form.prevermed_nome} on={v => set('prevermed_nome', v)} />
-                  <F label="CPF responsável" v={form.prevermed_cpf} on={v => set('prevermed_cpf', v)} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">CPF responsável</Label>
+                    <CPFInput value={form.prevermed_cpf} onChange={v => set('prevermed_cpf', v)} />
+                  </div>
                   <F label="E-mail responsável *" type="email" v={form.prevermed_email} on={v => set('prevermed_email', v)} />
                 </div>
               </div>
 
-              <div className="space-y-1 mb-3">
+              <div className="space-y-2 mb-3">
                 <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 1</Label>
+                {testemunhas.length > 0 && (
+                  <Select value={test1Id} onValueChange={(v) => { setTest1Id(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 't1'); }}>
+                    <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
+                      {testemunhas.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <div className="grid grid-cols-3 gap-3">
                   <F label="Nome" v={form.testemunha1_nome} on={v => set('testemunha1_nome', v)} />
-                  <F label="CPF" v={form.testemunha1_cpf} on={v => set('testemunha1_cpf', v)} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">CPF</Label>
+                    <CPFInput value={form.testemunha1_cpf} onChange={v => set('testemunha1_cpf', v)} />
+                  </div>
                   <F label="E-mail" type="email" v={form.testemunha1_email} on={v => set('testemunha1_email', v)} />
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 2</Label>
+                {testemunhas.length > 0 && (
+                  <Select value={test2Id} onValueChange={(v) => { setTest2Id(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 't2'); }}>
+                    <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
+                      {testemunhas.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <div className="grid grid-cols-3 gap-3">
                   <F label="Nome" v={form.testemunha2_nome} on={v => set('testemunha2_nome', v)} />
-                  <F label="CPF" v={form.testemunha2_cpf} on={v => set('testemunha2_cpf', v)} />
+                  <div className="space-y-1">
+                    <Label className="text-xs">CPF</Label>
+                    <CPFInput value={form.testemunha2_cpf} onChange={v => set('testemunha2_cpf', v)} />
+                  </div>
                   <F label="E-mail" type="email" v={form.testemunha2_email} on={v => set('testemunha2_email', v)} />
                 </div>
               </div>
@@ -317,6 +437,10 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
                   ))}
                 </div>
               </div>
+            )}
+
+            {!cpfsValidos && (
+              <p className="text-xs text-destructive">Há CPF(s) inválido(s). Corrija antes de avançar.</p>
             )}
           </div>
         )}
