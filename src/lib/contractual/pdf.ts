@@ -22,16 +22,23 @@ export async function generateAndUploadPdf(opts: {
     ${opts.html}
   `;
 
-  const blob: Blob = await html2pdf()
-    .set({
-      margin: [10, 12, 14, 12],
-      filename: `${opts.numero}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    } as any)
-    .from(container)
-    .outputPdf('blob');
+  // Limite Autentique: 5 MB. Ajustamos scale/quality para manter o PDF leve.
+  const buildPdf = (scale: number, quality: number): Promise<Blob> =>
+    html2pdf()
+      .set({
+        margin: [10, 12, 14, 12],
+        filename: `${opts.numero}.pdf`,
+        image: { type: 'jpeg', quality },
+        html2canvas: { scale, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+      } as any)
+      .from(container)
+      .outputPdf('blob');
+
+  const MAX_BYTES = 4.7 * 1024 * 1024; // margem de segurança abaixo dos 5 MB
+  let blob: Blob = await buildPdf(1.5, 0.8);
+  if (blob.size > MAX_BYTES) blob = await buildPdf(1.2, 0.7);
+  if (blob.size > MAX_BYTES) blob = await buildPdf(1, 0.6);
 
   const pdfBase64 = await blobToBase64(blob);
   const { data, error } = await supabase.functions.invoke('contract-pdf-upload', {
