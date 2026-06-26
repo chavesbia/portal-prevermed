@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Search, Loader2 } from 'lucide-react';
 import { validateCNPJ, formatCNPJ, onlyDigits } from '@/lib/contractual/format';
+import { CPFInput } from '@/components/contratual/CPFInput';
 
 interface Props {
   open: boolean;
@@ -121,7 +122,10 @@ export function ContratualClienteDialog({ open, onOpenChange, cliente, onSaved }
               <Field label="E-mail" value={form.email} onChange={v => set('email', v)} />
               <Field label="Telefone" value={form.telefone} onChange={v => set('telefone', v)} />
               <Field label="Representante Legal" value={form.representante_legal} onChange={v => set('representante_legal', v)} />
-              <Field label="CPF do Representante" value={form.cpf_representante} onChange={v => set('cpf_representante', v)} />
+              <div className="space-y-1">
+                <Label className="text-xs">CPF do Representante</Label>
+                <CPFInput value={form.cpf_representante || ''} onChange={v => set('cpf_representante', v)} />
+              </div>
             </div>
             <div className="mt-3">
               <Label>Observações</Label>
