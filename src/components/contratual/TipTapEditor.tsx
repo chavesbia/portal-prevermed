@@ -6,7 +6,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { Button } from '@/components/ui/button';
 import {
   Bold, Italic, Underline as UnderlineIcon, List, ListOrdered,
-  Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Code,
+  Heading1, Heading2, Heading3, AlignLeft, AlignCenter, AlignRight, Code, FileText,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -98,6 +98,12 @@ export function TipTapEditor({ value, onChange, placeholder, minHeight = 400 }: 
           <AlignRight className="h-4 w-4" />
         </Button>
         <div className="w-px h-5 bg-border mx-1" />
+        <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 px-2"
+          title="Inserir quebra de página"
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+          <FileText className="h-4 w-4" /> <span className="text-xs">Quebra de página</span>
+        </Button>
+        <div className="w-px h-5 bg-border mx-1" />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="outline" size="sm" className="gap-1 h-8">
@@ -144,7 +150,7 @@ export function TipTapEditor({ value, onChange, placeholder, minHeight = 400 }: 
       </div>
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[var(--mh)]"
+        className="prose prose-sm max-w-none p-4 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[var(--mh)] [&_.ProseMirror_hr]:my-6 [&_.ProseMirror_hr]:border-0 [&_.ProseMirror_hr]:border-t-2 [&_.ProseMirror_hr]:border-dashed [&_.ProseMirror_hr]:border-primary/60 [&_.ProseMirror_hr]:relative [&_.ProseMirror_hr]:after:content-['Quebra_de_página'] [&_.ProseMirror_hr]:after:absolute [&_.ProseMirror_hr]:after:left-1/2 [&_.ProseMirror_hr]:after:-translate-x-1/2 [&_.ProseMirror_hr]:after:-top-2.5 [&_.ProseMirror_hr]:after:bg-background [&_.ProseMirror_hr]:after:px-2 [&_.ProseMirror_hr]:after:text-[10px] [&_.ProseMirror_hr]:after:uppercase [&_.ProseMirror_hr]:after:tracking-wider [&_.ProseMirror_hr]:after:text-primary"
         style={{ ['--mh' as any]: `${minHeight}px` }}
       />
     </div>
