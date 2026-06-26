@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -132,14 +132,18 @@ function SignatarioDialog({ open, onOpenChange, signatario, onSaved }: {
 
   const reset = () => { setTipo('testemunha'); setNome(''); setCpf(''); setEmail(''); setCargo(''); };
 
-  // Sync on open
-  if (open && signatario && nome === '' && cpf === '' && tipo === 'testemunha' && signatario.nome) {
-    setTipo(signatario.tipo);
-    setNome(signatario.nome);
-    setCpf(signatario.cpf);
-    setEmail(signatario.email || '');
-    setCargo(signatario.cargo || '');
-  }
+  useEffect(() => {
+    if (!open) return;
+    if (signatario) {
+      setTipo(signatario.tipo);
+      setNome(signatario.nome);
+      setCpf(signatario.cpf);
+      setEmail(signatario.email || '');
+      setCargo(signatario.cargo || '');
+    } else {
+      reset();
+    }
+  }, [open, signatario]);
 
   const handleOpenChange = (b: boolean) => {
     if (!b) reset();
