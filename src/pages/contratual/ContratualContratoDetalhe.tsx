@@ -104,9 +104,21 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
 
   const baixarPdf = async () => {
     if (!contrato?.pdf_url) { toast.error('PDF não disponível'); return; }
-    const url = await getSignedPdfUrl(contrato.pdf_url);
-    if (url) window.open(url, '_blank');
-    else toast.error('Não foi possível gerar URL do PDF');
+    try {
+      // Baixa direto do Storage via SDK (não usa URL pública — evita bloqueio por adblock/Edge)
+      const { data, error } = await supabase.storage.from('contract-pdfs').download(contrato.pdf_url);
+      if (error || !data) throw error || new Error('Falha ao baixar PDF');
+      const blobUrl = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${contrato.numero_contrato}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (e: any) {
+      toast.error(e.message || 'Não foi possível baixar o PDF. Verifique se há bloqueador de anúncios ativo.');
+    }
   };
 
   const regenerarPdf = async () => {
