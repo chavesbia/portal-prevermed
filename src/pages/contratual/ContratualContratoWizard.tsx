@@ -464,10 +464,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         {step === 3 && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Pré-visualização do contrato. Confirme para gerar o PDF.</p>
+            {placeholdersFaltando.length > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+                <p className="font-medium mb-1">Não é possível gerar o contrato — há campos sem preenchimento:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {placeholdersFaltando.map(k => (
+                    <li key={k}><code>{`{{${k}}}`}</code></li>
+                  ))}
+                </ul>
+                <p className="mt-1">Volte ao passo 2 e preencha esses campos.</p>
+              </div>
+            )}
             <div className="border rounded-lg bg-white p-6 prose prose-sm max-w-none max-h-[60vh] overflow-y-auto"
               dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
         )}
+
 
         <DialogFooter className="flex sm:justify-between gap-2">
           <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
