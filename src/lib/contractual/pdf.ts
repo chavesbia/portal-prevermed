@@ -15,11 +15,28 @@ export async function generateAndUploadPdf(opts: {
   container.style.fontSize = '12pt';
   container.style.lineHeight = '1.6';
   container.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
-      <strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>
-      <div style="font-size:10pt;color:#475569;">Contrato ${opts.numero}</div>
+    <style>
+      .pdf-root p, .pdf-root li, .pdf-root h1, .pdf-root h2, .pdf-root h3,
+      .pdf-root blockquote, .pdf-root tr, .pdf-root table {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      .pdf-root hr {
+        page-break-after: always;
+        break-after: page;
+        border: 0;
+        height: 0;
+        visibility: hidden;
+        margin: 0;
+      }
+    </style>
+    <div class="pdf-root">
+      <div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
+        <strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>
+        <div style="font-size:10pt;color:#475569;">Contrato ${opts.numero}</div>
+      </div>
+      ${opts.html}
     </div>
-    ${opts.html}
   `;
 
   // Limite Autentique: 5 MB. Ajustamos scale/quality para manter o PDF leve.
@@ -31,6 +48,10 @@ export async function generateAndUploadPdf(opts: {
         image: { type: 'jpeg', quality },
         html2canvas: { scale, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+        pagebreak: {
+          mode: ['css', 'legacy', 'avoid-all'],
+          avoid: ['p', 'li', 'h1', 'h2', 'h3', 'tr', 'blockquote', 'table'],
+        },
       } as any)
       .from(container)
       .outputPdf('blob');
