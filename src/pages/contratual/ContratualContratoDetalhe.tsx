@@ -235,7 +235,12 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                       <div className="text-xs text-muted-foreground">{formatCPF(a.cpf)}</div>
                     </div>
                     <div className="text-right">
-                      <Badge variant="secondary">{a.status}</Badge>
+                      <Badge variant="secondary" className={
+                        a.status === 'assinado' ? 'bg-emerald-100 text-emerald-800' :
+                        a.status === 'pendente' ? 'bg-amber-100 text-amber-800' :
+                        a.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
+                        'bg-slate-100 text-slate-700'
+                      }>{a.status}</Badge>
                       {a.data_assinatura && (
                         <div className="text-xs text-muted-foreground mt-1">{formatDateBR(a.data_assinatura)}</div>
                       )}
