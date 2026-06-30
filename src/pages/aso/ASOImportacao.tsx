@@ -123,7 +123,25 @@ export default function ASOImportacao() {
             Arraste ou selecione o arquivo Excel/CSV extraído do relatório da agenda do SOC
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Building2 className="h-4 w-4" /> Unidade de destino <span className="text-destructive">*</span>
+            </Label>
+            <Select value={unidade} onValueChange={setUnidade}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="Selecione Lapa ou Osasco" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Lapa">🏢 Lapa</SelectItem>
+                <SelectItem value="Osasco">🏢 Osasco</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Obrigatório. Todos os atendimentos deste arquivo serão registrados nesta unidade.
+            </p>
+          </div>
+
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
               dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
