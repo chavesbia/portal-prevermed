@@ -52,7 +52,7 @@ export async function executeASOImport(
     riscos: row.riscos,
     tipo_compromisso: row.tipo_compromisso,
     empresa: row.empresa,
-    unidade: row.unidade,
+    unidade,
     setor: row.setor,
     cargo: row.cargo,
     funcionario: row.funcionario,
