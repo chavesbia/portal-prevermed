@@ -12,9 +12,10 @@ export async function executeASOImport(
   rows: ASOParsedRow[],
   userId: string,
   userName: string,
-  file: File
+  file: File,
+  unidadeOverride?: string
 ): Promise<ASOImportResult> {
-  const unidade = detectUnidade(rows);
+  const unidade = unidadeOverride || detectUnidade(rows);
 
   // Create import batch
   const { data: lote, error: loteErr } = await supabase
