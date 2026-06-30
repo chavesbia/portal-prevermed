@@ -25,6 +25,7 @@ export default function ASOImportacao() {
   const [importing, setImporting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [unidade, setUnidade] = useState<string>("");
   const { data: lotes, refetch } = useASOLotes();
   const qc = useQueryClient();
 
