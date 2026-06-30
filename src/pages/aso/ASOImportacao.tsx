@@ -11,7 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
-import { Upload, FileSpreadsheet, CheckCircle, Loader2, Trash2 } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle, Loader2, Trash2, Building2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { ptBR } from "date-fns/locale";
@@ -23,6 +25,7 @@ export default function ASOImportacao() {
   const [importing, setImporting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [unidade, setUnidade] = useState<string>("");
   const { data: lotes, refetch } = useASOLotes();
   const qc = useQueryClient();
 
@@ -81,9 +84,13 @@ export default function ASOImportacao() {
 
   const handleImport = async () => {
     if (!user || !file || parsedRows.length === 0) return;
+    if (!unidade) {
+      toast({ title: "Selecione a unidade", description: "Escolha Lapa ou Osasco antes de importar.", variant: "destructive" });
+      return;
+    }
     setImporting(true);
     try {
-      const result = await executeASOImport(parsedRows, user.id, displayName, file);
+      const result = await executeASOImport(parsedRows, user.id, displayName, file, unidade);
       const ignoradosMsg = result.totalIgnorados > 0 ? ` (${result.totalIgnorados} registro(s) ignorado(s) por duplicidade)` : "";
       toast({
         title: "Importação concluída!",
@@ -91,6 +98,7 @@ export default function ASOImportacao() {
       });
       setParsedRows([]);
       setFile(null);
+      setUnidade("");
       refetch();
       qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
       qc.invalidateQueries({ queryKey: ["aso-stats"] });
@@ -115,7 +123,25 @@ export default function ASOImportacao() {
             Arraste ou selecione o arquivo Excel/CSV extraído do relatório da agenda do SOC
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Building2 className="h-4 w-4" /> Unidade de destino <span className="text-destructive">*</span>
+            </Label>
+            <Select value={unidade} onValueChange={setUnidade}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="Selecione Lapa ou Osasco" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Lapa">🏢 Lapa</SelectItem>
+                <SelectItem value="Osasco">🏢 Osasco</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Obrigatório. Todos os atendimentos deste arquivo serão registrados nesta unidade.
+            </p>
+          </div>
+
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
               dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary/50"
@@ -152,11 +178,11 @@ export default function ASOImportacao() {
                 <Badge variant="secondary" className="text-sm">
                   {parsedRows.length} atendimentos prontos para importar
                 </Badge>
-                <Button onClick={handleImport} disabled={importing}>
+                <Button onClick={handleImport} disabled={importing || !unidade}>
                   {importing ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Importando...</>
                   ) : (
-                    <><CheckCircle className="h-4 w-4 mr-2" /> Importar Agora</>
+                    <><CheckCircle className="h-4 w-4 mr-2" /> Importar Agora {unidade && `(${unidade})`}</>
                   )}
                 </Button>
               </div>

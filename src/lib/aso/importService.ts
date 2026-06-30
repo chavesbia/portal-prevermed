@@ -12,9 +12,10 @@ export async function executeASOImport(
   rows: ASOParsedRow[],
   userId: string,
   userName: string,
-  file: File
+  file: File,
+  unidadeOverride?: string
 ): Promise<ASOImportResult> {
-  const unidade = detectUnidade(rows);
+  const unidade = unidadeOverride || detectUnidade(rows);
 
   // Create import batch
   const { data: lote, error: loteErr } = await supabase
@@ -37,7 +38,7 @@ export async function executeASOImport(
   const atendimentos = rows.map((row, idx) => ({
     id_interno: `${generateIdInterno(
       row.data_atendimento!,
-      row.agenda,
+      unidade,
       row.cpf,
       idx + 1
     )}-${loteShort}`,
@@ -51,7 +52,7 @@ export async function executeASOImport(
     riscos: row.riscos,
     tipo_compromisso: row.tipo_compromisso,
     empresa: row.empresa,
-    unidade: row.unidade,
+    unidade,
     setor: row.setor,
     cargo: row.cargo,
     funcionario: row.funcionario,
