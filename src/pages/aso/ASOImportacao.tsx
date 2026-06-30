@@ -178,11 +178,11 @@ export default function ASOImportacao() {
                 <Badge variant="secondary" className="text-sm">
                   {parsedRows.length} atendimentos prontos para importar
                 </Badge>
-                <Button onClick={handleImport} disabled={importing}>
+                <Button onClick={handleImport} disabled={importing || !unidade}>
                   {importing ? (
                     <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Importando...</>
                   ) : (
-                    <><CheckCircle className="h-4 w-4 mr-2" /> Importar Agora</>
+                    <><CheckCircle className="h-4 w-4 mr-2" /> Importar Agora {unidade && `(${unidade})`}</>
                   )}
                 </Button>
               </div>
