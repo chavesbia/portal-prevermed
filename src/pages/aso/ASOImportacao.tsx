@@ -84,9 +84,13 @@ export default function ASOImportacao() {
 
   const handleImport = async () => {
     if (!user || !file || parsedRows.length === 0) return;
+    if (!unidade) {
+      toast({ title: "Selecione a unidade", description: "Escolha Lapa ou Osasco antes de importar.", variant: "destructive" });
+      return;
+    }
     setImporting(true);
     try {
-      const result = await executeASOImport(parsedRows, user.id, displayName, file);
+      const result = await executeASOImport(parsedRows, user.id, displayName, file, unidade);
       const ignoradosMsg = result.totalIgnorados > 0 ? ` (${result.totalIgnorados} registro(s) ignorado(s) por duplicidade)` : "";
       toast({
         title: "Importação concluída!",
@@ -94,6 +98,7 @@ export default function ASOImportacao() {
       });
       setParsedRows([]);
       setFile(null);
+      setUnidade("");
       refetch();
       qc.invalidateQueries({ queryKey: ["aso-atendimentos"] });
       qc.invalidateQueries({ queryKey: ["aso-stats"] });
