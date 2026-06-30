@@ -38,7 +38,7 @@ export async function executeASOImport(
   const atendimentos = rows.map((row, idx) => ({
     id_interno: `${generateIdInterno(
       row.data_atendimento!,
-      row.agenda,
+      unidade,
       row.cpf,
       idx + 1
     )}-${loteShort}`,
