@@ -21,6 +21,16 @@ export interface ASOParsedRow {
 const COLUMN_MAP: Record<string, keyof ASOParsedRow> = {
   "Agenda": "agenda",
   "Data": "data_atendimento",
+  "Data Atendimento": "data_atendimento",
+  "Data do Atendimento": "data_atendimento",
+  "Data de Atendimento": "data_atendimento",
+  "Data Agenda": "data_atendimento",
+  "Data da Agenda": "data_atendimento",
+  "Dt Atendimento": "data_atendimento",
+  "Dt. Atendimento": "data_atendimento",
+  "Dt Agenda": "data_atendimento",
+  "Data Compromisso": "data_atendimento",
+  "Data do Compromisso": "data_atendimento",
   "Hora.Inicial": "hora_inicial",
   "Hora Inicial": "hora_inicial",
   "HoraInicial": "hora_inicial",
@@ -108,8 +118,22 @@ export async function parseASOFile(file: File): Promise<ASOParsedRow[]> {
     }
   }
 
+  // Fallback: any header whose normalized key starts with "data" (ex.: "Data Atendimento", "Data.Agenda")
   if (!Object.values(mapping).includes("data_atendimento")) {
-    throw new Error("Coluna 'Data' não encontrada na planilha");
+    for (const h of headers) {
+      if (mapping[h]) continue;
+      const key = normalizeKey(h);
+      if (key.startsWith("data") || key.startsWith("dt")) {
+        mapping[h] = "data_atendimento";
+        break;
+      }
+    }
+  }
+
+  if (!Object.values(mapping).includes("data_atendimento")) {
+    throw new Error(
+      `Coluna de data não encontrada. Cabeçalhos lidos: ${headers.join(", ")}`
+    );
   }
 
   const rows: ASOParsedRow[] = [];
