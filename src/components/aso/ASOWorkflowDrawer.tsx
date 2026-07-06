@@ -197,6 +197,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     if (parsed.length === 0) return;
     backfilledRef.current.add(a.id);
     (async () => {
+      // Confere no servidor pra evitar corrida com outra aba/usuário que já criou os exames.
+      const { data: existentes } = await supabase
+        .from("aso_exames_atendimento")
+        .select("id")
+        .eq("atendimento_id", a.id)
+        .limit(1);
+      if (existentes && existentes.length > 0) {
+        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+        return;
+      }
       const records = parsed.map(e => ({
         atendimento_id: a.id,
         nome_exame: e.nome_exame,
@@ -444,15 +454,31 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     if (a.exames_texto && (!exames || exames.length === 0)) {
       const parsed = parseExamesTexto(a.exames_texto);
       if (parsed.length > 0) {
-        const records = parsed.map(e => ({
-          atendimento_id: a.id,
-          nome_exame: e.nome_exame,
-          tipo: e.tipo,
-          status: e.status_inicial,
-        }));
-        const { error: insErr } = await supabase.from("aso_exames_atendimento").insert(records as any);
-        if (insErr) {
-          toast({ title: "Erro ao criar exames", description: insErr.message, variant: "destructive" });
+        // Marca o backfillRef ANTES do insert para impedir que o efeito de backfill
+        // dispare em seguida (quando o status avança mas o cache de exames ainda está vazio),
+        // o que causava duplicação de todos os exames.
+        backfilledRef.current.add(a.id);
+        // Revalida no servidor pra evitar corrida: só insere se realmente não existir nada.
+        const { data: existentes, error: checkErr } = await supabase
+          .from("aso_exames_atendimento")
+          .select("id")
+          .eq("atendimento_id", a.id)
+          .limit(1);
+        if (checkErr) {
+          toast({ title: "Erro ao verificar exames", description: checkErr.message, variant: "destructive" });
+          return;
+        }
+        if (!existentes || existentes.length === 0) {
+          const records = parsed.map(e => ({
+            atendimento_id: a.id,
+            nome_exame: e.nome_exame,
+            tipo: e.tipo,
+            status: e.status_inicial,
+          }));
+          const { error: insErr } = await supabase.from("aso_exames_atendimento").insert(records as any);
+          if (insErr) {
+            toast({ title: "Erro ao criar exames", description: insErr.message, variant: "destructive" });
+          }
         }
         const nomes = parsed.map(e => e.nome_exame);
         const apenasRecepcao = podeRecepcaoLiberar(nomes);
@@ -460,7 +486,7 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
           await supabase.from("aso_atendimentos").update({ possui_exame_complementar: true } as any).eq("id", a.id);
           setLocal((prev: any) => prev ? { ...prev, possui_exame_complementar: true } : prev);
         }
-        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+        await qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
       }
     }
     await advanceStatus("em_triagem", getSetorRecepcao());
