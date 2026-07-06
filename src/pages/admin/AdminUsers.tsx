@@ -394,6 +394,29 @@ export default function AdminUsers() {
     }
   };
 
+  const handleToggleStatus = async (user: UserWithDetails) => {
+    const nextStatus: 'active' | 'inactive' = user.status === 'active' ? 'inactive' : 'active';
+    const actionLabel = nextStatus === 'inactive' ? 'inativar' : 'ativar';
+    if (!confirm(`Tem certeza que deseja ${actionLabel} o usuário ${user.full_name}?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: nextStatus, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success(`Usuário ${nextStatus === 'inactive' ? 'inativado' : 'ativado'} com sucesso`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast.error('Erro ao alterar status do usuário');
+    }
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedUser) return;
@@ -740,6 +763,10 @@ export default function AdminUsers() {
                             Resetar Senha
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            {user.status === 'active' ? 'Inativar Usuário' : 'Ativar Usuário'}
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeleteUser(user)}
                             className="text-destructive"
