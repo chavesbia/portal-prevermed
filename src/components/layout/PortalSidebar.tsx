@@ -171,28 +171,37 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
   const { user, isAdmMaster } = useAuth();
   const { departmentsWithModules } = useModulePermissions();
 
-  // Build dynamic departments section from permissions
-  const departmentsSection: MenuSection | null = departmentsWithModules.length > 0
+  // Build unified "Meus Módulos" section — deduplicated across departments
+  const uniqueModules = (() => {
+    const seen = new Map<string, { label: string; icon: LucideIcon; path: string }>();
+    for (const dept of departmentsWithModules) {
+      for (const m of dept.modules) {
+        if (!m.module_route) continue;
+        if ((m.module_route.match(/\//g) || []).length !== 1) continue;
+        if (!seen.has(m.module_route)) {
+          seen.set(m.module_route, {
+            label: m.module_name,
+            icon: getModuleIcon(m.module_icon),
+            path: m.module_route,
+          });
+        }
+      }
+    }
+    return Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label));
+  })();
+
+  const modulesSection: MenuSection | null = uniqueModules.length > 0
     ? {
-        title: 'Departamentos',
-        items: departmentsWithModules.map(dept => ({
-          label: dept.name,
-          icon: getDepartmentIcon(dept.name),
-          path: `/departamentos/${dept.name.toLowerCase().replace(/\s+/g, '-')}`,
+        title: 'Meus Módulos',
+        items: uniqueModules.map(m => ({
+          label: m.label,
+          icon: m.icon,
+          path: m.path,
           requiresAuth: true,
-          subItems: dept.modules
-            // Esconde sub-módulos internos de permissão granular (ex: /liberacao-asos/recepcao).
-            // Apenas módulos de 1º nível (/algo) aparecem no menu.
-            .filter(m => m.module_route && (m.module_route.match(/\//g) || []).length === 1)
-            .map(m => ({
-              label: m.module_name,
-              icon: getModuleIcon(m.module_icon),
-              path: m.module_route,
-              requiresAuth: true,
-            })),
         })),
       }
     : null;
+
 
   const menuSections: MenuSection[] = [
     ...staticMenuSections,
