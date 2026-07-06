@@ -197,6 +197,16 @@ export default function ASOWorkflowDrawer({ atendimento, open, onClose, onUpdate
     if (parsed.length === 0) return;
     backfilledRef.current.add(a.id);
     (async () => {
+      // Confere no servidor pra evitar corrida com outra aba/usuário que já criou os exames.
+      const { data: existentes } = await supabase
+        .from("aso_exames_atendimento")
+        .select("id")
+        .eq("atendimento_id", a.id)
+        .limit(1);
+      if (existentes && existentes.length > 0) {
+        qc.invalidateQueries({ queryKey: ["aso-exames", a.id] });
+        return;
+      }
       const records = parsed.map(e => ({
         atendimento_id: a.id,
         nome_exame: e.nome_exame,
