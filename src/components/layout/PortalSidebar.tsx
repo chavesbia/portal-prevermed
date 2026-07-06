@@ -205,7 +205,7 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
 
   const menuSections: MenuSection[] = [
     ...staticMenuSections,
-    ...(departmentsSection ? [departmentsSection] : []),
+    ...(modulesSection ? [modulesSection] : []),
     adminSection,
   ];
 
