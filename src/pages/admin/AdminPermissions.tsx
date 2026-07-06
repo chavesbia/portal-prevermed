@@ -78,6 +78,14 @@ const ACTIONS = [
 
 export default function AdminPermissions() {
   const { role } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'manage';
+  const handleTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === 'manage') next.delete('tab');
+    else next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
   const [modules, setModules] = useState<Module[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [deptModules, setDeptModules] = useState<DeptModule[]>([]);
