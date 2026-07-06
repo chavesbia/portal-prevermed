@@ -763,6 +763,10 @@ export default function AdminUsers() {
                             Resetar Senha
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            {user.status === 'active' ? 'Inativar Usuário' : 'Ativar Usuário'}
+                          </DropdownMenuItem>
                           <DropdownMenuItem 
                             onClick={() => handleDeleteUser(user)}
                             className="text-destructive"
