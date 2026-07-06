@@ -334,11 +334,19 @@ export default function AdminPermissions() {
         </Button>
       </div>
 
-      <Tabs defaultValue="manage" className="space-y-4">
-        <TabsList>
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="manage" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
             Gerenciar por Usuário
+          </TabsTrigger>
+          <TabsTrigger value="revisao-permissoes" className="gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Revisão de Permissões
+          </TabsTrigger>
+          <TabsTrigger value="revisao-vinculos" className="gap-2">
+            <Link2Off className="h-4 w-4" />
+            Revisão de Vínculos
           </TabsTrigger>
           <TabsTrigger value="overview" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -358,6 +366,15 @@ export default function AdminPermissions() {
         <TabsContent value="manage">
           <PermissionsMasterDetail />
         </TabsContent>
+
+        <TabsContent value="revisao-permissoes">
+          <AdminShadowReview />
+        </TabsContent>
+
+        <TabsContent value="revisao-vinculos">
+          <AdminInertLinksReview />
+        </TabsContent>
+
 
 
         {/* ===== Tab: Overview ===== */}
