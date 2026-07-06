@@ -107,8 +107,8 @@ const App = () => (
                 <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
                 <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
                 <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
-                <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
-                <Route path="/admin/revisao-vinculos" element={<AdminMasterRoute><AdminInertLinksReview /></AdminMasterRoute>} />
+                <Route path="/admin/revisao-permissoes" element={<Navigate to="/admin/permissoes?tab=revisao-permissoes" replace />} />
+                <Route path="/admin/revisao-vinculos" element={<Navigate to="/admin/permissoes?tab=revisao-vinculos" replace />} />
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
 
 
