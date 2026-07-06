@@ -17,11 +17,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid,
+  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid, ShieldCheck, Link2Off,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 import { PermissionsMasterDetail } from '@/components/admin/PermissionsMasterDetail';
+import AdminShadowReview from '@/pages/admin/AdminShadowReview';
+import AdminInertLinksReview from '@/pages/admin/AdminInertLinksReview';
 
 interface Module {
   id: string;
