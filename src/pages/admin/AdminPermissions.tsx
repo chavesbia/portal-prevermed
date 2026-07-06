@@ -17,11 +17,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid,
+  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid, ShieldCheck, Link2Off,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 import { PermissionsMasterDetail } from '@/components/admin/PermissionsMasterDetail';
+import AdminShadowReview from '@/pages/admin/AdminShadowReview';
+import AdminInertLinksReview from '@/pages/admin/AdminInertLinksReview';
 
 interface Module {
   id: string;
@@ -75,6 +78,14 @@ const ACTIONS = [
 
 export default function AdminPermissions() {
   const { role } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'manage';
+  const handleTabChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === 'manage') next.delete('tab');
+    else next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
   const [modules, setModules] = useState<Module[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [deptModules, setDeptModules] = useState<DeptModule[]>([]);
@@ -323,11 +334,19 @@ export default function AdminPermissions() {
         </Button>
       </div>
 
-      <Tabs defaultValue="manage" className="space-y-4">
-        <TabsList>
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="manage" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
             Gerenciar por Usuário
+          </TabsTrigger>
+          <TabsTrigger value="revisao-permissoes" className="gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Revisão de Permissões
+          </TabsTrigger>
+          <TabsTrigger value="revisao-vinculos" className="gap-2">
+            <Link2Off className="h-4 w-4" />
+            Revisão de Vínculos
           </TabsTrigger>
           <TabsTrigger value="overview" className="gap-2">
             <Shield className="h-4 w-4" />
@@ -347,6 +366,15 @@ export default function AdminPermissions() {
         <TabsContent value="manage">
           <PermissionsMasterDetail />
         </TabsContent>
+
+        <TabsContent value="revisao-permissoes">
+          <AdminShadowReview />
+        </TabsContent>
+
+        <TabsContent value="revisao-vinculos">
+          <AdminInertLinksReview />
+        </TabsContent>
+
 
 
         {/* ===== Tab: Overview ===== */}

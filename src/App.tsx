@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PortalLayout } from "@/components/layout/PortalLayout";
@@ -47,8 +47,6 @@ const AdminAudit = lazy(() => import("./pages/admin/AdminAudit"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminDocuments = lazy(() => import("./pages/admin/AdminDocuments"));
 const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos"));
-const AdminShadowReview = lazy(() => import("./pages/admin/AdminShadowReview"));
-const AdminInertLinksReview = lazy(() => import("./pages/admin/AdminInertLinksReview"));
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 
 const queryClient = new QueryClient();
@@ -107,8 +105,8 @@ const App = () => (
                 <Route path="/admin/configuracoes" element={<AdminMasterRoute><AdminSettings /></AdminMasterRoute>} />
                 <Route path="/admin/documentos" element={<AdminMasterRoute><AdminDocuments /></AdminMasterRoute>} />
                 <Route path="/admin/laudos-servicos" element={<AdminMasterRoute><AdminLaudosServicos /></AdminMasterRoute>} />
-                <Route path="/admin/revisao-permissoes" element={<AdminMasterRoute><AdminShadowReview /></AdminMasterRoute>} />
-                <Route path="/admin/revisao-vinculos" element={<AdminMasterRoute><AdminInertLinksReview /></AdminMasterRoute>} />
+                <Route path="/admin/revisao-permissoes" element={<Navigate to="/admin/permissoes?tab=revisao-permissoes" replace />} />
+                <Route path="/admin/revisao-vinculos" element={<Navigate to="/admin/permissoes?tab=revisao-vinculos" replace />} />
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
 
 
