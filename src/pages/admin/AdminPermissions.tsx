@@ -17,10 +17,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package,
+  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { PermissionsMasterDetail } from '@/components/admin/PermissionsMasterDetail';
 
 interface Module {
   id: string;
@@ -322,8 +323,12 @@ export default function AdminPermissions() {
         </Button>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="manage" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="manage" className="gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Gerenciar por Usuário
+          </TabsTrigger>
           <TabsTrigger value="overview" className="gap-2">
             <Shield className="h-4 w-4" />
             Visão Geral
@@ -334,9 +339,15 @@ export default function AdminPermissions() {
           </TabsTrigger>
           <TabsTrigger value="user-perms" className="gap-2">
             <Users className="h-4 w-4" />
-            Permissões de Usuários
+            Permissões (legado)
           </TabsTrigger>
         </TabsList>
+
+        {/* ===== Tab: Master-Detail Manager (default) ===== */}
+        <TabsContent value="manage">
+          <PermissionsMasterDetail />
+        </TabsContent>
+
 
         {/* ===== Tab: Overview ===== */}
         <TabsContent value="overview">
