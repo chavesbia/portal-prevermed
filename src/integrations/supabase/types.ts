@@ -5287,6 +5287,7 @@ export type Database = {
         }
         Returns: string
       }
+      can_access_document_object: { Args: { _name: string }; Returns: boolean }
       can_access_occurrence_attachment: {
         Args: { _ticket_id: string }
         Returns: boolean
@@ -5311,8 +5312,16 @@ export type Database = {
         Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_commercial_module: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       can_view_module_route: {
         Args: { _route: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_occurrence_ticket: {
+        Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
       contract_calc_status: {
