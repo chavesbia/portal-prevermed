@@ -17,10 +17,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package,
+  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { PermissionsMasterDetail } from '@/components/admin/PermissionsMasterDetail';
 
 interface Module {
   id: string;
