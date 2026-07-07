@@ -16,7 +16,7 @@ export default function GestaoOS() {
   const permissions = getModulePermissions('/gestao-os');
   const {
     isLoading, filters, setFilters,
-    getFilteredOrdens, addOrdem, updateOrdemStatus,
+    getFilteredOrdens, addOrdem, updateOrdem, updateOrdemStatus,
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
   } = useOrdens();
 
