@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
+import { Eye, Pencil, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
