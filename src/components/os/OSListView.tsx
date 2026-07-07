@@ -13,6 +13,7 @@ import {
 import { OSFilterBar } from '@/components/os/OSFilterBar';
 import { OSDetailDialog } from '@/components/os/OSDetailDialog';
 import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
+import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
 import { differenceInDays, format, parseISO } from 'date-fns';
@@ -24,15 +25,17 @@ interface OSListViewProps {
   setFilters: any;
   responsaveis: string[];
   onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
+  onUpdateOrdem: (id: string, data: any) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
   onRefresh?: () => void;
 }
 
-export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
+export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onUpdateOrdem, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
