@@ -140,7 +140,25 @@ export function useClientAttachments(clientId: string | undefined) {
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as ClientAttachment[];
+      const rows = (data || []) as ClientAttachment[];
+      // Bucket is private — issue short-lived signed URLs for each attachment.
+      const signed = await Promise.all(
+        rows.map(async (att) => {
+          const raw = att.file_url || '';
+          const match = raw.match(/\/client-documents\/(.+?)(\?|$)/);
+          const path = match
+            ? decodeURIComponent(match[1])
+            : raw.startsWith('client-documents/')
+              ? raw.slice('client-documents/'.length)
+              : null;
+          if (!path) return att;
+          const { data: s } = await supabase.storage
+            .from('client-documents')
+            .createSignedUrl(path, 60 * 10);
+          return s?.signedUrl ? { ...att, file_url: s.signedUrl } : att;
+        })
+      );
+      return signed;
     },
     enabled: !!clientId,
   });
@@ -153,14 +171,11 @@ export function useClientAttachments(clientId: string | undefined) {
         .upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from('client-documents')
-        .getPublicUrl(filePath);
-
+      // Store the storage path so we can re-sign it on read (bucket is private).
       const { error } = await supabase.from('client_attachments').insert({
         client_id: clientId,
         type,
-        file_url: urlData.publicUrl,
+        file_url: `client-documents/${filePath}`,
         file_name: file.name,
       } as any);
       if (error) throw error;
