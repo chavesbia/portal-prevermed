@@ -187,6 +187,61 @@ export function useOrdens() {
     }
   };
 
+  const updateOrdem = async (
+    ordemId: string,
+    data: {
+      numero_os: string;
+      empresa_cliente: string;
+      contato_cliente?: string | null;
+      responsavel_atual: string;
+      status_os: StatusOS;
+      data_registro: string;
+      data_emissao?: string | null;
+      prazo_acordado?: string | null;
+      observacoes?: string | null;
+    },
+  ) => {
+    try {
+      const ordem = ordens.find(o => o.id === ordemId);
+      const oldStatus = ordem?.status_os;
+
+      const { error } = await supabase
+        .from('ordens_servico')
+        .update({
+          numero_os: data.numero_os,
+          empresa_cliente: data.empresa_cliente,
+          contato_cliente: data.contato_cliente ?? null,
+          responsavel_atual: data.responsavel_atual,
+          status_os: data.status_os,
+          data_registro: data.data_registro,
+          data_emissao: data.data_emissao ?? null,
+          prazo_acordado: data.prazo_acordado ?? null,
+          observacoes: data.observacoes ?? null,
+          updated_by: user?.id || null,
+        })
+        .eq('id', ordemId);
+      if (error) throw error;
+
+      await supabase.from('historico_os').insert({
+        ordem_id: ordemId,
+        user_id: user?.id || null,
+        user_name: profile?.full_name || 'Sistema',
+        acao: 'Edição',
+        comentario: 'Dados da OS atualizados.',
+        status_anterior: oldStatus || null,
+        status_novo: data.status_os,
+      });
+
+      await fetchOrdens();
+      toast({ title: 'Sucesso', description: 'OS atualizada com sucesso!' });
+      return true;
+    } catch (error: any) {
+      console.error('Erro ao atualizar OS:', error);
+      toast({ title: 'Erro', description: 'Erro ao atualizar OS: ' + (error.message || ''), variant: 'destructive' });
+      return false;
+    }
+  };
+
   const deleteOrdem = async (ordemId: string) => {
     try {
       const { error } = await supabase
