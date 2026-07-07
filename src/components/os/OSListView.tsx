@@ -173,6 +173,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
       {selectedOS && (
         <>
           <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
+          <OSEditDialog ordem={selectedOS} open={showEdit} onOpenChange={setShowEdit} responsaveis={responsaveis} onUpdate={onUpdateOrdem} />
           <OSHistoryDialog ordem={selectedOS} open={showHistory} onOpenChange={setShowHistory} onGetHistorico={onGetHistorico} />
         </>
       )}
