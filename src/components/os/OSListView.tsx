@@ -122,6 +122,9 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowDetail(true); }}>
                                   <Eye className="mr-2 h-4 w-4" />Visualizar
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowEdit(true); }}>
+                                  <Pencil className="mr-2 h-4 w-4" />Editar
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowHistory(true); }}>
                                   <History className="mr-2 h-4 w-4" />Histórico
                                 </DropdownMenuItem>
