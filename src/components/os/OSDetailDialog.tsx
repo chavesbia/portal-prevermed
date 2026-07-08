@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
+import { OSFinanceiroTab } from './OSFinanceiroTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 interface OSDetailDialogProps {
