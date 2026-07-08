@@ -149,6 +149,10 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
           <TabsContent value="financeiro" className="mt-4">
             <OSFinanceiroTab ordem={ordem} canEdit={canEdit} />
           </TabsContent>
+
+          <TabsContent value="anexos" className="mt-4">
+            <OSAnexosTab ordem={ordem} canEdit={canEdit} />
+          </TabsContent>
         </Tabs>
 
 
