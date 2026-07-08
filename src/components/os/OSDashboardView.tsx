@@ -261,8 +261,18 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        </TabsContent>
+
+        <TabsContent value="executivo" className="mt-6">
+          <OSDashboardExecutivoView />
+        </TabsContent>
+
+        <TabsContent value="sla" className="mt-6">
+          <OSSLAView ordens={ordens} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
