@@ -22,8 +22,8 @@ const SLA_COLORS: Record<SLAStatus, string> = {
 };
 
 export function OSSLAView({ ordens }: OSSLAViewProps) {
-  const { feriados } = useFeriados();
-  const feriadosISO = useMemo(() => (feriados || []).map((f: any) => f.data), [feriados]);
+  const { data: feriados } = useFeriados();
+  const feriadosISO = useMemo(() => feriados || [], [feriados]);
 
   const rows = useMemo(() => ordens.map(o => ({
     ordem: o,
