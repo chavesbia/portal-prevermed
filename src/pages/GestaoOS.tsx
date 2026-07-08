@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Plus } from 'lucide-react';
 import { useOrdens } from '@/hooks/useOrdens';
 import { OSDashboardView } from '@/components/os/OSDashboardView';
 import { OSListView } from '@/components/os/OSListView';
 import { OSNovaView } from '@/components/os/OSNovaView';
-import { OSSLAView } from '@/components/os/OSSLAView';
 import { OSGestaoVencimentosView } from '@/components/os/OSGestaoVencimentosView';
 import { OSAgendaView } from '@/components/os/OSAgendaView';
 import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
@@ -12,7 +14,6 @@ import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { OSAlertasView } from '@/components/os/OSAlertasView';
-import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
@@ -24,6 +25,7 @@ export default function GestaoOS() {
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
   } = useOrdens();
 
+  const [novaOpen, setNovaOpen] = useState(false);
   const filteredOrdens = getFilteredOrdens();
   const responsaveis = getResponsaveis();
   const canEdit = permissions?.can_edit ?? false;
@@ -38,22 +40,26 @@ export default function GestaoOS() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
-        <p className="text-muted-foreground">Controle de Ordens de Serviço — Engenharia</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
+          <p className="text-muted-foreground">Controle de Ordens de Serviço — Engenharia</p>
+        </div>
+        {canEdit && (
+          <Button onClick={() => setNovaOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Nova OS
+          </Button>
+        )}
       </div>
 
       <Tabs defaultValue="dashboard">
         <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="executivo">Executivo</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
           <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
-          {canEdit && <TabsTrigger value="nova">Nova OS</TabsTrigger>}
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
-          <TabsTrigger value="sla">SLA</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
           <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
@@ -66,10 +72,6 @@ export default function GestaoOS() {
             setFilters={setFilters}
             responsaveis={responsaveis}
           />
-        </TabsContent>
-
-        <TabsContent value="executivo" className="mt-6">
-          <OSDashboardExecutivoView />
         </TabsContent>
 
         <TabsContent value="alertas" className="mt-6">
@@ -90,15 +92,6 @@ export default function GestaoOS() {
           />
         </TabsContent>
 
-        {canEdit && (
-          <TabsContent value="nova" className="mt-6">
-            <OSNovaView
-              onSubmit={addOrdem}
-              responsaveis={responsaveis}
-            />
-          </TabsContent>
-        )}
-
         <TabsContent value="agenda" className="mt-6">
           <OSAgendaView ordens={filteredOrdens} canEdit={canEdit} />
         </TabsContent>
@@ -109,10 +102,6 @@ export default function GestaoOS() {
 
         <TabsContent value="historico" className="mt-6">
           <OSHistoricoGeralView ordens={filteredOrdens} />
-        </TabsContent>
-
-        <TabsContent value="sla" className="mt-6">
-          <OSSLAView ordens={filteredOrdens} />
         </TabsContent>
 
         <TabsContent value="vencimentos" className="mt-6">
@@ -127,6 +116,23 @@ export default function GestaoOS() {
           <OSFinanceiroView />
         </TabsContent>
       </Tabs>
+
+      {canEdit && (
+        <Dialog open={novaOpen} onOpenChange={setNovaOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nova Ordem de Serviço</DialogTitle>
+              <DialogDescription>Cadastre uma nova OS no sistema.</DialogDescription>
+            </DialogHeader>
+            <OSNovaView
+              embedded
+              onSubmit={addOrdem}
+              responsaveis={responsaveis}
+              onDone={() => setNovaOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
