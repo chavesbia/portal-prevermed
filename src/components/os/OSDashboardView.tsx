@@ -2,8 +2,11 @@ import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer } from 'lu
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OSKPICard } from '@/components/os/OSKPICard';
 import { OSFilterBar } from '@/components/os/OSFilterBar';
+import { OSSLAView } from '@/components/os/OSSLAView';
+import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { Badge } from '@/components/ui/badge';
 import { OrdemServico, statusOSColors, statusServicoColors } from '@/types/os';
 import { differenceInDays } from 'date-fns';
@@ -90,6 +93,15 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
   return (
     <div className="space-y-6">
       <OSFilterBar filters={filters} setFilters={setFilters} responsaveis={responsaveis} />
+
+      <Tabs defaultValue="geral">
+        <TabsList>
+          <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="executivo">Executivo</TabsTrigger>
+          <TabsTrigger value="sla">SLA</TabsTrigger>
+        </TabsList>
+        <TabsContent value="geral" className="mt-6 space-y-6">
+
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <OSKPICard title="Total de OS" value={stats.total} subtitle="Ordens registradas" icon={FileText} variant="primary" />
@@ -249,8 +261,18 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
               </table>
             </div>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        </TabsContent>
+
+        <TabsContent value="executivo" className="mt-6">
+          <OSDashboardExecutivoView />
+        </TabsContent>
+
+        <TabsContent value="sla" className="mt-6">
+          <OSSLAView ordens={ordens} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

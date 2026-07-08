@@ -16,7 +16,7 @@ import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
 import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
 import { OSAgendarVisitaDialog } from '@/components/os/OSAgendarVisitaDialog';
-import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
+import { OSServicoEditDialog } from '@/components/os/OSServicoEditDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
 import { calcOSSLA } from '@/lib/os/sla';
@@ -47,6 +47,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
+  const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
@@ -157,44 +158,36 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                           </td>
                         </tr>
                         {isExpanded && svcs.map(servico => (
-                          <React.Fragment key={servico.id}>
-                            <tr className="bg-muted/30 border-b last:border-0">
-                              <td className="py-2" />
-                              <td className="py-2 pl-4 text-muted-foreground">↳</td>
-                              <td className="py-2 font-medium">{servico.tipo}</td>
-                              <td className="py-2 hidden md:table-cell">
-                                <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
-                              </td>
-                              <td className="py-2 hidden lg:table-cell text-xs text-muted-foreground">
-                                {servico.data_inicio ? format(parseISO(servico.data_inicio), 'dd/MM/yy', { locale: ptBR }) : '-'}
-                                {' → '}
-                                {servico.data_conclusao ? format(parseISO(servico.data_conclusao), 'dd/MM/yy', { locale: ptBR }) : 'Aberto'}
-                              </td>
-                              <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
-                              <td className="py-2" />
-                              <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
-                              <td className="py-2 text-right">
-                                {servico.status !== 'Encerrado' && (
-                                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
-                                    <CheckSquare className="h-3 w-3 mr-1" />Finalizar
-                                  </Button>
-                                )}
-                              </td>
-                            </tr>
-                            <tr className="bg-muted/20 border-b last:border-0">
-                              <td />
-                              <td className="pl-4 text-[10px] uppercase text-muted-foreground tracking-wide align-middle">Resp.</td>
-                              <td colSpan={7} className="py-2 pr-4">
-                                <ProfissionalSelector
-                                  value={servico.responsavel_id}
-                                  onChange={async (id) => {
-                                    await supabase.from('servicos_os').update({ responsavel_id: id }).eq('id', servico.id);
-                                    onRefresh?.();
-                                  }}
-                                />
-                              </td>
-                            </tr>
-                          </React.Fragment>
+                          <tr
+                            key={servico.id}
+                            className="bg-muted/30 border-b last:border-0 hover:bg-muted/60 cursor-pointer"
+                            onClick={() => setEditServico({ ordem, servico })}
+                          >
+                            <td className="py-2" />
+                            <td className="py-2 pl-4 text-muted-foreground">↳</td>
+                            <td className="py-2 font-medium">{servico.tipo}</td>
+                            <td className="py-2 hidden md:table-cell">
+                              <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
+                            </td>
+                            <td className="py-2 hidden lg:table-cell text-xs text-muted-foreground">
+                              {servico.data_inicio ? format(parseISO(servico.data_inicio), 'dd/MM/yy', { locale: ptBR }) : '-'}
+                              {' → '}
+                              {servico.data_conclusao ? format(parseISO(servico.data_conclusao), 'dd/MM/yy', { locale: ptBR }) : 'Aberto'}
+                            </td>
+                            <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
+                            <td className="py-2" />
+                            <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
+                            <td className="py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditServico({ ordem, servico })}>
+                                <Pencil className="h-3 w-3 mr-1" />Editar
+                              </Button>
+                              {servico.status !== 'Encerrado' && (
+                                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
+                                  <CheckSquare className="h-3 w-3 mr-1" />Finalizar
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
                         ))}
                       </React.Fragment>
                     );
@@ -224,6 +217,19 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
           onFinalized={() => { setFinalizarServico(null); onRefresh?.(); }}
         />
       )}
+
+      {editServico && (
+        <OSServicoEditDialog
+          open={!!editServico}
+          onOpenChange={(o) => !o && setEditServico(null)}
+          ordem={editServico.ordem}
+          servico={editServico.servico}
+          onSaved={() => { setEditServico(null); onRefresh?.(); }}
+          onRequestFinalizar={() => setFinalizarServico(editServico)}
+        />
+      )}
+
+
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
