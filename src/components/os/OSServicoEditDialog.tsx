@@ -126,13 +126,13 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável Técnico</Label>
+            <Label>Responsável {statusChanged && <span className="text-destructive">*</span>}</Label>
             <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Agendamento / Início</Label>
+              <Label>Início {statusChanged && <span className="text-destructive">*</span>}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !dataInicio && 'text-muted-foreground')}>
