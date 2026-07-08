@@ -98,6 +98,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Responsável</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Tempo Total</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Ações</th>
                   </tr>
