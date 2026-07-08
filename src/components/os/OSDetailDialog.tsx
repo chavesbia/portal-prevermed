@@ -72,6 +72,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
             <TabsTrigger value="custos">Custos</TabsTrigger>
             <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+            <TabsTrigger value="anexos">Anexos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="detalhes" className="mt-4">
