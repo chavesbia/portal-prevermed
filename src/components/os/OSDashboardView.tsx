@@ -94,6 +94,15 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     <div className="space-y-6">
       <OSFilterBar filters={filters} setFilters={setFilters} responsaveis={responsaveis} />
 
+      <Tabs defaultValue="geral">
+        <TabsList>
+          <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="executivo">Executivo</TabsTrigger>
+          <TabsTrigger value="sla">SLA</TabsTrigger>
+        </TabsList>
+        <TabsContent value="geral" className="mt-6 space-y-6">
+
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <OSKPICard title="Total de OS" value={stats.total} subtitle="Ordens registradas" icon={FileText} variant="primary" />
         <OSKPICard title="Em Andamento" value={stats.emAndamento} subtitle="Em execução" icon={Clock} variant="warning" />
