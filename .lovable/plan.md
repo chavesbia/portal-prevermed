@@ -17,7 +17,7 @@ Entrega: só frontend + 1 migração pequena (tabela `conselhos_classe`).
 
 ---
 
-## Fase 2 — Novo modelo de Status e SLA
+## Fase 2 — Novo modelo de Status e SLA ✅ CONCLUÍDA
 
 Objetivo: separar SLA da OS do status operacional dos serviços.
 
