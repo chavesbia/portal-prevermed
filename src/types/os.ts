@@ -30,6 +30,7 @@ export interface ServicoOS {
   data_inicio: string | null;
   data_conclusao: string | null;
   observacoes: string | null;
+  responsavel_id: string | null;
   created_at: string;
   updated_at: string;
 }
