@@ -103,38 +103,30 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
       );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nova Ordem de Serviço</CardTitle>
-        <CardDescription>Cadastre uma nova OS no sistema</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <FormField control={form.control} name="numeroOS" render={({ field }) => (
-                <FormItem><FormLabel>Número da OS</FormLabel><FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="empresaCliente" render={({ field }) => (
-                <FormItem><FormLabel>Empresa Cliente</FormLabel><FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="contatoCliente" render={({ field }) => (
-                <FormItem><FormLabel>Contato do Cliente</FormLabel><FormControl><Input placeholder="Nome do contato" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="responsavelAtual" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Responsável</FormLabel>
-                  {responsaveis.length > 0 ? (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                      <SelectContent>{responsaveis.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                    </Select>
-                  ) : (
-                    <FormControl><Input placeholder="Nome do responsável" {...field} /></FormControl>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )} />
+    <Wrapper>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <FormField control={form.control} name="numeroOS" render={({ field }) => (
+              <FormItem><FormLabel>Número da OS</FormLabel><FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="empresaCliente" render={({ field }) => (
+              <FormItem><FormLabel>Empresa Cliente</FormLabel><FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="contatoCliente" render={({ field }) => (
+              <FormItem><FormLabel>Contato do Cliente</FormLabel><FormControl><Input placeholder="Nome do contato" {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="responsavelAtual" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-1"><Lock className="h-3 w-3" />Emissor</FormLabel>
+                <FormControl>
+                  <Input readOnly disabled value={field.value || emissorNome} className="bg-muted" />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">Preenchido automaticamente com o usuário logado.</p>
+                <FormMessage />
+              </FormItem>
+            )} />
+
               <FormField control={form.control} name="statusOS" render={({ field }) => (
                 <FormItem><FormLabel>Status da OS</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
