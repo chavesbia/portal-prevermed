@@ -16,7 +16,9 @@ import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
 import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
 import { OSAgendarVisitaDialog } from '@/components/os/OSAgendarVisitaDialog';
-import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
+import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
+import { calcOSSLA } from '@/lib/os/sla';
+import { useFeriados } from '@/hooks/useFeriados';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
