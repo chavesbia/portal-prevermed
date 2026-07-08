@@ -287,7 +287,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>OS vinculada (opcional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(v) => { field.onChange(v); form.setValue('servico_id', 'none'); }} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Sem OS vinculada" /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="none">Sem OS vinculada</SelectItem>
@@ -296,6 +296,26 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                   </Select>
                 </FormItem>
               )} />
+
+              {watchedOrdemId && watchedOrdemId !== 'none' && (() => {
+                const os = ordens.find(o => o.id === watchedOrdemId);
+                const svcs = os?.servicos || [];
+                if (svcs.length === 0) return null;
+                return (
+                  <FormField control={form.control} name="servico_id" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Serviço da OS</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="OS inteira" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">— OS inteira —</SelectItem>
+                          {svcs.map(s => <SelectItem key={s.id} value={s.id}>{s.tipo} ({s.tipo_os})</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                );
+              })()}
 
               <FormField control={form.control} name="empresa_cliente" render={({ field }) => (
                 <FormItem>
