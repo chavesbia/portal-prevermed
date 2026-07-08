@@ -218,6 +218,19 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
         />
       )}
 
+      {editServico && (
+        <OSServicoEditDialog
+          open={!!editServico}
+          onOpenChange={(o) => !o && setEditServico(null)}
+          ordem={editServico.ordem}
+          servico={editServico.servico}
+          onSaved={() => { setEditServico(null); onRefresh?.(); }}
+          onRequestFinalizar={() => setFinalizarServico(editServico)}
+        />
+      )}
+
+
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
