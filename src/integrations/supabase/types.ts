@@ -4488,6 +4488,68 @@ export type Database = {
           },
         ]
       }
+      profissionais: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          conselho_id: string | null
+          created_at: string
+          created_by: string | null
+          custo_padrao: number | null
+          email: string | null
+          id: string
+          nome: string
+          numero_conselho: string | null
+          observacoes: string | null
+          telefone: string | null
+          tipo: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          conselho_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_padrao?: number | null
+          email?: string | null
+          id?: string
+          nome: string
+          numero_conselho?: string | null
+          observacoes?: string | null
+          telefone?: string | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          conselho_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_padrao?: number | null
+          email?: string | null
+          id?: string
+          nome?: string
+          numero_conselho?: string | null
+          observacoes?: string | null
+          telefone?: string | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profissionais_conselho_id_fkey"
+            columns: ["conselho_id"]
+            isOneToOne: false
+            referencedRelation: "conselhos_classe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotation_versions: {
         Row: {
           client_name: string
@@ -4930,6 +4992,7 @@ export type Database = {
           id: string
           observacoes: string | null
           ordem_id: string
+          responsavel_id: string | null
           status: string
           tipo: string
           tipo_os: string
@@ -4942,6 +5005,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           ordem_id: string
+          responsavel_id?: string | null
           status?: string
           tipo: string
           tipo_os?: string
@@ -4954,6 +5018,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           ordem_id?: string
+          responsavel_id?: string | null
           status?: string
           tipo?: string
           tipo_os?: string
@@ -4965,6 +5030,13 @@ export type Database = {
             columns: ["ordem_id"]
             isOneToOne: false
             referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servicos_os_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
             referencedColumns: ["id"]
           },
         ]
