@@ -71,7 +71,6 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
           <TabsList>
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
             <TabsTrigger value="custos">Custos</TabsTrigger>
-            <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
             <TabsTrigger value="anexos">Anexos</TabsTrigger>
           </TabsList>
 
@@ -91,23 +90,17 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                   <p className="font-medium">{ordem.tipo_servico_resumo || '-'}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-xs">Responsável</Label>
-                  <p className="font-medium">{ordem.responsavel_atual}</p>
+                  <Label className="text-muted-foreground text-xs">Emissor da OS</Label>
+                  <p className="font-medium">{emissorNome || ordem.responsavel_atual || '—'}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-xs">Data de Registro</Label>
-                  <p className="font-medium">{format(parseISO(ordem.data_registro), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  <Label className="text-muted-foreground text-xs">Data de Emissão</Label>
+                  <p className="font-medium">{format(parseISO(ordem.data_emissao || ordem.data_registro), 'dd/MM/yyyy', { locale: ptBR })}</p>
                 </div>
-                {(emissorNome || ordem.created_by) && (
+                {ordem.prazo_acordado && (
                   <div className="space-y-1">
-                    <Label className="text-muted-foreground text-xs">Emissor</Label>
-                    <p className="font-medium">{emissorNome || '—'}</p>
-                  </div>
-                )}
-                {ordem.data_emissao && (
-                  <div className="space-y-1">
-                    <Label className="text-muted-foreground text-xs">Data de Emissão</Label>
-                    <p className="font-medium">{format(parseISO(ordem.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                    <Label className="text-muted-foreground text-xs">Prazo de Entrega</Label>
+                    <p className="font-medium">{format(parseISO(ordem.prazo_acordado), 'dd/MM/yyyy', { locale: ptBR })}</p>
                   </div>
                 )}
               </div>
@@ -144,10 +137,6 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
           <TabsContent value="custos" className="mt-4">
             <OSCustosTab ordem={ordem} canEdit={canEdit} />
-          </TabsContent>
-
-          <TabsContent value="financeiro" className="mt-4">
-            <OSFinanceiroTab ordem={ordem} canEdit={canEdit} />
           </TabsContent>
 
           <TabsContent value="anexos" className="mt-4">

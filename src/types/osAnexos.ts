@@ -1,24 +1,24 @@
-export type OSAnexoCategoria = 'contrato' | 'art' | 'laudo' | 'foto' | 'relatorio' | 'outro';
+export type OSAnexoCategoria = 'art' | 'comprovante' | 'relatorio' | 'checklist' | 'laudo' | 'outro';
 
 export const OS_ANEXO_CATEGORIA_OPTIONS: OSAnexoCategoria[] = [
-  'contrato', 'art', 'laudo', 'foto', 'relatorio', 'outro',
+  'art', 'comprovante', 'relatorio', 'checklist', 'laudo', 'outro',
 ];
 
 export const osAnexoCategoriaLabel: Record<OSAnexoCategoria, string> = {
-  contrato: 'Contrato',
   art: 'ART',
-  laudo: 'Laudo',
-  foto: 'Foto',
+  comprovante: 'Comprovante',
   relatorio: 'Relatório',
+  checklist: 'CheckList',
+  laudo: 'Laudo',
   outro: 'Outro',
 };
 
 export const osAnexoCategoriaColors: Record<OSAnexoCategoria, string> = {
-  contrato: 'bg-blue-100 text-blue-700 border-blue-300',
   art: 'bg-purple-100 text-purple-700 border-purple-300',
-  laudo: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-  foto: 'bg-amber-100 text-amber-700 border-amber-300',
+  comprovante: 'bg-blue-100 text-blue-700 border-blue-300',
   relatorio: 'bg-indigo-100 text-indigo-700 border-indigo-300',
+  checklist: 'bg-amber-100 text-amber-700 border-amber-300',
+  laudo: 'bg-emerald-100 text-emerald-700 border-emerald-300',
   outro: 'bg-muted text-muted-foreground border-border',
 };
 

@@ -32,7 +32,7 @@ const formatSize = (b: number | null) => {
 export function OSAnexosTab({ ordem, canEdit }: Props) {
   const { anexos, isLoading, uploadAnexo, deleteAnexo, getSignedUrl } = useOSAnexos(ordem.id);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [categoria, setCategoria] = useState<OSAnexoCategoria>('outro');
+  const [categoria, setCategoria] = useState<OSAnexoCategoria>('art');
   const [descricao, setDescricao] = useState('');
   const [dataVenc, setDataVenc] = useState('');
   const [uploading, setUploading] = useState(false);
