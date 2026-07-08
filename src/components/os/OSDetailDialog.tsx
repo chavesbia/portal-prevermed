@@ -29,6 +29,9 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
+  const { getModulePermissions } = useModulePermissions();
+  const canEdit = getModulePermissions('/gestao-os')?.can_edit ?? false;
+
 
   useEffect(() => {
     if (!open || !ordem.created_by) { setEmissorNome(null); return; }
