@@ -1,3 +1,4 @@
+export type VisitaStatus = 'agendada' | 'realizada' | 'cancelada';
 export type VisitaTipo = 'Visita Técnica' | 'Medições' | 'Treinamento' | 'Reunião' | 'Outro';
 
 export interface OSVisita {
@@ -84,7 +85,7 @@ export const calibracaoStatusColors: Record<CalibracaoStatus, string> = {
 };
 
 export const VISITA_TIPO_OPTIONS: VisitaTipo[] = [
-  'Avaliação', 'Coleta', 'Inspeção', 'Reunião', 'Treinamento', 'Outro',
+  'Visita Técnica', 'Medições', 'Treinamento', 'Reunião', 'Outro',
 ];
 
 export const VISITA_STATUS_OPTIONS: VisitaStatus[] = ['agendada', 'realizada', 'cancelada'];
