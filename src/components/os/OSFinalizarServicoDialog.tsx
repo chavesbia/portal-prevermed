@@ -13,8 +13,9 @@ import { Calendar as CalendarIcon, AlertCircle, Plus } from 'lucide-react';
 import { format, addDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { OrdemServico, ServicoOS, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
+import { OrdemServico, ServicoOS, ConselhoProfissional } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos } from '@/hooks/useOSData';
+import { useConselhosClasse } from '@/hooks/useConselhosClasse';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -32,6 +33,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
   const { responsaveis, add: addResp } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
   const { add: addLaudo } = useLaudos();
+  const { conselhos, add: addConselho } = useConselhosClasse();
 
   const [form, setForm] = useState({
     tipoLaudoId: '',
@@ -43,7 +45,10 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
   });
 
   const [showNovoResp, setShowNovoResp] = useState(false);
-  const [novoResp, setNovoResp] = useState({ nome: '', conselho: 'CREA' as ConselhoProfissional, numero_registro: '', especialidade: '', email: '' });
+  const [novoResp, setNovoResp] = useState({ nome: '', conselho: 'CREA' as string, numero_registro: '', especialidade: '', email: '' });
+  const [showNovoConselho, setShowNovoConselho] = useState(false);
+  const [novoConselhoSigla, setNovoConselhoSigla] = useState('');
+  const [novoConselhoDesc, setNovoConselhoDesc] = useState('');
 
   const tipoSelecionado = useMemo(() => tiposLaudo.find(t => t.id === form.tipoLaudoId), [tiposLaudo, form.tipoLaudoId]);
 
