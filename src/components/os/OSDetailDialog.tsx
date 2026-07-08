@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -13,6 +14,8 @@ import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, statusOSColors } from '@/typ
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
+import { OSCustosTab } from './OSCustosTab';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 interface OSDetailDialogProps {
   ordem: OrdemServico;
