@@ -35,7 +35,7 @@ Entrega: migração de enums + trigger de propagação + ajustes de UI (Lista, F
 
 ---
 
-## Fase 3 — Emissor + Responsável por Serviço
+## Fase 3 — Emissor + Responsável por Serviço ✅ CONCLUÍDA
 
 Objetivo: rastreabilidade de quem abre a OS (comercial) e quem executa cada serviço (interno ou externo).
 
