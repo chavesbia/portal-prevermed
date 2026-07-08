@@ -45,15 +45,19 @@ type FormData = z.infer<typeof formSchema>;
 interface OSNovaViewProps {
   onSubmit: (data: any) => Promise<boolean>;
   responsaveis: string[];
+  embedded?: boolean;
+  onDone?: () => void;
 }
 
-export function OSNovaView({ onSubmit, responsaveis }: OSNovaViewProps) {
+export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
+  const { profile } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const emissorNome = profile?.full_name || '';
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', empresaCliente: '', contatoCliente: '', responsavelAtual: '',
+      numeroOS: '', empresaCliente: '', contatoCliente: '', responsavelAtual: emissorNome,
       statusOS: 'Não iniciado', dataRegistro: new Date(), dataEmissao: null, prazoAcordado: null,
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo', status: 'Não iniciado' }],
     },
