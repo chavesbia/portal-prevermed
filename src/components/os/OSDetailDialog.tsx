@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -12,6 +12,7 @@ import {
 import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, statusOSColors } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OSDetailDialogProps {
   ordem: OrdemServico;
@@ -24,6 +25,19 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
+  const [emissorNome, setEmissorNome] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !ordem.created_by) { setEmissorNome(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('user_id', ordem.created_by)
+        .maybeSingle();
+      setEmissorNome((data as any)?.full_name || null);
+    })();
+  }, [open, ordem.created_by]);
 
   const handleUpdate = async () => {
     if (newStatus !== ordem.status_os || comentario) {
@@ -67,6 +81,12 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
               <Label className="text-muted-foreground text-xs">Data de Registro</Label>
               <p className="font-medium">{format(parseISO(ordem.data_registro), 'dd/MM/yyyy', { locale: ptBR })}</p>
             </div>
+            {(emissorNome || ordem.created_by) && (
+              <div className="space-y-1">
+                <Label className="text-muted-foreground text-xs">Emissor</Label>
+                <p className="font-medium">{emissorNome || '—'}</p>
+              </div>
+            )}
             {ordem.data_emissao && (
               <div className="space-y-1">
                 <Label className="text-muted-foreground text-xs">Data de Emissão</Label>
