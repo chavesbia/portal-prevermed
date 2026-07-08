@@ -10,6 +10,7 @@ import { OSAgendaView } from '@/components/os/OSAgendaView';
 import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
+import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
