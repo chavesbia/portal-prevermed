@@ -108,6 +108,13 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                     const isExpanded = expandedOS.has(ordem.id);
                     const svcs = ordem.servicos || [];
                     const concluidos = svcs.filter(s => s.status === 'Encerrado').length;
+                    const sla = calcOSSLA({
+                      data_registro: ordem.data_registro,
+                      prazo_acordado: ordem.prazo_acordado,
+                      status_os: ordem.status_os,
+                      updated_at: ordem.updated_at,
+                      feriados,
+                    });
                     return (
                       <React.Fragment key={ordem.id}>
                         <tr className="border-b hover:bg-muted/50 transition-colors">
@@ -118,9 +125,10 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                           </td>
                           <td className="py-3 font-medium">{ordem.numero_os}</td>
                           <td className="py-3 max-w-[150px] truncate">{ordem.empresa_cliente}</td>
-                          <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} concluídos</td>
+                          <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} encerrados</td>
                           <td className="py-3 hidden lg:table-cell text-muted-foreground">{ordem.responsavel_atual.split(' ')[0]}</td>
                           <td className="py-3"><Badge className={statusOSColors[ordem.status_os] || 'bg-muted'}>{ordem.status_os}</Badge></td>
+                          <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>
                           <td className="py-3 hidden xl:table-cell text-muted-foreground">{calcularTempoTotalOS(ordem)}</td>
                           <td className="py-3 text-right">
                             <DropdownMenu>
