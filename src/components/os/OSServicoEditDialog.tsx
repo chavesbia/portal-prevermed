@@ -45,12 +45,23 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
   }, [open, servico]);
 
   const isEncerrar = status === 'Encerrado';
+  const statusChanged = status !== servico.status;
 
   const handleSave = async () => {
     if (isEncerrar) {
       onOpenChange(false);
       onRequestFinalizar();
       return;
+    }
+    if (statusChanged) {
+      if (!responsavelId) {
+        toast({ title: 'Atenção', description: 'Selecione o Responsável para alterar o status.', variant: 'destructive' });
+        return;
+      }
+      if (!dataInicio) {
+        toast({ title: 'Atenção', description: 'Informe a Data de início para alterar o status.', variant: 'destructive' });
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -63,7 +74,7 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
       } as any).eq('id', servico.id);
       if (error) throw error;
 
-      if (status !== servico.status) {
+      if (statusChanged) {
         await supabase.from('historico_os').insert({
           ordem_id: ordem.id,
           user_id: user?.id || null,
@@ -74,11 +85,6 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
           status_novo: status,
           servico_afetado: servico.tipo,
         });
-
-        // Auto-inicia OS se ainda não iniciada
-        if (ordem.status_os === 'Não iniciado' && status !== 'Não iniciado') {
-          await supabase.from('ordens_servico').update({ status_os: 'Em andamento', updated_by: user?.id || null } as any).eq('id', ordem.id);
-        }
       }
 
       toast({ title: 'Salvo', description: 'Serviço atualizado.' });
