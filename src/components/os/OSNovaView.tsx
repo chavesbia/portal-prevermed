@@ -216,7 +216,6 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+    </Wrapper>
   );
 }
