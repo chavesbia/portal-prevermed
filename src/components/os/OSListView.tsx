@@ -47,6 +47,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
+  const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
