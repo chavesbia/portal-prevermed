@@ -80,17 +80,20 @@ Entrega: views/materialized views + página de indicadores financeiros.
 
 ---
 
-## Fase 6 — Inteligência e Automação
+## Fase 6 — Inteligência e Automação ✅ CONCLUÍDA (base)
 
 Objetivo: reduzir trabalho manual e antecipar problemas.
 
-- **Notificações**: SLA em atenção/atrasado, serviço parado há X dias em "Aguardando cliente", ART próxima do vencimento.
-- **Agenda unificada** (`OSAgendaView` + visitas + prazos) com sincronização iCal.
-- **Dashboards executivos**: heatmap de carga por responsável, produtividade por profissional, ticket médio, comparativo mês a mês.
-- **Anexos**: padronizar bucket privado para documentos da OS (contrato, ART, laudo final) com URLs assinadas.
-- **API/Webhook** para integração futura com ERP financeiro.
+- **Notificações**: view `vw_os_alertas` consolida SLA (atenção/atrasado), serviços parados há +10 dias em "Aguardando cliente" / "Em revisão interna", laudos com vigência ≤ 30 dias e orçamento estourado. Nova aba **Alertas** com KPIs, filtros por tipo/severidade e busca.
+- **Dashboards executivos**: view `vw_os_produtividade` (últimos 90 dias) e nova aba **Executivo** com KPIs globais, gráfico de carga empilhado por responsável (encerradas / em andamento / atrasadas) e tabela detalhada com tempo médio de conclusão.
+- **Anexos**: bucket privado `os-anexos` + tabela `os_anexos` (categoria: contrato/ART/laudo/foto/relatório/outro, vencimento opcional, tamanho, MIME). Trigger registra upload/remoção no histórico. Nova aba **Anexos** no detalhe da OS com upload, download via signed URL (1h), badge de vencimento e exclusão restrita a ADM Master.
 
-Entrega: edge functions de notificação + dashboards + storage bucket.
+Evolução futura (não bloqueante):
+- Edge function de notificação por e-mail/push consumindo `vw_os_alertas`.
+- Agenda unificada com sincronização iCal.
+- API/Webhook para integração com ERP financeiro.
+
+Entrega desta fase: migração (enum, tabela, políticas, trigger, 2 views) + bucket privado + hooks/tabs frontend.
 
 ---
 
