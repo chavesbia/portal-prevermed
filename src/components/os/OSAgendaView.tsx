@@ -35,13 +35,16 @@ const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
   ordem_id: z.string().optional(),
+  servico_id: z.string().optional(),
   data_visita: z.date({ required_error: 'Data é obrigatória' }),
   hora_visita: z.string().optional(),
   responsavel_id: z.string().min(1, 'Responsável é obrigatório'),
-  tipo_visita: z.enum(['Avaliação', 'Coleta', 'Inspeção', 'Reunião', 'Treinamento', 'Outro']),
+  tipo_visita: z.enum(['Visita Técnica', 'Medições', 'Treinamento', 'Reunião', 'Outro']),
   endereco: z.string().optional(),
   observacoes: z.string().optional(),
   custos_deslocamento: z.string().optional(),
+  urgente: z.boolean().default(false),
+  motivo_urgencia: z.string().optional(),
 });
 type FormData = z.infer<typeof formSchema>;
 
@@ -66,7 +69,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' },
+    defaultValues: { empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' },
   });
 
   useEffect(() => {
@@ -119,19 +122,21 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const onOpenDialog = (open: boolean) => {
     setOpenDialog(open);
     if (!open) {
-      form.reset({ empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' });
+      form.reset({ empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' });
       setEquipamentosIds([]);
     }
   };
 
   const onSubmit = async (data: FormData) => {
     if (conflitos.length > 0) return;
+    if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
     const ok = await addVisita({
       empresa_cliente: data.empresa_cliente,
       ordem_id: ordem?.id || null,
       numero_os: ordem?.numero_os || null,
+      servico_id: data.servico_id && data.servico_id !== 'none' ? data.servico_id : null,
       data_visita: format(data.data_visita, 'yyyy-MM-dd'),
       hora_visita: data.hora_visita || null,
       responsavel_id: data.responsavel_id,
@@ -140,10 +145,17 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       endereco: data.endereco || null,
       observacoes: data.observacoes || null,
       custos_deslocamento: parseFloat(data.custos_deslocamento || '0') || 0,
+      urgente: data.urgente,
+      motivo_urgencia: data.urgente ? (data.motivo_urgencia || null) : null,
       equipamentos_ids: equipamentosIds,
     });
     if (ok) onOpenDialog(false);
   };
+
+  // Realizar visita: pede custo real
+  const [toRealizar, setToRealizar] = useState<OSVisita | null>(null);
+  const [custoRealInput, setCustoRealInput] = useState('');
+
 
   return (
     <div className="space-y-6">
