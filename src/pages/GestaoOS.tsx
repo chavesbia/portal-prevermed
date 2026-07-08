@@ -46,6 +46,8 @@ export default function GestaoOS() {
       <Tabs defaultValue="dashboard">
         <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="executivo">Executivo</TabsTrigger>
+          <TabsTrigger value="alertas">Alertas</TabsTrigger>
           <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
           {canEdit && <TabsTrigger value="nova">Nova OS</TabsTrigger>}
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
