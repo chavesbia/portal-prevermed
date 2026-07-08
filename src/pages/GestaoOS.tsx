@@ -11,6 +11,8 @@ import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
+import { OSAlertasView } from '@/components/os/OSAlertasView';
+import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
