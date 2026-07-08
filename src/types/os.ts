@@ -135,17 +135,16 @@ export interface OSFilters {
 export const STATUS_OS_OPTIONS: StatusOS[] = [
   'Não iniciado',
   'Em andamento',
-  'Em revisão interna',
-  'Aguardando assinatura',
-  'Aguardando cliente',
   'Encerrado',
 ];
 
 export const STATUS_SERVICO_OPTIONS: StatusServico[] = [
   'Não iniciado',
   'Em andamento',
-  'Concluído',
-  'Pendente',
+  'Agendado',
+  'Em revisão interna',
+  'Aguardando cliente',
+  'Encerrado',
 ];
 
 export const TIPO_OS_OPTIONS: TipoOS[] = ['Novo', 'Revisão'];
@@ -161,15 +160,34 @@ export const CONSELHO_OPTIONS: ConselhoProfissional[] = ['CREA', 'CRF', 'CRM', '
 export const statusOSColors: Record<string, string> = {
   'Não iniciado': 'bg-muted text-muted-foreground',
   'Em andamento': 'bg-primary text-primary-foreground',
-  'Em revisão interna': 'bg-yellow-500 text-white',
-  'Aguardando assinatura': 'bg-purple-500 text-white',
-  'Aguardando cliente': 'bg-blue-400 text-white',
   'Encerrado': 'bg-emerald-600 text-white',
 };
 
 export const statusServicoColors: Record<string, string> = {
   'Não iniciado': 'bg-muted text-muted-foreground',
   'Em andamento': 'bg-blue-500 text-white',
-  'Concluído': 'bg-emerald-600 text-white',
-  'Pendente': 'bg-yellow-500 text-white',
+  'Agendado': 'bg-indigo-500 text-white',
+  'Em revisão interna': 'bg-yellow-500 text-white',
+  'Aguardando cliente': 'bg-blue-400 text-white',
+  'Encerrado': 'bg-emerald-600 text-white',
 };
+
+// Fase 2 — SLA por OS
+export type SLAStatus = 'em_dia' | 'atencao' | 'atrasado' | 'encerrado' | 'sem_prazo';
+
+export const slaStatusColors: Record<SLAStatus, string> = {
+  em_dia: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  atencao: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  atrasado: 'bg-red-100 text-red-700 border-red-300',
+  encerrado: 'bg-muted text-muted-foreground border-border',
+  sem_prazo: 'bg-muted text-muted-foreground border-border',
+};
+
+export const slaStatusLabels: Record<SLAStatus, string> = {
+  em_dia: 'Em dia',
+  atencao: 'Atenção',
+  atrasado: 'Atrasado',
+  encerrado: 'Encerrado',
+  sem_prazo: 'Sem prazo',
+};
+
