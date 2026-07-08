@@ -422,16 +422,34 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               )}
 
               <FormField control={form.control} name="custos_deslocamento" render={({ field }) => (
-                <FormItem><FormLabel>Custos de Deslocamento (R$)</FormLabel>
+                <FormItem><FormLabel>Custo Aproximado (deslocamento, equipamentos etc.) R$</FormLabel>
                   <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
                 </FormItem>
               )} />
+
+              <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                <FormField control={form.control} name="urgente" render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <FormLabel className="!mt-0 cursor-pointer">Urgente</FormLabel>
+                  </FormItem>
+                )} />
+                {form.watch('urgente') && (
+                  <FormField control={form.control} name="motivo_urgencia" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Motivo da urgência</FormLabel>
+                      <FormControl><Textarea rows={2} {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                )}
+              </div>
 
               <FormField control={form.control} name="observacoes" render={({ field }) => (
                 <FormItem><FormLabel>Observações</FormLabel>
                   <FormControl><Textarea rows={3} {...field} /></FormControl>
                 </FormItem>
               )} />
+
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
