@@ -1,162 +1,191 @@
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Clock, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
-import { differenceInDays, parseISO } from 'date-fns';
 import { OSKPICard } from '@/components/os/OSKPICard';
-import { OrdemServico } from '@/types/os';
+import { OrdemServico, slaStatusColors, slaStatusLabels, SLAStatus } from '@/types/os';
+import { calcOSSLA } from '@/lib/os/sla';
+import { useFeriados } from '@/hooks/useFeriados';
 
 interface OSSLAViewProps {
   ordens: OrdemServico[];
 }
 
+const SLA_COLORS: Record<SLAStatus, string> = {
+  em_dia: 'hsl(142, 76%, 36%)',
+  atencao: 'hsl(38, 92%, 50%)',
+  atrasado: 'hsl(0, 84%, 60%)',
+  encerrado: 'hsl(215, 15%, 60%)',
+  sem_prazo: 'hsl(215, 15%, 40%)',
+};
+
 export function OSSLAView({ ordens }: OSSLAViewProps) {
-  const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
+  const { data: feriados } = useFeriados();
+  const feriadosISO = useMemo(() => feriados || [], [feriados]);
 
-  const slaData = encerradas.map(ordem => {
-    const reg = parseISO(ordem.data_registro);
-    const upd = parseISO(ordem.updated_at);
-    const tempoTotal = Math.max(differenceInDays(upd, reg), 1);
-    const dentroPrazo = !ordem.prazo_acordado || upd <= parseISO(ordem.prazo_acordado);
-    return {
-      numeroOS: ordem.numero_os,
-      cliente: ordem.empresa_cliente.slice(0, 15),
-      tempoTotal,
-      dentroPrazo,
-    };
-  });
+  const rows = useMemo(() => ordens.map(o => ({
+    ordem: o,
+    sla: calcOSSLA({
+      data_registro: o.data_registro,
+      prazo_acordado: o.prazo_acordado,
+      status_os: o.status_os,
+      updated_at: o.updated_at,
+      feriados: feriadosISO,
+    }),
+  })), [ordens, feriadosISO]);
 
-  const avgSLA = slaData.length > 0
-    ? Math.round(slaData.reduce((acc, s) => acc + s.tempoTotal, 0) / slaData.length)
-    : 0;
+  const abertas = rows.filter(r => r.ordem.status_os !== 'Encerrado');
+  const encerradas = rows.filter(r => r.ordem.status_os === 'Encerrado');
 
-  const dentroPrazo = slaData.filter(s => s.dentroPrazo).length;
-  const percentualDentroPrazo = slaData.length > 0
-    ? Math.round((dentroPrazo / slaData.length) * 100) : 0;
+  const kpis = {
+    emDia: abertas.filter(r => r.sla.status === 'em_dia').length,
+    atencao: abertas.filter(r => r.sla.status === 'atencao').length,
+    atrasado: abertas.filter(r => r.sla.status === 'atrasado').length,
+    encerradas: encerradas.length,
+  };
 
-  // SLA by service type
-  const svcMap: Record<string, { total: number; count: number }> = {};
-  encerradas.forEach(o => {
-    o.servicos?.forEach(s => {
-      if (!svcMap[s.tipo]) svcMap[s.tipo] = { total: 0, count: 0 };
-      const inicio = s.data_inicio ? parseISO(s.data_inicio) : parseISO(o.data_registro);
-      const fim = s.data_conclusao ? parseISO(s.data_conclusao) : parseISO(o.updated_at);
-      svcMap[s.tipo].total += Math.max(differenceInDays(fim, inicio), 1);
-      svcMap[s.tipo].count += 1;
-    });
-  });
-  const serviceSLA = Object.entries(svcMap)
-    .map(([name, d]) => ({ name: name.length > 12 ? name.slice(0, 12) + '...' : name, fullName: name, media: Math.round(d.total / d.count), count: d.count }))
-    .sort((a, b) => b.media - a.media);
+  const distStatus: { name: string; value: number; key: SLAStatus }[] = ([
+    { key: 'em_dia' as SLAStatus, name: 'Em dia', value: kpis.emDia },
+    { key: 'atencao' as SLAStatus, name: 'Atenção', value: kpis.atencao },
+    { key: 'atrasado' as SLAStatus, name: 'Atrasado', value: kpis.atrasado },
+    { key: 'encerrado' as SLAStatus, name: 'Encerradas', value: kpis.encerradas },
+  ]).filter(d => d.value > 0);
 
-  // Top 10 longest
-  const topLongest = [...slaData].sort((a, b) => b.tempoTotal - a.tempoTotal).slice(0, 10);
+  const atrasadas = rows
+    .filter(r => r.sla.status === 'atrasado')
+    .sort((a, b) => (a.sla.diasRestantes ?? 0) - (b.sla.diasRestantes ?? 0))
+    .slice(0, 10);
 
-  // Performance by responsible
+  // Tempo médio (dias úteis) por responsável entre encerradas
   const respMap: Record<string, { total: number; count: number }> = {};
-  encerradas.forEach(o => {
-    if (!respMap[o.responsavel_atual]) respMap[o.responsavel_atual] = { total: 0, count: 0 };
-    const t = Math.max(differenceInDays(parseISO(o.updated_at), parseISO(o.data_registro)), 1);
-    respMap[o.responsavel_atual].total += t;
-    respMap[o.responsavel_atual].count += 1;
+  encerradas.forEach(r => {
+    const nome = r.ordem.responsavel_atual;
+    if (!respMap[nome]) respMap[nome] = { total: 0, count: 0 };
+    respMap[nome].total += r.sla.diasCorridos;
+    respMap[nome].count += 1;
   });
   const respPerf = Object.entries(respMap).map(([name, d]) => ({
     name, media: Math.round(d.total / d.count), count: d.count,
   }));
 
-  const ChartTooltip = ({ active, payload }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="rounded-lg border bg-card p-3 shadow-lg">
-          <p className="font-medium">{payload[0].payload.fullName || payload[0].payload.name}</p>
-          <p className="text-sm text-muted-foreground">Média: {payload[0].value} dias</p>
-          {payload[0].payload.count && <p className="text-xs text-muted-foreground">{payload[0].payload.count} OS finalizadas</p>}
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight">Métricas de SLA</h2>
-        <p className="text-muted-foreground">Análise do tempo de conclusão das ordens de serviço</p>
+        <h2 className="text-xl font-bold tracking-tight">SLA das Ordens de Serviço</h2>
+        <p className="text-muted-foreground">
+          Contabilizado por OS considerando os status <strong>Não Iniciado</strong> e <strong>Em Andamento</strong>. O SLA congela ao encerrar.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <OSKPICard title="SLA Médio" value={`${avgSLA} dias`} subtitle="Tempo médio de conclusão" icon={Clock} variant="primary" />
-        <OSKPICard title="Dentro do Prazo" value={`${percentualDentroPrazo}%`} subtitle={`${dentroPrazo} de ${slaData.length} OS`} icon={CheckCircle} variant="success" />
-        <OSKPICard title="OS Finalizadas" value={encerradas.length} subtitle="Total encerradas" icon={TrendingUp} />
-        <OSKPICard title="Fora do Prazo" value={slaData.length - dentroPrazo} subtitle="OS com atraso" icon={AlertTriangle} variant={slaData.length - dentroPrazo > 0 ? 'destructive' : 'default'} />
+        <OSKPICard title="Em dia" value={kpis.emDia} subtitle="OS abertas dentro do prazo" icon={CheckCircle} variant="success" />
+        <OSKPICard title="Atenção" value={kpis.atencao} subtitle="Prazo ≤ 3 dias úteis" icon={Clock} variant="warning" />
+        <OSKPICard title="Atrasadas" value={kpis.atrasado} subtitle="OS fora do prazo" icon={AlertTriangle} variant={kpis.atrasado > 0 ? 'destructive' : 'default'} />
+        <OSKPICard title="Encerradas" value={kpis.encerradas} subtitle="SLA congelado" icon={TrendingUp} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-lg">SLA por Tipo de Serviço</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Distribuição por SLA</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-[350px]">
-              {serviceSLA.length > 0 ? (
+            <div className="h-[300px]">
+              {distStatus.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={serviceSLA} layout="vertical" margin={{ left: 10, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="hsl(var(--border))" />
-                    <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="media" radius={[0, 4, 4, 0]}>
-                      {serviceSLA.map((entry, i) => (
-                        <Cell key={i} fill={entry.media > avgSLA ? 'hsl(38, 92%, 50%)' : 'hsl(210, 100%, 50%)'} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                  <PieChart>
+                    <Pie data={distStatus} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                      {distStatus.map((d, i) => <Cell key={i} fill={SLA_COLORS[d.key]} />)}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">Sem dados de OS finalizadas</div>
+                <div className="flex items-center justify-center h-full text-muted-foreground">Sem dados</div>
               )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle className="text-lg">Top 10 — Maior Tempo de Conclusão</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">OS Atrasadas (Top 10)</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {topLongest.map((item, index) => (
-                <div key={item.numeroOS} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">{index + 1}</div>
+              {atrasadas.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">Nenhuma OS atrasada. 🎉</p>
+              )}
+              {atrasadas.map((r, i) => (
+                <div key={r.ordem.id} className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-sm font-medium text-red-700">{i + 1}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium truncate">OS #{item.numeroOS}</span>
-                      <Badge variant={item.dentroPrazo ? 'default' : 'destructive'}>{item.tempoTotal} dias</Badge>
+                      <span className="text-sm font-medium truncate">OS #{r.ordem.numero_os}</span>
+                      <Badge className={slaStatusColors[r.sla.status]}>{r.sla.label}</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{item.cliente}</p>
-                    <Progress value={Math.min((item.tempoTotal / (topLongest[0]?.tempoTotal || 1)) * 100, 100)} className="h-1.5 mt-1" />
+                    <p className="text-xs text-muted-foreground truncate">{r.ordem.empresa_cliente} · {r.ordem.responsavel_atual}</p>
                   </div>
                 </div>
               ))}
-              {topLongest.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhuma OS finalizada encontrada.</p>}
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg">Performance por Responsável</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">Tempo médio por Responsável (OS encerradas)</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {respPerf.map(resp => (
-              <div key={resp.name} className="rounded-lg border p-4">
-                <h4 className="font-medium truncate">{resp.name}</h4>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{resp.media}</span>
-                  <span className="text-sm text-muted-foreground">dias (média)</span>
+          {respPerf.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Nenhuma OS encerrada ainda.</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {respPerf.map(r => (
+                <div key={r.name} className="rounded-lg border p-4">
+                  <h4 className="font-medium truncate">{r.name}</h4>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">{r.media}</span>
+                    <span className="text-sm text-muted-foreground">dias úteis (média)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{r.count} OS encerradas</p>
+                  <Progress value={Math.min(100, r.media * 5)} className="h-2 mt-2" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{resp.count} OS finalizadas</p>
-                <Progress value={Math.max(0, 100 - (resp.media / (avgSLA || 1)) * 50)} className="h-2 mt-2" />
-              </div>
-            ))}
-            {respPerf.length === 0 && <p className="text-muted-foreground col-span-3 text-center py-4">Sem dados disponíveis</p>}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Detalhamento por OS</CardTitle></CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="pb-3 text-left font-medium text-muted-foreground">Nº OS</th>
+                  <th className="pb-3 text-left font-medium text-muted-foreground">Cliente</th>
+                  <th className="pb-3 text-left font-medium text-muted-foreground">Registro</th>
+                  <th className="pb-3 text-left font-medium text-muted-foreground">Prazo</th>
+                  <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
+                  <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.ordem.id} className="border-b hover:bg-muted/50">
+                    <td className="py-2 font-medium">{r.ordem.numero_os}</td>
+                    <td className="py-2 max-w-[220px] truncate">{r.ordem.empresa_cliente}</td>
+                    <td className="py-2 text-muted-foreground">{r.ordem.data_registro.split('-').reverse().join('/')}</td>
+                    <td className="py-2 text-muted-foreground">{r.ordem.prazo_acordado ? r.ordem.prazo_acordado.split('-').reverse().join('/') : '—'}</td>
+                    <td className="py-2"><Badge variant="outline">{r.ordem.status_os}</Badge></td>
+                    <td className="py-2"><Badge className={slaStatusColors[r.sla.status]}>{r.sla.label || slaStatusLabels[r.sla.status]}</Badge></td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">Nenhuma OS.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

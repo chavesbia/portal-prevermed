@@ -16,7 +16,9 @@ import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
 import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
 import { OSAgendarVisitaDialog } from '@/components/os/OSAgendarVisitaDialog';
-import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
+import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
+import { calcOSSLA } from '@/lib/os/sla';
+import { useFeriados } from '@/hooks/useFeriados';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -33,6 +35,8 @@ interface OSListViewProps {
 }
 
 export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onUpdateOrdem, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
+  const { data: feriadosData } = useFeriados();
+  const feriados = feriadosData || [];
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -55,7 +59,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
     const datasInicio = svcs.map(s => s.data_inicio).filter(Boolean) as string[];
     if (datasInicio.length === 0) return '-';
     const primeira = new Date(Math.min(...datasInicio.map(d => new Date(d).getTime())));
-    const todosFinalizados = svcs.every(s => s.status === 'Concluído');
+    const todosFinalizados = svcs.every(s => s.status === 'Encerrado');
     if (todosFinalizados) {
       const datasConclusao = svcs.map(s => s.data_conclusao).filter(Boolean) as string[];
       if (datasConclusao.length > 0) {
@@ -94,6 +98,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Responsável</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Tempo Total</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Ações</th>
                   </tr>
@@ -102,7 +107,14 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                   {ordens.map(ordem => {
                     const isExpanded = expandedOS.has(ordem.id);
                     const svcs = ordem.servicos || [];
-                    const concluidos = svcs.filter(s => s.status === 'Concluído').length;
+                    const concluidos = svcs.filter(s => s.status === 'Encerrado').length;
+                    const sla = calcOSSLA({
+                      data_registro: ordem.data_registro,
+                      prazo_acordado: ordem.prazo_acordado,
+                      status_os: ordem.status_os,
+                      updated_at: ordem.updated_at,
+                      feriados,
+                    });
                     return (
                       <React.Fragment key={ordem.id}>
                         <tr className="border-b hover:bg-muted/50 transition-colors">
@@ -113,9 +125,10 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                           </td>
                           <td className="py-3 font-medium">{ordem.numero_os}</td>
                           <td className="py-3 max-w-[150px] truncate">{ordem.empresa_cliente}</td>
-                          <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} concluídos</td>
+                          <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} encerrados</td>
                           <td className="py-3 hidden lg:table-cell text-muted-foreground">{ordem.responsavel_atual.split(' ')[0]}</td>
                           <td className="py-3"><Badge className={statusOSColors[ordem.status_os] || 'bg-muted'}>{ordem.status_os}</Badge></td>
+                          <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>
                           <td className="py-3 hidden xl:table-cell text-muted-foreground">{calcularTempoTotalOS(ordem)}</td>
                           <td className="py-3 text-right">
                             <DropdownMenu>
@@ -157,7 +170,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
                             <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
                             <td className="py-2 text-right">
-                              {servico.status !== 'Concluído' && (
+                              {servico.status !== 'Encerrado' && (
                                 <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
                                   <CheckSquare className="h-3 w-3 mr-1" />Finalizar
                                 </Button>

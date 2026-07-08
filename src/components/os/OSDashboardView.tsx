@@ -11,9 +11,6 @@ import { differenceInDays } from 'date-fns';
 const STATUS_COLORS: Record<string, string> = {
   'Não iniciado': 'hsl(215, 15%, 60%)',
   'Em andamento': 'hsl(210, 100%, 50%)',
-  'Em revisão interna': 'hsl(38, 92%, 50%)',
-  'Aguardando assinatura': 'hsl(280, 65%, 60%)',
-  'Aguardando cliente': 'hsl(199, 89%, 48%)',
   'Encerrado': 'hsl(142, 76%, 36%)',
 };
 
@@ -39,9 +36,9 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
 
   const stats = {
     total: ordens.length,
-    emAndamento: ordens.filter(o => o.status_os === 'Em andamento' || o.status_os === 'Em revisão interna').length,
+    emAndamento: ordens.filter(o => o.status_os === 'Em andamento').length,
     encerradas: encerradas.length,
-    pendentes: ordens.filter(o => ['Não iniciado', 'Aguardando assinatura', 'Aguardando cliente'].includes(o.status_os)).length,
+    pendentes: ordens.filter(o => o.status_os === 'Não iniciado').length,
     novos: novosCount,
     slaMedio: slaMedio.toFixed(1),
   };
