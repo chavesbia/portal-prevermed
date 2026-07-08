@@ -16,7 +16,7 @@ import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
 import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
 import { OSAgendarVisitaDialog } from '@/components/os/OSAgendarVisitaDialog';
-import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
+import { OSServicoEditDialog } from '@/components/os/OSServicoEditDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
 import { calcOSSLA } from '@/lib/os/sla';
