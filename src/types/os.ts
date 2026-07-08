@@ -1,18 +1,19 @@
 // Types matching the database schema for Ordens de Serviço
 
+// Fase 2: Status macro da OS — dispara SLA
 export type StatusOS =
   | 'Não iniciado'
   | 'Em andamento'
-  | 'Em revisão interna'
-  | 'Aguardando assinatura'
-  | 'Aguardando cliente'
   | 'Encerrado';
 
+// Fase 2: Status operacional do Serviço
 export type StatusServico =
   | 'Não iniciado'
   | 'Em andamento'
-  | 'Concluído'
-  | 'Pendente';
+  | 'Agendado'
+  | 'Em revisão interna'
+  | 'Aguardando cliente'
+  | 'Encerrado';
 
 export type TipoOS = 'Novo' | 'Revisão';
 
