@@ -36,9 +36,9 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
 
   const stats = {
     total: ordens.length,
-    emAndamento: ordens.filter(o => o.status_os === 'Em andamento' || o.status_os === 'Em revisão interna').length,
+    emAndamento: ordens.filter(o => o.status_os === 'Em andamento').length,
     encerradas: encerradas.length,
-    pendentes: ordens.filter(o => ['Não iniciado', 'Aguardando assinatura', 'Aguardando cliente'].includes(o.status_os)).length,
+    pendentes: ordens.filter(o => o.status_os === 'Não iniciado').length,
     novos: novosCount,
     slaMedio: slaMedio.toFixed(1),
   };
