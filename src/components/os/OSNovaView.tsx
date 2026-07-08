@@ -83,9 +83,24 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
         status: s.status as StatusServico,
       })),
     });
-    if (ok) form.reset();
+    if (ok) {
+      form.reset();
+      onDone?.();
+    }
     setSubmitting(false);
   };
+
+  const Wrapper = embedded
+    ? ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+    : ({ children }: { children: React.ReactNode }) => (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nova Ordem de Serviço</CardTitle>
+            <CardDescription>Cadastre uma nova OS no sistema</CardDescription>
+          </CardHeader>
+          <CardContent>{children}</CardContent>
+        </Card>
+      );
 
   return (
     <Card>
