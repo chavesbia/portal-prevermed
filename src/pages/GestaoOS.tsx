@@ -110,6 +110,10 @@ export default function GestaoOS() {
         <TabsContent value="profissionais" className="mt-6">
           <OSProfissionaisView canEdit={canEdit} />
         </TabsContent>
+
+        <TabsContent value="financeiro" className="mt-6">
+          <OSFinanceiroView />
+        </TabsContent>
       </Tabs>
     </div>
   );
