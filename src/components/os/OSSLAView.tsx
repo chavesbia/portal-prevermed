@@ -46,12 +46,12 @@ export function OSSLAView({ ordens }: OSSLAViewProps) {
     encerradas: encerradas.length,
   };
 
-  const distStatus: { name: string; value: number; key: SLAStatus }[] = [
-    { key: 'em_dia', name: 'Em dia', value: kpis.emDia },
-    { key: 'atencao', name: 'Atenção', value: kpis.atencao },
-    { key: 'atrasado', name: 'Atrasado', value: kpis.atrasado },
-    { key: 'encerrado', name: 'Encerradas', value: kpis.encerradas },
-  ].filter(d => d.value > 0);
+  const distStatus: { name: string; value: number; key: SLAStatus }[] = ([
+    { key: 'em_dia' as SLAStatus, name: 'Em dia', value: kpis.emDia },
+    { key: 'atencao' as SLAStatus, name: 'Atenção', value: kpis.atencao },
+    { key: 'atrasado' as SLAStatus, name: 'Atrasado', value: kpis.atrasado },
+    { key: 'encerrado' as SLAStatus, name: 'Encerradas', value: kpis.encerradas },
+  ]).filter(d => d.value > 0);
 
   const atrasadas = rows
     .filter(r => r.sla.status === 'atrasado')
