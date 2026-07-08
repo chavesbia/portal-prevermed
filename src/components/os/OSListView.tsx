@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Pencil, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare } from 'lucide-react';
+import { Eye, Pencil, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare, CalendarPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import { OSDetailDialog } from '@/components/os/OSDetailDialog';
 import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
 import { OSEditDialog } from '@/components/os/OSEditDialog';
 import { OSFinalizarServicoDialog } from '@/components/os/OSFinalizarServicoDialog';
+import { OSAgendarVisitaDialog } from '@/components/os/OSAgendarVisitaDialog';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS } from '@/types/os';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,6 +37,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
   const [showDetail, setShowDetail] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showAgendar, setShowAgendar] = useState(false);
   const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
@@ -125,6 +127,9 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowEdit(true); }}>
                                   <Pencil className="mr-2 h-4 w-4" />Editar
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowAgendar(true); }}>
+                                  <CalendarPlus className="mr-2 h-4 w-4" />Agendar Visita
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowHistory(true); }}>
                                   <History className="mr-2 h-4 w-4" />Histórico
                                 </DropdownMenuItem>
@@ -175,6 +180,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
           <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
           <OSEditDialog ordem={selectedOS} open={showEdit} onOpenChange={setShowEdit} responsaveis={responsaveis} onUpdate={onUpdateOrdem} />
           <OSHistoryDialog ordem={selectedOS} open={showHistory} onOpenChange={setShowHistory} onGetHistorico={onGetHistorico} />
+          <OSAgendarVisitaDialog ordem={selectedOS} open={showAgendar} onOpenChange={setShowAgendar} />
         </>
       )}
 
