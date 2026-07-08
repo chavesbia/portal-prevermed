@@ -26,6 +26,7 @@ export interface NovaVisitaInput {
   empresa_cliente: string;
   ordem_id?: string | null;
   numero_os?: string | null;
+  servico_id?: string | null;
   data_visita: string;
   hora_visita?: string | null;
   responsavel_id?: string | null;
@@ -34,6 +35,8 @@ export interface NovaVisitaInput {
   endereco?: string | null;
   observacoes?: string | null;
   custos_deslocamento?: number;
+  urgente?: boolean;
+  motivo_urgencia?: string | null;
   equipamentos_ids?: string[];
 }
 
@@ -81,6 +84,7 @@ export function useOSVisitas() {
           empresa_cliente: input.empresa_cliente,
           ordem_id: input.ordem_id || null,
           numero_os: input.numero_os || null,
+          servico_id: input.servico_id || null,
           data_visita: input.data_visita,
           hora_visita: input.hora_visita || null,
           responsavel_id: input.responsavel_id || null,
@@ -90,6 +94,8 @@ export function useOSVisitas() {
           endereco: input.endereco || null,
           observacoes: input.observacoes || null,
           custos_deslocamento: input.custos_deslocamento || 0,
+          urgente: input.urgente || false,
+          motivo_urgencia: input.motivo_urgencia || null,
           created_by: user?.id || null,
         } as any)
         .select()
@@ -111,16 +117,15 @@ export function useOSVisitas() {
     }
   };
 
-  const updateVisitaStatus = async (id: string, status: VisitaStatus, motivo?: string) => {
+  const updateVisitaStatus = async (id: string, status: VisitaStatus, motivo?: string, custoReal?: number) => {
     try {
-      const { error } = await supabase
-        .from('os_visitas')
-        .update({
-          status,
-          motivo_cancelamento: status === 'cancelada' ? (motivo || null) : null,
-          updated_by: user?.id || null,
-        })
-        .eq('id', id);
+      const payload: any = {
+        status,
+        motivo_cancelamento: status === 'cancelada' ? (motivo || null) : null,
+        updated_by: user?.id || null,
+      };
+      if (status === 'realizada' && typeof custoReal === 'number') payload.custo_real = custoReal;
+      const { error } = await supabase.from('os_visitas').update(payload).eq('id', id);
       if (error) throw error;
       await fetchVisitas();
       return true;
