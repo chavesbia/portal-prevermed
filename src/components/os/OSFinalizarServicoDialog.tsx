@@ -87,10 +87,10 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
     const tipo = tiposLaudo.find(t => t.id === form.tipoLaudoId)!;
     const resp = responsaveis.find(r => r.id === form.responsavelTecnicoId)!;
 
-    // Update service status to 'Concluído' with conclusion date
+    // Update service status to Encerrado with conclusion date
     const { error: svcErr } = await supabase
       .from('servicos_os')
-      .update({ status: 'Concluído', data_conclusao: new Date().toISOString().split('T')[0] } as any)
+      .update({ status: 'Encerrado', data_conclusao: new Date().toISOString().split('T')[0] } as any)
       .eq('id', servico.id);
     if (svcErr) { toast({ title: 'Erro', description: 'Erro ao finalizar serviço.', variant: 'destructive' }); return; }
 
@@ -122,13 +122,13 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       acao: 'Finalização de Serviço',
       comentario: `Serviço ${servico.tipo} finalizado com laudo ${tipo.nome}. RT: ${resp.nome} (${resp.conselho} ${resp.numero_registro})`,
       status_anterior: servico.status,
-      status_novo: 'Concluído',
+      status_novo: 'Encerrado',
       servico_afetado: servico.tipo,
     });
 
     // Check if all services are completed -> auto-close OS
     const { data: allSvcs } = await supabase.from('servicos_os').select('status').eq('ordem_id', ordem.id);
-    if (allSvcs && allSvcs.every(s => s.status === 'Concluído')) {
+    if (allSvcs && allSvcs.every(s => s.status === 'Encerrado')) {
       await supabase.from('ordens_servico').update({ status_os: 'Encerrado', updated_by: user?.id || null } as any).eq('id', ordem.id);
       await supabase.from('historico_os').insert({
         ordem_id: ordem.id,

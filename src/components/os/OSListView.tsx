@@ -55,7 +55,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
     const datasInicio = svcs.map(s => s.data_inicio).filter(Boolean) as string[];
     if (datasInicio.length === 0) return '-';
     const primeira = new Date(Math.min(...datasInicio.map(d => new Date(d).getTime())));
-    const todosFinalizados = svcs.every(s => s.status === 'Concluído');
+    const todosFinalizados = svcs.every(s => s.status === 'Encerrado');
     if (todosFinalizados) {
       const datasConclusao = svcs.map(s => s.data_conclusao).filter(Boolean) as string[];
       if (datasConclusao.length > 0) {
@@ -102,7 +102,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                   {ordens.map(ordem => {
                     const isExpanded = expandedOS.has(ordem.id);
                     const svcs = ordem.servicos || [];
-                    const concluidos = svcs.filter(s => s.status === 'Concluído').length;
+                    const concluidos = svcs.filter(s => s.status === 'Encerrado').length;
                     return (
                       <React.Fragment key={ordem.id}>
                         <tr className="border-b hover:bg-muted/50 transition-colors">
@@ -157,7 +157,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
                             <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
                             <td className="py-2 text-right">
-                              {servico.status !== 'Concluído' && (
+                              {servico.status !== 'Encerrado' && (
                                 <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
                                   <CheckSquare className="h-3 w-3 mr-1" />Finalizar
                                 </Button>
