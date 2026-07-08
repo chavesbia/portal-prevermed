@@ -1,0 +1,1 @@
+ALTER VIEW public.vw_os_financeiro SET (security_invoker = true);
