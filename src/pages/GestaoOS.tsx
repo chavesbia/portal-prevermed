@@ -10,6 +10,7 @@ import { OSAgendaView } from '@/components/os/OSAgendaView';
 import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
+import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
@@ -51,6 +52,7 @@ export default function GestaoOS() {
           <TabsTrigger value="sla">SLA</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
@@ -107,6 +109,10 @@ export default function GestaoOS() {
 
         <TabsContent value="profissionais" className="mt-6">
           <OSProfissionaisView canEdit={canEdit} />
+        </TabsContent>
+
+        <TabsContent value="financeiro" className="mt-6">
+          <OSFinanceiroView />
         </TabsContent>
       </Tabs>
     </div>

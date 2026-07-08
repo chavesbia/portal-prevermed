@@ -2958,6 +2958,13 @@ export type Database = {
             referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "historico_os_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
+          },
         ]
       }
       laudos: {
@@ -3031,6 +3038,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
           },
           {
             foreignKeyName: "laudos_responsavel_tecnico_id_fkey"
@@ -3642,6 +3656,7 @@ export type Database = {
       ordens_servico: {
         Row: {
           contato_cliente: string | null
+          contrato_id: string | null
           created_at: string
           created_by: string | null
           data_emissao: string | null
@@ -3650,7 +3665,10 @@ export type Database = {
           id: string
           numero_os: string
           observacoes: string | null
+          orcamento_custo: number | null
           prazo_acordado: string | null
+          quotation_id: string | null
+          receita_prevista: number | null
           responsavel_atual: string
           status_os: string
           tipo_servico_resumo: string | null
@@ -3659,6 +3677,7 @@ export type Database = {
         }
         Insert: {
           contato_cliente?: string | null
+          contrato_id?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string | null
@@ -3667,7 +3686,10 @@ export type Database = {
           id?: string
           numero_os: string
           observacoes?: string | null
+          orcamento_custo?: number | null
           prazo_acordado?: string | null
+          quotation_id?: string | null
+          receita_prevista?: number | null
           responsavel_atual: string
           status_os?: string
           tipo_servico_resumo?: string | null
@@ -3676,6 +3698,7 @@ export type Database = {
         }
         Update: {
           contato_cliente?: string | null
+          contrato_id?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string | null
@@ -3684,14 +3707,32 @@ export type Database = {
           id?: string
           numero_os?: string
           observacoes?: string | null
+          orcamento_custo?: number | null
           prazo_acordado?: string | null
+          quotation_id?: string | null
+          receita_prevista?: number | null
           responsavel_atual?: string
           status_os?: string
           tipo_servico_resumo?: string | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       os_custos: {
         Row: {
@@ -3752,6 +3793,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_custos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
           },
           {
             foreignKeyName: "os_custos_profissional_id_fkey"
@@ -3847,6 +3895,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_equipamento_historico_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
           },
         ]
       }
@@ -4014,6 +4069,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ordens_servico"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_visitas_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
           },
         ]
       }
@@ -5142,6 +5204,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "servicos_os_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
+          },
+          {
             foreignKeyName: "servicos_os_responsavel_id_fkey"
             columns: ["responsavel_id"]
             isOneToOne: false
@@ -5476,6 +5545,42 @@ export type Database = {
             columns: ["setor_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vw_os_financeiro: {
+        Row: {
+          contrato_id: string | null
+          custo_estourado: boolean | null
+          custo_total: number | null
+          data_emissao: string | null
+          data_registro: string | null
+          empresa_cliente: string | null
+          margem_percent: number | null
+          margem_valor: number | null
+          numero_os: string | null
+          orcamento_custo: number | null
+          ordem_id: string | null
+          prazo_acordado: string | null
+          quotation_id: string | null
+          receita_prevista: number | null
+          responsavel_atual: string | null
+          status_os: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
             referencedColumns: ["id"]
           },
         ]
