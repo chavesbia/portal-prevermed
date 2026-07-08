@@ -51,6 +51,8 @@ export interface OrdemServico {
   quotation_id: string | null;
   receita_prevista: number | null;
   orcamento_custo: number | null;
+  urgente: boolean;
+  motivo_urgencia: string | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;

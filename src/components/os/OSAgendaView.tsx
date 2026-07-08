@@ -35,13 +35,16 @@ const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
   ordem_id: z.string().optional(),
+  servico_id: z.string().optional(),
   data_visita: z.date({ required_error: 'Data é obrigatória' }),
   hora_visita: z.string().optional(),
   responsavel_id: z.string().min(1, 'Responsável é obrigatório'),
-  tipo_visita: z.enum(['Avaliação', 'Coleta', 'Inspeção', 'Reunião', 'Treinamento', 'Outro']),
+  tipo_visita: z.enum(['Visita Técnica', 'Medições', 'Treinamento', 'Reunião', 'Outro']),
   endereco: z.string().optional(),
   observacoes: z.string().optional(),
   custos_deslocamento: z.string().optional(),
+  urgente: z.boolean().default(false),
+  motivo_urgencia: z.string().optional(),
 });
 type FormData = z.infer<typeof formSchema>;
 
@@ -66,7 +69,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: { empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' },
+    defaultValues: { empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' },
   });
 
   useEffect(() => {
@@ -119,19 +122,21 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const onOpenDialog = (open: boolean) => {
     setOpenDialog(open);
     if (!open) {
-      form.reset({ empresa_cliente: '', tipo_visita: 'Avaliação', custos_deslocamento: '' });
+      form.reset({ empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' });
       setEquipamentosIds([]);
     }
   };
 
   const onSubmit = async (data: FormData) => {
     if (conflitos.length > 0) return;
+    if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
     const ok = await addVisita({
       empresa_cliente: data.empresa_cliente,
       ordem_id: ordem?.id || null,
       numero_os: ordem?.numero_os || null,
+      servico_id: data.servico_id && data.servico_id !== 'none' ? data.servico_id : null,
       data_visita: format(data.data_visita, 'yyyy-MM-dd'),
       hora_visita: data.hora_visita || null,
       responsavel_id: data.responsavel_id,
@@ -140,21 +145,28 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       endereco: data.endereco || null,
       observacoes: data.observacoes || null,
       custos_deslocamento: parseFloat(data.custos_deslocamento || '0') || 0,
+      urgente: data.urgente,
+      motivo_urgencia: data.urgente ? (data.motivo_urgencia || null) : null,
       equipamentos_ids: equipamentosIds,
     });
     if (ok) onOpenDialog(false);
   };
 
+  // Realizar visita: pede custo real
+  const [toRealizar, setToRealizar] = useState<OSVisita | null>(null);
+  const [custoRealInput, setCustoRealInput] = useState('');
+
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Agenda de Visitas Técnicas</h2>
+          <h2 className="text-xl font-semibold">Agenda</h2>
           <p className="text-sm text-muted-foreground">Agendamentos vinculados (ou não) a Ordens de Serviço.</p>
         </div>
         {canEdit && (
           <Button onClick={() => onOpenDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Nova Visita
+            <Plus className="mr-2 h-4 w-4" /> Agendar
           </Button>
         )}
       </div>
@@ -231,6 +243,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                           <Badge className={visitaStatusColors[v.status]}>{visitaStatusLabel[v.status]}</Badge>
                           <Badge variant="outline">{v.tipo_visita}</Badge>
                           {v.numero_os && <Badge variant="outline" className="font-mono">OS #{v.numero_os}</Badge>}
+                          {v.urgente && <Badge variant="destructive">URGENTE</Badge>}
                         </div>
                         <h3 className="font-semibold">{v.empresa_cliente}</h3>
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
@@ -246,7 +259,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
                         {canEdit && v.status === 'agendada' && (
                           <>
-                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => updateVisitaStatus(v.id, 'realizada')}>Realizada</Button>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
                         )}
@@ -268,13 +281,13 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       {/* Dialog Nova Visita */}
       <Dialog open={openDialog} onOpenChange={onOpenDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Agendar Visita Técnica</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Agenda</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>OS vinculada (opcional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(v) => { field.onChange(v); form.setValue('servico_id', 'none'); }} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Sem OS vinculada" /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="none">Sem OS vinculada</SelectItem>
@@ -283,6 +296,26 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                   </Select>
                 </FormItem>
               )} />
+
+              {watchedOrdemId && watchedOrdemId !== 'none' && (() => {
+                const os = ordens.find(o => o.id === watchedOrdemId);
+                const svcs = os?.servicos || [];
+                if (svcs.length === 0) return null;
+                return (
+                  <FormField control={form.control} name="servico_id" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Serviço da OS</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="OS inteira" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">— OS inteira —</SelectItem>
+                          {svcs.map(s => <SelectItem key={s.id} value={s.id}>{s.tipo} ({s.tipo_os})</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                );
+              })()}
 
               <FormField control={form.control} name="empresa_cliente" render={({ field }) => (
                 <FormItem>
@@ -389,16 +422,34 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               )}
 
               <FormField control={form.control} name="custos_deslocamento" render={({ field }) => (
-                <FormItem><FormLabel>Custos de Deslocamento (R$)</FormLabel>
+                <FormItem><FormLabel>Custo Aproximado (deslocamento, equipamentos etc.) R$</FormLabel>
                   <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
                 </FormItem>
               )} />
+
+              <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+                <FormField control={form.control} name="urgente" render={({ field }) => (
+                  <FormItem className="flex items-center gap-2 space-y-0">
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <FormLabel className="!mt-0 cursor-pointer">Urgente</FormLabel>
+                  </FormItem>
+                )} />
+                {form.watch('urgente') && (
+                  <FormField control={form.control} name="motivo_urgencia" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Motivo da urgência</FormLabel>
+                      <FormControl><Textarea rows={2} {...field} /></FormControl>
+                    </FormItem>
+                  )} />
+                )}
+              </div>
 
               <FormField control={form.control} name="observacoes" render={({ field }) => (
                 <FormItem><FormLabel>Observações</FormLabel>
                   <FormControl><Textarea rows={3} {...field} /></FormControl>
                 </FormItem>
               )} />
+
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
@@ -413,27 +464,37 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       <Dialog open={!!selectedView} onOpenChange={o => !o && setSelectedView(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Detalhes da Visita</DialogTitle></DialogHeader>
-          {selectedView && (
-            <div className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <Badge className={visitaStatusColors[selectedView.status]}>{visitaStatusLabel[selectedView.status]}</Badge>
-                <Badge variant="outline">{selectedView.tipo_visita}</Badge>
-                {selectedView.numero_os && <Badge variant="outline" className="font-mono">OS #{selectedView.numero_os}</Badge>}
+          {selectedView && (() => {
+            const os = selectedView.ordem_id ? ordens.find(o => o.id === selectedView.ordem_id) : null;
+            const svc = selectedView.servico_id && os ? os.servicos?.find(s => s.id === selectedView.servico_id) : null;
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={visitaStatusColors[selectedView.status]}>{visitaStatusLabel[selectedView.status]}</Badge>
+                  <Badge variant="outline">{selectedView.tipo_visita}</Badge>
+                  {selectedView.numero_os && <Badge variant="outline" className="font-mono">OS #{selectedView.numero_os}</Badge>}
+                  {selectedView.urgente && <Badge variant="destructive">URGENTE</Badge>}
+                </div>
+                <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
+                {svc && <div><span className="text-muted-foreground">Serviço:</span> {svc.tipo} ({svc.tipo_os})</div>}
+                <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
+                <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
+                <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco || <span className="italic text-muted-foreground">Não informado</span>}</div>
+                {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
+                  <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
+                )}
+                <div><span className="text-muted-foreground">Custo aproximado:</span> {formatBRL(selectedView.custos_deslocamento || 0)}</div>
+                {selectedView.status === 'realizada' && (
+                  <div><span className="text-muted-foreground">Custo real:</span> {formatBRL((selectedView as any).custo_real || 0)}</div>
+                )}
+                {selectedView.urgente && selectedView.motivo_urgencia && (
+                  <div className="text-destructive"><span className="text-muted-foreground">Motivo da urgência:</span> {selectedView.motivo_urgencia}</div>
+                )}
+                {selectedView.observacoes && <div><span className="text-muted-foreground">Observações:</span> {selectedView.observacoes}</div>}
+                {selectedView.motivo_cancelamento && <div className="text-destructive"><span className="text-muted-foreground">Motivo do cancelamento:</span> {selectedView.motivo_cancelamento}</div>}
               </div>
-              <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
-              <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
-              <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
-              {selectedView.endereco && <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco}</div>}
-              {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
-                <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
-              )}
-              {selectedView.custos_deslocamento > 0 && (
-                <div><span className="text-muted-foreground">Custos de deslocamento:</span> {formatBRL(selectedView.custos_deslocamento)}</div>
-              )}
-              {selectedView.observacoes && <div><span className="text-muted-foreground">Observações:</span> {selectedView.observacoes}</div>}
-              {selectedView.motivo_cancelamento && <div className="text-destructive"><span className="text-muted-foreground">Motivo do cancelamento:</span> {selectedView.motivo_cancelamento}</div>}
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
@@ -469,6 +530,33 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Marcar como realizada — solicita custo real */}
+      <Dialog open={!!toRealizar} onOpenChange={o => !o && setToRealizar(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Marcar visita como realizada</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            {toRealizar && (
+              <div className="text-muted-foreground">
+                Custo aproximado informado no agendamento: <strong>{formatBRL(toRealizar.custos_deslocamento || 0)}</strong>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Custo real (deslocamento + extras) R$</Label>
+              <Input type="number" step="0.01" min="0" value={custoRealInput} onChange={e => setCustoRealInput(e.target.value)} placeholder="0,00" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
+            <Button onClick={async () => {
+              if (!toRealizar) return;
+              const val = parseFloat(custoRealInput || '0') || 0;
+              await updateVisitaStatus(toRealizar.id, 'realizada', undefined, val);
+              setToRealizar(null);
+            }}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

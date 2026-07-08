@@ -43,7 +43,7 @@ export default function GestaoOS() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
-          <p className="text-muted-foreground">Controle de Ordens de Serviço — Engenharia</p>
+          <p className="text-muted-foreground">Controle de Ordens de Serviço</p>
         </div>
         {canEdit && (
           <Button onClick={() => setNovaOpen(true)}>

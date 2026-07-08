@@ -99,7 +99,6 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                     <th className="pb-3 text-left font-medium text-muted-foreground">Nº OS</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Cliente</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Responsável</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Tempo Total</th>
@@ -126,10 +125,12 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </Button>
                           </td>
-                          <td className="py-3 font-medium">{ordem.numero_os}</td>
+                          <td className="py-3 font-medium">
+                            {ordem.numero_os}
+                            {(ordem as any).urgente && <Badge variant="destructive" className="ml-2 text-[10px]">URGENTE</Badge>}
+                          </td>
                           <td className="py-3 max-w-[150px] truncate">{ordem.empresa_cliente}</td>
                           <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} encerrados</td>
-                          <td className="py-3 hidden lg:table-cell text-muted-foreground">{ordem.responsavel_atual.split(' ')[0]}</td>
                           <td className="py-3"><Badge className={statusOSColors[ordem.status_os] || 'bg-muted'}>{ordem.status_os}</Badge></td>
                           <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>
                           <td className="py-3 hidden xl:table-cell text-muted-foreground">{calcularTempoTotalOS(ordem)}</td>
@@ -160,8 +161,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                         {isExpanded && svcs.map(servico => (
                           <tr
                             key={servico.id}
-                            className="bg-muted/30 border-b last:border-0 hover:bg-muted/60 cursor-pointer"
-                            onClick={() => setEditServico({ ordem, servico })}
+                            className="bg-muted/30 border-b last:border-0 hover:bg-muted/60"
                           >
                             <td className="py-2" />
                             <td className="py-2 pl-4 text-muted-foreground">↳</td>
@@ -169,23 +169,29 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             <td className="py-2 hidden md:table-cell">
                               <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
                             </td>
+                            <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
                             <td className="py-2 hidden lg:table-cell text-xs text-muted-foreground">
                               {servico.data_inicio ? format(parseISO(servico.data_inicio), 'dd/MM/yy', { locale: ptBR }) : '-'}
                               {' → '}
                               {servico.data_conclusao ? format(parseISO(servico.data_conclusao), 'dd/MM/yy', { locale: ptBR }) : 'Aberto'}
                             </td>
-                            <td className="py-2"><Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge></td>
-                            <td className="py-2" />
                             <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
-                            <td className="py-2 text-right" onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setEditServico({ ordem, servico })}>
-                                <Pencil className="h-3 w-3 mr-1" />Editar
-                              </Button>
-                              {servico.status !== 'Encerrado' && (
-                                <Button variant="ghost" size="sm" className="text-xs" onClick={() => setFinalizarServico({ ordem, servico })}>
-                                  <CheckSquare className="h-3 w-3 mr-1" />Finalizar
-                                </Button>
-                              )}
+                            <td className="py-2 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => setEditServico({ ordem, servico })}>
+                                    <Pencil className="mr-2 h-4 w-4" />Editar
+                                  </DropdownMenuItem>
+                                  {servico.status !== 'Encerrado' && (
+                                    <DropdownMenuItem onClick={() => setFinalizarServico({ ordem, servico })}>
+                                      <CheckSquare className="mr-2 h-4 w-4" />Finalizar
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </td>
                           </tr>
                         ))}

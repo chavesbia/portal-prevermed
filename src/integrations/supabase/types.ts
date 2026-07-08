@@ -3663,6 +3663,7 @@ export type Database = {
           data_registro: string
           empresa_cliente: string
           id: string
+          motivo_urgencia: string | null
           numero_os: string
           observacoes: string | null
           orcamento_custo: number | null
@@ -3674,6 +3675,7 @@ export type Database = {
           tipo_servico_resumo: string | null
           updated_at: string
           updated_by: string | null
+          urgente: boolean
         }
         Insert: {
           contato_cliente?: string | null
@@ -3684,6 +3686,7 @@ export type Database = {
           data_registro?: string
           empresa_cliente: string
           id?: string
+          motivo_urgencia?: string | null
           numero_os: string
           observacoes?: string | null
           orcamento_custo?: number | null
@@ -3695,6 +3698,7 @@ export type Database = {
           tipo_servico_resumo?: string | null
           updated_at?: string
           updated_by?: string | null
+          urgente?: boolean
         }
         Update: {
           contato_cliente?: string | null
@@ -3705,6 +3709,7 @@ export type Database = {
           data_registro?: string
           empresa_cliente?: string
           id?: string
+          motivo_urgencia?: string | null
           numero_os?: string
           observacoes?: string | null
           orcamento_custo?: number | null
@@ -3716,6 +3721,7 @@ export type Database = {
           tipo_servico_resumo?: string | null
           updated_at?: string
           updated_by?: string | null
+          urgente?: boolean
         }
         Relationships: [
           {
@@ -4075,6 +4081,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          custo_real: number
           custos_deslocamento: number
           data_visita: string
           empresa_cliente: string
@@ -4082,19 +4089,23 @@ export type Database = {
           hora_visita: string | null
           id: string
           motivo_cancelamento: string | null
+          motivo_urgencia: string | null
           numero_os: string | null
           observacoes: string | null
           ordem_id: string | null
           responsavel_id: string | null
           responsavel_nome: string
+          servico_id: string | null
           status: Database["public"]["Enums"]["visita_status"]
-          tipo_visita: Database["public"]["Enums"]["visita_tipo"]
+          tipo_visita: string
           updated_at: string
           updated_by: string | null
+          urgente: boolean
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          custo_real?: number
           custos_deslocamento?: number
           data_visita: string
           empresa_cliente: string
@@ -4102,19 +4113,23 @@ export type Database = {
           hora_visita?: string | null
           id?: string
           motivo_cancelamento?: string | null
+          motivo_urgencia?: string | null
           numero_os?: string | null
           observacoes?: string | null
           ordem_id?: string | null
           responsavel_id?: string | null
           responsavel_nome: string
+          servico_id?: string | null
           status?: Database["public"]["Enums"]["visita_status"]
-          tipo_visita?: Database["public"]["Enums"]["visita_tipo"]
+          tipo_visita?: string
           updated_at?: string
           updated_by?: string | null
+          urgente?: boolean
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          custo_real?: number
           custos_deslocamento?: number
           data_visita?: string
           empresa_cliente?: string
@@ -4122,15 +4137,18 @@ export type Database = {
           hora_visita?: string | null
           id?: string
           motivo_cancelamento?: string | null
+          motivo_urgencia?: string | null
           numero_os?: string | null
           observacoes?: string | null
           ordem_id?: string | null
           responsavel_id?: string | null
           responsavel_nome?: string
+          servico_id?: string | null
           status?: Database["public"]["Enums"]["visita_status"]
-          tipo_visita?: Database["public"]["Enums"]["visita_tipo"]
+          tipo_visita?: string
           updated_at?: string
           updated_by?: string | null
+          urgente?: boolean
         }
         Relationships: [
           {
@@ -4146,6 +4164,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_os_financeiro"
             referencedColumns: ["ordem_id"]
+          },
+          {
+            foreignKeyName: "os_visitas_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: false
+            referencedRelation: "servicos_os"
+            referencedColumns: ["id"]
           },
         ]
       }

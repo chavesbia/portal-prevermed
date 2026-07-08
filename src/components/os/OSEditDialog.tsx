@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -31,10 +32,11 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
   const [contatoCliente, setContatoCliente] = useState(ordem.contato_cliente || '');
   const [responsavel, setResponsavel] = useState(ordem.responsavel_atual);
   const [statusOS, setStatusOS] = useState<StatusOS>(ordem.status_os as StatusOS);
-  const [dataRegistro, setDataRegistro] = useState<Date | undefined>(ordem.data_registro ? parseISO(ordem.data_registro) : undefined);
-  const [dataEmissao, setDataEmissao] = useState<Date | undefined>(ordem.data_emissao ? parseISO(ordem.data_emissao) : undefined);
+  const [dataEmissao, setDataEmissao] = useState<Date | undefined>(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
   const [prazoAcordado, setPrazoAcordado] = useState<Date | undefined>(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
   const [observacoes, setObservacoes] = useState(ordem.observacoes || '');
+  const [urgente, setUrgente] = useState<boolean>(!!ordem.urgente);
+  const [motivoUrgencia, setMotivoUrgencia] = useState<string>(ordem.motivo_urgencia || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -44,25 +46,30 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
     setContatoCliente(ordem.contato_cliente || '');
     setResponsavel(ordem.responsavel_atual);
     setStatusOS(ordem.status_os as StatusOS);
-    setDataRegistro(ordem.data_registro ? parseISO(ordem.data_registro) : undefined);
-    setDataEmissao(ordem.data_emissao ? parseISO(ordem.data_emissao) : undefined);
+    setDataEmissao(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
     setPrazoAcordado(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
     setObservacoes(ordem.observacoes || '');
+    setUrgente(!!ordem.urgente);
+    setMotivoUrgencia(ordem.motivo_urgencia || '');
   }, [ordem, open]);
 
   const handleSave = async () => {
-    if (!numeroOS || !empresaCliente || !responsavel || !statusOS || !dataRegistro) return;
+    if (!numeroOS || !empresaCliente || !responsavel || !dataEmissao) return;
+    if (urgente && !motivoUrgencia.trim()) return;
     setSaving(true);
+    const dataEmissaoStr = format(dataEmissao, 'yyyy-MM-dd');
     const ok = await onUpdate(ordem.id, {
       numero_os: numeroOS,
       empresa_cliente: empresaCliente,
       contato_cliente: contatoCliente || null,
       responsavel_atual: responsavel,
       status_os: statusOS,
-      data_registro: format(dataRegistro, 'yyyy-MM-dd'),
-      data_emissao: dataEmissao ? format(dataEmissao, 'yyyy-MM-dd') : null,
+      data_registro: dataEmissaoStr,
+      data_emissao: dataEmissaoStr,
       prazo_acordado: prazoAcordado ? format(prazoAcordado, 'yyyy-MM-dd') : null,
       observacoes: observacoes || null,
+      urgente,
+      motivo_urgencia: urgente ? motivoUrgencia : null,
     });
     setSaving(false);
     if (ok) onOpenChange(false);
@@ -127,10 +134,20 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
                 {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">Normalmente automático conforme os serviços.</p>
           </div>
-          {dateField('Data de Registro', dataRegistro, setDataRegistro)}
           {dateField('Data de Emissão', dataEmissao, setDataEmissao)}
-          {dateField('Prazo Acordado', prazoAcordado, setPrazoAcordado)}
+          {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
+        </div>
+
+        <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+          <div className="flex items-center gap-2">
+            <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
+            <Label htmlFor="urg-edit" className="cursor-pointer">Urgente</Label>
+          </div>
+          {urgente && (
+            <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
+          )}
         </div>
 
         <div className="space-y-2">
