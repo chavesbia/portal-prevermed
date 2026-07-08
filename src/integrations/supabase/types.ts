@@ -3734,6 +3734,76 @@ export type Database = {
           },
         ]
       }
+      os_anexos: {
+        Row: {
+          categoria: Database["public"]["Enums"]["os_anexo_categoria"]
+          created_at: string
+          created_by: string | null
+          data_vencimento: string | null
+          descricao: string | null
+          id: string
+          mime_type: string | null
+          nome: string
+          ordem_id: string
+          servico_os_id: string | null
+          storage_path: string
+          tamanho_bytes: number | null
+          updated_at: string
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["os_anexo_categoria"]
+          created_at?: string
+          created_by?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          id?: string
+          mime_type?: string | null
+          nome: string
+          ordem_id: string
+          servico_os_id?: string | null
+          storage_path: string
+          tamanho_bytes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["os_anexo_categoria"]
+          created_at?: string
+          created_by?: string | null
+          data_vencimento?: string | null
+          descricao?: string | null
+          id?: string
+          mime_type?: string | null
+          nome?: string
+          ordem_id?: string
+          servico_os_id?: string | null
+          storage_path?: string
+          tamanho_bytes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_anexos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_anexos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_os_financeiro"
+            referencedColumns: ["ordem_id"]
+          },
+          {
+            foreignKeyName: "os_anexos_servico_os_id_fkey"
+            columns: ["servico_os_id"]
+            isOneToOne: false
+            referencedRelation: "servicos_os"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       os_custos: {
         Row: {
           anexo_url: string | null
@@ -5549,6 +5619,19 @@ export type Database = {
           },
         ]
       }
+      vw_os_alertas: {
+        Row: {
+          descricao: string | null
+          empresa_cliente: string | null
+          numero_os: string | null
+          ordem_id: string | null
+          referencia_data: string | null
+          responsavel_atual: string | null
+          severidade: string | null
+          tipo: string | null
+        }
+        Relationships: []
+      }
       vw_os_financeiro: {
         Row: {
           contrato_id: string | null
@@ -5584,6 +5667,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vw_os_produtividade: {
+        Row: {
+          os_atrasadas: number | null
+          os_em_andamento: number | null
+          os_encerradas: number | null
+          responsavel: string | null
+          servicos_encerrados: number | null
+          tempo_medio_dias: number | null
+          total_os: number | null
+          total_servicos: number | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -5889,6 +5985,13 @@ export type Database = {
         | "duvida"
         | "sugestao"
         | "ocorrencia"
+      os_anexo_categoria:
+        | "contrato"
+        | "art"
+        | "laudo"
+        | "foto"
+        | "relatorio"
+        | "outro"
       os_custo_tipo:
         | "profissional_externo"
         | "art"
@@ -6206,6 +6309,14 @@ export const Constants = {
         "duvida",
         "sugestao",
         "ocorrencia",
+      ],
+      os_anexo_categoria: [
+        "contrato",
+        "art",
+        "laudo",
+        "foto",
+        "relatorio",
+        "outro",
       ],
       os_custo_tipo: [
         "profissional_externo",
