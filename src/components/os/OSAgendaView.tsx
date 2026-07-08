@@ -530,6 +530,33 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Marcar como realizada — solicita custo real */}
+      <Dialog open={!!toRealizar} onOpenChange={o => !o && setToRealizar(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Marcar visita como realizada</DialogTitle></DialogHeader>
+          <div className="space-y-3 text-sm">
+            {toRealizar && (
+              <div className="text-muted-foreground">
+                Custo aproximado informado no agendamento: <strong>{formatBRL(toRealizar.custos_deslocamento || 0)}</strong>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Custo real (deslocamento + extras) R$</Label>
+              <Input type="number" step="0.01" min="0" value={custoRealInput} onChange={e => setCustoRealInput(e.target.value)} placeholder="0,00" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
+            <Button onClick={async () => {
+              if (!toRealizar) return;
+              const val = parseFloat(custoRealInput || '0') || 0;
+              await updateVisitaStatus(toRealizar.id, 'realizada', undefined, val);
+              setToRealizar(null);
+            }}>Confirmar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
