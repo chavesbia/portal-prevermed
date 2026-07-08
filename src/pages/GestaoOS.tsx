@@ -50,6 +50,7 @@ export default function GestaoOS() {
           <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="sla">SLA</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
+          <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
