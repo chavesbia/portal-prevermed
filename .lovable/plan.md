@@ -66,7 +66,7 @@ Entrega: migrações + aba nova no `OSDetailDialog`.
 
 ---
 
-## Fase 5 — Gestão Financeira da OS
+## Fase 5 — Gestão Financeira da OS ✅ CONCLUÍDA
 
 Objetivo: consolidar custos, receita e margem por OS/serviço.
 
