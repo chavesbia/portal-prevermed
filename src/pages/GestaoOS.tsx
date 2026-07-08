@@ -9,6 +9,7 @@ import { OSGestaoVencimentosView } from '@/components/os/OSGestaoVencimentosView
 import { OSAgendaView } from '@/components/os/OSAgendaView';
 import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
+import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
