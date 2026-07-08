@@ -17,6 +17,7 @@ import { OrdemServico, StatusOS, STATUS_OS_OPTIONS } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OSEditDialogProps {
   ordem: OrdemServico;
@@ -26,17 +27,17 @@ interface OSEditDialogProps {
   onUpdate: (id: string, data: any) => Promise<boolean>;
 }
 
-export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate }: OSEditDialogProps) {
+export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDialogProps) {
   const [numeroOS, setNumeroOS] = useState(ordem.numero_os);
   const [empresaCliente, setEmpresaCliente] = useState(ordem.empresa_cliente);
   const [contatoCliente, setContatoCliente] = useState(ordem.contato_cliente || '');
-  const [responsavel, setResponsavel] = useState(ordem.responsavel_atual);
   const [statusOS, setStatusOS] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [dataEmissao, setDataEmissao] = useState<Date | undefined>(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
   const [prazoAcordado, setPrazoAcordado] = useState<Date | undefined>(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
   const [observacoes, setObservacoes] = useState(ordem.observacoes || '');
   const [urgente, setUrgente] = useState<boolean>(!!ordem.urgente);
   const [motivoUrgencia, setMotivoUrgencia] = useState<string>(ordem.motivo_urgencia || '');
+  const [emissorNome, setEmissorNome] = useState<string>(ordem.responsavel_atual || '');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -44,17 +45,29 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
     setNumeroOS(ordem.numero_os);
     setEmpresaCliente(ordem.empresa_cliente);
     setContatoCliente(ordem.contato_cliente || '');
-    setResponsavel(ordem.responsavel_atual);
     setStatusOS(ordem.status_os as StatusOS);
     setDataEmissao(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
     setPrazoAcordado(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
     setObservacoes(ordem.observacoes || '');
     setUrgente(!!ordem.urgente);
     setMotivoUrgencia(ordem.motivo_urgencia || '');
+    setEmissorNome(ordem.responsavel_atual || '');
+
+    // Try to resolve emissor's real name from profiles (created_by)
+    (async () => {
+      if (ordem.created_by) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('user_id', ordem.created_by)
+          .maybeSingle();
+        if ((data as any)?.full_name) setEmissorNome((data as any).full_name);
+      }
+    })();
   }, [ordem, open]);
 
   const handleSave = async () => {
-    if (!numeroOS || !empresaCliente || !responsavel || !dataEmissao) return;
+    if (!numeroOS || !empresaCliente || !dataEmissao) return;
     if (urgente && !motivoUrgencia.trim()) return;
     setSaving(true);
     const dataEmissaoStr = format(dataEmissao, 'yyyy-MM-dd');
@@ -62,7 +75,6 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
       numero_os: numeroOS,
       empresa_cliente: empresaCliente,
       contato_cliente: contatoCliente || null,
-      responsavel_atual: responsavel,
       status_os: statusOS,
       data_registro: dataEmissaoStr,
       data_emissao: dataEmissaoStr,
@@ -114,17 +126,9 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
             <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Responsável</Label>
-            {responsaveis.length > 0 ? (
-              <Select value={responsavel} onValueChange={setResponsavel}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {responsaveis.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />
-            )}
+            <Label>Emissor da OS</Label>
+            <Input value={emissorNome} readOnly disabled />
+            <p className="text-xs text-muted-foreground">Definido automaticamente no cadastro da OS.</p>
           </div>
           <div className="space-y-2">
             <Label>Status da OS</Label>
@@ -137,17 +141,16 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
             <p className="text-xs text-muted-foreground">Normalmente automático conforme os serviços.</p>
           </div>
           {dateField('Data de Emissão', dataEmissao, setDataEmissao)}
-          {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
-        </div>
-
-        <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
-          <div className="flex items-center gap-2">
-            <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
-            <Label htmlFor="urg-edit" className="cursor-pointer">Urgente</Label>
+          <div className="space-y-2">
+            {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
+              <Label htmlFor="urg-edit" className="cursor-pointer text-sm">Urgente</Label>
+            </div>
+            {urgente && (
+              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
+            )}
           </div>
-          {urgente && (
-            <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
-          )}
         </div>
 
         <div className="space-y-2">
@@ -166,3 +169,4 @@ export function OSEditDialog({ ordem, open, onOpenChange, responsaveis, onUpdate
     </Dialog>
   );
 }
+
