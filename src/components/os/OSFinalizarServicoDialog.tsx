@@ -211,11 +211,31 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
                 <div className="space-y-2"><Label>Nome *</Label><Input value={novoResp.nome} onChange={e => setNovoResp({ ...novoResp, nome: e.target.value })} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Conselho *</Label>
-                    <Select value={novoResp.conselho} onValueChange={v => setNovoResp({ ...novoResp, conselho: v as ConselhoProfissional })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{CONSELHO_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between">
+                      <Label>Conselho *</Label>
+                      <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowNovoConselho(v => !v)}>
+                        <Plus className="h-3 w-3 mr-1" />Novo conselho
+                      </Button>
+                    </div>
+                    {!showNovoConselho ? (
+                      <Select value={novoResp.conselho} onValueChange={v => setNovoResp({ ...novoResp, conselho: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{conselhos.map(c => <SelectItem key={c.id} value={c.sigla}>{c.sigla}</SelectItem>)}</SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="space-y-2 rounded-md border p-2 bg-background">
+                        <Input placeholder="Sigla (ex: MTE)" value={novoConselhoSigla} onChange={e => setNovoConselhoSigla(e.target.value.toUpperCase())} className="h-8" />
+                        <Input placeholder="Descrição (opcional)" value={novoConselhoDesc} onChange={e => setNovoConselhoDesc(e.target.value)} className="h-8" />
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => { setShowNovoConselho(false); setNovoConselhoSigla(''); setNovoConselhoDesc(''); }}>Cancelar</Button>
+                          <Button type="button" size="sm" className="h-7 text-xs flex-1" onClick={async () => {
+                            if (!novoConselhoSigla.trim()) { toast({ title: 'Atenção', description: 'Informe a sigla.', variant: 'destructive' }); return; }
+                            const c = await addConselho(novoConselhoSigla, novoConselhoDesc);
+                            if (c) { setNovoResp({ ...novoResp, conselho: c.sigla }); setShowNovoConselho(false); setNovoConselhoSigla(''); setNovoConselhoDesc(''); }
+                          }}>Salvar</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2"><Label>Registro *</Label><Input value={novoResp.numero_registro} onChange={e => setNovoResp({ ...novoResp, numero_registro: e.target.value })} /></div>
                 </div>
