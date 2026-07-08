@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -29,12 +30,16 @@ const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const { addVisita } = useOSVisitas();
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+  const [servicoId, setServicoId] = useState<string>('none');
   const [dataVisita, setDataVisita] = useState<Date | undefined>();
   const [horaVisita, setHoraVisita] = useState('');
   const [responsavelId, setResponsavelId] = useState('');
-  const [tipoVisita, setTipoVisita] = useState<VisitaTipo>('Avaliação');
+  const [tipoVisita, setTipoVisita] = useState<VisitaTipo>('Visita Técnica');
   const [endereco, setEndereco] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [custoAprox, setCustoAprox] = useState('');
+  const [urgente, setUrgente] = useState(false);
+  const [motivoUrgencia, setMotivoUrgencia] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -57,19 +62,22 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   }, [open]);
 
   const reset = () => {
-    setDataVisita(undefined); setHoraVisita(''); setResponsavelId('');
-    setTipoVisita('Avaliação'); setEndereco(''); setObservacoes('');
+    setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId('');
+    setTipoVisita('Visita Técnica'); setEndereco(''); setObservacoes('');
+    setCustoAprox(''); setUrgente(false); setMotivoUrgencia('');
   };
 
   const handleSubmit = async () => {
     if (!dataVisita) { toast({ title: 'Atenção', description: 'Selecione a data.', variant: 'destructive' }); return; }
     if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o responsável.', variant: 'destructive' }); return; }
+    if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
     setSaving(true);
     const profile = profiles.find(p => p.user_id === responsavelId);
     const ok = await addVisita({
       empresa_cliente: ordem.empresa_cliente,
       ordem_id: ordem.id,
       numero_os: ordem.numero_os,
+      servico_id: servicoId === 'none' ? null : servicoId,
       data_visita: format(dataVisita, 'yyyy-MM-dd'),
       hora_visita: horaVisita || null,
       responsavel_id: responsavelId,
@@ -77,21 +85,38 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
       tipo_visita: tipoVisita,
       endereco: endereco || null,
       observacoes: observacoes || null,
-      custos_deslocamento: 0,
+      custos_deslocamento: parseFloat(custoAprox || '0') || 0,
+      urgente,
+      motivo_urgencia: urgente ? motivoUrgencia : null,
       equipamentos_ids: [],
     });
     setSaving(false);
     if (ok) { reset(); onOpenChange(false); }
   };
 
+  const servicos = ordem.servicos || [];
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Agendar Visita — OS #{ordem.numero_os}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="text-sm text-muted-foreground">Cliente: <span className="font-medium text-foreground">{ordem.empresa_cliente}</span></div>
+
+          {servicos.length > 0 && (
+            <div className="space-y-2">
+              <Label>Serviço da OS</Label>
+              <Select value={servicoId} onValueChange={setServicoId}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— OS inteira —</SelectItem>
+                  {servicos.map(s => <SelectItem key={s.id} value={s.id}>{s.tipo} ({s.tipo_os})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
@@ -137,6 +162,21 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
           <div className="space-y-2">
             <Label>Endereço</Label>
             <Input value={endereco} onChange={e => setEndereco(e.target.value)} placeholder="Local da visita" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Custo Aproximado (deslocamento, equipamentos etc.) R$</Label>
+            <Input type="number" step="0.01" min="0" value={custoAprox} onChange={e => setCustoAprox(e.target.value)} placeholder="0,00" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox id="urgente-visita" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
+              <Label htmlFor="urgente-visita" className="cursor-pointer">Urgente</Label>
+            </div>
+            {urgente && (
+              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
+            )}
           </div>
 
           <div className="space-y-2">
