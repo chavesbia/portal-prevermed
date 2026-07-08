@@ -100,6 +100,8 @@ export function useOrdens() {
     data_emissao?: string | null;
     prazo_acordado?: string | null;
     observacoes?: string;
+    urgente?: boolean;
+    motivo_urgencia?: string | null;
     servicos: { tipo: string; tipo_os: TipoOS; status: StatusServico }[];
   }) => {
     try {
@@ -117,9 +119,11 @@ export function useOrdens() {
           data_emissao: data.data_emissao || null,
           prazo_acordado: data.prazo_acordado || null,
           observacoes: data.observacoes || null,
+          urgente: data.urgente || false,
+          motivo_urgencia: data.motivo_urgencia || null,
           tipo_servico_resumo,
           created_by: user?.id || null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -199,6 +203,8 @@ export function useOrdens() {
       data_emissao?: string | null;
       prazo_acordado?: string | null;
       observacoes?: string | null;
+      urgente?: boolean;
+      motivo_urgencia?: string | null;
     },
   ) => {
     try {
@@ -217,8 +223,10 @@ export function useOrdens() {
           data_emissao: data.data_emissao ?? null,
           prazo_acordado: data.prazo_acordado ?? null,
           observacoes: data.observacoes ?? null,
+          urgente: data.urgente ?? false,
+          motivo_urgencia: data.motivo_urgencia ?? null,
           updated_by: user?.id || null,
-        })
+        } as any)
         .eq('id', ordemId);
       if (error) throw error;
 
