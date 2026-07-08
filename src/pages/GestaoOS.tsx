@@ -68,6 +68,14 @@ export default function GestaoOS() {
           />
         </TabsContent>
 
+        <TabsContent value="executivo" className="mt-6">
+          <OSDashboardExecutivoView />
+        </TabsContent>
+
+        <TabsContent value="alertas" className="mt-6">
+          <OSAlertasView />
+        </TabsContent>
+
         <TabsContent value="ordens" className="mt-6">
           <OSListView
             ordens={filteredOrdens}
