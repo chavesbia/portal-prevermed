@@ -258,7 +258,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
                         {canEdit && v.status === 'agendada' && (
                           <>
-                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => updateVisitaStatus(v.id, 'realizada')}>Realizada</Button>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
                         )}
@@ -280,7 +280,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       {/* Dialog Nova Visita */}
       <Dialog open={openDialog} onOpenChange={onOpenDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Agendar Visita Técnica</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Agenda</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
