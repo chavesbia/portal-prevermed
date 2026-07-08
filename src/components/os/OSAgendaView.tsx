@@ -161,12 +161,12 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Agenda de Visitas Técnicas</h2>
+          <h2 className="text-xl font-semibold">Agenda</h2>
           <p className="text-sm text-muted-foreground">Agendamentos vinculados (ou não) a Ordens de Serviço.</p>
         </div>
         {canEdit && (
           <Button onClick={() => onOpenDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Nova Visita
+            <Plus className="mr-2 h-4 w-4" /> Agendar
           </Button>
         )}
       </div>
