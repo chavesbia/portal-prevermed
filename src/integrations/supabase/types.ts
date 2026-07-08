@@ -3693,6 +3693,115 @@ export type Database = {
         }
         Relationships: []
       }
+      os_custos: {
+        Row: {
+          anexo_url: string | null
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          fornecedor: string | null
+          id: string
+          observacoes: string | null
+          ordem_id: string
+          profissional_id: string | null
+          servico_os_id: string | null
+          tipo: Database["public"]["Enums"]["os_custo_tipo"]
+          updated_at: string
+          updated_by: string | null
+          valor: number
+        }
+        Insert: {
+          anexo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_id: string
+          profissional_id?: string | null
+          servico_os_id?: string | null
+          tipo: Database["public"]["Enums"]["os_custo_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+          valor?: number
+        }
+        Update: {
+          anexo_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem_id?: string
+          profissional_id?: string | null
+          servico_os_id?: string | null
+          tipo?: Database["public"]["Enums"]["os_custo_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_custos_ordem_id_fkey"
+            columns: ["ordem_id"]
+            isOneToOne: false
+            referencedRelation: "ordens_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_custos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "os_custos_servico_os_id_fkey"
+            columns: ["servico_os_id"]
+            isOneToOne: false
+            referencedRelation: "servicos_os"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      os_custos_padrao: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string
+          id: string
+          tipo: Database["public"]["Enums"]["os_custo_tipo"]
+          tipo_servico: string | null
+          updated_at: string
+          valor_sugerido: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao: string
+          id?: string
+          tipo: Database["public"]["Enums"]["os_custo_tipo"]
+          tipo_servico?: string | null
+          updated_at?: string
+          valor_sugerido?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string
+          id?: string
+          tipo?: Database["public"]["Enums"]["os_custo_tipo"]
+          tipo_servico?: string | null
+          updated_at?: string
+          valor_sugerido?: number
+        }
+        Relationships: []
+      }
       os_equipamento_historico: {
         Row: {
           acao: string
@@ -5675,6 +5784,14 @@ export type Database = {
         | "duvida"
         | "sugestao"
         | "ocorrencia"
+      os_custo_tipo:
+        | "profissional_externo"
+        | "art"
+        | "deslocamento"
+        | "locacao_equipamento"
+        | "hospedagem"
+        | "alimentacao"
+        | "outros"
       passivo_status:
         | "em_dia"
         | "atrasado"
@@ -5984,6 +6101,15 @@ export const Constants = {
         "duvida",
         "sugestao",
         "ocorrencia",
+      ],
+      os_custo_tipo: [
+        "profissional_externo",
+        "art",
+        "deslocamento",
+        "locacao_equipamento",
+        "hospedagem",
+        "alimentacao",
+        "outros",
       ],
       passivo_status: [
         "em_dia",
