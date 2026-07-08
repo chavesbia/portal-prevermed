@@ -47,12 +47,35 @@ export interface OrdemServico {
   prazo_acordado: string | null;
   observacoes: string | null;
   tipo_servico_resumo: string | null;
+  contrato_id: string | null;
+  quotation_id: string | null;
+  receita_prevista: number | null;
+  orcamento_custo: number | null;
   created_by: string | null;
   updated_by: string | null;
   created_at: string;
   updated_at: string;
   // Joined
   servicos?: ServicoOS[];
+}
+
+export interface OSFinanceiroRow {
+  ordem_id: string;
+  numero_os: string;
+  empresa_cliente: string;
+  status_os: StatusOS;
+  data_registro: string;
+  data_emissao: string | null;
+  prazo_acordado: string | null;
+  responsavel_atual: string;
+  contrato_id: string | null;
+  quotation_id: string | null;
+  receita_prevista: number | null;
+  orcamento_custo: number | null;
+  custo_total: number;
+  margem_valor: number;
+  margem_percent: number | null;
+  custo_estourado: boolean;
 }
 
 export interface HistoricoOS {
