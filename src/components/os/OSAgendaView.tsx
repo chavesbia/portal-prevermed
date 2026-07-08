@@ -243,6 +243,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                           <Badge className={visitaStatusColors[v.status]}>{visitaStatusLabel[v.status]}</Badge>
                           <Badge variant="outline">{v.tipo_visita}</Badge>
                           {v.numero_os && <Badge variant="outline" className="font-mono">OS #{v.numero_os}</Badge>}
+                          {v.urgente && <Badge variant="destructive">URGENTE</Badge>}
                         </div>
                         <h3 className="font-semibold">{v.empresa_cliente}</h3>
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
