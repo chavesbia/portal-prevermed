@@ -11,6 +11,8 @@ import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
+import { OSAlertasView } from '@/components/os/OSAlertasView';
+import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 export default function GestaoOS() {
@@ -44,6 +46,8 @@ export default function GestaoOS() {
       <Tabs defaultValue="dashboard">
         <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="executivo">Executivo</TabsTrigger>
+          <TabsTrigger value="alertas">Alertas</TabsTrigger>
           <TabsTrigger value="ordens">Ordens de Serviço</TabsTrigger>
           {canEdit && <TabsTrigger value="nova">Nova OS</TabsTrigger>}
           <TabsTrigger value="agenda">Agenda</TabsTrigger>
@@ -62,6 +66,14 @@ export default function GestaoOS() {
             setFilters={setFilters}
             responsaveis={responsaveis}
           />
+        </TabsContent>
+
+        <TabsContent value="executivo" className="mt-6">
+          <OSDashboardExecutivoView />
+        </TabsContent>
+
+        <TabsContent value="alertas" className="mt-6">
+          <OSAlertasView />
         </TabsContent>
 
         <TabsContent value="ordens" className="mt-6">

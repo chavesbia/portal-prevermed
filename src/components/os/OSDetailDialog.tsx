@@ -16,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
 import { OSFinanceiroTab } from './OSFinanceiroTab';
+import { OSAnexosTab } from './OSAnexosTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 
 interface OSDetailDialogProps {
@@ -71,6 +72,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
             <TabsTrigger value="custos">Custos</TabsTrigger>
             <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+            <TabsTrigger value="anexos">Anexos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="detalhes" className="mt-4">
@@ -146,6 +148,10 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
           <TabsContent value="financeiro" className="mt-4">
             <OSFinanceiroTab ordem={ordem} canEdit={canEdit} />
+          </TabsContent>
+
+          <TabsContent value="anexos" className="mt-4">
+            <OSAnexosTab ordem={ordem} canEdit={canEdit} />
           </TabsContent>
         </Tabs>
 
