@@ -2,8 +2,11 @@ import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer } from 'lu
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OSKPICard } from '@/components/os/OSKPICard';
 import { OSFilterBar } from '@/components/os/OSFilterBar';
+import { OSSLAView } from '@/components/os/OSSLAView';
+import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { Badge } from '@/components/ui/badge';
 import { OrdemServico, statusOSColors, statusServicoColors } from '@/types/os';
 import { differenceInDays } from 'date-fns';
