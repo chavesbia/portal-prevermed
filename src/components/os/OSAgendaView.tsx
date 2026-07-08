@@ -464,27 +464,37 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       <Dialog open={!!selectedView} onOpenChange={o => !o && setSelectedView(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Detalhes da Visita</DialogTitle></DialogHeader>
-          {selectedView && (
-            <div className="space-y-3 text-sm">
-              <div className="flex flex-wrap gap-2">
-                <Badge className={visitaStatusColors[selectedView.status]}>{visitaStatusLabel[selectedView.status]}</Badge>
-                <Badge variant="outline">{selectedView.tipo_visita}</Badge>
-                {selectedView.numero_os && <Badge variant="outline" className="font-mono">OS #{selectedView.numero_os}</Badge>}
+          {selectedView && (() => {
+            const os = selectedView.ordem_id ? ordens.find(o => o.id === selectedView.ordem_id) : null;
+            const svc = selectedView.servico_id && os ? os.servicos?.find(s => s.id === selectedView.servico_id) : null;
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Badge className={visitaStatusColors[selectedView.status]}>{visitaStatusLabel[selectedView.status]}</Badge>
+                  <Badge variant="outline">{selectedView.tipo_visita}</Badge>
+                  {selectedView.numero_os && <Badge variant="outline" className="font-mono">OS #{selectedView.numero_os}</Badge>}
+                  {selectedView.urgente && <Badge variant="destructive">URGENTE</Badge>}
+                </div>
+                <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
+                {svc && <div><span className="text-muted-foreground">Serviço:</span> {svc.tipo} ({svc.tipo_os})</div>}
+                <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
+                <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
+                <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco || <span className="italic text-muted-foreground">Não informado</span>}</div>
+                {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
+                  <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
+                )}
+                <div><span className="text-muted-foreground">Custo aproximado:</span> {formatBRL(selectedView.custos_deslocamento || 0)}</div>
+                {selectedView.status === 'realizada' && (
+                  <div><span className="text-muted-foreground">Custo real:</span> {formatBRL((selectedView as any).custo_real || 0)}</div>
+                )}
+                {selectedView.urgente && selectedView.motivo_urgencia && (
+                  <div className="text-destructive"><span className="text-muted-foreground">Motivo da urgência:</span> {selectedView.motivo_urgencia}</div>
+                )}
+                {selectedView.observacoes && <div><span className="text-muted-foreground">Observações:</span> {selectedView.observacoes}</div>}
+                {selectedView.motivo_cancelamento && <div className="text-destructive"><span className="text-muted-foreground">Motivo do cancelamento:</span> {selectedView.motivo_cancelamento}</div>}
               </div>
-              <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
-              <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
-              <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
-              {selectedView.endereco && <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco}</div>}
-              {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
-                <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
-              )}
-              {selectedView.custos_deslocamento > 0 && (
-                <div><span className="text-muted-foreground">Custos de deslocamento:</span> {formatBRL(selectedView.custos_deslocamento)}</div>
-              )}
-              {selectedView.observacoes && <div><span className="text-muted-foreground">Observações:</span> {selectedView.observacoes}</div>}
-              {selectedView.motivo_cancelamento && <div className="text-destructive"><span className="text-muted-foreground">Motivo do cancelamento:</span> {selectedView.motivo_cancelamento}</div>}
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
