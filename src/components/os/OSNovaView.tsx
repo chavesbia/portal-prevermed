@@ -14,11 +14,12 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Save, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock } from 'lucide-react';
 import { STATUS_OS_OPTIONS, STATUS_SERVICO_OPTIONS, TIPO_OS_OPTIONS, TIPO_SERVICO_OPTIONS, StatusOS, StatusServico, TipoOS } from '@/types/os';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
