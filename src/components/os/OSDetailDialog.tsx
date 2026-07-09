@@ -10,11 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, statusOSColors } from '@/types/os';
+import { OrdemServico, ServicoOS, StatusOS, STATUS_OS_OPTIONS, statusOSColors, statusServicoColors } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
+import { Timer } from 'lucide-react';
+import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
 
 import { OSAnexosTab } from './OSAnexosTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
@@ -31,6 +33,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
+  const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const canEdit = getModulePermissions('/gestao-os')?.can_edit ?? false;
 
@@ -46,6 +49,24 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
       setEmissorNome((data as any)?.full_name || null);
     })();
   }, [open, ordem.created_by]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (ordem.servicos && ordem.servicos.length) { setServicos(ordem.servicos); return; }
+    (async () => {
+      const { data } = await supabase
+        .from('servicos_os')
+        .select('*')
+        .eq('ordem_id', ordem.id)
+        .order('created_at');
+      setServicos((data || []) as unknown as ServicoOS[]);
+    })();
+  }, [open, ordem.id, ordem.servicos]);
+
+  // Cronômetro OS: início = data_emissao (fallback data_registro); fim = updated_at se Encerrado
+  const osStart = ordem.data_emissao || ordem.data_registro;
+  const osEnd = ordem.status_os === 'Encerrado' ? ordem.updated_at : null;
+  const osElapsed = elapsedMs(osStart, osEnd);
 
   const handleUpdate = async () => {
     if (newStatus !== ordem.status_os || comentario) {
