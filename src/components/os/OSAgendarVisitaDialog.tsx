@@ -69,7 +69,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
 
   const handleSubmit = async () => {
     if (!dataVisita) { toast({ title: 'Atenção', description: 'Selecione a data.', variant: 'destructive' }); return; }
-    if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o responsável.', variant: 'destructive' }); return; }
+    if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o Elaborador/Executor.', variant: 'destructive' }); return; }
     if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
     setSaving(true);
     const profile = profiles.find(p => p.user_id === responsavelId);
@@ -140,7 +140,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável *</Label>
+            <Label>Elaborador/Executor *</Label>
             <Select value={responsavelId} onValueChange={setResponsavelId}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
