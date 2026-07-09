@@ -122,7 +122,7 @@ export function OSAlertasView() {
                       </div>
                       <p className="text-sm mt-1">{a.descricao}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Responsável: {a.responsavel_atual}
+                        Elaborador/Executor: {a.responsavel_atual}
                         {a.referencia_data && ` · ${format(parseISO(a.referencia_data), 'dd/MM/yyyy')}`}
                       </p>
                     </div>
