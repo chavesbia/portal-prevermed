@@ -17,6 +17,7 @@ const defaultFilters: OSFilters = {
 
 export function useOrdens() {
   const { user, profile } = useAuth();
+  const { profissionais } = useProfissionais();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
