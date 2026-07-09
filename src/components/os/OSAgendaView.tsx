@@ -491,7 +491,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
-                <Button type="submit" disabled={hasBloqueio}>Agendar</Button>
+                <Button type="submit" disabled={hasBloqueio}>{editingVisita ? 'Salvar alterações' : 'Agendar'}</Button>
               </DialogFooter>
             </form>
           </Form>
