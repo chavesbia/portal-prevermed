@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
 import { calcOSSLA } from '@/lib/os/sla';
 import { useFeriados } from '@/hooks/useFeriados';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
