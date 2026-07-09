@@ -95,6 +95,11 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   }, []);
 
   const filtered = getFiltered();
+  const responsaveisComVisitas = useMemo(() => {
+    const map = new Map<string, string>();
+    filtered.forEach(v => { if (v.responsavel_id) map.set(v.responsavel_id, v.responsavel_nome); });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [filtered]);
   const empresas = useMemo(() => Array.from(new Set(ordens.map(o => o.empresa_cliente))).sort(), [ordens]);
   const watchedOrdemId = form.watch('ordem_id');
   const watchedData = form.watch('data_visita');
