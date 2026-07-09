@@ -292,6 +292,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
                         {canEdit && v.status === 'agendada' && (
                           <>
+                            <Button variant="outline" size="sm" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
