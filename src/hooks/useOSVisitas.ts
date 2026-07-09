@@ -117,6 +117,44 @@ export function useOSVisitas() {
     }
   };
 
+  const updateVisita = async (id: string, input: NovaVisitaInput) => {
+    try {
+      const { error } = await supabase.from('os_visitas').update({
+        empresa_cliente: input.empresa_cliente,
+        ordem_id: input.ordem_id || null,
+        numero_os: input.numero_os || null,
+        servico_id: input.servico_id || null,
+        data_visita: input.data_visita,
+        hora_visita: input.hora_visita || null,
+        responsavel_id: input.responsavel_id || null,
+        responsavel_nome: input.responsavel_nome,
+        tipo_visita: input.tipo_visita,
+        endereco: input.endereco || null,
+        observacoes: input.observacoes || null,
+        custos_deslocamento: input.custos_deslocamento || 0,
+        urgente: input.urgente || false,
+        motivo_urgencia: input.motivo_urgencia || null,
+        updated_by: user?.id || null,
+      } as any).eq('id', id);
+      if (error) throw error;
+
+      // Substitui vínculos de equipamentos
+      await supabase.from('os_visita_equipamentos').delete().eq('visita_id', id);
+      if (input.equipamentos_ids?.length) {
+        await supabase.from('os_visita_equipamentos').insert(
+          input.equipamentos_ids.map(eid => ({ visita_id: id, equipamento_id: eid }))
+        );
+      }
+
+      await fetchVisitas();
+      toast({ title: 'Sucesso', description: 'Visita atualizada.' });
+      return true;
+    } catch (e: any) {
+      toast({ title: 'Erro', description: 'Erro ao atualizar visita: ' + (e.message || ''), variant: 'destructive' });
+      return false;
+    }
+  };
+
   const updateVisitaStatus = async (id: string, status: VisitaStatus, motivo?: string, custoReal?: number) => {
     try {
       const payload: any = {
