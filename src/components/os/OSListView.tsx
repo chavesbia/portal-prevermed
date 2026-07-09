@@ -203,7 +203,8 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                               </DropdownMenu>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </React.Fragment>
                     );
                   })}
