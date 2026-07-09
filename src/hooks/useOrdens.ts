@@ -71,7 +71,13 @@ export function useOrdens() {
         if (!matchCliente && !matchOS) return false;
       }
       if (filters.status_os && filters.status_os !== 'all' && ordem.status_os !== filters.status_os) return false;
-      if (filters.responsavel && filters.responsavel !== 'all' && ordem.responsavel_atual !== filters.responsavel) return false;
+      if (filters.responsavel && filters.responsavel !== 'all') {
+        const has = ordem.servicos?.some(s => {
+          const p = profissionais.find(pr => pr.id === s.responsavel_id);
+          return p?.nome === filters.responsavel;
+        });
+        if (!has) return false;
+      }
       if (filters.tipo_servico && filters.tipo_servico !== 'all') {
         const has = ordem.servicos?.some(s => s.tipo === filters.tipo_servico);
         if (!has) return false;
