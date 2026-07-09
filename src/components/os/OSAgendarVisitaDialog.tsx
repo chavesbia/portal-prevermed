@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
+import { AlertTriangle, CalendarIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,7 @@ interface ProfileOption { user_id: string; full_name: string | null; }
 const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 
 export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
-  const { addVisita } = useOSVisitas();
+  const { addVisita, detectConflitos } = useOSVisitas();
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [servicoId, setServicoId] = useState<string>('none');
   const [dataVisita, setDataVisita] = useState<Date | undefined>();
@@ -67,10 +68,17 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
     setCustoAprox(''); setUrgente(false); setMotivoUrgencia('');
   };
 
+  const conflitos = useMemo(() => {
+    if (!dataVisita) return [];
+    return detectConflitos(format(dataVisita, 'yyyy-MM-dd'), [], responsavelId || null, horaVisita || null);
+  }, [dataVisita, responsavelId, horaVisita, detectConflitos]);
+  const hasBloqueio = conflitos.some(c => c.severity === 'error');
+
   const handleSubmit = async () => {
     if (!dataVisita) { toast({ title: 'Atenção', description: 'Selecione a data.', variant: 'destructive' }); return; }
     if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o Elaborador/Executor.', variant: 'destructive' }); return; }
     if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
+    if (hasBloqueio) { toast({ title: 'Conflito', description: 'Resolva os conflitos de agenda antes de salvar.', variant: 'destructive' }); return; }
     setSaving(true);
     const profile = profiles.find(p => p.user_id === responsavelId);
     const ok = await addVisita({
@@ -183,10 +191,24 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
             <Label>Observações</Label>
             <Textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={2} />
           </div>
+          {conflitos.length > 0 && (
+            <Alert variant={hasBloqueio ? 'destructive' : 'default'}>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc pl-4 space-y-1 text-xs">
+                  {conflitos.map((c, i) => (
+                    <li key={i} className={c.severity === 'warn' ? 'text-amber-700' : undefined}>
+                      {c.severity === 'warn' ? '⚠ ' : ''}{c.message}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={saving}>{saving ? 'Salvando...' : 'Agendar'}</Button>
+          <Button onClick={handleSubmit} disabled={saving || hasBloqueio}>{saving ? 'Salvando...' : 'Agendar'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

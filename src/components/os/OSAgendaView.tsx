@@ -98,6 +98,8 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const empresas = useMemo(() => Array.from(new Set(ordens.map(o => o.empresa_cliente))).sort(), [ordens]);
   const watchedOrdemId = form.watch('ordem_id');
   const watchedData = form.watch('data_visita');
+  const watchedResp = form.watch('responsavel_id');
+  const watchedHora = form.watch('hora_visita');
 
   useEffect(() => {
     if (watchedOrdemId && watchedOrdemId !== 'none') {
@@ -107,10 +109,11 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   }, [watchedOrdemId, ordens, form]);
 
   const conflitos = useMemo(() => {
-    if (!watchedData || equipamentosIds.length === 0) return [];
+    if (!watchedData) return [];
     const dataISO = format(watchedData, 'yyyy-MM-dd');
-    return detectConflitos(dataISO, equipamentosIds);
-  }, [watchedData, equipamentosIds, detectConflitos]);
+    return detectConflitos(dataISO, equipamentosIds, watchedResp, watchedHora);
+  }, [watchedData, equipamentosIds, watchedResp, watchedHora, detectConflitos]);
+  const hasBloqueio = conflitos.some(c => c.severity === 'error');
 
   const equipNomes = (ids: string[]) =>
     ids.map(id => equipamentos.find(e => e.id === id)?.nome).filter(Boolean).join(', ');
@@ -128,7 +131,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   };
 
   const onSubmit = async (data: FormData) => {
-    if (conflitos.length > 0) return;
+    if (hasBloqueio) return;
     if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
@@ -353,7 +356,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               </div>
 
               <FormField control={form.control} name="responsavel_id" render={({ field }) => (
-                <FormItem><FormLabel>Responsável *</FormLabel>
+                <FormItem><FormLabel>Elaborador/Executor *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
                     <SelectContent>{profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent>
@@ -411,11 +414,15 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               </div>
 
               {conflitos.length > 0 && (
-                <Alert variant="destructive">
+                <Alert variant={hasBloqueio ? 'destructive' : 'default'}>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     <ul className="list-disc pl-4 space-y-1">
-                      {conflitos.map((c, i) => <li key={i}>{c}</li>)}
+                      {conflitos.map((c, i) => (
+                        <li key={i} className={c.severity === 'warn' ? 'text-amber-700' : undefined}>
+                          {c.severity === 'warn' ? '⚠ ' : ''}{c.message}
+                        </li>
+                      ))}
                     </ul>
                   </AlertDescription>
                 </Alert>
@@ -453,7 +460,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
-                <Button type="submit" disabled={conflitos.length > 0}>Agendar</Button>
+                <Button type="submit" disabled={hasBloqueio}>Agendar</Button>
               </DialogFooter>
             </form>
           </Form>
