@@ -149,25 +149,94 @@ export function useOSVisitas() {
   };
 
   /**
-   * Detecta conflitos: equipamentos já agendados em outras visitas no mesmo dia
-   * Retorna array de mensagens de conflito.
+   * Detecta conflitos de agendamento:
+   *  - error: mesmo Elaborador/Executor sobreposto (buffer de deslocamento);
+   *  - error: equipamento já reservado no mesmo dia;
+   *  - warn : muitos elaboradores fora no mesmo dia (>= threshold).
    */
-  const detectConflitos = useCallback((dataISO: string, equipamentosIds: string[], excludeVisitaId?: string): string[] => {
-    if (!dataISO || equipamentosIds.length === 0) return [];
-    const conflitos: string[] = [];
-    visitas.forEach(v => {
-      if (v.id === excludeVisitaId) return;
-      if (v.status !== 'agendada') return;
-      if (v.data_visita !== dataISO) return;
-      const eqsDaVisita = visitaEquipamentos[v.id] || [];
-      equipamentosIds.forEach(eid => {
-        if (eqsDaVisita.includes(eid)) {
-          conflitos.push(`Equipamento já agendado para ${v.responsavel_nome}${v.numero_os ? ` na OS #${v.numero_os}` : ''}.`);
-        }
+  const detectConflitos = useCallback((
+    dataISO: string,
+    equipamentosIds: string[],
+    responsavelId?: string | null,
+    horaVisita?: string | null,
+    excludeVisitaId?: string,
+    opts?: { bufferMin?: number; maxProfsPorDia?: number },
+  ): { severity: 'error' | 'warn'; message: string }[] => {
+    if (!dataISO) return [];
+    const bufferMin = opts?.bufferMin ?? 60;
+    const maxProfs = opts?.maxProfsPorDia ?? 3;
+    const conflitos: { severity: 'error' | 'warn'; message: string }[] = [];
+
+    const toMin = (h?: string | null) => {
+      if (!h) return null;
+      const [hh, mm] = h.split(':').map(Number);
+      return (hh || 0) * 60 + (mm || 0);
+    };
+    const newHora = toMin(horaVisita);
+
+    const mesmoDia = visitas.filter(v =>
+      v.id !== excludeVisitaId &&
+      v.status === 'agendada' &&
+      v.data_visita === dataISO,
+    );
+
+    // 1) Sobreposição do mesmo Elaborador/Executor
+    if (responsavelId) {
+      mesmoDia
+        .filter(v => v.responsavel_id === responsavelId)
+        .forEach(v => {
+          const outraHora = toMin(v.hora_visita);
+          if (newHora != null && outraHora != null) {
+            if (Math.abs(newHora - outraHora) < bufferMin) {
+              conflitos.push({
+                severity: 'error',
+                message: `Elaborador/Executor já agendado às ${v.hora_visita}${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Buffer mínimo: ${bufferMin} min.`,
+              });
+            }
+          } else {
+            conflitos.push({
+              severity: 'error',
+              message: `Elaborador/Executor já possui visita neste dia${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Defina horários para permitir conciliar.`,
+            });
+          }
+        });
+    }
+
+    // 2) Reserva de equipamento
+    if (equipamentosIds.length > 0) {
+      mesmoDia.forEach(v => {
+        const eqsDaVisita = visitaEquipamentos[v.id] || [];
+        equipamentosIds.forEach(eid => {
+          if (eqsDaVisita.includes(eid)) {
+            conflitos.push({
+              severity: 'error',
+              message: `Equipamento já reservado por ${v.responsavel_nome}${v.numero_os ? ` na OS #${v.numero_os}` : ''}.`,
+            });
+          }
+        });
       });
+    }
+
+    // 3) Muitos profissionais fora no mesmo dia
+    const profsDoDia = new Set(mesmoDia.map(v => v.responsavel_id).filter(Boolean) as string[]);
+    if (responsavelId) profsDoDia.add(responsavelId);
+    if (profsDoDia.size >= maxProfs) {
+      conflitos.push({
+        severity: 'warn',
+        message: `${profsDoDia.size} elaboradores/executores agendados neste dia. Confirme cobertura interna.`,
+      });
+    }
+
+    // Dedup por mensagem
+    const seen = new Set<string>();
+    return conflitos.filter(c => {
+      const k = c.severity + '|' + c.message;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
     });
-    return Array.from(new Set(conflitos));
   }, [visitas, visitaEquipamentos]);
+
 
   const getFiltered = useCallback(() => {
     return visitas.filter(v => {
