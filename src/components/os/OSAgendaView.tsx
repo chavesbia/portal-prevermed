@@ -57,9 +57,10 @@ const formatBRL = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
-  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
+  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
   const { equipamentos } = useOSEquipamentos();
   const [openDialog, setOpenDialog] = useState(false);
+  const [editingVisita, setEditingVisita] = useState<OSVisita | null>(null);
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [selectedView, setSelectedView] = useState<OSVisita | null>(null);
   const [toCancel, setToCancel] = useState<OSVisita | null>(null);
