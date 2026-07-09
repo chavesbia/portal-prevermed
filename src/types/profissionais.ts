@@ -7,7 +7,8 @@ export type ProfissionalCategoria =
   | 'Engenheiro de Segurança'
   | 'Técnico de Segurança'
   | 'Fonoaudiólogo'
-  | 'Fisioterapeuta'
+  | 'Ergonomista'
+  | 'Auxiliar Técnico'
   | 'Outro';
 
 export const PROFISSIONAL_CATEGORIAS: ProfissionalCategoria[] = [
@@ -17,7 +18,8 @@ export const PROFISSIONAL_CATEGORIAS: ProfissionalCategoria[] = [
   'Engenheiro de Segurança',
   'Técnico de Segurança',
   'Fonoaudiólogo',
-  'Fisioterapeuta',
+  'Ergonomista',
+  'Auxiliar Técnico',
   'Outro',
 ];
 
