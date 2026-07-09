@@ -133,7 +133,28 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (!open) {
       form.reset({ empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' });
       setEquipamentosIds([]);
+      setEditingVisita(null);
     }
+  };
+
+  const openEdit = (v: OSVisita) => {
+    setEditingVisita(v);
+    form.reset({
+      empresa_cliente: v.empresa_cliente,
+      ordem_id: v.ordem_id || 'none',
+      servico_id: v.servico_id || 'none',
+      data_visita: new Date(v.data_visita + 'T00:00:00'),
+      hora_visita: v.hora_visita || '',
+      responsavel_id: v.responsavel_id || '',
+      tipo_visita: v.tipo_visita as VisitaTipo,
+      endereco: v.endereco || '',
+      observacoes: v.observacoes || '',
+      custos_deslocamento: String(v.custos_deslocamento || ''),
+      urgente: v.urgente || false,
+      motivo_urgencia: v.motivo_urgencia || '',
+    });
+    setEquipamentosIds(visitaEquipamentos[v.id] || []);
+    setOpenDialog(true);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -141,7 +162,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
-    const ok = await addVisita({
+    const payload = {
       empresa_cliente: data.empresa_cliente,
       ordem_id: ordem?.id || null,
       numero_os: ordem?.numero_os || null,
@@ -157,7 +178,10 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       urgente: data.urgente,
       motivo_urgencia: data.urgente ? (data.motivo_urgencia || null) : null,
       equipamentos_ids: equipamentosIds,
-    });
+    };
+    const ok = editingVisita
+      ? await updateVisita(editingVisita.id, payload)
+      : await addVisita(payload);
     if (ok) onOpenDialog(false);
   };
 
