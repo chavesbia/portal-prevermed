@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS, slaStatusColors } from '@/types/os';
 import { calcOSSLA } from '@/lib/os/sla';
 import { useFeriados } from '@/hooks/useFeriados';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -38,6 +39,7 @@ interface OSListViewProps {
 
 export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onUpdateOrdem, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
   const { data: feriadosData } = useFeriados();
+  const { profissionais } = useProfissionais();
   const feriados = feriadosData || [];
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -158,14 +160,21 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             </DropdownMenu>
                           </td>
                         </tr>
-                        {isExpanded && svcs.map(servico => (
+                        {isExpanded && svcs.map(servico => {
+                          const prof = profissionais.find(p => p.id === servico.responsavel_id);
+                          return (
                           <tr
                             key={servico.id}
                             className="bg-muted/30 border-b last:border-0 hover:bg-muted/60"
                           >
                             <td className="py-2" />
                             <td className="py-2 pl-4 text-muted-foreground">↳</td>
-                            <td className="py-2 font-medium">{servico.tipo}</td>
+                            <td className="py-2">
+                              <div className="font-medium">{servico.tipo}</div>
+                              <div className="text-xs text-muted-foreground">
+                                Elaborador/Executor: {prof?.nome || <span className="italic">— não atribuído —</span>}
+                              </div>
+                            </td>
                             <td className="py-2 hidden md:table-cell">
                               <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
                             </td>
@@ -194,7 +203,8 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                               </DropdownMenu>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </React.Fragment>
                     );
                   })}

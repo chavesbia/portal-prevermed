@@ -95,6 +95,11 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   }, []);
 
   const filtered = getFiltered();
+  const responsaveisComVisitas = useMemo(() => {
+    const map = new Map<string, string>();
+    filtered.forEach(v => { if (v.responsavel_id) map.set(v.responsavel_id, v.responsavel_nome); });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [filtered]);
   const empresas = useMemo(() => Array.from(new Set(ordens.map(o => o.empresa_cliente))).sort(), [ordens]);
   const watchedOrdemId = form.watch('ordem_id');
   const watchedData = form.watch('data_visita');
@@ -180,7 +185,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar cliente, OS, responsável"
+              placeholder="Buscar cliente, OS, elaborador/executor"
               className="pl-9"
               value={filters.search}
               onChange={e => setFilters({ ...filters, search: e.target.value })}
@@ -194,10 +199,10 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
             </SelectContent>
           </Select>
           <Select value={filters.responsavel_id} onValueChange={v => setFilters({ ...filters, responsavel_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Elaborador/Executor" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os responsáveis</SelectItem>
-              {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}
+              <SelectItem value="all">Todos</SelectItem>
+              {responsaveisComVisitas.map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="flex gap-2">
@@ -485,7 +490,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
                 {svc && <div><span className="text-muted-foreground">Serviço:</span> {svc.tipo} ({svc.tipo_os})</div>}
                 <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
-                <div><span className="text-muted-foreground">Responsável:</span> {selectedView.responsavel_nome}</div>
+                <div><span className="text-muted-foreground">Elaborador/Executor:</span> {selectedView.responsavel_nome}</div>
                 <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco || <span className="italic text-muted-foreground">Não informado</span>}</div>
                 {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
                   <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>

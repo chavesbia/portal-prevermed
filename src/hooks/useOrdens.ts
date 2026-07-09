@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, HistoricoOS, OSFilters, StatusOS, TipoOS, StatusServico } from '@/types/os';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
 
 const defaultFilters: OSFilters = {
@@ -16,6 +17,7 @@ const defaultFilters: OSFilters = {
 
 export function useOrdens() {
   const { user, profile } = useAuth();
+  const { profissionais } = useProfissionais();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
@@ -69,7 +71,13 @@ export function useOrdens() {
         if (!matchCliente && !matchOS) return false;
       }
       if (filters.status_os && filters.status_os !== 'all' && ordem.status_os !== filters.status_os) return false;
-      if (filters.responsavel && filters.responsavel !== 'all' && ordem.responsavel_atual !== filters.responsavel) return false;
+      if (filters.responsavel && filters.responsavel !== 'all') {
+        const has = ordem.servicos?.some(s => {
+          const p = profissionais.find(pr => pr.id === s.responsavel_id);
+          return p?.nome === filters.responsavel;
+        });
+        if (!has) return false;
+      }
       if (filters.tipo_servico && filters.tipo_servico !== 'all') {
         const has = ordem.servicos?.some(s => s.tipo === filters.tipo_servico);
         if (!has) return false;
@@ -88,7 +96,7 @@ export function useOrdens() {
       }
       return true;
     });
-  }, [ordens, filters]);
+  }, [ordens, filters, profissionais]);
 
   const addOrdem = async (data: {
     numero_os: string;
@@ -280,9 +288,15 @@ export function useOrdens() {
   };
 
   const getResponsaveis = useCallback(() => {
-    const set = new Set(ordens.map(o => o.responsavel_atual));
+    const set = new Set<string>();
+    ordens.forEach(o => {
+      (o.servicos || []).forEach(s => {
+        const p = profissionais.find(pr => pr.id === s.responsavel_id);
+        if (p?.nome) set.add(p.nome);
+      });
+    });
     return Array.from(set).sort();
-  }, [ordens]);
+  }, [ordens, profissionais]);
 
   return {
     ordens,
