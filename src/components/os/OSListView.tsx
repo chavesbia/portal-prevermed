@@ -39,6 +39,7 @@ interface OSListViewProps {
 
 export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onUpdateOrdem, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
   const { data: feriadosData } = useFeriados();
+  const { profissionais } = useProfissionais();
   const feriados = feriadosData || [];
   const [selectedOS, setSelectedOS] = useState<OrdemServico | null>(null);
   const [showDetail, setShowDetail] = useState(false);
