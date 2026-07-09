@@ -96,7 +96,7 @@ export function useOrdens() {
       }
       return true;
     });
-  }, [ordens, filters]);
+  }, [ordens, filters, profissionais]);
 
   const addOrdem = async (data: {
     numero_os: string;
