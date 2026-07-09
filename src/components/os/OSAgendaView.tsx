@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Plus, Search, Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Plus, Search, Trash2, Eye, AlertTriangle, Pencil } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,9 +57,10 @@ const formatBRL = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
-  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
+  const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
   const { equipamentos } = useOSEquipamentos();
   const [openDialog, setOpenDialog] = useState(false);
+  const [editingVisita, setEditingVisita] = useState<OSVisita | null>(null);
   const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [selectedView, setSelectedView] = useState<OSVisita | null>(null);
   const [toCancel, setToCancel] = useState<OSVisita | null>(null);
@@ -116,8 +117,8 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const conflitos = useMemo(() => {
     if (!watchedData) return [];
     const dataISO = format(watchedData, 'yyyy-MM-dd');
-    return detectConflitos(dataISO, equipamentosIds, watchedResp, watchedHora);
-  }, [watchedData, equipamentosIds, watchedResp, watchedHora, detectConflitos]);
+    return detectConflitos(dataISO, equipamentosIds, watchedResp, watchedHora, editingVisita?.id);
+  }, [watchedData, equipamentosIds, watchedResp, watchedHora, detectConflitos, editingVisita]);
   const hasBloqueio = conflitos.some(c => c.severity === 'error');
 
   const equipNomes = (ids: string[]) =>
@@ -132,7 +133,28 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (!open) {
       form.reset({ empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' });
       setEquipamentosIds([]);
+      setEditingVisita(null);
     }
+  };
+
+  const openEdit = (v: OSVisita) => {
+    setEditingVisita(v);
+    form.reset({
+      empresa_cliente: v.empresa_cliente,
+      ordem_id: v.ordem_id || 'none',
+      servico_id: v.servico_id || 'none',
+      data_visita: new Date(v.data_visita + 'T00:00:00'),
+      hora_visita: v.hora_visita || '',
+      responsavel_id: v.responsavel_id || '',
+      tipo_visita: v.tipo_visita as VisitaTipo,
+      endereco: v.endereco || '',
+      observacoes: v.observacoes || '',
+      custos_deslocamento: String(v.custos_deslocamento || ''),
+      urgente: v.urgente || false,
+      motivo_urgencia: v.motivo_urgencia || '',
+    });
+    setEquipamentosIds(visitaEquipamentos[v.id] || []);
+    setOpenDialog(true);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -140,7 +162,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
     const profile = profiles.find(p => p.user_id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
-    const ok = await addVisita({
+    const payload = {
       empresa_cliente: data.empresa_cliente,
       ordem_id: ordem?.id || null,
       numero_os: ordem?.numero_os || null,
@@ -156,7 +178,10 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       urgente: data.urgente,
       motivo_urgencia: data.urgente ? (data.motivo_urgencia || null) : null,
       equipamentos_ids: equipamentosIds,
-    });
+    };
+    const ok = editingVisita
+      ? await updateVisita(editingVisita.id, payload)
+      : await addVisita(payload);
     if (ok) onOpenDialog(false);
   };
 
@@ -267,6 +292,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         <Button variant="outline" size="sm" onClick={() => setSelectedView(v)}><Eye className="h-4 w-4" /></Button>
                         {canEdit && v.status === 'agendada' && (
                           <>
+                            <Button variant="outline" size="sm" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
@@ -289,7 +315,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       {/* Dialog Nova Visita */}
       <Dialog open={openDialog} onOpenChange={onOpenDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Agenda</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingVisita ? 'Editar visita' : 'Agendar visita'}</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
@@ -465,7 +491,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => onOpenDialog(false)}>Cancelar</Button>
-                <Button type="submit" disabled={hasBloqueio}>Agendar</Button>
+                <Button type="submit" disabled={hasBloqueio}>{editingVisita ? 'Salvar alterações' : 'Agendar'}</Button>
               </DialogFooter>
             </form>
           </Form>
