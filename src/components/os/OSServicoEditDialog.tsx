@@ -55,7 +55,7 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
     }
     if (statusChanged) {
       if (!responsavelId) {
-        toast({ title: 'Atenção', description: 'Selecione o Responsável para alterar o status.', variant: 'destructive' });
+        toast({ title: 'Atenção', description: 'Selecione o Elaborador/Executor para alterar o status.', variant: 'destructive' });
         return;
       }
       if (!dataInicio) {
@@ -126,7 +126,7 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
           </div>
 
           <div className="space-y-2">
-            <Label>Responsável {statusChanged && <span className="text-destructive">*</span>}</Label>
+            <Label>Elaborador/Executor {statusChanged && <span className="text-destructive">*</span>}</Label>
             <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} />
           </div>
 

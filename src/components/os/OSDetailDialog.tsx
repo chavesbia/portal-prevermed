@@ -10,11 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, statusOSColors } from '@/types/os';
+import { OrdemServico, ServicoOS, StatusOS, STATUS_OS_OPTIONS, statusOSColors, statusServicoColors } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
+import { Timer } from 'lucide-react';
+import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
 
 import { OSAnexosTab } from './OSAnexosTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
@@ -31,6 +33,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
+  const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const canEdit = getModulePermissions('/gestao-os')?.can_edit ?? false;
 
@@ -46,6 +49,24 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
       setEmissorNome((data as any)?.full_name || null);
     })();
   }, [open, ordem.created_by]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (ordem.servicos && ordem.servicos.length) { setServicos(ordem.servicos); return; }
+    (async () => {
+      const { data } = await supabase
+        .from('servicos_os')
+        .select('*')
+        .eq('ordem_id', ordem.id)
+        .order('created_at');
+      setServicos((data || []) as unknown as ServicoOS[]);
+    })();
+  }, [open, ordem.id, ordem.servicos]);
+
+  // Cronômetro OS: início = data_emissao (fallback data_registro); fim = updated_at se Encerrado
+  const osStart = ordem.data_emissao || ordem.data_registro;
+  const osEnd = ordem.status_os === 'Encerrado' ? ordem.updated_at : null;
+  const osElapsed = elapsedMs(osStart, osEnd);
 
   const handleUpdate = async () => {
     if (newStatus !== ordem.status_os || comentario) {
@@ -111,6 +132,47 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                   <p className="rounded-lg bg-muted p-3 text-sm">{ordem.observacoes}</p>
                 </div>
               )}
+
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary" /> Cronômetro
+                </h4>
+                <div className="rounded-lg border p-3 flex items-center justify-between text-sm">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Tempo total da OS</div>
+                    <div className="font-medium">{formatDuration(osElapsed)}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-right">
+                    {osStart && <>Início: {format(parseISO(osStart), 'dd/MM/yyyy', { locale: ptBR })}</>}<br />
+                    {osEnd
+                      ? <>Encerrado: {format(parseISO(osEnd), 'dd/MM/yyyy', { locale: ptBR })}</>
+                      : <span className="text-emerald-600">Em andamento</span>}
+                  </div>
+                </div>
+                {servicos.length > 0 && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Por serviço</Label>
+                    <div className="rounded-lg border divide-y">
+                      {servicos.map(s => {
+                        const sEnd = s.status === 'Encerrado' ? (s.data_conclusao || s.updated_at) : null;
+                        const sMs = elapsedMs(s.data_inicio, sEnd);
+                        return (
+                          <div key={s.id} className="flex items-center justify-between p-2 text-sm">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-medium truncate">{s.tipo}</span>
+                              <Badge className={statusServicoColors[s.status] + ' text-[10px]'}>{s.status}</Badge>
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {s.data_inicio ? formatDuration(sMs) : 'não iniciado'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
 
               <div className="border-t pt-4 space-y-4">
                 <h4 className="font-semibold">Atualizar Status</h4>

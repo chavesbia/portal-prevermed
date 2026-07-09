@@ -15,10 +15,12 @@ import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { OSAlertasView } from '@/components/os/OSAlertasView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
+import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
   const { getModulePermissions } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
+  const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, filters, setFilters,
     getFilteredOrdens, addOrdem, updateOrdem, updateOrdemStatus,
@@ -62,7 +64,7 @@ export default function GestaoOS() {
           <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
-          <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+          {isFinanceiro && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
@@ -112,9 +114,11 @@ export default function GestaoOS() {
           <OSProfissionaisView canEdit={canEdit} />
         </TabsContent>
 
-        <TabsContent value="financeiro" className="mt-6">
-          <OSFinanceiroView />
-        </TabsContent>
+        {isFinanceiro && (
+          <TabsContent value="financeiro" className="mt-6">
+            <OSFinanceiroView />
+          </TabsContent>
+        )}
       </Tabs>
 
       {canEdit && (
