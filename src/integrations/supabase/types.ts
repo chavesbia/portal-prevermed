@@ -2969,6 +2969,9 @@ export type Database = {
       }
       laudos: {
         Row: {
+          art_anexo_url: string | null
+          art_numero: string | null
+          art_validade: string | null
           created_at: string
           created_by: string | null
           data_emissao: string
@@ -2979,6 +2982,7 @@ export type Database = {
           numero_os: string
           observacoes: string | null
           ordem_id: string
+          possui_art: boolean
           possui_vigencia: boolean
           responsavel_tecnico_id: string
           responsavel_tecnico_nome: string
@@ -2990,6 +2994,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          art_anexo_url?: string | null
+          art_numero?: string | null
+          art_validade?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string
@@ -3000,6 +3007,7 @@ export type Database = {
           numero_os: string
           observacoes?: string | null
           ordem_id: string
+          possui_art?: boolean
           possui_vigencia?: boolean
           responsavel_tecnico_id: string
           responsavel_tecnico_nome: string
@@ -3011,6 +3019,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          art_anexo_url?: string | null
+          art_numero?: string | null
+          art_validade?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string
@@ -3021,6 +3032,7 @@ export type Database = {
           numero_os?: string
           observacoes?: string | null
           ordem_id?: string
+          possui_art?: boolean
           possui_vigencia?: boolean
           responsavel_tecnico_id?: string
           responsavel_tecnico_nome?: string

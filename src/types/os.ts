@@ -134,6 +134,10 @@ export interface Laudo {
   data_validade: string | null;
   justificativa_sem_vigencia: string | null;
   observacoes: string | null;
+  possui_art: boolean;
+  art_numero: string | null;
+  art_validade: string | null;
+  art_anexo_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
