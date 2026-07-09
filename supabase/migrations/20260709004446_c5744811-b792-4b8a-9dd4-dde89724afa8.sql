@@ -1,0 +1,2 @@
+ALTER TABLE public.profissionais DROP CONSTRAINT profissionais_categoria_check;
+ALTER TABLE public.profissionais ADD CONSTRAINT profissionais_categoria_check CHECK (categoria = ANY (ARRAY['Médico'::text, 'Psicólogo'::text, 'Enfermeiro'::text, 'Engenheiro de Segurança'::text, 'Técnico de Segurança'::text, 'Fonoaudiólogo'::text, 'Ergonomista'::text, 'Auxiliar Técnico'::text, 'Outro'::text]));
