@@ -288,9 +288,15 @@ export function useOrdens() {
   };
 
   const getResponsaveis = useCallback(() => {
-    const set = new Set(ordens.map(o => o.responsavel_atual));
+    const set = new Set<string>();
+    ordens.forEach(o => {
+      (o.servicos || []).forEach(s => {
+        const p = profissionais.find(pr => pr.id === s.responsavel_id);
+        if (p?.nome) set.add(p.nome);
+      });
+    });
     return Array.from(set).sort();
-  }, [ordens]);
+  }, [ordens, profissionais]);
 
   return {
     ordens,
