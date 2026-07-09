@@ -133,6 +133,47 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                 </div>
               )}
 
+              <div className="border-t pt-4 space-y-3">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-primary" /> Cronômetro
+                </h4>
+                <div className="rounded-lg border p-3 flex items-center justify-between text-sm">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Tempo total da OS</div>
+                    <div className="font-medium">{formatDuration(osElapsed)}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-right">
+                    {osStart && <>Início: {format(parseISO(osStart), 'dd/MM/yyyy', { locale: ptBR })}</>}<br />
+                    {osEnd
+                      ? <>Encerrado: {format(parseISO(osEnd), 'dd/MM/yyyy', { locale: ptBR })}</>
+                      : <span className="text-emerald-600">Em andamento</span>}
+                  </div>
+                </div>
+                {servicos.length > 0 && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Por serviço</Label>
+                    <div className="rounded-lg border divide-y">
+                      {servicos.map(s => {
+                        const sEnd = s.status === 'Encerrado' ? (s.data_conclusao || s.updated_at) : null;
+                        const sMs = elapsedMs(s.data_inicio, sEnd);
+                        return (
+                          <div key={s.id} className="flex items-center justify-between p-2 text-sm">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-medium truncate">{s.tipo}</span>
+                              <Badge className={statusServicoColors[s.status] + ' text-[10px]'}>{s.status}</Badge>
+                            </div>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              {s.data_inicio ? formatDuration(sMs) : 'não iniciado'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+
               <div className="border-t pt-4 space-y-4">
                 <h4 className="font-semibold">Atualizar Status</h4>
                 <div className="space-y-2">
