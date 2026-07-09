@@ -199,10 +199,10 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
             </SelectContent>
           </Select>
           <Select value={filters.responsavel_id} onValueChange={v => setFilters({ ...filters, responsavel_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Elaborador/Executor" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os responsáveis</SelectItem>
-              {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}
+              <SelectItem value="all">Todos</SelectItem>
+              {responsaveisComVisitas.map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
             </SelectContent>
           </Select>
           <div className="flex gap-2">
