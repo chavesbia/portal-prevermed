@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OrdemServico, ServicoOS, HistoricoOS, OSFilters, StatusOS, TipoOS, StatusServico } from '@/types/os';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
 
 const defaultFilters: OSFilters = {
