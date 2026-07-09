@@ -315,7 +315,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       {/* Dialog Nova Visita */}
       <Dialog open={openDialog} onOpenChange={onOpenDialog}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Agenda</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingVisita ? 'Editar visita' : 'Agendar visita'}</DialogTitle></DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
