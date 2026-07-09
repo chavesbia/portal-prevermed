@@ -309,6 +309,7 @@ export function useOSVisitas() {
     setFilters,
     getFiltered,
     addVisita,
+    updateVisita,
     updateVisitaStatus,
     deleteVisita,
     detectConflitos,
