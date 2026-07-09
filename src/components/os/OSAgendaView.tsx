@@ -117,8 +117,8 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const conflitos = useMemo(() => {
     if (!watchedData) return [];
     const dataISO = format(watchedData, 'yyyy-MM-dd');
-    return detectConflitos(dataISO, equipamentosIds, watchedResp, watchedHora);
-  }, [watchedData, equipamentosIds, watchedResp, watchedHora, detectConflitos]);
+    return detectConflitos(dataISO, equipamentosIds, watchedResp, watchedHora, editingVisita?.id);
+  }, [watchedData, equipamentosIds, watchedResp, watchedHora, detectConflitos, editingVisita]);
   const hasBloqueio = conflitos.some(c => c.severity === 'error');
 
   const equipNomes = (ids: string[]) =>
