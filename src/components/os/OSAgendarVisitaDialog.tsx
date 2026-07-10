@@ -58,7 +58,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
     if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
     if (hasBloqueio) { toast({ title: 'Conflito', description: 'Resolva os conflitos de agenda antes de salvar.', variant: 'destructive' }); return; }
     setSaving(true);
-    const profile = profiles.find(p => p.user_id === responsavelId);
+    const profissional = profissionais.find(p => p.id === responsavelId);
     const ok = await addVisita({
       empresa_cliente: ordem.empresa_cliente,
       ordem_id: ordem.id,
