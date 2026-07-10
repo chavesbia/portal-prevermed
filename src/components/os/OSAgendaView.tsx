@@ -365,10 +365,9 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
               <FormField control={form.control} name="responsavel_id" render={({ field }) => (
                 <FormItem><FormLabel>Elaborador/Executor *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ProfissionalSelector value={field.value || null} onChange={(id) => field.onChange(id || '')} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
