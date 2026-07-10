@@ -137,7 +137,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const onSubmit = async (data: FormData) => {
     if (hasBloqueio) return;
     if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
-    const profile = profiles.find(p => p.user_id === data.responsavel_id);
+    const profissional = profissionais.find(p => p.id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
     const payload = {
       empresa_cliente: data.empresa_cliente,
@@ -147,7 +147,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       data_visita: format(data.data_visita, 'yyyy-MM-dd'),
       hora_visita: data.hora_visita || null,
       responsavel_id: data.responsavel_id,
-      responsavel_nome: profile?.full_name || 'Sem nome',
+      responsavel_nome: profissional?.nome || 'Sem nome',
       tipo_visita: data.tipo_visita as VisitaTipo,
       endereco: data.endereco || null,
       observacoes: data.observacoes || null,
