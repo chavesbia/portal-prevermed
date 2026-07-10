@@ -57,9 +57,9 @@ const formatBRL = (v: number) =>
 export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
   const { equipamentos } = useOSEquipamentos();
+  const { profissionais } = useProfissionais();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingVisita, setEditingVisita] = useState<OSVisita | null>(null);
-  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [selectedView, setSelectedView] = useState<OSVisita | null>(null);
   const [toCancel, setToCancel] = useState<OSVisita | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -71,27 +71,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     defaultValues: { empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' },
   });
 
-  useEffect(() => {
-    (async () => {
-      // Apenas usuários do departamento de Engenharia podem ser responsáveis por visitas
-      const { data: ud } = await supabase
-        .from('user_departments')
-        .select('user_id')
-        .eq('department_id', ENGENHARIA_DEPT_ID);
-      const ids = (ud || []).map((r: any) => r.user_id);
-      if (ids.length === 0) {
-        setProfiles([]);
-        return;
-      }
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('status', 'active')
-        .in('user_id', ids)
-        .order('full_name');
-      setProfiles((data || []) as ProfileOption[]);
-    })();
-  }, []);
 
   const filtered = getFiltered();
   const responsaveisComVisitas = useMemo(() => {
