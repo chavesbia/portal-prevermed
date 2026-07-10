@@ -41,7 +41,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const [saving, setSaving] = useState(false);
 
   const reset = () => {
-    setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId('');
+    setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId(null);
     setTipoVisita('Visita Técnica'); setEndereco(''); setObservacoes('');
     setCustoAprox(''); setUrgente(false); setMotivoUrgencia('');
   };
