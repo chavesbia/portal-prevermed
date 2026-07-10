@@ -24,13 +24,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import { useOSVisitas } from '@/hooks/useOSVisitas';
 import { useOSEquipamentos } from '@/hooks/useOSEquipamentos';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 import { supabase } from '@/integrations/supabase/client';
-
-interface ProfileOption { user_id: string; full_name: string | null; }
-
-const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
