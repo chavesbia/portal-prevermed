@@ -127,13 +127,9 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
 
           <div className="space-y-2">
             <Label>Elaborador/Executor *</Label>
-            <Select value={responsavelId} onValueChange={setResponsavelId}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} />
           </div>
+
 
           <div className="space-y-2">
             <Label>Tipo de Visita *</Label>
