@@ -67,7 +67,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
       data_visita: format(dataVisita, 'yyyy-MM-dd'),
       hora_visita: horaVisita || null,
       responsavel_id: responsavelId,
-      responsavel_nome: profile?.full_name || 'Sem nome',
+      responsavel_nome: profissional?.nome || 'Sem nome',
       tipo_visita: tipoVisita,
       endereco: endereco || null,
       observacoes: observacoes || null,
