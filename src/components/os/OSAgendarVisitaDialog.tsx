@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils';
 import { OrdemServico } from '@/types/os';
 import { VISITA_TIPO_OPTIONS, VisitaTipo } from '@/types/osVisitas';
 import { useOSVisitas } from '@/hooks/useOSVisitas';
-import { supabase } from '@/integrations/supabase/client';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { toast } from '@/hooks/use-toast';
 
 interface Props {
@@ -24,17 +25,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-interface ProfileOption { user_id: string; full_name: string | null; }
-
-const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
-
 export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const { addVisita, detectConflitos } = useOSVisitas();
-  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+  const { profissionais } = useProfissionais();
   const [servicoId, setServicoId] = useState<string>('none');
   const [dataVisita, setDataVisita] = useState<Date | undefined>();
   const [horaVisita, setHoraVisita] = useState('');
-  const [responsavelId, setResponsavelId] = useState('');
+  const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [tipoVisita, setTipoVisita] = useState<VisitaTipo>('Visita Técnica');
   const [endereco, setEndereco] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -43,27 +40,8 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const [motivoUrgencia, setMotivoUrgencia] = useState('');
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
-    (async () => {
-      const { data: ud } = await supabase
-        .from('user_departments')
-        .select('user_id')
-        .eq('department_id', ENGENHARIA_DEPT_ID);
-      const ids = (ud || []).map((r: any) => r.user_id);
-      if (ids.length === 0) { setProfiles([]); return; }
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('status', 'active')
-        .in('user_id', ids)
-        .order('full_name');
-      setProfiles((data || []) as ProfileOption[]);
-    })();
-  }, [open]);
-
   const reset = () => {
-    setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId('');
+    setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId(null);
     setTipoVisita('Visita Técnica'); setEndereco(''); setObservacoes('');
     setCustoAprox(''); setUrgente(false); setMotivoUrgencia('');
   };
@@ -80,7 +58,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
     if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
     if (hasBloqueio) { toast({ title: 'Conflito', description: 'Resolva os conflitos de agenda antes de salvar.', variant: 'destructive' }); return; }
     setSaving(true);
-    const profile = profiles.find(p => p.user_id === responsavelId);
+    const profissional = profissionais.find(p => p.id === responsavelId);
     const ok = await addVisita({
       empresa_cliente: ordem.empresa_cliente,
       ordem_id: ordem.id,
@@ -89,7 +67,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
       data_visita: format(dataVisita, 'yyyy-MM-dd'),
       hora_visita: horaVisita || null,
       responsavel_id: responsavelId,
-      responsavel_nome: profile?.full_name || 'Sem nome',
+      responsavel_nome: profissional?.nome || 'Sem nome',
       tipo_visita: tipoVisita,
       endereco: endereco || null,
       observacoes: observacoes || null,
@@ -149,13 +127,9 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
 
           <div className="space-y-2">
             <Label>Elaborador/Executor *</Label>
-            <Select value={responsavelId} onValueChange={setResponsavelId}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} />
           </div>
+
 
           <div className="space-y-2">
             <Label>Tipo de Visita *</Label>

@@ -24,13 +24,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { cn } from '@/lib/utils';
 import { useOSVisitas } from '@/hooks/useOSVisitas';
 import { useOSEquipamentos } from '@/hooks/useOSEquipamentos';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 import { supabase } from '@/integrations/supabase/client';
-
-interface ProfileOption { user_id: string; full_name: string | null; }
-
-const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
 
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
@@ -59,9 +57,9 @@ const formatBRL = (v: number) =>
 export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const { isLoading, filters, setFilters, getFiltered, addVisita, updateVisita, updateVisitaStatus, deleteVisita, detectConflitos, visitaEquipamentos } = useOSVisitas();
   const { equipamentos } = useOSEquipamentos();
+  const { profissionais } = useProfissionais();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingVisita, setEditingVisita] = useState<OSVisita | null>(null);
-  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
   const [selectedView, setSelectedView] = useState<OSVisita | null>(null);
   const [toCancel, setToCancel] = useState<OSVisita | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -73,27 +71,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     defaultValues: { empresa_cliente: '', tipo_visita: 'Visita Técnica', custos_deslocamento: '', urgente: false, motivo_urgencia: '' },
   });
 
-  useEffect(() => {
-    (async () => {
-      // Apenas usuários do departamento de Engenharia podem ser responsáveis por visitas
-      const { data: ud } = await supabase
-        .from('user_departments')
-        .select('user_id')
-        .eq('department_id', ENGENHARIA_DEPT_ID);
-      const ids = (ud || []).map((r: any) => r.user_id);
-      if (ids.length === 0) {
-        setProfiles([]);
-        return;
-      }
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('status', 'active')
-        .in('user_id', ids)
-        .order('full_name');
-      setProfiles((data || []) as ProfileOption[]);
-    })();
-  }, []);
 
   const filtered = getFiltered();
   const responsaveisComVisitas = useMemo(() => {
@@ -160,7 +137,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const onSubmit = async (data: FormData) => {
     if (hasBloqueio) return;
     if (data.urgente && !(data.motivo_urgencia || '').trim()) return;
-    const profile = profiles.find(p => p.user_id === data.responsavel_id);
+    const profissional = profissionais.find(p => p.id === data.responsavel_id);
     const ordem = data.ordem_id && data.ordem_id !== 'none' ? ordens.find(o => o.id === data.ordem_id) : null;
     const payload = {
       empresa_cliente: data.empresa_cliente,
@@ -170,7 +147,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
       data_visita: format(data.data_visita, 'yyyy-MM-dd'),
       hora_visita: data.hora_visita || null,
       responsavel_id: data.responsavel_id,
-      responsavel_nome: profile?.full_name || 'Sem nome',
+      responsavel_nome: profissional?.nome || 'Sem nome',
       tipo_visita: data.tipo_visita as VisitaTipo,
       endereco: data.endereco || null,
       observacoes: data.observacoes || null,
@@ -388,10 +365,9 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
 
               <FormField control={form.control} name="responsavel_id" render={({ field }) => (
                 <FormItem><FormLabel>Elaborador/Executor *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                    <SelectContent>{profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ProfissionalSelector value={field.value || null} onChange={(id) => field.onChange(id || '')} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
