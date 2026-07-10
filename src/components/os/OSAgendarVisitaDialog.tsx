@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils';
 import { OrdemServico } from '@/types/os';
 import { VISITA_TIPO_OPTIONS, VisitaTipo } from '@/types/osVisitas';
 import { useOSVisitas } from '@/hooks/useOSVisitas';
-import { supabase } from '@/integrations/supabase/client';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { toast } from '@/hooks/use-toast';
 
 interface Props {
@@ -24,17 +25,13 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-interface ProfileOption { user_id: string; full_name: string | null; }
-
-const ENGENHARIA_DEPT_ID = '75667708-1efb-4c2e-87b1-70251eb7f412';
-
 export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const { addVisita, detectConflitos } = useOSVisitas();
-  const [profiles, setProfiles] = useState<ProfileOption[]>([]);
+  const { profissionais } = useProfissionais();
   const [servicoId, setServicoId] = useState<string>('none');
   const [dataVisita, setDataVisita] = useState<Date | undefined>();
   const [horaVisita, setHoraVisita] = useState('');
-  const [responsavelId, setResponsavelId] = useState('');
+  const [responsavelId, setResponsavelId] = useState<string | null>(null);
   const [tipoVisita, setTipoVisita] = useState<VisitaTipo>('Visita Técnica');
   const [endereco, setEndereco] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -42,25 +39,6 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
   const [urgente, setUrgente] = useState(false);
   const [motivoUrgencia, setMotivoUrgencia] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    (async () => {
-      const { data: ud } = await supabase
-        .from('user_departments')
-        .select('user_id')
-        .eq('department_id', ENGENHARIA_DEPT_ID);
-      const ids = (ud || []).map((r: any) => r.user_id);
-      if (ids.length === 0) { setProfiles([]); return; }
-      const { data } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .eq('status', 'active')
-        .in('user_id', ids)
-        .order('full_name');
-      setProfiles((data || []) as ProfileOption[]);
-    })();
-  }, [open]);
 
   const reset = () => {
     setServicoId('none'); setDataVisita(undefined); setHoraVisita(''); setResponsavelId('');
