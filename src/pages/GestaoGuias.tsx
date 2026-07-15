@@ -25,6 +25,7 @@ export default function GestaoGuias() {
   const defaultTab = searchParams.get("tab") || "dashboard";
 
   const [injectedFilters, setInjectedFilters] = useState<Partial<GuiaFiltersState> | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value }, { replace: true });
@@ -35,12 +36,30 @@ export default function GestaoGuias() {
     setSearchParams({ tab: "guias" }, { replace: true });
   }, [setSearchParams]);
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await exportGuiasCompleto();
+      toast({ title: "Exportação concluída", description: `${res.totalGuias.toLocaleString("pt-BR")} guias exportadas.` });
+    } catch (err: any) {
+      toast({ title: "Erro ao exportar", description: err.message ?? String(err), variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <ProtectedModuleRoute route={MODULE_ROUTE}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Gestão de Guias</h1>
-          <p className="text-muted-foreground">Controle operacional de guias do SOC</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Gestão de Guias</h1>
+            <p className="text-muted-foreground">Controle operacional de guias do SOC</p>
+          </div>
+          <Button onClick={handleExport} disabled={exporting} variant="outline" className="gap-2">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? "Exportando..." : "Exportar tudo (XLSX)"}
+          </Button>
         </div>
 
         <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-4">
