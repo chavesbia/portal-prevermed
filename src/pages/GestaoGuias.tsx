@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, List, LayoutDashboard, Settings } from "lucide-react";
+import { Upload, List, LayoutDashboard, Settings, Download, Loader2 } from "lucide-react";
 import GuiasImportacao from "./guias/GuiasImportacao";
 import GuiasList from "./guias/GuiasList";
 import GuiasDashboard from "./guias/GuiasDashboard";
@@ -10,6 +10,9 @@ import { ProtectedModuleRoute } from "@/components/layout/ProtectedModuleRoute";
 import { useSearchParams } from "react-router-dom";
 import { emptyFilters, type GuiaFiltersState } from "@/components/guias/GuiaFilters";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { exportGuiasCompleto } from "@/lib/guias/export";
+import { toast } from "@/hooks/use-toast";
 
 const MODULE_ROUTE = '/gestao-guias';
 
