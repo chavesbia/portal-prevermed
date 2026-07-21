@@ -655,7 +655,8 @@ export function PermissionsMasterDetail() {
                         };
 
                         return (
-                          <>
+                          <Fragment key={group.key}>
+
                             {hasChildren && (
                               <tr key={`grp-${group.key}`} className="bg-muted/30 border-t-2 border-border/60">
                                 <td colSpan={6} className="py-2 px-3">
