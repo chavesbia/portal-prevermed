@@ -98,7 +98,7 @@ const App = () => (
                 <Route path="/departamentos/*" element={<Index />} />
 
                 {/* Admin routes - exclusivo ADM Master */}
-                <Route path="/admin/usuarios" element={<AdminMasterRoute><AdminUsers /></AdminMasterRoute>} />
+                <Route path="/admin/usuarios" element={<Navigate to="/admin/permissoes?tab=usuarios" replace />} />
                 <Route path="/admin/departamentos" element={<AdminMasterRoute><AdminDepartments /></AdminMasterRoute>} />
                 <Route path="/admin/permissoes" element={<AdminMasterRoute><AdminPermissions /></AdminMasterRoute>} />
                 <Route path="/admin/auditoria" element={<AdminMasterRoute><AdminAudit /></AdminMasterRoute>} />
