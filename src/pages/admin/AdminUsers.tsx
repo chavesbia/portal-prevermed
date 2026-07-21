@@ -1157,6 +1157,14 @@ export default function AdminUsers() {
               )}
             </Button>
           </div>
+            </TabsContent>
+
+            <TabsContent value="acessos" className="flex-1 overflow-hidden mt-3 data-[state=inactive]:hidden" forceMount>
+              {selectedUser && (
+                <UserAccessPanel userId={selectedUser.user_id} />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
