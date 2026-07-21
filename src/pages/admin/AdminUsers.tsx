@@ -799,7 +799,19 @@ export default function AdminUsers() {
               Atualize todas as informações do usuário {selectedUser?.full_name}.
             </DialogDescription>
           </DialogHeader>
-          
+
+          <Tabs defaultValue="perfil" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-0 h-10 shrink-0">
+              <TabsTrigger value="perfil" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Perfil
+              </TabsTrigger>
+              <TabsTrigger value="acessos" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Shield className="h-3.5 w-3.5 mr-1.5" />
+                Acessos
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="perfil" className="flex-1 overflow-hidden mt-3 data-[state=inactive]:hidden" forceMount>
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
             {/* Photo Upload */}
             <div className="flex items-center gap-4">
