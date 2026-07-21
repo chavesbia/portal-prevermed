@@ -145,6 +145,56 @@ export function PermissionsMasterDetail() {
     return (modulesByDept.get(activeDept) || []).sort((a, b) => a.name.localeCompare(b.name));
   }, [activeDept, modules, modulesByDept]);
 
+  /**
+   * Agrupa módulos hierarquicamente pela convenção de nome:
+   *   "Feedback - Avaliações" → grupo "Feedback"
+   *   "Gestão de Feedback"    → módulo raiz do grupo "Gestão de Feedback"
+   * Se existir um módulo raiz cujo nome coincida com o prefixo (ou contenha o prefixo),
+   * ele é usado como "pai"; os demais viram filhos. Módulos sem sub-permissões
+   * viram grupos de 1 item só (sem cabeçalho extra).
+   */
+  const groupedModules = useMemo(() => {
+    const list = modulesForActiveTab;
+    // Módulos com " - " são "filhos" — o texto antes do primeiro " - " é a chave do grupo
+    const buckets = new Map<string, { key: string; parent: Module | null; children: Module[] }>();
+
+    const ensure = (key: string) => {
+      if (!buckets.has(key)) buckets.set(key, { key, parent: null, children: [] });
+      return buckets.get(key)!;
+    };
+
+    // primeiro os filhos, para saber quais chaves têm subitens
+    for (const m of list) {
+      const idx = m.name.indexOf(' - ');
+      if (idx > 0) {
+        const key = m.name.slice(0, idx).trim();
+        ensure(key).children.push(m);
+      }
+    }
+    // agora os pais / módulos avulsos
+    for (const m of list) {
+      const idx = m.name.indexOf(' - ');
+      if (idx > 0) continue;
+      // tenta casar como pai de algum bucket (match exato ou o bucket contido no nome)
+      const key =
+        [...buckets.keys()].find(k => m.name === k || m.name.toLowerCase().includes(k.toLowerCase())) ??
+        m.name;
+      const b = ensure(key);
+      // primeiro pai vence; se já existe pai, vira "avulso" próprio
+      if (b.parent) ensure(m.name).parent = m;
+      else b.parent = m;
+    }
+    return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+  }, [modulesForActiveTab]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) =>
+    setCollapsedGroups(prev => {
+      const n = new Set(prev);
+      n.has(key) ? n.delete(key) : n.add(key);
+      return n;
+    });
+
   // Effective value considering pending edits
   const effectiveValue = (moduleId: string, action: ActionKey): boolean => {
     const p = pending[moduleId];
@@ -161,18 +211,38 @@ export function PermissionsMasterDetail() {
     }));
   };
 
-  const markAllInTab = (value: boolean) => {
+  const applyToModules = (moduleIds: string[], values: Partial<Record<ActionKey, boolean>>) => {
     setPending(prev => {
       const next = { ...prev };
-      for (const m of modulesForActiveTab) {
-        next[m.id] = ACTIONS.reduce(
-          (acc, a) => ({ ...acc, [a.key]: value }),
-          next[m.id] || {}
-        );
+      for (const id of moduleIds) {
+        next[id] = { ...(next[id] || {}), ...values };
       }
       return next;
     });
   };
+
+  const markAllInTab = (value: boolean) => {
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: value }), {} as Record<ActionKey, boolean>);
+    applyToModules(modulesForActiveTab.map(m => m.id), values);
+  };
+
+  // Marca "Visualizar" em todos os módulos do grupo (pai + filhos)
+  const releaseGroupView = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    applyToModules(ids, { can_view: true });
+  };
+  // Marca todas as ações em todos os módulos do grupo
+  const releaseGroupFull = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: true }), {} as Record<ActionKey, boolean>);
+    applyToModules(ids, values);
+  };
+  const clearGroup = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: false }), {} as Record<ActionKey, boolean>);
+    applyToModules(ids, values);
+  };
+
 
   const changesCount = useMemo(() => {
     let c = 0;
