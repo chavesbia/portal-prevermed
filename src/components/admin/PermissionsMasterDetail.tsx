@@ -717,7 +717,8 @@ export function PermissionsMasterDetail() {
                             )}
                             {!collapsed && group.parent && renderRow(group.parent, false)}
                             {!collapsed && group.children.map(c => renderRow(c, hasChildren))}
-                          </>
+                          </Fragment>
+
                         );
                       })
                     )}
