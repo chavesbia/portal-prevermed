@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -17,7 +16,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Shield, Plus, Edit, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid, ShieldCheck, Link2Off,
+  Shield, Plus, Trash2, RefreshCw, Users, Building2, Search, Package, LayoutGrid, ClipboardCheck,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -69,24 +68,51 @@ interface UserPermission {
   module_name?: string;
 }
 
-const ACTIONS = [
-  { key: 'can_view', label: 'Visualizar' },
-  { key: 'can_create', label: 'Criar' },
-  { key: 'can_edit', label: 'Editar' },
-  { key: 'can_delete', label: 'Excluir' },
-  { key: 'can_approve', label: 'Aprovar' },
-] as const;
+// Legacy tab values → new location
+const TAB_ALIASES: Record<string, { tab: string; sub?: string }> = {
+  'user-perms': { tab: 'manage' },
+  'overview': { tab: 'auditoria', sub: 'visao-geral' },
+  'revisao-permissoes': { tab: 'auditoria', sub: 'revisao-permissoes' },
+  'revisao-vinculos': { tab: 'auditoria', sub: 'revisao-vinculos' },
+};
 
 export default function AdminPermissions() {
   const { role } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'usuarios';
+  const rawTab = searchParams.get('tab') || 'usuarios';
+  const rawSub = searchParams.get('sub') || '';
+
+  // Resolve legacy aliases
+  const alias = TAB_ALIASES[rawTab];
+  const currentTab = alias ? alias.tab : rawTab;
+  const currentSub = alias?.sub || rawSub || 'revisao-permissoes';
+
+  useEffect(() => {
+    if (alias) {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', alias.tab);
+      if (alias.sub) next.set('sub', alias.sub);
+      else next.delete('sub');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawTab]);
+
   const handleTabChange = (value: string) => {
     const next = new URLSearchParams(searchParams);
     if (value === 'usuarios') next.delete('tab');
     else next.set('tab', value);
+    next.delete('sub');
     setSearchParams(next, { replace: true });
   };
+
+  const handleSubChange = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', 'auditoria');
+    next.set('sub', value);
+    setSearchParams(next, { replace: true });
+  };
+
   const [modules, setModules] = useState<Module[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [deptModules, setDeptModules] = useState<DeptModule[]>([]);
@@ -98,20 +124,6 @@ export default function AdminPermissions() {
   const [selectedDept, setSelectedDept] = useState<string>('');
   const [addModuleDialogOpen, setAddModuleDialogOpen] = useState(false);
   const [selectedModuleToAdd, setSelectedModuleToAdd] = useState<string>('');
-
-  // User permissions tab state
-  const [searchUser, setSearchUser] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string>('');
-  const [permDialogOpen, setPermDialogOpen] = useState(false);
-  const [editingPerm, setEditingPerm] = useState<UserPermission | null>(null);
-  const [permForm, setPermForm] = useState({
-    module_id: '',
-    can_view: true,
-    can_create: false,
-    can_edit: false,
-    can_delete: false,
-    can_approve: false,
-  });
 
   useEffect(() => {
     fetchAllData();
@@ -174,7 +186,7 @@ export default function AdminPermissions() {
     fetchAllData();
   };
 
-  // ==================== Overview Tab ====================
+  // ==================== Overview (sub-tab) ====================
 
   const usersWithPermissions = (() => {
     const userIds = [...new Set(permissions.map(p => p.user_id))];
@@ -198,114 +210,6 @@ export default function AdminPermissions() {
     u.user!.full_name.toLowerCase().includes(overviewSearch.toLowerCase()) ||
     (u.user!.contact_email || u.user!.email).toLowerCase().includes(overviewSearch.toLowerCase())
   );
-
-  // ==================== User Permissions Tab ====================
-
-  const filteredUsers = users.filter(u =>
-    u.full_name.toLowerCase().includes(searchUser.toLowerCase()) ||
-    (u.contact_email || u.email).toLowerCase().includes(searchUser.toLowerCase())
-  );
-
-  // Get modules available to the selected user (based on their departments)
-  const getUserAvailableModules = (userId: string) => {
-    // Get user's department IDs (we need to fetch from user_departments)
-    // For simplicity, show all department-linked modules
-    const allLinkedModuleIds = new Set(deptModules.map(dm => dm.module_id));
-    return modules.filter(m => allLinkedModuleIds.has(m.id));
-  };
-
-  const userPermissions = permissions
-    .filter(p => p.user_id === selectedUser)
-    .map(p => ({
-      ...p,
-      module_name: modules.find(m => m.id === p.module_id)?.name || 'Desconhecido',
-    }));
-
-  const handleOpenPermDialog = (perm?: UserPermission) => {
-    if (perm) {
-      setEditingPerm(perm);
-      setPermForm({
-        module_id: perm.module_id,
-        can_view: perm.can_view,
-        can_create: perm.can_create,
-        can_edit: perm.can_edit,
-        can_delete: perm.can_delete,
-        can_approve: perm.can_approve,
-      });
-    } else {
-      setEditingPerm(null);
-      setPermForm({
-        module_id: '',
-        can_view: true,
-        can_create: false,
-        can_edit: false,
-        can_delete: false,
-        can_approve: false,
-      });
-    }
-    setPermDialogOpen(true);
-  };
-
-  const handleSavePerm = async () => {
-    if (!selectedUser || !permForm.module_id) return;
-
-    if (editingPerm) {
-      const { error } = await supabase
-        .from('permissions')
-        .update({
-          can_view: permForm.can_view,
-          can_create: permForm.can_create,
-          can_edit: permForm.can_edit,
-          can_delete: permForm.can_delete,
-          can_approve: permForm.can_approve,
-        })
-        .eq('id', editingPerm.id);
-
-      if (error) {
-        toast.error('Erro ao atualizar permissão');
-        return;
-      }
-      toast.success('Permissão atualizada');
-    } else {
-      // Check for existing
-      const existing = permissions.find(
-        p => p.user_id === selectedUser && p.module_id === permForm.module_id
-      );
-      if (existing) {
-        toast.error('Este usuário já possui permissão para este módulo');
-        return;
-      }
-
-      const { error } = await supabase.from('permissions').insert({
-        user_id: selectedUser,
-        module_id: permForm.module_id,
-        can_view: permForm.can_view,
-        can_create: permForm.can_create,
-        can_edit: permForm.can_edit,
-        can_delete: permForm.can_delete,
-        can_approve: permForm.can_approve,
-      });
-
-      if (error) {
-        toast.error('Erro ao criar permissão');
-        return;
-      }
-      toast.success('Permissão criada');
-    }
-
-    setPermDialogOpen(false);
-    fetchAllData();
-  };
-
-  const handleDeletePerm = async (permId: string) => {
-    const { error } = await supabase.from('permissions').delete().eq('id', permId);
-    if (error) {
-      toast.error('Erro ao remover permissão');
-      return;
-    }
-    toast.success('Permissão removida');
-    fetchAllData();
-  };
 
   if (role !== 'adm_master') {
     return (
@@ -345,25 +249,13 @@ export default function AdminPermissions() {
             <LayoutGrid className="h-4 w-4" />
             Gerenciar por Usuário
           </TabsTrigger>
-          <TabsTrigger value="revisao-permissoes" className="gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            Revisão de Permissões
-          </TabsTrigger>
-          <TabsTrigger value="revisao-vinculos" className="gap-2">
-            <Link2Off className="h-4 w-4" />
-            Revisão de Vínculos
-          </TabsTrigger>
-          <TabsTrigger value="overview" className="gap-2">
-            <Shield className="h-4 w-4" />
-            Visão Geral
+          <TabsTrigger value="auditoria" className="gap-2">
+            <ClipboardCheck className="h-4 w-4" />
+            Auditoria
           </TabsTrigger>
           <TabsTrigger value="dept-modules" className="gap-2">
             <Building2 className="h-4 w-4" />
             Módulos por Departamento
-          </TabsTrigger>
-          <TabsTrigger value="user-perms" className="gap-2">
-            <Users className="h-4 w-4" />
-            Permissões (legado)
           </TabsTrigger>
         </TabsList>
 
@@ -371,88 +263,95 @@ export default function AdminPermissions() {
           <AdminUsers />
         </TabsContent>
 
-        {/* ===== Tab: Master-Detail Manager ===== */}
         <TabsContent value="manage">
           <PermissionsMasterDetail />
         </TabsContent>
 
-        <TabsContent value="revisao-permissoes">
-          <AdminShadowReview />
-        </TabsContent>
+        {/* ===== Tab: Auditoria (nested sub-tabs) ===== */}
+        <TabsContent value="auditoria">
+          <Tabs value={currentSub} onValueChange={handleSubChange} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="revisao-permissoes">Revisão de Permissões</TabsTrigger>
+              <TabsTrigger value="revisao-vinculos">Revisão de Vínculos</TabsTrigger>
+              <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="revisao-vinculos">
-          <AdminInertLinksReview />
-        </TabsContent>
+            <TabsContent value="revisao-permissoes">
+              <AdminShadowReview />
+            </TabsContent>
 
+            <TabsContent value="revisao-vinculos">
+              <AdminInertLinksReview />
+            </TabsContent>
 
+            <TabsContent value="visao-geral">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Usuários com Permissões Liberadas</CardTitle>
+                    <Badge variant="outline" className="text-sm">
+                      {usersWithPermissions.length} usuário(s)
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Filtrar por nome ou e-mail..."
+                      value={overviewSearch}
+                      onChange={e => setOverviewSearch(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
 
-        {/* ===== Tab: Overview ===== */}
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Usuários com Permissões Liberadas</CardTitle>
-                <Badge variant="outline" className="text-sm">
-                  {usersWithPermissions.length} usuário(s)
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Filtrar por nome ou e-mail..."
-                  value={overviewSearch}
-                  onChange={e => setOverviewSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              {filteredOverview.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  Nenhum usuário com permissões encontrado.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredOverview.map(({ user, perms }) => (
-                    <div key={user!.user_id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold">{user!.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user!.contact_email || user!.email}</p>
-                        </div>
-                        {user!.position && <Badge variant="outline">{user!.position}</Badge>}
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Módulo</TableHead>
-                            <TableHead className="text-center">Visualizar</TableHead>
-                            <TableHead className="text-center">Criar</TableHead>
-                            <TableHead className="text-center">Editar</TableHead>
-                            <TableHead className="text-center">Excluir</TableHead>
-                            <TableHead className="text-center">Aprovar</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {perms.map(p => (
-                            <TableRow key={p.id}>
-                              <TableCell className="font-medium">{p.module_name}</TableCell>
-                              <TableCell className="text-center"><PermBadge value={p.can_view} /></TableCell>
-                              <TableCell className="text-center"><PermBadge value={p.can_create} /></TableCell>
-                              <TableCell className="text-center"><PermBadge value={p.can_edit} /></TableCell>
-                              <TableCell className="text-center"><PermBadge value={p.can_delete} /></TableCell>
-                              <TableCell className="text-center"><PermBadge value={p.can_approve} /></TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                  {filteredOverview.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      Nenhum usuário com permissões encontrado.
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredOverview.map(({ user, perms }) => (
+                        <div key={user!.user_id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">{user!.full_name}</p>
+                              <p className="text-sm text-muted-foreground">{user!.contact_email || user!.email}</p>
+                            </div>
+                            {user!.position && <Badge variant="outline">{user!.position}</Badge>}
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Módulo</TableHead>
+                                <TableHead className="text-center">Visualizar</TableHead>
+                                <TableHead className="text-center">Criar</TableHead>
+                                <TableHead className="text-center">Editar</TableHead>
+                                <TableHead className="text-center">Excluir</TableHead>
+                                <TableHead className="text-center">Aprovar</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {perms.map(p => (
+                                <TableRow key={p.id}>
+                                  <TableCell className="font-medium">{p.module_name}</TableCell>
+                                  <TableCell className="text-center"><PermBadge value={p.can_view} /></TableCell>
+                                  <TableCell className="text-center"><PermBadge value={p.can_create} /></TableCell>
+                                  <TableCell className="text-center"><PermBadge value={p.can_edit} /></TableCell>
+                                  <TableCell className="text-center"><PermBadge value={p.can_delete} /></TableCell>
+                                  <TableCell className="text-center"><PermBadge value={p.can_approve} /></TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* ===== Tab: Department Modules ===== */}
@@ -525,128 +424,6 @@ export default function AdminPermissions() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* ===== Tab: User Permissions ===== */}
-        <TabsContent value="user-perms">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Permissões por Usuário</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-end gap-4">
-                <div className="flex-1">
-                  <Label>Buscar Usuário</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Nome ou e-mail..."
-                      value={searchUser}
-                      onChange={e => setSearchUser(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {searchUser && (
-                <div className="border rounded-md max-h-48 overflow-y-auto">
-                  {filteredUsers.slice(0, 20).map(u => (
-                    <button
-                      key={u.user_id}
-                      className={cn(
-                        'w-full text-left px-4 py-2 hover:bg-accent transition-colors flex justify-between items-center',
-                        selectedUser === u.user_id && 'bg-accent'
-                      )}
-                      onClick={() => {
-                        setSelectedUser(u.user_id);
-                        setSearchUser(u.full_name);
-                      }}
-                    >
-                      <div>
-                        <div className="font-medium">{u.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{u.contact_email || u.email}</div>
-                      </div>
-                      {u.position && <Badge variant="outline">{u.position}</Badge>}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {selectedUser && (
-                <>
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <h3 className="font-semibold">
-                      Permissões de {users.find(u => u.user_id === selectedUser)?.full_name}
-                    </h3>
-                    <Button size="sm" onClick={() => handleOpenPermDialog()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Permissão
-                    </Button>
-                  </div>
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Módulo</TableHead>
-                        <TableHead className="text-center">Visualizar</TableHead>
-                        <TableHead className="text-center">Criar</TableHead>
-                        <TableHead className="text-center">Editar</TableHead>
-                        <TableHead className="text-center">Excluir</TableHead>
-                        <TableHead className="text-center">Aprovar</TableHead>
-                        <TableHead className="w-[100px]">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {userPermissions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                            Nenhuma permissão configurada para este usuário
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        userPermissions.map(p => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-medium">{p.module_name}</TableCell>
-                            <TableCell className="text-center">
-                              <PermBadge value={p.can_view} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <PermBadge value={p.can_create} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <PermBadge value={p.can_edit} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <PermBadge value={p.can_delete} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <PermBadge value={p.can_approve} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenPermDialog(p)}>
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeletePerm(p.id)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* ===== Dialog: Add Module to Department ===== */}
@@ -673,84 +450,6 @@ export default function AdminPermissions() {
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setAddModuleDialogOpen(false)}>Cancelar</Button>
               <Button onClick={handleAddModuleToDept} disabled={!selectedModuleToAdd}>Vincular</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ===== Dialog: User Permission ===== */}
-      <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingPerm ? 'Editar Permissão' : 'Nova Permissão'}</DialogTitle>
-            <DialogDescription>
-              Configure as permissões para{' '}
-              <strong>{users.find(u => u.user_id === selectedUser)?.full_name}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Módulo</Label>
-              <Select
-                value={permForm.module_id}
-                onValueChange={v => setPermForm(prev => ({ ...prev, module_id: v }))}
-                disabled={!!editingPerm}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um módulo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {getUserAvailableModules(selectedUser).map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label>Permissões</Label>
-              {ACTIONS.map(action => (
-                <div key={action.key} className="flex items-center gap-2">
-                  <Checkbox
-                    id={action.key}
-                    checked={permForm[action.key as keyof typeof permForm] as boolean}
-                    onCheckedChange={(checked) =>
-                      setPermForm(prev => ({ ...prev, [action.key]: !!checked }))
-                    }
-                  />
-                  <label htmlFor={action.key} className="text-sm cursor-pointer">
-                    {action.label}
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2 pt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPermForm(prev => ({
-                  ...prev,
-                  can_view: true, can_create: true, can_edit: true, can_delete: true, can_approve: true,
-                }))}
-              >
-                Acesso Completo
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPermForm(prev => ({
-                  ...prev,
-                  can_view: true, can_create: false, can_edit: false, can_delete: false, can_approve: false,
-                }))}
-              >
-                Somente Leitura
-              </Button>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setPermDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSavePerm} disabled={!permForm.module_id}>Salvar</Button>
             </div>
           </div>
         </DialogContent>
