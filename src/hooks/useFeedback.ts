@@ -386,3 +386,125 @@ export function useReabrirAvaliacao() {
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 }
+
+// ============= Área do colaborador / Papel de RH / Validação de PDI =============
+
+/** Retorna true se o usuário atual é RH (adm_master, edita configurações do módulo, ou está no departamento Recursos Humanos). */
+export function useIsRH() {
+  return useQuery({
+    queryKey: ["fb_is_rh_me"],
+    queryFn: async () => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) return false;
+      const { data, error } = await supabase.rpc("fb_is_rh", { _user_id: user.id });
+      if (error) return false;
+      return !!data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface MinhaAreaData {
+  colaborador: FbStatusColab | null;
+  avaliacoes: FbAvaliacao[];
+  ultimaDetalhe: { avaliacao: FbAvaliacao; notas: FbNota[]; feedforward: FbAcao[]; pdi: FbAcao[] } | null;
+  pdiAtivo: FbAcao[];
+  feedforwardAtivo: FbAcao[];
+}
+
+/** Dados agregados do próprio colaborador logado: status, histórico, PDI e feedforward. */
+export function useMinhaArea() {
+  return useQuery<MinhaAreaData>({
+    queryKey: ["fb_minha_area"],
+    queryFn: async () => {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) return { colaborador: null, avaliacoes: [], ultimaDetalhe: null, pdiAtivo: [], feedforwardAtivo: [] };
+
+      const { data: colab } = await supabase
+        .from("fb_v_status_colaborador")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!colab?.fb_colaborador_id) {
+        return { colaborador: (colab as any) ?? null, avaliacoes: [], ultimaDetalhe: null, pdiAtivo: [], feedforwardAtivo: [] };
+      }
+
+      const { data: avals } = await supabase
+        .from("fb_avaliacoes")
+        .select("*")
+        .eq("colaborador_id", colab.fb_colaborador_id)
+        .order("data_avaliacao", { ascending: false });
+
+      const avaliacoes = (avals ?? []) as FbAvaliacao[];
+      const avalIds = avaliacoes.map((a) => a.id);
+
+      const [notasRes, pdiRes, ffRes] = await Promise.all([
+        avalIds.length ? supabase.from("fb_avaliacao_notas").select("*").in("avaliacao_id", avalIds) : Promise.resolve({ data: [] as any[] }),
+        avalIds.length ? supabase.from("fb_pdi").select("*, fb_competencias(nome)").in("avaliacao_id", avalIds) : Promise.resolve({ data: [] as any[] }),
+        avalIds.length ? supabase.from("fb_feedforward").select("*").in("avaliacao_id", avalIds) : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const notas = (notasRes.data ?? []) as FbNota[];
+      const pdi = (pdiRes.data ?? []) as FbAcao[];
+      const ff = (ffRes.data ?? []) as FbAcao[];
+
+      const ultima = avaliacoes.find((a) => a.concluida) ?? avaliacoes[0] ?? null;
+      const ultimaDetalhe = ultima
+        ? {
+            avaliacao: ultima,
+            notas: notas.filter((n) => n.avaliacao_id === ultima.id),
+            pdi: pdi.filter((p) => p.avaliacao_id === ultima.id),
+            feedforward: ff.filter((f) => f.avaliacao_id === ultima.id),
+          }
+        : null;
+
+      return {
+        colaborador: colab as unknown as FbStatusColab,
+        avaliacoes,
+        ultimaDetalhe,
+        pdiAtivo: pdi.filter((p) => p.status !== "concluido"),
+        feedforwardAtivo: ff.filter((f) => f.status !== "concluido"),
+      };
+    },
+  });
+}
+
+/** Colaborador solicita validação de conclusão de uma ação (PDI ou Feedforward). */
+export function useSolicitarValidacaoAcao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tabela, id, evidencia }: { tabela: "fb_pdi" | "fb_feedforward"; id: string; evidencia?: string }) => {
+      const { error } = await supabase.rpc("fb_solicitar_validacao_acao", { _tabela: tabela, _id: id, _evidencia: evidencia ?? null });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["fb_minha_area"] });
+      qc.invalidateQueries({ queryKey: ["fb_avaliacao_detalhe"] });
+      qc.invalidateQueries({ queryKey: ["fb_planos_consolidados"] });
+      toast({ title: "Solicitação enviada", description: "Aguardando validação do seu líder." });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+}
+
+/** Líder/RH valida a conclusão de uma ação: marca como concluída e limpa o pedido. */
+export function useValidarAcao() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tabela, id, aprovar }: { tabela: "fb_pdi" | "fb_feedforward"; id: string; aprovar: boolean }) => {
+      const patch = aprovar
+        ? { status: "concluido" as FbAcaoStatus, aguardando_validacao: false }
+        : { aguardando_validacao: false };
+      const { error } = await supabase.from(tabela).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["fb_minha_area"] });
+      qc.invalidateQueries({ queryKey: ["fb_avaliacao_detalhe"] });
+      qc.invalidateQueries({ queryKey: ["fb_planos_consolidados"] });
+      toast({ title: vars.aprovar ? "Ação validada" : "Solicitação rejeitada" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+}
