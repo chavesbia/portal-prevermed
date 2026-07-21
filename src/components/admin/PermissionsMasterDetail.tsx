@@ -592,53 +592,136 @@ export function PermissionsMasterDetail() {
                         </td>
                       </tr>
                     ) : (
-                      modulesForActiveTab.map(m => {
-                        const hasAny = ACTIONS.some(a => effectiveValue(m.id, a.key));
-                        const isDirty = !!pending[m.id];
-                        return (
-                          <tr
-                            key={m.id}
-                            className={cn(
-                              'transition-colors',
-                              isDirty ? 'bg-primary/5' : hasAny ? 'hover:bg-muted/40' : 'hover:bg-muted/20'
-                            )}
-                          >
-                            <td className="py-2.5 px-4">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={cn(
-                                    'h-1.5 w-1.5 rounded-full shrink-0',
-                                    hasAny ? 'bg-primary' : 'bg-muted-foreground/20'
-                                  )}
-                                />
-                                <span className={cn(
-                                  'text-sm font-medium',
-                                  hasAny ? 'text-foreground' : 'text-muted-foreground'
-                                )}>
-                                  {m.name}
-                                </span>
-                                {isDirty && (
-                                  <Badge variant="outline" className="text-[9px] h-4 px-1 border-primary/40 text-primary">
-                                    alterado
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
-                            {ACTIONS.map(a => (
-                              <td key={a.key} className="py-2.5 px-2 text-center">
-                                <div className="flex justify-center">
-                                  <Checkbox
-                                    checked={effectiveValue(m.id, a.key)}
-                                    onCheckedChange={() => toggle(m.id, a.key)}
+                      groupedModules.map(group => {
+                        const allMods = [group.parent, ...group.children].filter(Boolean) as Module[];
+                        const hasChildren = group.children.length > 0;
+                        const collapsed = collapsedGroups.has(group.key);
+                        // contagem de acessos concedidos no grupo
+                        const grantedCount = allMods.filter(mm =>
+                          ACTIONS.some(a => effectiveValue(mm.id, a.key))
+                        ).length;
+                        const fullyGranted = grantedCount === allMods.length;
+                        const partiallyGranted = grantedCount > 0 && !fullyGranted;
+
+                        const renderRow = (m: Module, isChild: boolean) => {
+                          const hasAny = ACTIONS.some(a => effectiveValue(m.id, a.key));
+                          const isDirty = !!pending[m.id];
+                          // remove o prefixo do grupo do label do filho
+                          const displayName = isChild
+                            ? m.name.replace(new RegExp(`^${group.key}\\s*-\\s*`, 'i'), '')
+                            : m.name;
+                          return (
+                            <tr
+                              key={m.id}
+                              className={cn(
+                                'transition-colors',
+                                isDirty ? 'bg-primary/5' : hasAny ? 'hover:bg-muted/40' : 'hover:bg-muted/20'
+                              )}
+                            >
+                              <td className={cn('py-2.5 px-4', isChild && 'pl-10')}>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={cn(
+                                      'h-1.5 w-1.5 rounded-full shrink-0',
+                                      hasAny ? 'bg-primary' : 'bg-muted-foreground/20'
+                                    )}
                                   />
+                                  <span className={cn(
+                                    'text-sm',
+                                    isChild ? 'font-normal text-foreground/80' : 'font-medium',
+                                    hasAny ? 'text-foreground' : 'text-muted-foreground'
+                                  )}>
+                                    {displayName}
+                                  </span>
+                                  {isDirty && (
+                                    <Badge variant="outline" className="text-[9px] h-4 px-1 border-primary/40 text-primary">
+                                      alterado
+                                    </Badge>
+                                  )}
                                 </div>
                               </td>
-                            ))}
-                          </tr>
+                              {ACTIONS.map(a => (
+                                <td key={a.key} className="py-2.5 px-2 text-center">
+                                  <div className="flex justify-center">
+                                    <Checkbox
+                                      checked={effectiveValue(m.id, a.key)}
+                                      onCheckedChange={() => toggle(m.id, a.key)}
+                                    />
+                                  </div>
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        };
+
+                        return (
+                          <>
+                            {hasChildren && (
+                              <tr key={`grp-${group.key}`} className="bg-muted/30 border-t-2 border-border/60">
+                                <td colSpan={6} className="py-2 px-3">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleGroup(group.key)}
+                                      className="flex items-center gap-1.5 text-sm font-bold text-foreground/90 hover:text-primary"
+                                    >
+                                      <ChevronRight
+                                        className={cn(
+                                          'h-4 w-4 transition-transform',
+                                          !collapsed && 'rotate-90'
+                                        )}
+                                      />
+                                      <Package className="h-3.5 w-3.5 text-primary" />
+                                      {group.key}
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          'text-[10px] ml-1',
+                                          fullyGranted && 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300',
+                                          partiallyGranted && 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-300',
+                                        )}
+                                      >
+                                        {grantedCount}/{allMods.length} liberados
+                                      </Badge>
+                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => releaseGroupView(group)}
+                                        className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1"
+                                        title="Marca 'Visualizar' no módulo raiz e em todas as sub-áreas"
+                                      >
+                                        <CheckCheck className="h-3 w-3" />
+                                        Liberar acesso completo
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => releaseGroupFull(group)}
+                                        className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold"
+                                        title="Marca TODAS as ações (Visualizar/Criar/Editar/Excluir/Aprovar) em todas as sub-áreas"
+                                      >
+                                        Todas as ações
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => clearGroup(group)}
+                                        className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold"
+                                      >
+                                        Limpar
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            {!collapsed && group.parent && renderRow(group.parent, false)}
+                            {!collapsed && group.children.map(c => renderRow(c, hasChildren))}
+                          </>
                         );
                       })
                     )}
                   </tbody>
+
                 </table>
               </div>
 
