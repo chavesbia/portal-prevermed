@@ -109,6 +109,7 @@ const App = () => (
                 <Route path="/admin/revisao-permissoes" element={<Navigate to="/admin/permissoes?tab=revisao-permissoes" replace />} />
                 <Route path="/admin/revisao-vinculos" element={<Navigate to="/admin/permissoes?tab=revisao-vinculos" replace />} />
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
+                <Route path="/admin/empresas" element={<AdminMasterRoute><AdminEmpresas /></AdminMasterRoute>} />
 
 
                 <Route path="/perfil" element={<Profile />} />
