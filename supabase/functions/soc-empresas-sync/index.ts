@@ -1,0 +1,131 @@
+// Sincroniza a base mestre de empresas com o SOC (ExportaDados)
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+
+const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+function s(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const t = String(v).trim();
+  return t === '' ? null : t;
+}
+
+function digits(v: unknown): string | null {
+  const t = s(v);
+  return t ? t.replace(/\D/g, '') || null : null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+
+    const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+    const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS');
+    const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS');
+    if (!empresa || !codigo || !chave) {
+      return json({ error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS, SOC_CHAVE_EXPORTA_DADOS)' }, 500);
+    }
+
+    const parametro = JSON.stringify({ empresa, codigo, chave, tipoSaida: 'json' });
+    const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
+
+    const resp = await fetch(url, { method: 'POST' });
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => '');
+      return json({ error: 'Falha ao consultar SOC', status: resp.status, detail }, 502);
+    }
+
+    // SOC responde em ISO-8859-1
+    const buf = await resp.arrayBuffer();
+    const text = new TextDecoder('iso-8859-1').decode(buf);
+    let empresas: any[] = [];
+    try {
+      const parsed = JSON.parse(text);
+      empresas = Array.isArray(parsed) ? parsed : (parsed?.empresas || parsed?.data || []);
+    } catch (e) {
+      return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
+    }
+
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const now = new Date().toISOString();
+    let inserted = 0;
+    let updated = 0;
+    const errors: any[] = [];
+
+    for (const e of empresas) {
+      const soc_code = s(e.CODIGO);
+      if (!soc_code) continue;
+
+      const row = {
+        soc_code,
+        cnpj: digits(e.CNPJ),
+        nome_abreviado: s(e.NOMEABREVIADO),
+        razao_social: s(e.RAZAOSOCIAL) || s(e.RAZAOSOCIALINICIAL) || soc_code,
+        cep: digits(e.CEP),
+        logradouro: s(e.ENDERECO),
+        numero: s(e.NUMEROENDERECO),
+        complemento: s(e.COMPLEMENTOENDERECO),
+        bairro: s(e.BAIRRO),
+        cidade: s(e.CIDADE),
+        estado: s(e.UF),
+        inscricao_estadual: s(e.INSCRICAOESTADUAL),
+        inscricao_municipal: s(e.INSCRICAOMUNICIPAL),
+        is_active: String(e.ATIVO ?? '').trim() === '1' || String(e.ATIVO ?? '').toUpperCase() === 'SIM' || e.ATIVO === true,
+        codigo_cliente_integracao: s(e.CODIGOCLIENTEINTEGRACAO),
+        synced_at: now,
+      };
+
+      const { data: existing, error: selErr } = await admin
+        .from('companies')
+        .select('id')
+        .eq('soc_code', soc_code)
+        .maybeSingle();
+      if (selErr) { errors.push({ soc_code, error: selErr.message }); continue; }
+
+      if (existing) {
+        const { error: upErr } = await admin.from('companies').update(row).eq('id', existing.id);
+        if (upErr) errors.push({ soc_code, error: upErr.message });
+        else updated++;
+      } else {
+        const { error: insErr } = await admin.from('companies').insert(row);
+        if (insErr) errors.push({ soc_code, error: insErr.message });
+        else inserted++;
+      }
+    }
+
+    return json({
+      ok: true,
+      total: empresas.length,
+      inserted,
+      updated,
+      errors: errors.slice(0, 20),
+      error_count: errors.length,
+      synced_at: now,
+    });
+  } catch (e) {
+    return json({ error: String((e as any)?.message || e) }, 500);
+  }
+});
