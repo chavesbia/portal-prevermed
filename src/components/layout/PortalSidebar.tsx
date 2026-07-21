@@ -153,12 +153,11 @@ const staticMenuSections: MenuSection[] = [
 const adminSection: MenuSection = {
   title: 'Administração',
   items: [
-    { label: 'Usuários', icon: Users, path: '/admin/usuarios', adminOnly: true },
+    { label: 'Usuários e Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
     { label: 'Documentos', icon: FolderOpen, path: '/admin/documentos', adminOnly: true },
     { label: 'Laudos e Serviços', icon: NotebookPen, path: '/admin/laudos-servicos', adminOnly: true },
     { label: 'Médicos Assinantes', icon: Stethoscope, path: '/admin/medicos-aso', adminOnly: true },
-    { label: 'Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Auditoria', icon: ClipboardList, path: '/admin/auditoria', adminOnly: true },
     { label: 'Configurações', icon: Settings, path: '/admin/configuracoes', adminOnly: true },
   ],
