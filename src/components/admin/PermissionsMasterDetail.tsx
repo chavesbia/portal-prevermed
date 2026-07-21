@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Search, Copy, Save, RotateCcw, ShieldCheck, Users2, Building2, Package,
+  Search, Copy, Save, RotateCcw, ShieldCheck, Users2, Building2, Package, ChevronRight, CheckCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
