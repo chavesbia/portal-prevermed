@@ -1440,6 +1440,72 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          codigo_cliente_integracao: string | null
+          complemento: string | null
+          created_at: string
+          estado: string | null
+          id: string
+          inscricao_estadual: string | null
+          inscricao_municipal: string | null
+          is_active: boolean
+          logradouro: string | null
+          nome_abreviado: string | null
+          numero: string | null
+          razao_social: string
+          soc_code: string
+          synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo_cliente_integracao?: string | null
+          complemento?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          is_active?: boolean
+          logradouro?: string | null
+          nome_abreviado?: string | null
+          numero?: string | null
+          razao_social: string
+          soc_code: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo_cliente_integracao?: string | null
+          complemento?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          inscricao_municipal?: string | null
+          is_active?: boolean
+          logradouro?: string | null
+          nome_abreviado?: string | null
+          numero?: string | null
+          razao_social?: string
+          soc_code?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracao_alertas: {
         Row: {
           ativo: boolean
