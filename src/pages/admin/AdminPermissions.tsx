@@ -79,10 +79,10 @@ const ACTIONS = [
 export default function AdminPermissions() {
   const { role } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'manage';
+  const currentTab = searchParams.get('tab') || 'usuarios';
   const handleTabChange = (value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (value === 'manage') next.delete('tab');
+    if (value === 'usuarios') next.delete('tab');
     else next.set('tab', value);
     setSearchParams(next, { replace: true });
   };
