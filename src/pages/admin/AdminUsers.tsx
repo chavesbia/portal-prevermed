@@ -61,6 +61,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import BulkImportDialog from '@/components/admin/BulkImportDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserAccessPanel } from '@/components/admin/UserAccessPanel';
 
 type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
 
@@ -787,7 +789,7 @@ export default function AdminUsers() {
 
       {/* Edit User Dialog - Unified with all fields */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
@@ -797,7 +799,19 @@ export default function AdminUsers() {
               Atualize todas as informações do usuário {selectedUser?.full_name}.
             </DialogDescription>
           </DialogHeader>
-          
+
+          <Tabs defaultValue="perfil" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent px-0 h-10 shrink-0">
+              <TabsTrigger value="perfil" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                Perfil
+              </TabsTrigger>
+              <TabsTrigger value="acessos" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <Shield className="h-3.5 w-3.5 mr-1.5" />
+                Acessos
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="perfil" className="flex-1 overflow-hidden mt-3 data-[state=inactive]:hidden" forceMount>
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
             {/* Photo Upload */}
             <div className="flex items-center gap-4">
@@ -1143,6 +1157,14 @@ export default function AdminUsers() {
               )}
             </Button>
           </div>
+            </TabsContent>
+
+            <TabsContent value="acessos" className="flex-1 overflow-hidden mt-3 data-[state=inactive]:hidden" forceMount>
+              {selectedUser && (
+                <UserAccessPanel userId={selectedUser.user_id} />
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
