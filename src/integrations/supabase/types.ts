@@ -2500,6 +2500,7 @@ export type Database = {
       fb_feedforward: {
         Row: {
           acao: string
+          aguardando_validacao: boolean
           avaliacao_id: string
           created_at: string
           id: string
@@ -2510,6 +2511,7 @@ export type Database = {
         }
         Insert: {
           acao: string
+          aguardando_validacao?: boolean
           avaliacao_id: string
           created_at?: string
           id?: string
@@ -2520,6 +2522,7 @@ export type Database = {
         }
         Update: {
           acao?: string
+          aguardando_validacao?: boolean
           avaliacao_id?: string
           created_at?: string
           id?: string
@@ -2548,6 +2551,7 @@ export type Database = {
       fb_pdi: {
         Row: {
           acao: string
+          aguardando_validacao: boolean
           avaliacao_id: string
           competencia_id: string | null
           created_at: string
@@ -2560,6 +2564,7 @@ export type Database = {
         }
         Insert: {
           acao: string
+          aguardando_validacao?: boolean
           avaliacao_id: string
           competencia_id?: string | null
           created_at?: string
@@ -2572,6 +2577,7 @@ export type Database = {
         }
         Update: {
           acao?: string
+          aguardando_validacao?: boolean
           avaliacao_id?: string
           competencia_id?: string | null
           created_at?: string
@@ -5794,6 +5800,10 @@ export type Database = {
         Returns: boolean
       }
       fb_is_rh: { Args: { _user_id: string }; Returns: boolean }
+      fb_solicitar_validacao_acao: {
+        Args: { _evidencia?: string; _id: string; _tabela: string }
+        Returns: undefined
+      }
       generate_occurrence_ticket_number: { Args: never; Returns: string }
       get_user_accessible_modules: {
         Args: { _user_id: string }
