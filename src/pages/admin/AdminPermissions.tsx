@@ -25,6 +25,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PermissionsMasterDetail } from '@/components/admin/PermissionsMasterDetail';
 import AdminShadowReview from '@/pages/admin/AdminShadowReview';
 import AdminInertLinksReview from '@/pages/admin/AdminInertLinksReview';
+import AdminUsers from '@/pages/admin/AdminUsers';
 
 interface Module {
   id: string;
