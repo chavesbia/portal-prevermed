@@ -657,23 +657,23 @@ export function PermissionsMasterDetail() {
                         return (
                           <Fragment key={group.key}>
 
-                            {hasChildren && (
-                              <tr key={`grp-${group.key}`} className="bg-muted/30 border-t-2 border-border/60">
-                                <td colSpan={6} className="py-2 px-3">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleGroup(group.key)}
-                                      className="flex items-center gap-1.5 text-sm font-bold text-foreground/90 hover:text-primary"
-                                    >
-                                      <ChevronRight
-                                        className={cn(
-                                          'h-4 w-4 transition-transform',
-                                          !collapsed && 'rotate-90'
-                                        )}
-                                      />
-                                      <Package className="h-3.5 w-3.5 text-primary" />
-                                      {group.key}
+                            <tr key={`grp-${group.key}`} className="bg-muted/30 border-t-2 border-border/60">
+                              <td colSpan={6} className="py-2 px-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleGroup(group.key)}
+                                    className="flex items-center gap-1.5 text-sm font-bold text-foreground/90 hover:text-primary"
+                                  >
+                                    <ChevronRight
+                                      className={cn(
+                                        'h-4 w-4 transition-transform',
+                                        !collapsed && 'rotate-90'
+                                      )}
+                                    />
+                                    <Package className="h-3.5 w-3.5 text-primary" />
+                                    {group.key}
+                                    {hasChildren ? (
                                       <Badge
                                         variant="outline"
                                         className={cn(
@@ -684,37 +684,49 @@ export function PermissionsMasterDetail() {
                                       >
                                         {grantedCount}/{allMods.length} liberados
                                       </Badge>
+                                    ) : (
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          'text-[10px] ml-1',
+                                          fullyGranted
+                                            ? 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300'
+                                            : 'border-border text-muted-foreground'
+                                        )}
+                                      >
+                                        {fullyGranted ? 'liberado' : 'sem acesso'}
+                                      </Badge>
+                                    )}
+                                  </button>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => releaseGroupView(group)}
+                                      className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1"
+                                      title={hasChildren ? "Marca 'Visualizar' no módulo raiz e em todas as sub-áreas" : "Marca 'Visualizar' neste módulo"}
+                                    >
+                                      <CheckCheck className="h-3 w-3" />
+                                      Liberar acesso completo
                                     </button>
-                                    <div className="flex items-center gap-1.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => releaseGroupView(group)}
-                                        className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1"
-                                        title="Marca 'Visualizar' no módulo raiz e em todas as sub-áreas"
-                                      >
-                                        <CheckCheck className="h-3 w-3" />
-                                        Liberar acesso completo
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => releaseGroupFull(group)}
-                                        className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold"
-                                        title="Marca TODAS as ações (Visualizar/Criar/Editar/Excluir/Aprovar) em todas as sub-áreas"
-                                      >
-                                        Todas as ações
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => clearGroup(group)}
-                                        className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold"
-                                      >
-                                        Limpar
-                                      </button>
-                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => releaseGroupFull(group)}
+                                      className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold"
+                                      title="Marca TODAS as ações (Visualizar/Criar/Editar/Excluir/Aprovar)"
+                                    >
+                                      Todas as ações
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => clearGroup(group)}
+                                      className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold"
+                                    >
+                                      Limpar
+                                    </button>
                                   </div>
-                                </td>
-                              </tr>
-                            )}
+                                </div>
+                              </td>
+                            </tr>
                             {!collapsed && group.parent && renderRow(group.parent, false)}
                             {!collapsed && group.children.map(c => renderRow(c, hasChildren))}
                           </Fragment>
