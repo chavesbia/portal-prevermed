@@ -517,7 +517,29 @@ function PDFGenerator({ avaliacaoId, onDone }: { avaliacaoId: string; onDone: ()
 
 function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
   const upd = useUpdateAcaoStatus();
+  const validar = useValidarAcao();
   if (!data) return <div className="text-muted-foreground">Carregando…</div>;
+
+  const renderStatusCell = (row: any, table: "fb_pdi" | "fb_feedforward") => (
+    <div className="flex items-center gap-2">
+      <Select value={row.status} onValueChange={(v) => upd.mutate({ table, id: row.id, status: v as FbAcaoStatus })}>
+        <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+        <SelectContent>{(Object.keys(ACAO_STATUS) as FbAcaoStatus[]).map(s => <SelectItem key={s} value={s}>{ACAO_STATUS[s]}</SelectItem>)}</SelectContent>
+      </Select>
+      {row.aguardando_validacao && (
+        <>
+          <Badge variant="outline" className="text-xs whitespace-nowrap"><Clock className="h-3 w-3 mr-1" />aguard. validação</Badge>
+          <Button size="sm" variant="default" onClick={() => validar.mutate({ tabela: table, id: row.id, aprovar: true })}>
+            <CheckIcon className="h-3.5 w-3.5 mr-1" />Validar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => validar.mutate({ tabela: table, id: row.id, aprovar: false })}>
+            Rejeitar
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <Card>
@@ -527,17 +549,12 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
             <TableHeader><TableRow><TableHead>Colaborador</TableHead><TableHead>Ação</TableHead><TableHead>Responsável</TableHead><TableHead>Prazo</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
               {data.feedforward.map((f) => (
-                <TableRow key={f.id}>
+                <TableRow key={f.id} className={f.aguardando_validacao ? "bg-yellow-50/50" : ""}>
                   <TableCell className="font-medium">{f.colaborador_nome}</TableCell>
                   <TableCell className="max-w-md">{f.acao}</TableCell>
                   <TableCell>{f.responsavel ?? "—"}</TableCell>
                   <TableCell>{f.prazo ? new Date(f.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
-                  <TableCell>
-                    <Select value={f.status} onValueChange={(v) => upd.mutate({ table: "fb_feedforward", id: f.id, status: v as FbAcaoStatus })}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>{(Object.keys(ACAO_STATUS) as FbAcaoStatus[]).map(s => <SelectItem key={s} value={s}>{ACAO_STATUS[s]}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </TableCell>
+                  <TableCell>{renderStatusCell(f, "fb_feedforward")}</TableCell>
                 </TableRow>
               ))}
               {data.feedforward.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-4 text-muted-foreground">Nenhum combinado registrado.</TableCell></TableRow>}
@@ -553,17 +570,15 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
             <TableHeader><TableRow><TableHead>Colaborador</TableHead><TableHead>Competência</TableHead><TableHead>Ação</TableHead><TableHead>Prazo</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
               {data.pdi.map((p) => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} className={p.aguardando_validacao ? "bg-yellow-50/50" : ""}>
                   <TableCell className="font-medium">{p.colaborador_nome}</TableCell>
                   <TableCell>{p.fb_competencias?.nome ?? "Geral"}</TableCell>
-                  <TableCell className="max-w-md">{p.acao}</TableCell>
-                  <TableCell>{p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
-                  <TableCell>
-                    <Select value={p.status} onValueChange={(v) => upd.mutate({ table: "fb_pdi", id: p.id, status: v as FbAcaoStatus })}>
-                      <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                      <SelectContent>{(Object.keys(ACAO_STATUS) as FbAcaoStatus[]).map(s => <SelectItem key={s} value={s}>{ACAO_STATUS[s]}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <TableCell className="max-w-md">
+                    {p.acao}
+                    {p.evidencia && <div className="text-xs text-muted-foreground mt-1"><strong>Evidência:</strong> {p.evidencia}</div>}
                   </TableCell>
+                  <TableCell>{p.prazo ? new Date(p.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                  <TableCell>{renderStatusCell(p, "fb_pdi")}</TableCell>
                 </TableRow>
               ))}
               {data.pdi.length === 0 && <TableRow><TableCell colSpan={5} className="text-center py-4 text-muted-foreground">Nenhum PDI registrado.</TableCell></TableRow>}
@@ -574,6 +589,84 @@ function PlanosTab({ data }: { data?: { feedforward: any[]; pdi: any[] } }) {
     </div>
   );
 }
+
+// ============= MEU TIME (líder — reutiliza tabela de colaboradores filtrada por RLS) =============
+function MeuTimeView({ status, setores, onAvaliar, onAbrir }: {
+  status: FbStatusColab[]; setores: { id: string; nome: string }[];
+  onAvaliar: (colabId: string) => void;
+  onAbrir: (colabId: string, avalId: string) => void;
+}) {
+  // Remove o próprio usuário (já aparece em "Minha Área")
+  const time = status.filter((s) => s.fb_colaborador_id);
+  if (time.length === 0) {
+    return (
+      <Card><CardContent className="pt-6 text-center text-muted-foreground">
+        Você não possui liderados no ciclo de feedback.
+      </CardContent></Card>
+    );
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Meu Time — Liderados diretos e indiretos</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Lista em cascata: você vê seus liderados diretos e todos os liderados abaixo deles.
+        </p>
+      </CardHeader>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Colaborador</TableHead><TableHead>Setor</TableHead><TableHead>Cargo</TableHead>
+            <TableHead>Último Feedback</TableHead><TableHead>Próximo</TableHead>
+            <TableHead>Pontuação</TableHead><TableHead>Status</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {time.map((s) => {
+            const st = STATUS_LABELS[s.status_feedback];
+            return (
+              <TableRow key={s.colaborador_id}>
+                <TableCell className="font-medium">{s.nome}
+                  <div className="text-xs text-muted-foreground">{s.lider_nome ? `Líder: ${s.lider_nome}` : ""}</div>
+                </TableCell>
+                <TableCell>{s.setor_nome ?? "—"}</TableCell>
+                <TableCell>{s.cargo ?? "—"}</TableCell>
+                <TableCell>{s.ultimo_feedback ? new Date(s.ultimo_feedback).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                <TableCell>{s.proximo_feedback ? new Date(s.proximo_feedback).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                <TableCell>
+                  {s.pontuacao_total != null && s.classificacao ? (
+                    <Badge className="text-white border-transparent" style={{ backgroundColor: CLASS_COLORS[s.classificacao] }}>
+                      {s.pontuacao_total} · {CLASS_LABELS[s.classificacao]}
+                    </Badge>
+                  ) : "—"}
+                </TableCell>
+                <TableCell>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs whitespace-nowrap ${st.color}`}>
+                    {st.icon} {st.label}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right space-x-1 whitespace-nowrap">
+                  {s.ultima_avaliacao_id && (
+                    <Button size="sm" variant="outline" onClick={() => onAbrir(s.colaborador_id, s.ultima_avaliacao_id!)}>
+                      <Eye className="h-3.5 w-3.5 mr-1" />Ver
+                    </Button>
+                  )}
+                  {s.incluido_no_ciclo && (
+                    <Button size="sm" onClick={() => onAvaliar(s.colaborador_id)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />Avaliar
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </Card>
+  );
+}
+
 
 function IndicadoresTab({ status, setores, comps }: { status: FbStatusColab[]; setores: any[]; comps: any[] }) {
   const matriz = useMemo(() => {
