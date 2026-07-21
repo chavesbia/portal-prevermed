@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Search, Copy, Save, RotateCcw, ShieldCheck, Users2, Building2, Package,
+  Search, Copy, Save, RotateCcw, ShieldCheck, Users2, Building2, Package, ChevronRight, CheckCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -145,6 +145,56 @@ export function PermissionsMasterDetail() {
     return (modulesByDept.get(activeDept) || []).sort((a, b) => a.name.localeCompare(b.name));
   }, [activeDept, modules, modulesByDept]);
 
+  /**
+   * Agrupa módulos hierarquicamente pela convenção de nome:
+   *   "Feedback - Avaliações" → grupo "Feedback"
+   *   "Gestão de Feedback"    → módulo raiz do grupo "Gestão de Feedback"
+   * Se existir um módulo raiz cujo nome coincida com o prefixo (ou contenha o prefixo),
+   * ele é usado como "pai"; os demais viram filhos. Módulos sem sub-permissões
+   * viram grupos de 1 item só (sem cabeçalho extra).
+   */
+  const groupedModules = useMemo(() => {
+    const list = modulesForActiveTab;
+    // Módulos com " - " são "filhos" — o texto antes do primeiro " - " é a chave do grupo
+    const buckets = new Map<string, { key: string; parent: Module | null; children: Module[] }>();
+
+    const ensure = (key: string) => {
+      if (!buckets.has(key)) buckets.set(key, { key, parent: null, children: [] });
+      return buckets.get(key)!;
+    };
+
+    // primeiro os filhos, para saber quais chaves têm subitens
+    for (const m of list) {
+      const idx = m.name.indexOf(' - ');
+      if (idx > 0) {
+        const key = m.name.slice(0, idx).trim();
+        ensure(key).children.push(m);
+      }
+    }
+    // agora os pais / módulos avulsos
+    for (const m of list) {
+      const idx = m.name.indexOf(' - ');
+      if (idx > 0) continue;
+      // tenta casar como pai de algum bucket (match exato ou o bucket contido no nome)
+      const key =
+        [...buckets.keys()].find(k => m.name === k || m.name.toLowerCase().includes(k.toLowerCase())) ??
+        m.name;
+      const b = ensure(key);
+      // primeiro pai vence; se já existe pai, vira "avulso" próprio
+      if (b.parent) ensure(m.name).parent = m;
+      else b.parent = m;
+    }
+    return [...buckets.values()].sort((a, b) => a.key.localeCompare(b.key));
+  }, [modulesForActiveTab]);
+
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) =>
+    setCollapsedGroups(prev => {
+      const n = new Set(prev);
+      n.has(key) ? n.delete(key) : n.add(key);
+      return n;
+    });
+
   // Effective value considering pending edits
   const effectiveValue = (moduleId: string, action: ActionKey): boolean => {
     const p = pending[moduleId];
@@ -161,18 +211,38 @@ export function PermissionsMasterDetail() {
     }));
   };
 
-  const markAllInTab = (value: boolean) => {
+  const applyToModules = (moduleIds: string[], values: Partial<Record<ActionKey, boolean>>) => {
     setPending(prev => {
       const next = { ...prev };
-      for (const m of modulesForActiveTab) {
-        next[m.id] = ACTIONS.reduce(
-          (acc, a) => ({ ...acc, [a.key]: value }),
-          next[m.id] || {}
-        );
+      for (const id of moduleIds) {
+        next[id] = { ...(next[id] || {}), ...values };
       }
       return next;
     });
   };
+
+  const markAllInTab = (value: boolean) => {
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: value }), {} as Record<ActionKey, boolean>);
+    applyToModules(modulesForActiveTab.map(m => m.id), values);
+  };
+
+  // Marca "Visualizar" em todos os módulos do grupo (pai + filhos)
+  const releaseGroupView = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    applyToModules(ids, { can_view: true });
+  };
+  // Marca todas as ações em todos os módulos do grupo
+  const releaseGroupFull = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: true }), {} as Record<ActionKey, boolean>);
+    applyToModules(ids, values);
+  };
+  const clearGroup = (group: { parent: Module | null; children: Module[] }) => {
+    const ids = [group.parent?.id, ...group.children.map(c => c.id)].filter(Boolean) as string[];
+    const values = ACTIONS.reduce((acc, a) => ({ ...acc, [a.key]: false }), {} as Record<ActionKey, boolean>);
+    applyToModules(ids, values);
+  };
+
 
   const changesCount = useMemo(() => {
     let c = 0;
@@ -522,53 +592,138 @@ export function PermissionsMasterDetail() {
                         </td>
                       </tr>
                     ) : (
-                      modulesForActiveTab.map(m => {
-                        const hasAny = ACTIONS.some(a => effectiveValue(m.id, a.key));
-                        const isDirty = !!pending[m.id];
-                        return (
-                          <tr
-                            key={m.id}
-                            className={cn(
-                              'transition-colors',
-                              isDirty ? 'bg-primary/5' : hasAny ? 'hover:bg-muted/40' : 'hover:bg-muted/20'
-                            )}
-                          >
-                            <td className="py-2.5 px-4">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={cn(
-                                    'h-1.5 w-1.5 rounded-full shrink-0',
-                                    hasAny ? 'bg-primary' : 'bg-muted-foreground/20'
-                                  )}
-                                />
-                                <span className={cn(
-                                  'text-sm font-medium',
-                                  hasAny ? 'text-foreground' : 'text-muted-foreground'
-                                )}>
-                                  {m.name}
-                                </span>
-                                {isDirty && (
-                                  <Badge variant="outline" className="text-[9px] h-4 px-1 border-primary/40 text-primary">
-                                    alterado
-                                  </Badge>
-                                )}
-                              </div>
-                            </td>
-                            {ACTIONS.map(a => (
-                              <td key={a.key} className="py-2.5 px-2 text-center">
-                                <div className="flex justify-center">
-                                  <Checkbox
-                                    checked={effectiveValue(m.id, a.key)}
-                                    onCheckedChange={() => toggle(m.id, a.key)}
+                      groupedModules.map(group => {
+                        const allMods = [group.parent, ...group.children].filter(Boolean) as Module[];
+                        const hasChildren = group.children.length > 0;
+                        const collapsed = collapsedGroups.has(group.key);
+                        // contagem de acessos concedidos no grupo
+                        const grantedCount = allMods.filter(mm =>
+                          ACTIONS.some(a => effectiveValue(mm.id, a.key))
+                        ).length;
+                        const fullyGranted = grantedCount === allMods.length;
+                        const partiallyGranted = grantedCount > 0 && !fullyGranted;
+
+                        const renderRow = (m: Module, isChild: boolean) => {
+                          const hasAny = ACTIONS.some(a => effectiveValue(m.id, a.key));
+                          const isDirty = !!pending[m.id];
+                          // remove o prefixo do grupo do label do filho
+                          const displayName = isChild
+                            ? m.name.replace(new RegExp(`^${group.key}\\s*-\\s*`, 'i'), '')
+                            : m.name;
+                          return (
+                            <tr
+                              key={m.id}
+                              className={cn(
+                                'transition-colors',
+                                isDirty ? 'bg-primary/5' : hasAny ? 'hover:bg-muted/40' : 'hover:bg-muted/20'
+                              )}
+                            >
+                              <td className={cn('py-2.5 px-4', isChild && 'pl-10')}>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={cn(
+                                      'h-1.5 w-1.5 rounded-full shrink-0',
+                                      hasAny ? 'bg-primary' : 'bg-muted-foreground/20'
+                                    )}
                                   />
+                                  <span className={cn(
+                                    'text-sm',
+                                    isChild ? 'font-normal text-foreground/80' : 'font-medium',
+                                    hasAny ? 'text-foreground' : 'text-muted-foreground'
+                                  )}>
+                                    {displayName}
+                                  </span>
+                                  {isDirty && (
+                                    <Badge variant="outline" className="text-[9px] h-4 px-1 border-primary/40 text-primary">
+                                      alterado
+                                    </Badge>
+                                  )}
                                 </div>
                               </td>
-                            ))}
-                          </tr>
+                              {ACTIONS.map(a => (
+                                <td key={a.key} className="py-2.5 px-2 text-center">
+                                  <div className="flex justify-center">
+                                    <Checkbox
+                                      checked={effectiveValue(m.id, a.key)}
+                                      onCheckedChange={() => toggle(m.id, a.key)}
+                                    />
+                                  </div>
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        };
+
+                        return (
+                          <Fragment key={group.key}>
+
+                            {hasChildren && (
+                              <tr key={`grp-${group.key}`} className="bg-muted/30 border-t-2 border-border/60">
+                                <td colSpan={6} className="py-2 px-3">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleGroup(group.key)}
+                                      className="flex items-center gap-1.5 text-sm font-bold text-foreground/90 hover:text-primary"
+                                    >
+                                      <ChevronRight
+                                        className={cn(
+                                          'h-4 w-4 transition-transform',
+                                          !collapsed && 'rotate-90'
+                                        )}
+                                      />
+                                      <Package className="h-3.5 w-3.5 text-primary" />
+                                      {group.key}
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          'text-[10px] ml-1',
+                                          fullyGranted && 'border-emerald-300 text-emerald-700 bg-emerald-50 dark:bg-emerald-950 dark:text-emerald-300',
+                                          partiallyGranted && 'border-amber-300 text-amber-700 bg-amber-50 dark:bg-amber-950 dark:text-amber-300',
+                                        )}
+                                      >
+                                        {grantedCount}/{allMods.length} liberados
+                                      </Badge>
+                                    </button>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => releaseGroupView(group)}
+                                        className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1"
+                                        title="Marca 'Visualizar' no módulo raiz e em todas as sub-áreas"
+                                      >
+                                        <CheckCheck className="h-3 w-3" />
+                                        Liberar acesso completo
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => releaseGroupFull(group)}
+                                        className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold"
+                                        title="Marca TODAS as ações (Visualizar/Criar/Editar/Excluir/Aprovar) em todas as sub-áreas"
+                                      >
+                                        Todas as ações
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => clearGroup(group)}
+                                        className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold"
+                                      >
+                                        Limpar
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            {!collapsed && group.parent && renderRow(group.parent, false)}
+                            {!collapsed && group.children.map(c => renderRow(c, hasChildren))}
+                          </Fragment>
+
                         );
                       })
                     )}
                   </tbody>
+
                 </table>
               </div>
 
