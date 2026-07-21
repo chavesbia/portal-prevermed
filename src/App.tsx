@@ -48,6 +48,7 @@ const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminDocuments = lazy(() => import("./pages/admin/AdminDocuments"));
 const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos"));
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
+const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
 
 const queryClient = new QueryClient();
 
