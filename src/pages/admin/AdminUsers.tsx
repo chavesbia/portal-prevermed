@@ -61,6 +61,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import BulkImportDialog from '@/components/admin/BulkImportDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UserAccessPanel } from '@/components/admin/UserAccessPanel';
 
 type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
 
