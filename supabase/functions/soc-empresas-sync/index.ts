@@ -92,11 +92,12 @@ Deno.serve(async (req) => {
     let updated = 0;
     const errors: any[] = [];
 
+    // Build rows + dedupe by soc_code
+    const rowsMap = new Map<string, any>();
     for (const e of empresas) {
       const soc_code = s(e.CODIGO);
       if (!soc_code) continue;
-
-      const row = {
+      rowsMap.set(soc_code, {
         soc_code,
         cnpj: digits(e.CNPJ),
         nome_abreviado: s(e.NOMEABREVIADO),
@@ -113,23 +114,31 @@ Deno.serve(async (req) => {
         is_active: String(e.ATIVO ?? '').trim() === '1' || String(e.ATIVO ?? '').toUpperCase() === 'SIM' || e.ATIVO === true,
         codigo_cliente_integracao: s(e.CODIGOCLIENTEINTEGRACAO),
         synced_at: now,
-      };
+      });
+    }
+    const rows = Array.from(rowsMap.values());
+    const codes = rows.map((r) => r.soc_code);
 
-      const { data: existing, error: selErr } = await admin
-        .from('companies')
-        .select('id')
-        .eq('soc_code', soc_code)
-        .maybeSingle();
-      if (selErr) { errors.push({ soc_code, error: selErr.message }); continue; }
+    // Fetch existing soc_codes in batches to classify inserted vs updated
+    const existingSet = new Set<string>();
+    const CHUNK = 500;
+    for (let i = 0; i < codes.length; i += CHUNK) {
+      const slice = codes.slice(i, i + CHUNK);
+      const { data, error } = await admin.from('companies').select('soc_code').in('soc_code', slice);
+      if (error) { errors.push({ error: `select existing: ${error.message}` }); continue; }
+      for (const r of data || []) existingSet.add(r.soc_code as string);
+    }
 
-      if (existing) {
-        const { error: upErr } = await admin.from('companies').update(row).eq('id', existing.id);
-        if (upErr) errors.push({ soc_code, error: upErr.message });
-        else updated++;
-      } else {
-        const { error: insErr } = await admin.from('companies').insert(row);
-        if (insErr) errors.push({ soc_code, error: insErr.message });
-        else inserted++;
+    // Bulk upsert in chunks on soc_code
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const batch = rows.slice(i, i + CHUNK);
+      const { error } = await admin.from('companies').upsert(batch, { onConflict: 'soc_code' });
+      if (error) {
+        errors.push({ batch: `${i}-${i + batch.length}`, error: error.message });
+        continue;
+      }
+      for (const r of batch) {
+        if (existingSet.has(r.soc_code)) updated++; else inserted++;
       }
     }
 
