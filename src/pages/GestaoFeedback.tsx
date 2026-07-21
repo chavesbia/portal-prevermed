@@ -17,9 +17,12 @@ import {
   useColaboradores, useSetores, useStatusColaboradores, useCompetencias, useNiveis,
   useUpsertColaborador, useUpsertSetor, useUpdateNivelDescricao, usePlanosConsolidados,
   useUpdateAcaoStatus, useUpsertColaboradorByUser, useReabrirAvaliacao, useAvaliacaoDetalhe,
+  useIsRH, useValidarAcao,
   CLASS_LABELS, CLASS_COLORS, RISCO_LABELS,
   type FbStatusColab, type FbColaborador, type FbAcaoStatus,
 } from "@/hooks/useFeedback";
+import { MinhaAreaFeedback } from "@/components/feedback/MinhaAreaFeedback";
+import { UserCircle2, CheckCircle2 as CheckIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { NovaAvaliacaoDrawer } from "@/components/feedback/NovaAvaliacaoDrawer";
 import { supabase } from "@/integrations/supabase/client";
