@@ -39,7 +39,7 @@ export interface FbAvaliacao {
   created_at: string;
 }
 export interface FbNota { id: string; avaliacao_id: string; competencia_id: string; nota: number; comentario: string | null }
-export interface FbAcao { id: string; avaliacao_id: string; competencia_id?: string | null; acao: string; responsavel: string | null; prazo: string | null; status: FbAcaoStatus; evidencia?: string | null }
+export interface FbAcao { id: string; avaliacao_id: string; competencia_id?: string | null; acao: string; responsavel: string | null; prazo: string | null; status: FbAcaoStatus; evidencia?: string | null; aguardando_validacao?: boolean }
 
 export const CLASS_LABELS: Record<FbClassificacao, string> = {
   insuficiente: "Insuficiente", fraco: "Fraco", razoavel: "Razoável", bom: "Bom", excelente: "Excelente",
