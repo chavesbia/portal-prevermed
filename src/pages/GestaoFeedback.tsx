@@ -53,7 +53,8 @@ export default function GestaoFeedback() {
   const { data: colabs = [] } = useColaboradores();
   const planos = usePlanosConsolidados();
 
-  const [tab, setTab] = useState("dashboard");
+  const { data: isRH = false } = useIsRH();
+  const [tab, setTab] = useState("minha-area");
   const [filtroSetor, setFiltroSetor] = useState<string>("_");
   const [filtroStatus, setFiltroStatus] = useState<string>("_");
   const [filtroCiclo, setFiltroCiclo] = useState<"ciclo" | "todos" | "fora">("ciclo");
@@ -143,14 +144,29 @@ export default function GestaoFeedback() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-4xl">
-          <TabsTrigger value="dashboard"><BarChart3 className="h-4 w-4 mr-1" />Dashboard</TabsTrigger>
-          <TabsTrigger value="colaboradores"><Users className="h-4 w-4 mr-1" />Colaboradores</TabsTrigger>
-          <TabsTrigger value="feedbacks"><ClipboardCheck className="h-4 w-4 mr-1" />Feedbacks</TabsTrigger>
-          <TabsTrigger value="planos"><Target className="h-4 w-4 mr-1" />Planos</TabsTrigger>
-          <TabsTrigger value="indicadores"><TrendingUp className="h-4 w-4 mr-1" />Indicadores</TabsTrigger>
-          <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Configurações</TabsTrigger>
+        <TabsList className={`grid w-full ${isRH ? "grid-cols-8 max-w-5xl" : "grid-cols-2 max-w-md"}`}>
+          <TabsTrigger value="minha-area"><UserCircle2 className="h-4 w-4 mr-1" />Minha Área</TabsTrigger>
+          <TabsTrigger value="meu-time"><Users className="h-4 w-4 mr-1" />Meu Time</TabsTrigger>
+          {isRH && <TabsTrigger value="dashboard"><BarChart3 className="h-4 w-4 mr-1" />Dashboard</TabsTrigger>}
+          {isRH && <TabsTrigger value="colaboradores"><Users className="h-4 w-4 mr-1" />Colaboradores</TabsTrigger>}
+          {isRH && <TabsTrigger value="feedbacks"><ClipboardCheck className="h-4 w-4 mr-1" />Feedbacks</TabsTrigger>}
+          {isRH && <TabsTrigger value="planos"><Target className="h-4 w-4 mr-1" />Planos</TabsTrigger>}
+          {isRH && <TabsTrigger value="indicadores"><TrendingUp className="h-4 w-4 mr-1" />Indicadores</TabsTrigger>}
+          {isRH && <TabsTrigger value="config"><Settings className="h-4 w-4 mr-1" />Configurações</TabsTrigger>}
         </TabsList>
+
+        {/* ============= MINHA ÁREA ============= */}
+        <TabsContent value="minha-area">
+          <MinhaAreaFeedback />
+        </TabsContent>
+
+        {/* ============= MEU TIME (liderados em cascata via RLS) ============= */}
+        <TabsContent value="meu-time" className="space-y-3">
+          <MeuTimeView status={status} setores={setores}
+                       onAvaliar={handleNovaAvaliacao}
+                       onAbrir={(c, a) => handleNovaAvaliacao(c, a, "view")} />
+        </TabsContent>
+
 
         {/* ============= DASHBOARD ============= */}
         <TabsContent value="dashboard" className="space-y-4">
