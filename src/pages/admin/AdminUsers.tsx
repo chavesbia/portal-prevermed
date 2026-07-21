@@ -457,9 +457,9 @@ export default function AdminUsers() {
       setSelectedUser(prev => prev ? { ...prev, profile_photo_url: publicUrl } : null);
       toast.success('Foto atualizada!');
       fetchUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photo:', error);
-      toast.error('Erro ao enviar foto');
+      toast.error('Erro ao enviar foto: ' + (error?.message || 'desconhecido'));
     } finally {
       setIsUploadingPhoto(false);
       if (photoInputRef.current) photoInputRef.current.value = '';
