@@ -37,12 +37,33 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
     if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
+
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const startedAt = new Date().toISOString();
+    const { data: logRow } = await admin
+      .from('companies_sync_log')
+      .insert({ started_at: startedAt, triggered_by: userId, status: 'running' })
+      .select('id')
+      .single();
+    const logId = logRow?.id as string | undefined;
+
+    const finalize = async (patch: Record<string, unknown>) => {
+      if (!logId) return;
+      await admin.from('companies_sync_log').update({ finished_at: new Date().toISOString(), ...patch }).eq('id', logId);
+    };
 
     const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
     const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS');
     const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS');
     if (!empresa || !codigo || !chave) {
-      return json({ error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS, SOC_CHAVE_EXPORTA_DADOS)' }, 500);
+      const msg = 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS, SOC_CHAVE_EXPORTA_DADOS)';
+      await finalize({ status: 'error', error_message: msg });
+      return json({ error: msg }, 500);
     }
 
     const parametro = JSON.stringify({ empresa, codigo, chave, tipoSaida: 'json' });
@@ -51,24 +72,20 @@ Deno.serve(async (req) => {
     const resp = await fetch(url, { method: 'POST' });
     if (!resp.ok) {
       const detail = await resp.text().catch(() => '');
+      await finalize({ status: 'error', error_message: `SOC HTTP ${resp.status}: ${detail.slice(0, 500)}` });
       return json({ error: 'Falha ao consultar SOC', status: resp.status, detail }, 502);
     }
 
-    // SOC responde em ISO-8859-1
     const buf = await resp.arrayBuffer();
     const text = new TextDecoder('iso-8859-1').decode(buf);
     let empresas: any[] = [];
     try {
       const parsed = JSON.parse(text);
       empresas = Array.isArray(parsed) ? parsed : (parsed?.empresas || parsed?.data || []);
-    } catch (e) {
+    } catch (_e) {
+      await finalize({ status: 'error', error_message: 'Resposta SOC não é JSON válido' });
       return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
     }
-
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
 
     const now = new Date().toISOString();
     let inserted = 0;
@@ -116,16 +133,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    const status = errors.length === 0 ? 'success' : (inserted + updated > 0 ? 'partial' : 'error');
+    await finalize({
+      status,
+      total: empresas.length,
+      inserted,
+      updated,
+      error_count: errors.length,
+      errors: errors.slice(0, 100),
+    });
+
     return json({
       ok: true,
+      log_id: logId,
       total: empresas.length,
       inserted,
       updated,
       errors: errors.slice(0, 20),
       error_count: errors.length,
       synced_at: now,
+      status,
     });
   } catch (e) {
     return json({ error: String((e as any)?.message || e) }, 500);
   }
 });
+

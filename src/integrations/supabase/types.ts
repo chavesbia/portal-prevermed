@@ -1506,6 +1506,51 @@ export type Database = {
         }
         Relationships: []
       }
+      companies_sync_log: {
+        Row: {
+          created_at: string
+          error_count: number
+          error_message: string | null
+          errors: Json | null
+          finished_at: string | null
+          id: string
+          inserted: number
+          started_at: string
+          status: string
+          total: number
+          triggered_by: string | null
+          updated: number
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number
+          error_message?: string | null
+          errors?: Json | null
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          started_at?: string
+          status?: string
+          total?: number
+          triggered_by?: string | null
+          updated?: number
+        }
+        Update: {
+          created_at?: string
+          error_count?: number
+          error_message?: string | null
+          errors?: Json | null
+          finished_at?: string | null
+          id?: string
+          inserted?: number
+          started_at?: string
+          status?: string
+          total?: number
+          triggered_by?: string | null
+          updated?: number
+        }
+        Relationships: []
+      }
       configuracao_alertas: {
         Row: {
           ativo: boolean
