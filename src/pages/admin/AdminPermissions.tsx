@@ -323,10 +323,10 @@ export default function AdminPermissions() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Shield className="h-6 w-6" />
-            Gerenciamento de Permissões
+            Gerenciamento de Usuários e Permissões
           </h1>
           <p className="text-muted-foreground">
-            Gerencie módulos por departamento e permissões por usuário
+            Gerencie usuários, módulos por departamento e permissões
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchAllData} disabled={isLoading}>
@@ -337,6 +337,10 @@ export default function AdminPermissions() {
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="usuarios" className="gap-2">
+            <Users className="h-4 w-4" />
+            Usuários
+          </TabsTrigger>
           <TabsTrigger value="manage" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
             Gerenciar por Usuário
@@ -363,7 +367,11 @@ export default function AdminPermissions() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ===== Tab: Master-Detail Manager (default) ===== */}
+        <TabsContent value="usuarios">
+          <AdminUsers />
+        </TabsContent>
+
+        {/* ===== Tab: Master-Detail Manager ===== */}
         <TabsContent value="manage">
           <PermissionsMasterDetail />
         </TabsContent>
