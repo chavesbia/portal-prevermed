@@ -87,6 +87,45 @@ export default function AdminEmpresas() {
 
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
+  // Companies list
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
+  const [search, setSearch] = useState("");
+  const [ufFilter, setUfFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const loadCompanies = useCallback(async () => {
+    setLoadingCompanies(true);
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id, soc_code, cnpj, nome_abreviado, razao_social, cidade, estado, is_active, synced_at")
+      .order("razao_social", { ascending: true })
+      .limit(5000);
+    if (error) toast.error("Erro ao carregar empresas: " + error.message);
+    else setCompanies((data as Company[]) || []);
+    setLoadingCompanies(false);
+  }, []);
+
+  useEffect(() => { loadCompanies(); }, [loadCompanies]);
+
+  const ufOptions = Array.from(new Set(companies.map((c) => c.estado).filter(Boolean))).sort() as string[];
+
+  const filtered = companies.filter((c) => {
+    if (statusFilter === "active" && !c.is_active) return false;
+    if (statusFilter === "inactive" && c.is_active) return false;
+    if (ufFilter !== "all" && c.estado !== ufFilter) return false;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const qDigits = onlyDigits(q);
+      const hay = [
+        c.razao_social, c.nome_abreviado, c.soc_code, c.cidade,
+      ].map((v) => (v || "").toLowerCase()).join(" ");
+      const cnpjDigits = onlyDigits(c.cnpj || "");
+      if (!hay.includes(q) && !(qDigits && cnpjDigits.includes(qDigits))) return false;
+    }
+    return true;
+  });
+
   const sync = async () => {
     setLoading(true);
     try {
@@ -97,7 +136,7 @@ export default function AdminEmpresas() {
       } else {
         toast.error(data?.error || "Falha na sincronização");
       }
-      await loadLogs();
+      await Promise.all([loadLogs(), loadCompanies()]);
     } catch (e: any) {
       toast.error(e?.message || "Erro ao sincronizar");
       await loadLogs();
