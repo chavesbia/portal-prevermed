@@ -1165,6 +1165,7 @@ export type Database = {
           approval_date: string | null
           city: string | null
           cnpj: string | null
+          company_id: string | null
           company_name: string
           contact_email: string | null
           contact_name: string | null
@@ -1201,6 +1202,7 @@ export type Database = {
           approval_date?: string | null
           city?: string | null
           cnpj?: string | null
+          company_id?: string | null
           company_name: string
           contact_email?: string | null
           contact_name?: string | null
@@ -1237,6 +1239,7 @@ export type Database = {
           approval_date?: string | null
           city?: string | null
           cnpj?: string | null
+          company_id?: string | null
           company_name?: string
           contact_email?: string | null
           contact_name?: string | null
@@ -1268,7 +1271,15 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "commercial_clients_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commercial_contracts: {
         Row: {
@@ -1680,6 +1691,7 @@ export type Database = {
           cidade: string | null
           cnae_principal: string | null
           cnpj: string
+          company_id: string | null
           complemento: string | null
           cpf_representante: string | null
           created_at: string
@@ -1705,6 +1717,7 @@ export type Database = {
           cidade?: string | null
           cnae_principal?: string | null
           cnpj: string
+          company_id?: string | null
           complemento?: string | null
           cpf_representante?: string | null
           created_at?: string
@@ -1730,6 +1743,7 @@ export type Database = {
           cidade?: string | null
           cnae_principal?: string | null
           cnpj?: string
+          company_id?: string | null
           complemento?: string | null
           cpf_representante?: string | null
           created_at?: string
@@ -1748,7 +1762,15 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contract_clientes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contract_contratos: {
         Row: {
