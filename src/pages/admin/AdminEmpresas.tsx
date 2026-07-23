@@ -9,8 +9,31 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, Building2, ChevronDown } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, Search } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+
+type Company = {
+  id: string;
+  soc_code: string | null;
+  cnpj: string | null;
+  nome_abreviado: string | null;
+  razao_social: string | null;
+  cidade: string | null;
+  estado: string | null;
+  is_active: boolean | null;
+  synced_at: string | null;
+};
+
+const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
+const fmtCnpj = (c: string | null) => {
+  const d = onlyDigits(c || "");
+  if (d.length !== 14) return c || "—";
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+};
 
 type SyncLog = {
   id: string;
