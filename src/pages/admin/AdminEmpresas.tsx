@@ -9,7 +9,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, Building2, ChevronDown, Search } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
