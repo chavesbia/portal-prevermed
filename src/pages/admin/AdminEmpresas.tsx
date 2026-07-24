@@ -152,7 +152,16 @@ export default function AdminEmpresas() {
       const { data, error } = await supabase.functions.invoke("soc-empresas-sync");
       if (error) throw error;
       if (data?.ok) {
-        toast.success(`Sync concluído: ${data.inserted} inseridas, ${data.updated} atualizadas`);
+        {
+          const p = data.principal ?? {};
+          const sn = data.socnet ?? {};
+          const totalIns = (p.inserted ?? data.inserted ?? 0) + (sn.inserted ?? 0);
+          const totalUpd = (p.updated ?? data.updated ?? 0) + (sn.updated ?? 0);
+          toast.success(
+            `Sync concluído: ${totalIns} inseridas, ${totalUpd} atualizadas` +
+            (sn.total !== undefined ? ` (SOCNET: ${sn.inserted ?? 0} novas, ${sn.updated ?? 0} atualizadas de ${sn.total})` : '')
+          );
+        }
       } else {
         toast.error(data?.error || "Falha na sincronização");
       }
