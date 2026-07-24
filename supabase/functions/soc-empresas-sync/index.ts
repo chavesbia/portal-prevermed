@@ -185,6 +185,7 @@ Deno.serve(async (req) => {
       updated,
       errors: errors.slice(0, 20),
       error_count: errors.length,
+      skipped_count: skipped.length,
       synced_at: now,
       status,
     });
@@ -192,4 +193,5 @@ Deno.serve(async (req) => {
     return json({ error: String((e as any)?.message || e) }, 500);
   }
 });
+
 
