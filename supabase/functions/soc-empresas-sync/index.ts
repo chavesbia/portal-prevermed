@@ -133,15 +133,24 @@ Deno.serve(async (req) => {
         continue;
       }
       if (!cnpj) {
-        // Ainda sincronizamos, mas registramos como "sem CNPJ" (ex.: parceiros SOCNET)
-        skipped.push({
-          reason: (razao || '').toUpperCase().includes('SOCNET') ? 'socnet_sem_cnpj' : 'sem_cnpj',
-          motivo: (razao || '').toUpperCase().includes('SOCNET')
-            ? 'Parceiro SOCNET sem CNPJ cadastrado no SOC'
-            : 'Empresa sem CNPJ no SOC',
-          soc_code,
-          razao_social: razao,
-        });
+        const upper = (razao || '').toUpperCase();
+        const ie = s(e.INSCRICAOESTADUAL);
+        const im = s(e.INSCRICAOMUNICIPAL);
+        const hasCorpMarker = /\b(LTDA|ME|EIRELI|EPP|S\/A|S\.A\.?|SA|MEI|LTDA\.?|CIA|COMPANHIA|ASSOCIACAO|ASSOCIAÇÃO|INSTITUTO|FUNDACAO|FUNDAÇÃO|COOPERATIVA|SINDICATO|IGREJA|MUNICIPIO|MUNICÍPIO|PREFEITURA|SINDICATO)\b/.test(upper);
+        const isPF = !ie && !im && !hasCorpMarker && !upper.includes('SOCNET');
+        let reason: string;
+        let motivo: string;
+        if (upper.includes('SOCNET')) {
+          reason = 'socnet_sem_cnpj';
+          motivo = 'Parceiro SOCNET sem CNPJ cadastrado no SOC';
+        } else if (isPF) {
+          reason = 'pessoa_fisica_sem_cnpj';
+          motivo = 'Cliente Pessoa Física (sem CNPJ aplicável)';
+        } else {
+          reason = 'sem_cnpj';
+          motivo = 'Empresa sem CNPJ no SOC';
+        }
+        skipped.push({ reason, motivo, soc_code, razao_social: razao, cnpj: s(e.CNPJ) });
       }
       rowsMap.set(soc_code, {
         soc_code,
