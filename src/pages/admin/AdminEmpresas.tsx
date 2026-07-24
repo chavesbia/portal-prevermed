@@ -9,9 +9,13 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -96,10 +100,40 @@ const duration = (a: string, b: string | null) => {
 };
 
 export default function AdminEmpresas() {
+  const { isAdmMaster } = useAuth();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [socnetEnabled, setSocnetEnabled] = useState(false);
+  const [savingSocnet, setSavingSocnet] = useState(false);
+
+  const loadSocnetFlag = useCallback(async () => {
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "socnet_sync_enabled")
+      .maybeSingle();
+    const v = data?.value;
+    setSocnetEnabled(v === true || String(v ?? "").toLowerCase() === "true");
+  }, []);
+
+  const toggleSocnet = async (next: boolean) => {
+    setSavingSocnet(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert(
+        { key: "socnet_sync_enabled", value: next as any, updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
+    setSavingSocnet(false);
+    if (error) {
+      toast.error("Não foi possível atualizar: " + error.message);
+      return;
+    }
+    setSocnetEnabled(next);
+    toast.success(next ? "Sincronização SOCNET ativada" : "Sincronização SOCNET desativada");
+  };
 
   const loadLogs = useCallback(async () => {
     setLoadingLogs(true);
@@ -113,7 +147,8 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); }, [loadLogs]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); }, [loadLogs, loadSocnetFlag]);
+
 
   // Companies list
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -204,6 +239,37 @@ export default function AdminEmpresas() {
           </Button>
         </CardContent>
       </Card>
+
+      {isAdmMaster && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5 text-primary" />
+              Sincronização de Parceiros SOCNET
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="socnet-toggle" className="text-sm font-medium">
+                {socnetEnabled ? "Ativada" : "Desativada"}
+              </Label>
+              <p className="text-xs text-muted-foreground max-w-2xl">
+                Quando ativada, a próxima sincronização também trará empresas parceiras da rede SOCNET
+                (marcadas com <code>is_socnet = true</code>). Mantenha desativada para focar apenas nos
+                clientes diretos da PreverMed. Somente ADM Master pode alterar esta configuração.
+              </p>
+            </div>
+            <Switch
+              id="socnet-toggle"
+              checked={socnetEnabled}
+              disabled={savingSocnet}
+              onCheckedChange={toggleSocnet}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {(() => {
         const lastWithSkipped = logs.find((l) => Array.isArray(l.skipped) && l.skipped.length > 0);
