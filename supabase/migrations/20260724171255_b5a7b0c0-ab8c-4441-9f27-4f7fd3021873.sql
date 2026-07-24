@@ -1,0 +1,2 @@
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS is_socnet boolean NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_companies_is_socnet ON public.companies(is_socnet) WHERE is_socnet = true;
