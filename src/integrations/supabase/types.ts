@@ -3168,6 +3168,7 @@ export type Database = {
           art_anexo_url: string | null
           art_numero: string | null
           art_validade: string | null
+          company_id: string | null
           created_at: string
           created_by: string | null
           data_emissao: string
@@ -3193,6 +3194,7 @@ export type Database = {
           art_anexo_url?: string | null
           art_numero?: string | null
           art_validade?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string
@@ -3218,6 +3220,7 @@ export type Database = {
           art_anexo_url?: string | null
           art_numero?: string | null
           art_validade?: string | null
+          company_id?: string | null
           created_at?: string
           created_by?: string | null
           data_emissao?: string
@@ -3240,6 +3243,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "laudos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "laudos_ordem_id_fkey"
             columns: ["ordem_id"]
@@ -3874,6 +3884,7 @@ export type Database = {
       }
       ordens_servico: {
         Row: {
+          company_id: string | null
           contato_cliente: string | null
           contrato_id: string | null
           created_at: string
@@ -3897,6 +3908,7 @@ export type Database = {
           urgente: boolean
         }
         Insert: {
+          company_id?: string | null
           contato_cliente?: string | null
           contrato_id?: string | null
           created_at?: string
@@ -3920,6 +3932,7 @@ export type Database = {
           urgente?: boolean
         }
         Update: {
+          company_id?: string | null
           contato_cliente?: string | null
           contrato_id?: string | null
           created_at?: string
@@ -3943,6 +3956,13 @@ export type Database = {
           urgente?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "ordens_servico_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ordens_servico_contrato_id_fkey"
             columns: ["contrato_id"]
