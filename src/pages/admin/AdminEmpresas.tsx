@@ -269,7 +269,7 @@ export default function AdminEmpresas() {
         </Card>
       )}
 
-      </Card>
+
 
       {(() => {
         const lastWithSkipped = logs.find((l) => Array.isArray(l.skipped) && l.skipped.length > 0);
