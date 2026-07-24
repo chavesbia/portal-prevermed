@@ -9,9 +9,13 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle, Network } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
