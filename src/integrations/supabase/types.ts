@@ -705,6 +705,7 @@ export type Database = {
           cnpj: string
           colaborador_cpf: string
           colaborador_nome: string
+          company_id: string | null
           created_at: string
           created_by: string
           created_by_name: string | null
@@ -726,6 +727,7 @@ export type Database = {
           cnpj: string
           colaborador_cpf: string
           colaborador_nome: string
+          company_id?: string | null
           created_at?: string
           created_by: string
           created_by_name?: string | null
@@ -747,6 +749,7 @@ export type Database = {
           cnpj?: string
           colaborador_cpf?: string
           colaborador_nome?: string
+          company_id?: string | null
           created_at?: string
           created_by?: string
           created_by_name?: string | null
@@ -769,6 +772,13 @@ export type Database = {
             columns: ["area_id"]
             isOneToOne: false
             referencedRelation: "aso_retificacao_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aso_retificacao_solicitacoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
@@ -3744,6 +3754,7 @@ export type Database = {
           client_validated: boolean
           client_validated_at: string | null
           cnpj: string
+          company_id: string | null
           company_name: string
           concluded_at: string | null
           contact_origin: Database["public"]["Enums"]["occurrence_contact_origin"]
@@ -3778,6 +3789,7 @@ export type Database = {
           client_validated?: boolean
           client_validated_at?: string | null
           cnpj: string
+          company_id?: string | null
           company_name: string
           concluded_at?: string | null
           contact_origin: Database["public"]["Enums"]["occurrence_contact_origin"]
@@ -3812,6 +3824,7 @@ export type Database = {
           client_validated?: boolean
           client_validated_at?: string | null
           cnpj?: string
+          company_id?: string | null
           company_name?: string
           concluded_at?: string | null
           contact_origin?: Database["public"]["Enums"]["occurrence_contact_origin"]
@@ -3838,7 +3851,15 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_tickets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ordens_servico: {
         Row: {
