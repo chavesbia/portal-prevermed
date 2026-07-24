@@ -93,6 +93,30 @@ Deno.serve(async (req) => {
     const errors: any[] = [];
     const skipped: any[] = [];
 
+    // --- RAW INVESTIGATION (temporário) ---
+    const allFieldNames = new Set<string>();
+    for (const e of empresas) {
+      if (e && typeof e === 'object') for (const k of Object.keys(e)) allFieldNames.add(k);
+    }
+    const sampleSocnet = empresas.find((e: any) => String(e?.RAZAOSOCIAL || e?.RAZAOSOCIALINICIAL || '').toUpperCase().includes('SOCNET')) || null;
+    const sampleSemCnpj = empresas.find((e: any) => {
+      const c = String(e?.CNPJ ?? '').replace(/\D/g, '');
+      return !c && !String(e?.RAZAOSOCIAL || '').toUpperCase().includes('SOCNET');
+    }) || null;
+    const sampleComCnpj = empresas.find((e: any) => String(e?.CNPJ ?? '').replace(/\D/g, '').length >= 14) || null;
+    if (logId) {
+      await admin.from('companies_sync_log').update({
+        all_field_names: Array.from(allFieldNames).sort(),
+        raw_samples: {
+          socnet_sem_cnpj: sampleSocnet,
+          pessoa_fisica_ou_sem_cnpj: sampleSemCnpj,
+          normal_com_cnpj: sampleComCnpj,
+        },
+      }).eq('id', logId);
+    }
+    // --- FIM INVESTIGAÇÃO ---
+
+
     // Build rows + dedupe by soc_code; capture skipped rows with reason
     const rowsMap = new Map<string, any>();
     for (const e of empresas) {

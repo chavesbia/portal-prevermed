@@ -1519,6 +1519,7 @@ export type Database = {
       }
       companies_sync_log: {
         Row: {
+          all_field_names: Json | null
           created_at: string
           error_count: number
           error_message: string | null
@@ -1526,6 +1527,7 @@ export type Database = {
           finished_at: string | null
           id: string
           inserted: number
+          raw_samples: Json | null
           skipped: Json
           skipped_count: number
           started_at: string
@@ -1535,6 +1537,7 @@ export type Database = {
           updated: number
         }
         Insert: {
+          all_field_names?: Json | null
           created_at?: string
           error_count?: number
           error_message?: string | null
@@ -1542,6 +1545,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          raw_samples?: Json | null
           skipped?: Json
           skipped_count?: number
           started_at?: string
@@ -1551,6 +1555,7 @@ export type Database = {
           updated?: number
         }
         Update: {
+          all_field_names?: Json | null
           created_at?: string
           error_count?: number
           error_message?: string | null
@@ -1558,6 +1563,7 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          raw_samples?: Json | null
           skipped?: Json
           skipped_count?: number
           started_at?: string
