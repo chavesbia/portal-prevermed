@@ -240,6 +240,37 @@ export default function AdminEmpresas() {
         </CardContent>
       </Card>
 
+      {isAdmMaster && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Network className="h-5 w-5 text-primary" />
+              Sincronização de Parceiros SOCNET
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="socnet-toggle" className="text-sm font-medium">
+                {socnetEnabled ? "Ativada" : "Desativada"}
+              </Label>
+              <p className="text-xs text-muted-foreground max-w-2xl">
+                Quando ativada, a próxima sincronização também trará empresas parceiras da rede SOCNET
+                (marcadas com <code>is_socnet = true</code>). Mantenha desativada para focar apenas nos
+                clientes diretos da PreverMed. Somente ADM Master pode alterar esta configuração.
+              </p>
+            </div>
+            <Switch
+              id="socnet-toggle"
+              checked={socnetEnabled}
+              disabled={savingSocnet}
+              onCheckedChange={toggleSocnet}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      </Card>
+
       {(() => {
         const lastWithSkipped = logs.find((l) => Array.isArray(l.skipped) && l.skipped.length > 0);
         if (!lastWithSkipped) return null;
