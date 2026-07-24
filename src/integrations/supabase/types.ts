@@ -1526,6 +1526,8 @@ export type Database = {
           finished_at: string | null
           id: string
           inserted: number
+          skipped: Json
+          skipped_count: number
           started_at: string
           status: string
           total: number
@@ -1540,6 +1542,8 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          skipped?: Json
+          skipped_count?: number
           started_at?: string
           status?: string
           total?: number
@@ -1554,6 +1558,8 @@ export type Database = {
           finished_at?: string | null
           id?: string
           inserted?: number
+          skipped?: Json
+          skipped_count?: number
           started_at?: string
           status?: string
           total?: number

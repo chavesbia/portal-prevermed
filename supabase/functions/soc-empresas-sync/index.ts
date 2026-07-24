@@ -91,17 +91,39 @@ Deno.serve(async (req) => {
     let inserted = 0;
     let updated = 0;
     const errors: any[] = [];
+    const skipped: any[] = [];
 
-    // Build rows + dedupe by soc_code
+    // Build rows + dedupe by soc_code; capture skipped rows with reason
     const rowsMap = new Map<string, any>();
     for (const e of empresas) {
       const soc_code = s(e.CODIGO);
-      if (!soc_code) continue;
+      const razao = s(e.RAZAOSOCIAL) || s(e.RAZAOSOCIALINICIAL);
+      const cnpj = digits(e.CNPJ);
+      if (!soc_code) {
+        skipped.push({
+          reason: 'sem_codigo',
+          motivo: 'Registro do SOC sem código de empresa',
+          razao_social: razao,
+          cnpj: s(e.CNPJ),
+        });
+        continue;
+      }
+      if (!cnpj) {
+        // Ainda sincronizamos, mas registramos como "sem CNPJ" (ex.: parceiros SOCNET)
+        skipped.push({
+          reason: (razao || '').toUpperCase().includes('SOCNET') ? 'socnet_sem_cnpj' : 'sem_cnpj',
+          motivo: (razao || '').toUpperCase().includes('SOCNET')
+            ? 'Parceiro SOCNET sem CNPJ cadastrado no SOC'
+            : 'Empresa sem CNPJ no SOC',
+          soc_code,
+          razao_social: razao,
+        });
+      }
       rowsMap.set(soc_code, {
         soc_code,
-        cnpj: digits(e.CNPJ),
+        cnpj,
         nome_abreviado: s(e.NOMEABREVIADO),
-        razao_social: s(e.RAZAOSOCIAL) || s(e.RAZAOSOCIALINICIAL) || soc_code,
+        razao_social: razao || soc_code,
         cep: digits(e.CEP),
         logradouro: s(e.ENDERECO),
         numero: s(e.NUMEROENDERECO),
@@ -150,7 +172,10 @@ Deno.serve(async (req) => {
       updated,
       error_count: errors.length,
       errors: errors.slice(0, 100),
+      skipped: skipped.slice(0, 500),
+      skipped_count: skipped.length,
     });
+
 
     return json({
       ok: true,
@@ -160,6 +185,7 @@ Deno.serve(async (req) => {
       updated,
       errors: errors.slice(0, 20),
       error_count: errors.length,
+      skipped_count: skipped.length,
       synced_at: now,
       status,
     });
@@ -167,4 +193,5 @@ Deno.serve(async (req) => {
     return json({ error: String((e as any)?.message || e) }, 500);
   }
 });
+
 
