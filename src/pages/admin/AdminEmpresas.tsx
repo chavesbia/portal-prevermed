@@ -350,7 +350,7 @@ export default function AdminEmpresas() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.slice(0, 1000).map((c) => (
+                  {filtered.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-mono text-xs">{c.soc_code || "—"}</TableCell>
                       <TableCell className="font-medium">{c.razao_social || "—"}</TableCell>
@@ -367,11 +367,10 @@ export default function AdminEmpresas() {
                   ))}
                 </TableBody>
               </Table>
-              {filtered.length > 1000 && (
-                <p className="text-xs text-muted-foreground p-2 text-center border-t">
-                  Mostrando 1000 de {filtered.length} resultados. Refine a busca para ver mais.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground p-2 text-center border-t">
+                {filtered.length.toLocaleString("pt-BR")} empresa(s) listada(s).
+              </p>
+
             </div>
           )}
         </CardContent>
