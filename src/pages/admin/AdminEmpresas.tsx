@@ -63,7 +63,10 @@ const REASON_LABEL: Record<string, string> = {
   socnet_sem_cnpj: "Parceiro SOCNET sem CNPJ",
   sem_cnpj: "Sem CNPJ",
   sem_codigo: "Sem código SOC",
+  pessoa_fisica_sem_cnpj: "Pessoa Física (sem CNPJ aplicável)",
 };
+
+const INFO_REASONS = new Set(["pessoa_fisica_sem_cnpj"]);
 
 
 const statusVariant = (s: string): "default" | "secondary" | "destructive" | "outline" => {
