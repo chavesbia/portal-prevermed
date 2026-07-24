@@ -46,8 +46,25 @@ type SyncLog = {
   status: string;
   error_message: string | null;
   errors: any;
+  skipped: any;
+  skipped_count: number;
   triggered_by: string | null;
 };
+
+type SkippedRow = {
+  reason?: string;
+  motivo?: string;
+  soc_code?: string | null;
+  razao_social?: string | null;
+  cnpj?: string | null;
+};
+
+const REASON_LABEL: Record<string, string> = {
+  socnet_sem_cnpj: "Parceiro SOCNET sem CNPJ",
+  sem_cnpj: "Sem CNPJ",
+  sem_codigo: "Sem código SOC",
+};
+
 
 const statusVariant = (s: string): "default" | "secondary" | "destructive" | "outline" => {
   if (s === "success") return "default";
