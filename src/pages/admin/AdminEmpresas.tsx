@@ -120,7 +120,7 @@ export default function AdminEmpresas() {
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [search, setSearch] = useState("");
   const [ufFilter, setUfFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("active");
 
   const loadCompanies = useCallback(async () => {
     setLoadingCompanies(true);
