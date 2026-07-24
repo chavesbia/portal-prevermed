@@ -217,8 +217,6 @@ Deno.serve(async (req) => {
           codigo: codigoSocnet,
           chave: chaveSocnet,
           tipoSaida: 'json',
-          socnet: '1',
-          mostrarinativas: '1',
         });
         const urlSocnet = `${SOC_URL}?parametro=${encodeURIComponent(paramSocnet)}`;
         const respSN = await fetch(urlSocnet, { method: 'POST' });
