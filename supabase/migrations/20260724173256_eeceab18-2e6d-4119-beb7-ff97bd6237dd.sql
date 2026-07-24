@@ -1,0 +1,1 @@
+DELETE FROM public.companies WHERE is_socnet = true;
