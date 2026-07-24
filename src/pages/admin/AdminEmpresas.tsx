@@ -66,7 +66,15 @@ const REASON_LABEL: Record<string, string> = {
   pessoa_fisica_sem_cnpj: "Pessoa Física (sem CNPJ aplicável)",
 };
 
-const INFO_REASONS = new Set(["pessoa_fisica_sem_cnpj"]);
+// Todas as pendências passam a ser tratadas como informativas (amarelo),
+// pois representam registros do SOC sem CNPJ que não bloqueiam a operação.
+const INFO_REASONS = new Set([
+  "pessoa_fisica_sem_cnpj",
+  "sem_cnpj",
+  "socnet_sem_cnpj",
+  "sem_codigo",
+]);
+
 
 
 const statusVariant = (s: string): "default" | "secondary" | "destructive" | "outline" => {
