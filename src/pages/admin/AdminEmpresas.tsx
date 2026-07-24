@@ -185,6 +185,73 @@ export default function AdminEmpresas() {
         </CardContent>
       </Card>
 
+      {(() => {
+        const lastWithSkipped = logs.find((l) => Array.isArray(l.skipped) && l.skipped.length > 0);
+        if (!lastWithSkipped) return null;
+        const list = (lastWithSkipped.skipped as SkippedRow[]) || [];
+        const grouped = list.reduce<Record<string, SkippedRow[]>>((acc, r) => {
+          const k = r.reason || "outro";
+          (acc[k] ||= []).push(r);
+          return acc;
+        }, {});
+        return (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Empresas Não Sincronizadas
+                <span className="text-sm font-normal">
+                  ({lastWithSkipped.skipped_count ?? list.length})
+                </span>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Registros presentes no retorno do SOC porém com dados incompletos.
+                A maioria são parceiros SOCNET cadastrados sem CNPJ na base do SOC —
+                ajuste no próprio SOC para que sejam sincronizados corretamente.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Object.entries(grouped).map(([reason, rows]) => (
+                <div key={reason} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="destructive">{REASON_LABEL[reason] || reason}</Badge>
+                    <span className="text-xs text-muted-foreground">{rows.length} registro(s)</span>
+                  </div>
+                  <div className="border rounded-md max-h-64 overflow-auto bg-background">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-background z-10">
+                        <TableRow>
+                          <TableHead className="w-24">Cód. SOC</TableHead>
+                          <TableHead>Razão Social</TableHead>
+                          <TableHead className="w-44">CNPJ</TableHead>
+                          <TableHead>Motivo</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rows.slice(0, 200).map((r, i) => (
+                          <TableRow key={`${reason}-${i}`}>
+                            <TableCell className="font-mono text-xs">{r.soc_code || "—"}</TableCell>
+                            <TableCell className="text-sm">{r.razao_social || "—"}</TableCell>
+                            <TableCell className="font-mono text-xs">{r.cnpj || "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{r.motivo || "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {rows.length > 200 && (
+                      <p className="text-xs text-muted-foreground p-2 text-center border-t">
+                        Mostrando 200 de {rows.length}.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
