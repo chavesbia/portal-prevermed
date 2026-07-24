@@ -197,28 +197,151 @@ Deno.serve(async (req) => {
       }
     }
 
-    const status = errors.length === 0 ? 'success' : (inserted + updated > 0 ? 'partial' : 'error');
+    // ============================================================
+    // SEGUNDA CHAMADA — Cadastro de Empresas (SOCNET)
+    // ============================================================
+    let socnetTotal = 0;
+    let socnetInserted = 0;
+    let socnetUpdated = 0;
+    const socnetErrors: any[] = [];
+    const socnetSkipped: any[] = [];
+    let socnetStatusValues: string[] = [];
+
+    const codigoSocnet = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_SOCNET');
+    const chaveSocnet = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS_SOCNET');
+
+    if (codigoSocnet && chaveSocnet) {
+      try {
+        const paramSocnet = JSON.stringify({
+          empresa,
+          codigo: codigoSocnet,
+          chave: chaveSocnet,
+          tipoSaida: 'json',
+          socnet: '1',
+          mostrarinativas: '1',
+        });
+        const urlSocnet = `${SOC_URL}?parametro=${encodeURIComponent(paramSocnet)}`;
+        const respSN = await fetch(urlSocnet, { method: 'POST' });
+        if (!respSN.ok) {
+          const detail = await respSN.text().catch(() => '');
+          socnetErrors.push({ error: `SOC SOCNET HTTP ${respSN.status}: ${detail.slice(0, 500)}` });
+        } else {
+          const bufSN = await respSN.arrayBuffer();
+          const textSN = new TextDecoder('iso-8859-1').decode(bufSN);
+          let parceiros: any[] = [];
+          try {
+            const parsed = JSON.parse(textSN);
+            parceiros = Array.isArray(parsed) ? parsed : (parsed?.empresas || parsed?.data || []);
+          } catch (_e) {
+            socnetErrors.push({ error: 'Resposta SOC SOCNET não é JSON válido', preview: textSN.slice(0, 300) });
+          }
+          socnetTotal = parceiros.length;
+
+          // Coletar valores distintos de "status" para validar mapeamento
+          const statusSet = new Set<string>();
+          for (const p of parceiros) {
+            const v = p?.status;
+            if (v !== undefined && v !== null) statusSet.add(String(v));
+          }
+          socnetStatusValues = Array.from(statusSet);
+
+          const isActiveFrom = (v: unknown): boolean => {
+            if (v === true) return true;
+            if (v === false) return false;
+            const t = String(v ?? '').trim().toUpperCase();
+            return t === '1' || t === 'ATIVO' || t === 'A' || t === 'SIM' || t === 'TRUE';
+          };
+
+          const rowsSNMap = new Map<string, any>();
+          for (const p of parceiros) {
+            const soc_code = s(p.codigo);
+            const razao = s(p.razaoSocial) || s(p.nome);
+            if (!soc_code) {
+              socnetSkipped.push({ reason: 'sem_codigo', motivo: 'Registro SOCNET sem código', razao_social: razao });
+              continue;
+            }
+            rowsSNMap.set(soc_code, {
+              soc_code,
+              cnpj: digits(p.cnpj),
+              nome_abreviado: s(p.nome),
+              razao_social: razao || soc_code,
+              cep: digits(p.cep),
+              logradouro: s(p.endereco),
+              numero: s(p.numeroEndereco),
+              bairro: s(p.bairro),
+              cidade: s(p.cidade),
+              estado: s(p.uf),
+              inscricao_estadual: s(p.inscricaoEstadual),
+              inscricao_municipal: s(p.inscricaoMunicipal),
+              is_active: isActiveFrom(p.status),
+              codigo_cliente_integracao: s(p.codigoEmpresaClienteIntegracao),
+              is_socnet: true,
+              synced_at: now,
+            });
+          }
+          const rowsSN = Array.from(rowsSNMap.values());
+          const codesSN = rowsSN.map((r) => r.soc_code);
+
+          const existingSN = new Set<string>();
+          for (let i = 0; i < codesSN.length; i += CHUNK) {
+            const slice = codesSN.slice(i, i + CHUNK);
+            const { data, error } = await admin.from('companies').select('soc_code').in('soc_code', slice);
+            if (error) { socnetErrors.push({ error: `select existing socnet: ${error.message}` }); continue; }
+            for (const r of data || []) existingSN.add(r.soc_code as string);
+          }
+
+          for (let i = 0; i < rowsSN.length; i += CHUNK) {
+            const batch = rowsSN.slice(i, i + CHUNK);
+            const { error } = await admin.from('companies').upsert(batch, { onConflict: 'soc_code' });
+            if (error) {
+              socnetErrors.push({ batch: `${i}-${i + batch.length}`, error: error.message });
+              continue;
+            }
+            for (const r of batch) {
+              if (existingSN.has(r.soc_code)) socnetUpdated++; else socnetInserted++;
+            }
+          }
+        }
+      } catch (e) {
+        socnetErrors.push({ error: `SOCNET exception: ${String((e as any)?.message || e)}` });
+      }
+    } else {
+      socnetErrors.push({ error: 'Credenciais SOCNET ausentes (SOC_CODIGO_EXPORTA_DADOS_SOCNET, SOC_CHAVE_EXPORTA_DADOS_SOCNET)' });
+    }
+
+    const totalErrors = errors.length + socnetErrors.length;
+    const totalOk = inserted + updated + socnetInserted + socnetUpdated;
+    const status = totalErrors === 0 ? 'success' : (totalOk > 0 ? 'partial' : 'error');
     await finalize({
       status,
-      total: empresas.length,
-      inserted,
-      updated,
-      error_count: errors.length,
-      errors: errors.slice(0, 100),
-      skipped: skipped.slice(0, 500),
-      skipped_count: skipped.length,
+      total: empresas.length + socnetTotal,
+      inserted: inserted + socnetInserted,
+      updated: updated + socnetUpdated,
+      error_count: totalErrors,
+      errors: [...errors, ...socnetErrors].slice(0, 100),
+      skipped: [...skipped, ...socnetSkipped].slice(0, 500),
+      skipped_count: skipped.length + socnetSkipped.length,
     });
-
 
     return json({
       ok: true,
       log_id: logId,
-      total: empresas.length,
-      inserted,
-      updated,
-      errors: errors.slice(0, 20),
-      error_count: errors.length,
-      skipped_count: skipped.length,
+      principal: {
+        total: empresas.length,
+        inserted,
+        updated,
+        error_count: errors.length,
+        skipped_count: skipped.length,
+      },
+      socnet: {
+        total: socnetTotal,
+        inserted: socnetInserted,
+        updated: socnetUpdated,
+        error_count: socnetErrors.length,
+        skipped_count: socnetSkipped.length,
+        status_values: socnetStatusValues,
+        errors: socnetErrors.slice(0, 20),
+      },
       synced_at: now,
       status,
     });
