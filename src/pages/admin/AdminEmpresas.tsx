@@ -210,7 +210,8 @@ export default function AdminEmpresas() {
         if (!lastWithSkipped) return null;
         const list = (lastWithSkipped.skipped as SkippedRow[]) || [];
         const grouped = list.reduce<Record<string, SkippedRow[]>>((acc, r) => {
-          const k = r.reason || "outro";
+          let k = r.reason || "outro";
+          if (k === "pessoa_fisica_sem_cnpj" || k === "socnet_sem_cnpj") k = "sem_cnpj";
           (acc[k] ||= []).push(r);
           return acc;
         }, {});
