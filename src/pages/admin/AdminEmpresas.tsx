@@ -63,7 +63,10 @@ const REASON_LABEL: Record<string, string> = {
   socnet_sem_cnpj: "Parceiro SOCNET sem CNPJ",
   sem_cnpj: "Sem CNPJ",
   sem_codigo: "Sem código SOC",
+  pessoa_fisica_sem_cnpj: "Pessoa Física (sem CNPJ aplicável)",
 };
+
+const INFO_REASONS = new Set(["pessoa_fisica_sem_cnpj"]);
 
 
 const statusVariant = (s: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -194,27 +197,39 @@ export default function AdminEmpresas() {
           (acc[k] ||= []).push(r);
           return acc;
         }, {});
+        const errorCount = list.filter((r) => !INFO_REASONS.has(r.reason || "")).length;
+        const infoCount = list.length - errorCount;
+        const cardTone = errorCount > 0 ? "border-destructive/50 bg-destructive/5" : "border-amber-500/50 bg-amber-500/5";
+        const titleTone = errorCount > 0 ? "text-destructive" : "text-amber-700 dark:text-amber-500";
         return (
-          <Card className="border-destructive/50 bg-destructive/5">
+          <Card className={cardTone}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-destructive">
+              <CardTitle className={`flex items-center gap-2 ${titleTone}`}>
                 <AlertTriangle className="h-5 w-5" />
                 Empresas Não Sincronizadas
                 <span className="text-sm font-normal">
-                  ({lastWithSkipped.skipped_count ?? list.length})
+                  ({lastWithSkipped.skipped_count ?? list.length}
+                  {infoCount > 0 && errorCount > 0 ? ` — ${errorCount} alerta(s), ${infoCount} informativo(s)` : ""})
                 </span>
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Registros presentes no retorno do SOC porém com dados incompletos.
-                A maioria são parceiros SOCNET cadastrados sem CNPJ na base do SOC —
-                ajuste no próprio SOC para que sejam sincronizados corretamente.
+                Registros presentes no retorno do SOC porém sem CNPJ. Itens em amarelo são
+                informativos (ex.: clientes Pessoa Física, sem CNPJ aplicável). Itens em
+                vermelho indicam dados a corrigir no próprio SOC.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.entries(grouped).map(([reason, rows]) => (
+              {Object.entries(grouped).map(([reason, rows]) => {
+                const isInfo = INFO_REASONS.has(reason);
+                return (
                 <div key={reason} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Badge variant="destructive">{REASON_LABEL[reason] || reason}</Badge>
+                    <Badge
+                      variant={isInfo ? "outline" : "destructive"}
+                      className={isInfo ? "border-amber-500/60 bg-amber-500/10 text-amber-700 dark:text-amber-400" : ""}
+                    >
+                      {REASON_LABEL[reason] || reason}
+                    </Badge>
                     <span className="text-xs text-muted-foreground">{rows.length} registro(s)</span>
                   </div>
                   <div className="border rounded-md max-h-64 overflow-auto bg-background">
@@ -245,7 +260,8 @@ export default function AdminEmpresas() {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         );
