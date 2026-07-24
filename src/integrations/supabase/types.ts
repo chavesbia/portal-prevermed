@@ -3005,6 +3005,7 @@ export type Database = {
       guias: {
         Row: {
           atendido_texto: string | null
+          company_id: string | null
           created_at: string
           data_agendamento: string | null
           data_guia: string | null
@@ -3036,6 +3037,7 @@ export type Database = {
         }
         Insert: {
           atendido_texto?: string | null
+          company_id?: string | null
           created_at?: string
           data_agendamento?: string | null
           data_guia?: string | null
@@ -3067,6 +3069,7 @@ export type Database = {
         }
         Update: {
           atendido_texto?: string | null
+          company_id?: string | null
           created_at?: string
           data_agendamento?: string | null
           data_guia?: string | null
@@ -3096,7 +3099,15 @@ export type Database = {
           unidade_nome?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "guias_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       historico_os: {
         Row: {
