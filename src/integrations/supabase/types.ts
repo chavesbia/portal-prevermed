@@ -1465,6 +1465,7 @@ export type Database = {
           inscricao_estadual: string | null
           inscricao_municipal: string | null
           is_active: boolean
+          is_socnet: boolean
           logradouro: string | null
           nome_abreviado: string | null
           numero: string | null
@@ -1486,6 +1487,7 @@ export type Database = {
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
           is_active?: boolean
+          is_socnet?: boolean
           logradouro?: string | null
           nome_abreviado?: string | null
           numero?: string | null
@@ -1507,6 +1509,7 @@ export type Database = {
           inscricao_estadual?: string | null
           inscricao_municipal?: string | null
           is_active?: boolean
+          is_socnet?: boolean
           logradouro?: string | null
           nome_abreviado?: string | null
           numero?: string | null
