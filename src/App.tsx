@@ -38,6 +38,7 @@ const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
 const GestaoPassivos = lazy(() => import("./pages/GestaoPassivos"));
 const GestaoFeedback = lazy(() => import("./pages/GestaoFeedback"));
 const GestaoContratual = lazy(() => import("./pages/GestaoContratual"));
+const PainelCliente = lazy(() => import("./pages/PainelCliente"));
 
 // Admin (lazy - só carregados pelo ADM Master)
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
@@ -94,6 +95,8 @@ const App = () => (
                 <Route path="/gestao-feedback" element={<ProtectedModuleRoute route="/gestao-feedback"><GestaoFeedback /></ProtectedModuleRoute>} />
                 <Route path="/social" element={<Social />} />
                 <Route path="/gestao-contratual" element={<GestaoContratual />} />
+                <Route path="/painel-cliente" element={<ProtectedModuleRoute route="/painel-cliente"><PainelCliente /></ProtectedModuleRoute>} />
+                <Route path="/painel-cliente/:companyId" element={<ProtectedModuleRoute route="/painel-cliente"><PainelCliente /></ProtectedModuleRoute>} />
 
                 <Route path="/notificacoes" element={<Notificacoes />} />
                 <Route path="/departamentos/*" element={<Index />} />
