@@ -38,6 +38,7 @@ const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
 const GestaoPassivos = lazy(() => import("./pages/GestaoPassivos"));
 const GestaoFeedback = lazy(() => import("./pages/GestaoFeedback"));
 const GestaoContratual = lazy(() => import("./pages/GestaoContratual"));
+const PainelCliente = lazy(() => import("./pages/PainelCliente"));
 
 // Admin (lazy - só carregados pelo ADM Master)
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
