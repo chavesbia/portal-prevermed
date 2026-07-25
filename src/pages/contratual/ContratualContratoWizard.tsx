@@ -118,6 +118,21 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     }
   };
 
+  // Check for OTHER active companies in the SOC master with the same CNPJ.
+  const checkDuplicateCnpj = async (opt: CompanyOption) => {
+    const digits = (opt.cnpj || '').replace(/\D/g, '');
+    if (!digits) { setDuplicateCompanies([]); return; }
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, razao_social, nome_abreviado, cnpj, soc_code')
+      .eq('cnpj', digits)
+      .eq('is_active', true)
+      .neq('id', opt.id);
+    if (error) { setDuplicateCompanies([]); return; }
+    setDuplicateCompanies((data || []) as CompanyOption[]);
+  };
+
+
   const { data: templates = [] } = useQuery({
     queryKey: ['contract-templates-min'],
     queryFn: async () => {
