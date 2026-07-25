@@ -259,7 +259,20 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
           </div>
 
           <FormField control={form.control} name="observacoes" render={({ field }) => (
-            <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Observações..." rows={4} {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Observações... Se a unidade ainda não estiver cadastrada no SOC, anote aqui o nome e o endereço da unidade."
+                  rows={4}
+                  {...field}
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                Dica: unidade não encontrada na lista? Anote aqui o nome e o endereço para a Engenharia confirmar depois.
+              </p>
+              <FormMessage />
+            </FormItem>
           )} />
 
           <div className="flex justify-end gap-3">
