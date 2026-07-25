@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { CompanySelector } from '@/components/shared/CompanySelector';
+import { UnitSelector } from '@/components/shared/UnitSelector';
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
@@ -32,6 +33,7 @@ const servicoSchema = z.object({
 const formSchema = z.object({
   numeroOS: z.string().min(1, 'Número da OS é obrigatório'),
   companyId: z.string().uuid({ message: 'Selecione uma empresa cadastrada' }),
+  unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
   emissor: z.string().min(1),
@@ -62,7 +64,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', companyId: undefined as any, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
+      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
       dataEmissao: new Date(), prazoEntrega: null,
       urgente: false, motivoUrgencia: '',
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo' }],
@@ -78,6 +80,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     const ok = await onSubmit({
       numero_os: data.numeroOS,
       company_id: data.companyId,
+      unidade_id: data.unidadeId || null,
       empresa_cliente: data.empresaCliente,
       contato_cliente: data.contatoCliente,
       responsavel_atual: data.emissor,
@@ -130,11 +133,28 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                     onChange={(id, company) => {
                       field.onChange(id ?? undefined);
                       form.setValue('empresaCliente', company?.razao_social || '', { shouldValidate: true });
+                      form.setValue('unidadeId', null);
                     }}
                   />
                 </FormControl>
                 <p className="text-xs text-muted-foreground">
                   Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="unidadeId" render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Unidade (opcional)</FormLabel>
+                <FormControl>
+                  <UnitSelector
+                    companyId={form.watch('companyId')}
+                    value={field.value}
+                    onChange={(id) => field.onChange(id)}
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Se ainda não souber a unidade, deixe em branco — a Engenharia confirmará na finalização do serviço.
                 </p>
                 <FormMessage />
               </FormItem>
@@ -239,7 +259,20 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
           </div>
 
           <FormField control={form.control} name="observacoes" render={({ field }) => (
-            <FormItem><FormLabel>Observações</FormLabel><FormControl><Textarea placeholder="Observações..." rows={4} {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Observações... Se a unidade ainda não estiver cadastrada no SOC, anote aqui o nome e o endereço da unidade."
+                  rows={4}
+                  {...field}
+                />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">
+                Dica: unidade não encontrada na lista? Anote aqui o nome e o endereço para a Engenharia confirmar depois.
+              </p>
+              <FormMessage />
+            </FormItem>
           )} />
 
           <div className="flex justify-end gap-3">

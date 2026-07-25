@@ -3268,6 +3268,7 @@ export type Database = {
           tipo_laudo_id: string
           tipo_laudo_nome: string
           tipo_servico: string
+          unidade_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3294,6 +3295,7 @@ export type Database = {
           tipo_laudo_id: string
           tipo_laudo_nome: string
           tipo_servico: string
+          unidade_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3320,6 +3322,7 @@ export type Database = {
           tipo_laudo_id?: string
           tipo_laudo_nome?: string
           tipo_servico?: string
+          unidade_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3363,6 +3366,13 @@ export type Database = {
             columns: ["tipo_laudo_id"]
             isOneToOne: false
             referencedRelation: "tipos_laudo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "company_units"
             referencedColumns: ["id"]
           },
         ]
@@ -3983,6 +3993,7 @@ export type Database = {
           responsavel_atual: string
           status_os: string
           tipo_servico_resumo: string | null
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
           urgente: boolean
@@ -4007,6 +4018,7 @@ export type Database = {
           responsavel_atual: string
           status_os?: string
           tipo_servico_resumo?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           urgente?: boolean
@@ -4031,6 +4043,7 @@ export type Database = {
           responsavel_atual?: string
           status_os?: string
           tipo_servico_resumo?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           urgente?: boolean
@@ -4055,6 +4068,13 @@ export type Database = {
             columns: ["quotation_id"]
             isOneToOne: false
             referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordens_servico_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "company_units"
             referencedColumns: ["id"]
           },
         ]
