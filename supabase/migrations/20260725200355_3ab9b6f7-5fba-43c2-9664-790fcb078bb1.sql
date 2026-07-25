@@ -1,0 +1,1 @@
+ALTER TABLE public.contract_clientes DROP CONSTRAINT IF EXISTS contract_clientes_cnpj_key;
