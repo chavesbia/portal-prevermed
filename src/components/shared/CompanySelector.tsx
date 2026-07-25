@@ -93,11 +93,19 @@ export function CompanySelector({
   });
   const selected = inList || fallback || null;
 
+  const visibleCompanies = useMemo(() => {
+    if (!excludeInternal) return companies;
+    return companies.filter(c => {
+      const norm = normalizeForMatch(c.razao_social);
+      return !CONTRACT_EXCLUDE_KEYWORDS.some(k => norm.includes(k));
+    });
+  }, [companies, excludeInternal]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const qDigits = q.replace(/\D/g, '');
-    if (!q) return companies.slice(0, 100);
-    return companies
+    if (!q) return visibleCompanies.slice(0, 100);
+    return visibleCompanies
       .filter(c => {
         const razao = c.razao_social?.toLowerCase() || '';
         const abr = c.nome_abreviado?.toLowerCase() || '';
@@ -107,7 +115,7 @@ export function CompanySelector({
         return false;
       })
       .slice(0, 100);
-  }, [companies, search]);
+  }, [visibleCompanies, search]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
