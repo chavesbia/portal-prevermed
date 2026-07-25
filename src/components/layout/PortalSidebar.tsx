@@ -184,7 +184,7 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
         }
       }
     }
-    return Array.from(seen.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return Array.from(seen.values()).sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   })();
 
   const modulesSection: MenuSection | null = uniqueModules.length > 0
