@@ -99,6 +99,52 @@ const duration = (a: string, b: string | null) => {
   return `${Math.floor(ms / 60_000)}m ${Math.floor((ms % 60_000) / 1000)}s`;
 };
 
+type SyncItem = {
+  key: string;
+  name: string;
+  description: string;
+  lastRun: string | null;
+  loading: boolean;
+  run: () => void | Promise<void>;
+};
+
+function SyncList({
+  items, onRefresh, refreshing,
+}: { items: SyncItem[]; onRefresh: () => void; refreshing: boolean }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Sincronizações com SOC</CardTitle>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}>
+            {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Atualizar
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {items.map((it) => (
+            <div key={it.key} className="flex items-center gap-4 p-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">{it.name}</p>
+                <p className="text-xs text-muted-foreground">{it.description}</p>
+              </div>
+              <div className="text-xs text-muted-foreground w-56 text-right">
+                Última execução: <span className="font-medium text-foreground">{fmtDate(it.lastRun)}</span>
+              </div>
+              <Button size="sm" onClick={() => it.run()} disabled={it.loading}>
+                {it.loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Sincronizar
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminEmpresas() {
   const { isAdmMaster } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -108,6 +154,17 @@ export default function AdminEmpresas() {
   const [socnetEnabled, setSocnetEnabled] = useState(false);
   const [savingSocnet, setSavingSocnet] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
+  const [lastUnitSync, setLastUnitSync] = useState<string | null>(null);
+
+  const loadLastUnitSync = useCallback(async () => {
+    const { data } = await supabase
+      .from("company_units")
+      .select("synced_at")
+      .order("synced_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastUnitSync(data?.synced_at ?? null);
+  }, []);
 
   const syncUnits = async () => {
     setLoadingUnits(true);
@@ -126,6 +183,7 @@ export default function AdminEmpresas() {
       toast.error(e?.message || "Erro ao sincronizar unidades");
     } finally {
       setLoadingUnits(false);
+      loadLastUnitSync();
     }
   };
 
@@ -168,7 +226,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); }, [loadLogs, loadSocnetFlag]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync]);
 
 
   // Companies list
@@ -245,25 +303,29 @@ export default function AdminEmpresas() {
         <h1 className="text-2xl font-bold">Base Mestre de Empresas (SOC)</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Sincronização com SOC</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center gap-3">
-          <Button onClick={sync} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Sincronizar com SOC
-          </Button>
-          <Button variant="secondary" onClick={syncUnits} disabled={loadingUnits}>
-            {loadingUnits ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Building2 className="h-4 w-4 mr-2" />}
-            Sincronizar Unidades
-          </Button>
-          <Button variant="outline" onClick={loadLogs} disabled={loadingLogs}>
-            {loadingLogs ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Atualizar histórico
-          </Button>
-        </CardContent>
-      </Card>
+      <SyncList
+        items={[
+          {
+            key: "empresas",
+            name: "Empresas (SOC)",
+            description: "Base mestre de empresas com contrato direto.",
+            lastRun: logs[0]?.finished_at || logs[0]?.started_at || null,
+            loading,
+            run: sync,
+          },
+          {
+            key: "unidades",
+            name: "Unidades das empresas",
+            description: "Filiais/unidades ligadas às empresas (SOC).",
+            lastRun: lastUnitSync,
+            loading: loadingUnits,
+            run: syncUnits,
+          },
+        ]}
+        onRefresh={loadLogs}
+        refreshing={loadingLogs}
+      />
+
 
       {isAdmMaster && (
         <Card>

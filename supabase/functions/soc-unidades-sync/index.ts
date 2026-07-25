@@ -143,19 +143,27 @@ Deno.serve(async (req) => {
 
     const rows = Array.from(rowsMap.values());
 
-    // Classify inserted vs updated by looking up existing rows
+    // Classify inserted vs updated by looking up existing rows.
+    // Fetch existing (company_id, soc_unit_code) grouping by company_id so we
+    // only match the exact pair, not the cartesian product of both .in() lists.
     const existingSet = new Set<string>();
-    for (let i = 0; i < rows.length; i += CHUNK) {
-      const batch = rows.slice(i, i + CHUNK);
-      const companyIds = batch.map((r) => r.company_id);
-      const unitCodes = batch.map((r) => r.soc_unit_code);
-      const { data, error } = await admin
-        .from('company_units')
-        .select('company_id, soc_unit_code')
-        .in('company_id', companyIds)
-        .in('soc_unit_code', unitCodes);
-      if (error) continue;
-      for (const r of data || []) existingSet.add(`${r.company_id}::${r.soc_unit_code}`);
+    const byCompany = new Map<string, string[]>();
+    for (const r of rows) {
+      const arr = byCompany.get(r.company_id) || [];
+      arr.push(r.soc_unit_code);
+      byCompany.set(r.company_id, arr);
+    }
+    for (const [companyId, unitCodes] of byCompany) {
+      for (let i = 0; i < unitCodes.length; i += CHUNK) {
+        const slice = unitCodes.slice(i, i + CHUNK);
+        const { data, error } = await admin
+          .from('company_units')
+          .select('soc_unit_code')
+          .eq('company_id', companyId)
+          .in('soc_unit_code', slice);
+        if (error) continue;
+        for (const r of data || []) existingSet.add(`${companyId}::${r.soc_unit_code}`);
+      }
     }
 
     let inserted = 0;
