@@ -133,11 +133,28 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                     onChange={(id, company) => {
                       field.onChange(id ?? undefined);
                       form.setValue('empresaCliente', company?.razao_social || '', { shouldValidate: true });
+                      form.setValue('unidadeId', null);
                     }}
                   />
                 </FormControl>
                 <p className="text-xs text-muted-foreground">
                   Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                </p>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="unidadeId" render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Unidade (opcional)</FormLabel>
+                <FormControl>
+                  <UnitSelector
+                    companyId={form.watch('companyId')}
+                    value={field.value}
+                    onChange={(id) => field.onChange(id)}
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Se ainda não souber a unidade, deixe em branco — a Engenharia confirmará na finalização do serviço.
                 </p>
                 <FormMessage />
               </FormItem>
