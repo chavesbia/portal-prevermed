@@ -194,6 +194,8 @@ export default function PainelCliente() {
 
           <OrdensServicoCard companyId={company.id} navigate={navigate} />
 
+          <LaudosCard companyId={company.id} navigate={navigate} />
+
           {[
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
