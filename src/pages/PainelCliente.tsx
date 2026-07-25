@@ -1,12 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+
+function formatDate(v: string | null | undefined) {
+  if (!v) return '—';
+  const [y, m, d] = v.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function formatBRL(v: number | null | undefined) {
+  if (v == null) return '—';
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+interface Contrato {
+  id: string;
+  numero_contrato: string | null;
+  status: string | null;
+  data_inicio: string | null;
+  data_fim: string | null;
+  valor_mensal: number | null;
+}
 
 function formatCnpj(v: string | null | undefined) {
   if (!v) return '—';
