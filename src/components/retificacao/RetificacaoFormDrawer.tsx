@@ -32,6 +32,7 @@ interface AnexoRow {
 
 interface FormValues {
   data_solicitacao: string;
+  company_id: string;
   empresa: string;
   cnpj: string;
   unidade: string;
@@ -48,6 +49,7 @@ interface FormValues {
 
 const emptyValues: FormValues = {
   data_solicitacao: '',
+  company_id: '',
   empresa: '', cnpj: '', unidade: '',
   colaborador_nome: '', colaborador_cpf: '',
   area_id: '', motivo_id: '', descricao: '',
