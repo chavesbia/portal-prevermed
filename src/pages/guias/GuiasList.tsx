@@ -222,6 +222,26 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
   const total = pageData?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  // Supplementary query: mark guias whose linked company is currently inactive
+  const pageCodes = useMemo(() => pagedGuias.map((g) => g.guia_codigo), [pagedGuias]);
+  const { data: inactiveSet } = useQuery({
+    queryKey: ["guias-inactive-empresa", pageCodes],
+    enabled: pageCodes.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guias")
+        .select("guia_codigo, companies:company_id(is_active)")
+        .in("guia_codigo", pageCodes);
+      if (error) throw error;
+      const s = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        if (r.companies && r.companies.is_active === false) s.add(r.guia_codigo);
+      });
+      return s;
+    },
+  });
+
   const displayName = profile?.full_name ?? user?.email ?? "";
 
   const bulkUpdate = useMutation({
@@ -368,7 +388,19 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
                       <Link to={`/guias/${guia.guia_codigo}`} className="text-primary hover:underline font-mono text-xs font-medium">{guia.guia_codigo}</Link>
                     </td>
                     <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
-                      <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
+                      <div className="flex items-center gap-1">
+                        <TruncatedCell text={toTitleCase(guia.empresa_nome)} maxW="max-w-[140px]" />
+                        {inactiveSet?.has(guia.guia_codigo) && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-[9px] px-1 py-0 border-yellow-500/60 text-yellow-700 dark:text-yellow-400 shrink-0">inativa</Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="text-xs">Empresa hoje inativa no SOC</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </td>
                     <td className="sticky z-10 bg-background px-3 py-2 border-r border-border">
                       <TruncatedCell text={toTitleCase(guia.prestador_nome)} maxW="max-w-[140px]" />

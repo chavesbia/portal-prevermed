@@ -28,6 +28,8 @@ export interface ImportResult {
   examesCriados: number;
   examesAtualizados: number;
   guiasIgnoradas: number;
+  guiasEmpresaInativa: number;
+  empresasInativas: string[];
 }
 
 /** Normalize a value for comparison: trim, collapse spaces, lowercase, treat null/undefined/"" as empty */
@@ -153,7 +155,24 @@ export async function executeImport(
     examesCriados: 0,
     examesAtualizados: 0,
     guiasIgnoradas: 0,
+    guiasEmpresaInativa: 0,
+    empresasInativas: [],
   };
+
+  // Pre-fetch company map (soc_code -> {id, is_active, razao_social}) for all empresa_codigo present in the import
+  const socCodes = Array.from(new Set(
+    analysis.items.flatMap((i) => i.rows.map((r) => r.empresa_codigo).filter(Boolean) as string[])
+  ));
+  const companyBySoc = new Map<string, { id: string; is_active: boolean; razao_social: string }>();
+  for (let i = 0; i < socCodes.length; i += 200) {
+    const batch = socCodes.slice(i, i + 200);
+    const { data } = await supabase
+      .from("companies")
+      .select("id, soc_code, is_active, razao_social")
+      .in("soc_code", batch);
+    data?.forEach((c: any) => companyBySoc.set(c.soc_code, { id: c.id, is_active: c.is_active, razao_social: c.razao_social }));
+  }
+  const inactiveNames = new Set<string>();
 
   for (const item of analysis.items) {
     if (item.status === "identica") {
@@ -192,10 +211,20 @@ export async function executeImport(
       hora_agendamento: firstRow.hora_agendamento,
       pedido_codigo_sequencial: firstRow.pedido_codigo_sequencial,
       solicitante_nome: firstRow.solicitante_nome,
+      company_id: firstRow.empresa_codigo ? companyBySoc.get(firstRow.empresa_codigo)?.id ?? null : null,
       last_seen_at: now,
       last_import_at: now,
       last_import_by: userId,
     };
+
+    // Track inactive-company imports (does not block)
+    if (firstRow.empresa_codigo) {
+      const co = companyBySoc.get(firstRow.empresa_codigo);
+      if (co && co.is_active === false) {
+        result.guiasEmpresaInativa++;
+        inactiveNames.add(co.razao_social);
+      }
+    }
 
     let guiaId: string;
 
@@ -274,5 +303,6 @@ export async function executeImport(
     total_exames_atualizados: result.examesAtualizados,
   });
 
+  result.empresasInativas = Array.from(inactiveNames).sort();
   return result;
 }
