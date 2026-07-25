@@ -44,6 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import type { Database } from '@/integrations/supabase/types';
+import { CompanySelector } from '@/components/shared/CompanySelector';
 
 type OccurrenceTicketRow = {
   id: string;
