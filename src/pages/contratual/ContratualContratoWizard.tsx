@@ -81,13 +81,38 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
-  const { data: clientes = [] } = useQuery({
-    queryKey: ['contract-clientes-min'],
-    queryFn: async () => {
-      const { data } = await supabase.from('contract_clientes').select('id, razao_social, cnpj').order('razao_social');
-      return data || [];
-    }, enabled: open,
-  });
+  // Resolve/create contract_clientes record for the selected company
+  const resolveClienteForCompany = async (opt: CompanyOption) => {
+    setResolvingCliente(true);
+    try {
+      const { data: existing, error: qErr } = await supabase
+        .from('contract_clientes')
+        .select('id')
+        .eq('company_id', opt.id)
+        .maybeSingle();
+      if (qErr) throw qErr;
+      if (existing?.id) { setClienteId(existing.id); return; }
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: created, error: iErr } = await supabase
+        .from('contract_clientes')
+        .insert({
+          company_id: opt.id,
+          razao_social: opt.razao_social,
+          nome_fantasia: opt.nome_abreviado || null,
+          cnpj: (opt.cnpj || '').replace(/\D/g, '') || null,
+          created_by: user?.id, updated_by: user?.id,
+        })
+        .select('id')
+        .single();
+      if (iErr) throw iErr;
+      setClienteId(created.id);
+    } catch (e: any) {
+      toast.error(e.message || 'Falha ao vincular empresa ao contrato');
+      setClienteId('');
+    } finally {
+      setResolvingCliente(false);
+    }
+  };
 
   const { data: templates = [] } = useQuery({
     queryKey: ['contract-templates-min'],
