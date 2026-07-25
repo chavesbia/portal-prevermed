@@ -323,6 +323,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               <Label>Empresa (Cliente) *</Label>
               <CompanySelector
                 value={companyId}
+                excludeInternal
                 onChange={(id, opt) => {
                   setCompanyId(id);
                   setCompany(opt);
