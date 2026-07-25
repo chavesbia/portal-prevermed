@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { statusOSColors } from '@/types/os';
 
 function formatDate(v: string | null | undefined) {
   if (!v) return '—';
@@ -191,8 +192,9 @@ export default function PainelCliente() {
 
           <ContratosCard companyId={company.id} navigate={navigate} />
 
+          <OrdensServicoCard companyId={company.id} navigate={navigate} />
+
           {[
-            { title: 'Ordens de Serviço', desc: 'OS emitidas para esta empresa.' },
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
             { title: 'Ocorrências', desc: 'Tickets e ocorrências registradas.' },
@@ -302,6 +304,108 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
                 </div>
               );
             })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface OrdemServico {
+  id: string;
+  numero_os: string;
+  status_os: string;
+  data_registro: string | null;
+  data_emissao: string | null;
+  prazo_acordado: string | null;
+  tipo_servico_resumo: string | null;
+}
+
+function OrdensServicoCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
+  const MAX = 20;
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-os', companyId],
+    queryFn: async () => {
+      const { data: rows, error, count } = await supabase
+        .from('ordens_servico')
+        .select('id, numero_os, status_os, data_registro, data_emissao, prazo_acordado, tipo_servico_resumo', { count: 'exact' })
+        .eq('company_id', companyId)
+        .order('data_emissao', { ascending: false, nullsFirst: false })
+        .order('data_registro', { ascending: false })
+        .limit(MAX);
+      if (error) throw error;
+      return { rows: (rows ?? []) as OrdemServico[], total: count ?? 0 };
+    },
+  });
+
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const emAndamento = rows.filter((r) => r.status_os === 'Em andamento').length;
+  const encerradas = rows.filter((r) => r.status_os === 'Encerrado').length;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-primary" /> Ordens de Serviço
+          </CardTitle>
+          {!isLoading && total > 0 && (
+            <div className="flex items-center gap-2 text-xs">
+              <Badge variant="outline">Total: {total}</Badge>
+              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Em andamento: {emAndamento}</Badge>
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Encerradas: {encerradas}</Badge>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Nenhuma ordem de serviço encontrada para esta empresa.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {rows.map((o) => (
+              <div
+                key={o.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 hover:bg-muted/40 transition-colors"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">{o.numero_os}</span>
+                    <Badge className={`text-xs ${statusOSColors[o.status_os] ?? 'bg-muted text-muted-foreground'}`}>
+                      {o.status_os}
+                    </Badge>
+                    {o.tipo_servico_resumo && (
+                      <Badge variant="outline" className="text-xs">{o.tipo_servico_resumo}</Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Emissão: {formatDate(o.data_emissao ?? o.data_registro)}
+                    {o.prazo_acordado && <> • Prazo: {formatDate(o.prazo_acordado)}</>}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(`/gestao-os?os=${o.id}`)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
+                </Button>
+              </div>
+            ))}
+            {total > rows.length && (
+              <div className="pt-2 text-center">
+                <Button variant="link" size="sm" onClick={() => navigate('/gestao-os')}>
+                  Ver todas ({total})
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
