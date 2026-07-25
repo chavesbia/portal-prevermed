@@ -89,7 +89,13 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 const fmtDate = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "medium" }) : "—";
+  iso
+    ? new Date(iso).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        dateStyle: "short",
+        timeStyle: "medium",
+      })
+    : "—";
 
 const duration = (a: string, b: string | null) => {
   if (!b) return "—";
