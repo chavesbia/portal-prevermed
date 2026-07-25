@@ -107,6 +107,27 @@ export default function AdminEmpresas() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [socnetEnabled, setSocnetEnabled] = useState(false);
   const [savingSocnet, setSavingSocnet] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+
+  const syncUnits = async () => {
+    setLoadingUnits(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("soc-unidades-sync");
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(
+          `Unidades sincronizadas: ${data.inserted ?? 0} inseridas, ${data.updated ?? 0} atualizadas` +
+          (data.skipped_count ? ` (${data.skipped_count} puladas — empresa não encontrada)` : "")
+        );
+      } else {
+        toast.error(data?.error || "Falha na sincronização de unidades");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar unidades");
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
 
   const loadSocnetFlag = useCallback(async () => {
     const { data } = await supabase
@@ -232,6 +253,10 @@ export default function AdminEmpresas() {
           <Button onClick={sync} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sincronizar com SOC
+          </Button>
+          <Button variant="secondary" onClick={syncUnits} disabled={loadingUnits}>
+            {loadingUnits ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Building2 className="h-4 w-4 mr-2" />}
+            Sincronizar Unidades
           </Button>
           <Button variant="outline" onClick={loadLogs} disabled={loadingLogs}>
             {loadingLogs ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
