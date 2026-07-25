@@ -14,6 +14,7 @@ import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
 import { useContractSignatarios } from '@/hooks/useContractSignatarios';
 import { CPFInput } from '@/components/contratual/CPFInput';
 import { isValidCPF } from '@/lib/contractual/cpf';
+import { CompanySelector, type CompanyOption } from '@/components/shared/CompanySelector';
 
 interface Props {
   open: boolean;
@@ -41,7 +42,10 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
 
 export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
   const [step, setStep] = useState(1);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [company, setCompany] = useState<CompanyOption | null>(null);
   const [clienteId, setClienteId] = useState('');
+  const [resolvingCliente, setResolvingCliente] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
   const today = new Date().toISOString().slice(0, 10);
@@ -69,7 +73,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
   useEffect(() => {
     if (!open) {
-      setStep(1); setClienteId(''); setTemplateId(''); setVersionId('');
+      setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
       setManualValues({});
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
     }
@@ -77,13 +81,38 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
-  const { data: clientes = [] } = useQuery({
-    queryKey: ['contract-clientes-min'],
-    queryFn: async () => {
-      const { data } = await supabase.from('contract_clientes').select('id, razao_social, cnpj').order('razao_social');
-      return data || [];
-    }, enabled: open,
-  });
+  // Resolve/create contract_clientes record for the selected company
+  const resolveClienteForCompany = async (opt: CompanyOption) => {
+    setResolvingCliente(true);
+    try {
+      const { data: existing, error: qErr } = await supabase
+        .from('contract_clientes')
+        .select('id')
+        .eq('company_id', opt.id)
+        .maybeSingle();
+      if (qErr) throw qErr;
+      if (existing?.id) { setClienteId(existing.id); return; }
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: created, error: iErr } = await supabase
+        .from('contract_clientes')
+        .insert({
+          company_id: opt.id,
+          razao_social: opt.razao_social,
+          nome_fantasia: opt.nome_abreviado || null,
+          cnpj: (opt.cnpj || '').replace(/\D/g, '') || null,
+          created_by: user?.id, updated_by: user?.id,
+        })
+        .select('id')
+        .single();
+      if (iErr) throw iErr;
+      setClienteId(created.id);
+    } catch (e: any) {
+      toast.error(e.message || 'Falha ao vincular empresa ao contrato');
+      setClienteId('');
+    } finally {
+      setResolvingCliente(false);
+    }
+  };
 
   const { data: templates = [] } = useQuery({
     queryKey: ['contract-templates-min'],
@@ -194,7 +223,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     return out;
   }, [previewHtml]);
 
-  const canGoStep2 = !!clienteId && !!templateId && !!versionId;
+  const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId;
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
   const canConfirm = placeholdersFaltando.length === 0;
 
@@ -291,15 +320,20 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         {step === 1 && (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label>Cliente *</Label>
-              <Select value={clienteId} onValueChange={setClienteId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o cliente…" /></SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Empresa (Cliente) *</Label>
+              <CompanySelector
+                value={companyId}
+                onChange={(id, opt) => {
+                  setCompanyId(id);
+                  setCompany(opt);
+                  setClienteId('');
+                  if (opt) resolveClienteForCompany(opt);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Selecione uma empresa cadastrada e ativa na base sincronizada do SOC.
+                {resolvingCliente && ' Vinculando empresa ao contrato…'}
+              </p>
             </div>
             <div className="space-y-1">
               <Label>Modelo de contrato *</Label>
