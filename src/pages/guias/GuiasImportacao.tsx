@@ -306,6 +306,22 @@ export default function GuiasImportacao() {
                   <div><p className="text-2xl font-bold">{result.examesCriados}</p><p className="text-xs text-muted-foreground">Exames criados</p></div>
                   <div><p className="text-2xl font-bold">{result.examesAtualizados}</p><p className="text-xs text-muted-foreground">Exames atualizados</p></div>
                 </div>
+                {result.guiasEmpresaInativa > 0 && (
+                  <div className="mt-4 flex items-start gap-3 rounded-md border border-yellow-500/40 bg-yellow-500/10 p-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-yellow-800 dark:text-yellow-300">
+                        {result.guiasEmpresaInativa} guia(s) importada(s) são de empresas hoje inativas no SOC — verifique se é esperado.
+                      </p>
+                      {result.empresasInativas.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Empresas: {result.empresasInativas.slice(0, 6).join(", ")}
+                          {result.empresasInativas.length > 6 ? ` e mais ${result.empresasInativas.length - 6}` : ""}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
