@@ -19,6 +19,7 @@ import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
+  const [searchParams] = useSearchParams();
   const { getModulePermissions } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
   const { isFinanceiro } = useUserDepartments();
