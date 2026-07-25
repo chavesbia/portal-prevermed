@@ -222,6 +222,26 @@ export default function GuiasList({ readOnly = false, injectedFilters, onFilters
   const total = pageData?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  // Supplementary query: mark guias whose linked company is currently inactive
+  const pageCodes = useMemo(() => pagedGuias.map((g) => g.guia_codigo), [pagedGuias]);
+  const { data: inactiveSet } = useQuery({
+    queryKey: ["guias-inactive-empresa", pageCodes],
+    enabled: pageCodes.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("guias")
+        .select("guia_codigo, companies:company_id(is_active)")
+        .in("guia_codigo", pageCodes);
+      if (error) throw error;
+      const s = new Set<string>();
+      (data ?? []).forEach((r: any) => {
+        if (r.companies && r.companies.is_active === false) s.add(r.guia_codigo);
+      });
+      return s;
+    },
+  });
+
   const displayName = profile?.full_name ?? user?.email ?? "";
 
   const bulkUpdate = useMutation({
