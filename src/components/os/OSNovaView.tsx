@@ -64,7 +64,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', companyId: undefined as any, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
+      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
       dataEmissao: new Date(), prazoEntrega: null,
       urgente: false, motivoUrgencia: '',
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo' }],
@@ -80,6 +80,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     const ok = await onSubmit({
       numero_os: data.numeroOS,
       company_id: data.companyId,
+      unidade_id: data.unidadeId || null,
       empresa_cliente: data.empresaCliente,
       contato_cliente: data.contatoCliente,
       responsavel_atual: data.emissor,
