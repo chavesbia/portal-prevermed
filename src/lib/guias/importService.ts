@@ -155,7 +155,24 @@ export async function executeImport(
     examesCriados: 0,
     examesAtualizados: 0,
     guiasIgnoradas: 0,
+    guiasEmpresaInativa: 0,
+    empresasInativas: [],
   };
+
+  // Pre-fetch company map (soc_code -> {id, is_active, razao_social}) for all empresa_codigo present in the import
+  const socCodes = Array.from(new Set(
+    analysis.items.flatMap((i) => i.rows.map((r) => r.empresa_codigo).filter(Boolean) as string[])
+  ));
+  const companyBySoc = new Map<string, { id: string; is_active: boolean; razao_social: string }>();
+  for (let i = 0; i < socCodes.length; i += 200) {
+    const batch = socCodes.slice(i, i + 200);
+    const { data } = await supabase
+      .from("companies")
+      .select("id, soc_code, is_active, razao_social")
+      .in("soc_code", batch);
+    data?.forEach((c: any) => companyBySoc.set(c.soc_code, { id: c.id, is_active: c.is_active, razao_social: c.razao_social }));
+  }
+  const inactiveNames = new Set<string>();
 
   for (const item of analysis.items) {
     if (item.status === "identica") {
