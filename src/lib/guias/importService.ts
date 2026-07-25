@@ -28,6 +28,8 @@ export interface ImportResult {
   examesCriados: number;
   examesAtualizados: number;
   guiasIgnoradas: number;
+  guiasEmpresaInativa: number;
+  empresasInativas: string[];
 }
 
 /** Normalize a value for comparison: trim, collapse spaces, lowercase, treat null/undefined/"" as empty */
