@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { CompanySelector } from '@/components/shared/CompanySelector';
+import { UnitSelector } from '@/components/shared/UnitSelector';
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
@@ -32,6 +33,7 @@ const servicoSchema = z.object({
 const formSchema = z.object({
   numeroOS: z.string().min(1, 'Número da OS é obrigatório'),
   companyId: z.string().uuid({ message: 'Selecione uma empresa cadastrada' }),
+  unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
   emissor: z.string().min(1),
