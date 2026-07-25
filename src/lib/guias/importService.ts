@@ -211,10 +211,20 @@ export async function executeImport(
       hora_agendamento: firstRow.hora_agendamento,
       pedido_codigo_sequencial: firstRow.pedido_codigo_sequencial,
       solicitante_nome: firstRow.solicitante_nome,
+      company_id: firstRow.empresa_codigo ? companyBySoc.get(firstRow.empresa_codigo)?.id ?? null : null,
       last_seen_at: now,
       last_import_at: now,
       last_import_by: userId,
     };
+
+    // Track inactive-company imports (does not block)
+    if (firstRow.empresa_codigo) {
+      const co = companyBySoc.get(firstRow.empresa_codigo);
+      if (co && co.is_active === false) {
+        result.guiasEmpresaInativa++;
+        inactiveNames.add(co.razao_social);
+      }
+    }
 
     let guiaId: string;
 
