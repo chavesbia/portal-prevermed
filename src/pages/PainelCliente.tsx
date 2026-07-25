@@ -414,3 +414,132 @@ function OrdensServicoCard({ companyId, navigate }: { companyId: string; navigat
     </Card>
   );
 }
+
+interface LaudoRow {
+  id: string;
+  ordem_id: string | null;
+  tipo_laudo_nome: string | null;
+  data_emissao: string | null;
+  data_validade: string | null;
+  possui_vigencia: boolean | null;
+  numero_os: string | null;
+  responsavel_tecnico_nome: string | null;
+}
+
+type LaudoStatus = 'vencido' | 'a_vencer' | 'valido' | 'sem_vigencia';
+
+function classifyLaudo(l: LaudoRow, todayISO: string): LaudoStatus {
+  if (!l.possui_vigencia || !l.data_validade) return 'sem_vigencia';
+  if (l.data_validade < todayISO) return 'vencido';
+  const diff = (new Date(l.data_validade).getTime() - new Date(todayISO).getTime()) / 86400000;
+  if (diff <= 30) return 'a_vencer';
+  return 'valido';
+}
+
+function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-laudos', companyId],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from('laudos')
+        .select('id, ordem_id, tipo_laudo_nome, data_emissao, data_validade, possui_vigencia, numero_os, responsavel_tecnico_nome')
+        .eq('company_id', companyId);
+      if (error) throw error;
+      return (rows ?? []) as LaudoRow[];
+    },
+  });
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const rows = data ?? [];
+
+  const order: Record<LaudoStatus, number> = { vencido: 0, a_vencer: 1, valido: 2, sem_vigencia: 3 };
+  const sorted = [...rows].sort((a, b) => {
+    const sa = classifyLaudo(a, todayISO);
+    const sb = classifyLaudo(b, todayISO);
+    if (order[sa] !== order[sb]) return order[sa] - order[sb];
+    const da = a.data_emissao ?? '';
+    const db = b.data_emissao ?? '';
+    return db.localeCompare(da);
+  });
+
+  const counts = rows.reduce(
+    (acc, l) => {
+      acc[classifyLaudo(l, todayISO)]++;
+      return acc;
+    },
+    { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>,
+  );
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-base flex items-center gap-2">
+            <FileCheck2 className="h-4 w-4 text-primary" /> Laudos
+          </CardTitle>
+          {!isLoading && rows.length > 0 && (
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Válidos: {counts.valido}</Badge>
+              <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Vencem em breve: {counts.a_vencer}</Badge>
+              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Vencidos: {counts.vencido}</Badge>
+              {counts.sem_vigencia > 0 && (
+                <Badge variant="outline">Sem vigência: {counts.sem_vigencia}</Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : sorted.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Nenhum laudo encontrado para esta empresa.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {sorted.map((l) => {
+              const status = classifyLaudo(l, todayISO);
+              const badge =
+                status === 'vencido' ? { cls: 'bg-red-100 text-red-800 hover:bg-red-100 border-red-200', label: 'Vencido' }
+                : status === 'a_vencer' ? { cls: 'bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200', label: 'Vence em breve' }
+                : status === 'valido' ? { cls: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200', label: 'Válido' }
+                : { cls: 'bg-muted text-muted-foreground', label: 'Sem vigência' };
+              return (
+                <div
+                  key={l.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{l.tipo_laudo_nome || 'Laudo'}</span>
+                      <Badge className={`text-xs ${badge.cls}`}>{badge.label}</Badge>
+                      {l.numero_os && (
+                        <Badge variant="outline" className="text-xs">OS {l.numero_os}</Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Emissão: {formatDate(l.data_emissao)} • Validade: {formatDate(l.data_validade)}
+                      {l.responsavel_tecnico_nome && <> • Resp. Técnico: {l.responsavel_tecnico_nome}</>}
+                    </div>
+                  </div>
+                  {l.ordem_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/gestao-os?os=${l.ordem_id}`)}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
