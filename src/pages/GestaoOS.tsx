@@ -55,7 +55,7 @@ export default function GestaoOS() {
         )}
       </div>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs defaultValue={searchParams.get('os') ? 'ordens' : 'dashboard'}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>
