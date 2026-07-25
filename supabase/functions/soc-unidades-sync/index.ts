@@ -157,8 +157,9 @@ Deno.serve(async (req) => {
       while (true) {
         const { data, error } = await admin
           .from('company_units')
-          .select('company_id, soc_unit_code')
+          .select('company_id, soc_unit_code, id')
           .in('company_id', slice)
+          .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
         if (error) break;
         const rowsPage = data || [];
