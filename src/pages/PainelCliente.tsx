@@ -192,8 +192,9 @@ export default function PainelCliente() {
 
           <ContratosCard companyId={company.id} navigate={navigate} />
 
+          <OrdensServicoCard companyId={company.id} navigate={navigate} />
+
           {[
-            { title: 'Ordens de Serviço', desc: 'OS emitidas para esta empresa.' },
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
             { title: 'Ocorrências', desc: 'Tickets e ocorrências registradas.' },
