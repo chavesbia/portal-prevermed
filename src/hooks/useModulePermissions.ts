@@ -49,16 +49,17 @@ export function useModulePermissions() {
     const deptMap = new Map<string, DepartmentWithModules>();
     for (const mod of modules) {
       if (!mod.module_route) continue;
-      let dept = deptMap.get(mod.department_id);
+      const deptKey = mod.department_id ?? '__no_dept__';
+      let dept = deptMap.get(deptKey);
       if (!dept) {
-        dept = { id: mod.department_id, name: mod.department_name, modules: [] };
-        deptMap.set(mod.department_id, dept);
+        dept = { id: deptKey, name: mod.department_name ?? 'Outros', modules: [] };
+        deptMap.set(deptKey, dept);
       }
       if (!dept.modules.find(m => m.module_id === mod.module_id)) {
         dept.modules.push(mod);
       }
     }
-    return Array.from(deptMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return Array.from(deptMap.values()).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
   }, [modules]);
 
   const getModulePermissions = useCallback((route: string) => {
