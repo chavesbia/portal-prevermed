@@ -189,8 +189,9 @@ export default function PainelCliente() {
 
           <Separator />
 
+          <ContratosCard companyId={company.id} navigate={navigate} />
+
           {[
-            { title: 'Contratos', desc: 'Contratos vigentes, encerrados e histórico.' },
             { title: 'Ordens de Serviço', desc: 'OS emitidas para esta empresa.' },
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
@@ -209,5 +210,101 @@ export default function PainelCliente() {
         </>
       )}
     </div>
+  );
+}
+
+function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-contratos', companyId],
+    queryFn: async () => {
+      const { data: clientes, error: cErr } = await supabase
+        .from('contract_clientes')
+        .select('id')
+        .eq('company_id', companyId);
+      if (cErr) throw cErr;
+      const clienteIds = (clientes ?? []).map((c) => c.id);
+      if (clienteIds.length === 0) return [] as Contrato[];
+      const { data: contratos, error } = await supabase
+        .from('contract_contratos')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal')
+        .in('cliente_id', clienteIds)
+        .order('data_inicio', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (contratos ?? []) as Contrato[];
+    },
+  });
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <FileText className="h-4 w-4 text-primary" /> Contratos
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : !data || data.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            Nenhum contrato encontrado para esta empresa.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {data.map((c) => {
+              const vencido = c.data_fim && c.data_fim < today;
+              const vigente = !c.data_fim || c.data_fim >= today;
+              return (
+                <div
+                  key={c.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 hover:bg-muted/40 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">
+                        {c.numero_contrato || 'Sem número'}
+                      </span>
+                      {c.status && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {c.status}
+                        </Badge>
+                      )}
+                      {vencido ? (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 text-xs">
+                          Vencido
+                        </Badge>
+                      ) : c.data_fim ? (
+                        <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200 text-xs">
+                          Vigente
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">
+                          Sem data de fim
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Vigência: {formatDate(c.data_inicio)} → {formatDate(c.data_fim)} • Mensal:{' '}
+                      <span className="font-medium text-foreground">{formatBRL(c.valor_mensal)}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/gestao-contratual?contrato=${c.id}`)}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
