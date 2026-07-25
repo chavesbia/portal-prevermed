@@ -99,6 +99,52 @@ const duration = (a: string, b: string | null) => {
   return `${Math.floor(ms / 60_000)}m ${Math.floor((ms % 60_000) / 1000)}s`;
 };
 
+type SyncItem = {
+  key: string;
+  name: string;
+  description: string;
+  lastRun: string | null;
+  loading: boolean;
+  run: () => void | Promise<void>;
+};
+
+function SyncList({
+  items, onRefresh, refreshing,
+}: { items: SyncItem[]; onRefresh: () => void; refreshing: boolean }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Sincronizações com SOC</CardTitle>
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={refreshing}>
+            {refreshing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Atualizar
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y">
+          {items.map((it) => (
+            <div key={it.key} className="flex items-center gap-4 p-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">{it.name}</p>
+                <p className="text-xs text-muted-foreground">{it.description}</p>
+              </div>
+              <div className="text-xs text-muted-foreground w-56 text-right">
+                Última execução: <span className="font-medium text-foreground">{fmtDate(it.lastRun)}</span>
+              </div>
+              <Button size="sm" onClick={() => it.run()} disabled={it.loading}>
+                {it.loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                Sincronizar
+              </Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminEmpresas() {
   const { isAdmMaster } = useAuth();
   const [loading, setLoading] = useState(false);
