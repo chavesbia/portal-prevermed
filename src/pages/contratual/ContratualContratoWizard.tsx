@@ -79,6 +79,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
       setManualValues({});
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
+      setDuplicateCompanies([]); setDuplicateAcknowledged(false);
     }
   }, [open]);
 
