@@ -179,7 +179,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); }, [loadLogs, loadSocnetFlag]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync]);
 
 
   // Companies list
