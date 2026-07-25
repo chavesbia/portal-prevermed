@@ -42,7 +42,10 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
 
 export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
   const [step, setStep] = useState(1);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [company, setCompany] = useState<CompanyOption | null>(null);
   const [clienteId, setClienteId] = useState('');
+  const [resolvingCliente, setResolvingCliente] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
   const today = new Date().toISOString().slice(0, 10);
