@@ -273,6 +273,19 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
             </h4>
 
             <div className="space-y-2">
+              <Label>Unidade *</Label>
+              <UnitSelector
+                companyId={(ordem as any).company_id ?? null}
+                value={unidadeId}
+                onChange={(id) => setUnidadeId(id)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Confirme a unidade onde o serviço foi executado. Ela será gravada na OS e no laudo.
+              </p>
+            </div>
+
+
+            <div className="space-y-2">
               <Label>Tipo de Laudo *</Label>
               <Select value={form.tipoLaudoId} onValueChange={handleTipoChange}>
                 <SelectTrigger><SelectValue placeholder="Selecione o tipo de laudo" /></SelectTrigger>
