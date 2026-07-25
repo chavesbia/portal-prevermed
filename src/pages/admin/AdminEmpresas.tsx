@@ -254,6 +254,10 @@ export default function AdminEmpresas() {
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sincronizar com SOC
           </Button>
+          <Button variant="secondary" onClick={syncUnits} disabled={loadingUnits}>
+            {loadingUnits ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Building2 className="h-4 w-4 mr-2" />}
+            Sincronizar Unidades
+          </Button>
           <Button variant="outline" onClick={loadLogs} disabled={loadingLogs}>
             {loadingLogs ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Atualizar histórico
