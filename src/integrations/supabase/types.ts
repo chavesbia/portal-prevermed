@@ -1608,6 +1608,86 @@ export type Database = {
         }
         Relationships: []
       }
+      company_units: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          codigo_cliente_integracao: string | null
+          company_id: string
+          complemento: string | null
+          cpf: string | null
+          created_at: string
+          estado: string | null
+          id: string
+          inscricao_estadual: string | null
+          is_active: boolean
+          logradouro: string | null
+          name: string | null
+          numero: string | null
+          razao_social: string | null
+          risk_grade: string | null
+          soc_unit_code: string
+          synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo_cliente_integracao?: string | null
+          company_id: string
+          complemento?: string | null
+          cpf?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          is_active?: boolean
+          logradouro?: string | null
+          name?: string | null
+          numero?: string | null
+          razao_social?: string | null
+          risk_grade?: string | null
+          soc_unit_code: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo_cliente_integracao?: string | null
+          company_id?: string
+          complemento?: string | null
+          cpf?: string | null
+          created_at?: string
+          estado?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          is_active?: boolean
+          logradouro?: string | null
+          name?: string | null
+          numero?: string | null
+          razao_social?: string | null
+          risk_grade?: string | null
+          soc_unit_code?: string
+          synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_units_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracao_alertas: {
         Row: {
           ativo: boolean
