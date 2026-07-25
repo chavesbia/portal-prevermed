@@ -131,6 +131,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
   const handleFinalizar = async () => {
     // Validações
     if (!form.tipoLaudoId) { toast({ title: 'Atenção', description: 'Selecione o tipo de laudo.', variant: 'destructive' }); return; }
+    if (!unidadeId) { toast({ title: 'Atenção', description: 'Selecione a unidade', variant: 'destructive' }); return; }
     if (!form.responsavelTecnicoId) { toast({ title: 'Atenção', description: 'Selecione o responsável técnico.', variant: 'destructive' }); return; }
     if (tipoSelecionado?.exige_vigencia && !form.possuiVigencia) {
       toast({ title: 'Atenção', description: `${tipoSelecionado.nome} exige vigência obrigatória.`, variant: 'destructive' }); return;
@@ -176,6 +177,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         numero_os: ordem.numero_os,
         empresa_cliente: ordem.empresa_cliente,
         company_id: (ordem as any).company_id ?? null,
+        unidade_id: unidadeId,
         tipo_servico: servico.tipo,
         tipo_laudo_nome: tipo.nome,
         responsavel_tecnico_nome: resp.nome,
