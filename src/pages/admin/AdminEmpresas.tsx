@@ -245,25 +245,29 @@ export default function AdminEmpresas() {
         <h1 className="text-2xl font-bold">Base Mestre de Empresas (SOC)</h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Sincronização com SOC</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center gap-3">
-          <Button onClick={sync} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Sincronizar com SOC
-          </Button>
-          <Button variant="secondary" onClick={syncUnits} disabled={loadingUnits}>
-            {loadingUnits ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Building2 className="h-4 w-4 mr-2" />}
-            Sincronizar Unidades
-          </Button>
-          <Button variant="outline" onClick={loadLogs} disabled={loadingLogs}>
-            {loadingLogs ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            Atualizar histórico
-          </Button>
-        </CardContent>
-      </Card>
+      <SyncList
+        items={[
+          {
+            key: "empresas",
+            name: "Empresas (SOC)",
+            description: "Base mestre de empresas com contrato direto.",
+            lastRun: logs[0]?.finished_at || logs[0]?.started_at || null,
+            loading,
+            run: sync,
+          },
+          {
+            key: "unidades",
+            name: "Unidades das empresas",
+            description: "Filiais/unidades ligadas às empresas (SOC).",
+            lastRun: lastUnitSync,
+            loading: loadingUnits,
+            run: syncUnits,
+          },
+        ]}
+        onRefresh={loadLogs}
+        refreshing={loadingLogs}
+      />
+
 
       {isAdmMaster && (
         <Card>
