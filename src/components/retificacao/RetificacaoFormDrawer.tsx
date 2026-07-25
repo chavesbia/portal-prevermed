@@ -19,6 +19,7 @@ import {
   useRetificacaoAreas, useRetificacaoMotivos, useRetificacaoMedicos,
 } from '@/hooks/useRetificacaoCatalog';
 import type { SolicitacaoRow } from './RetificacaoList';
+import { CompanySelector } from '@/components/shared/CompanySelector';
 
 interface AnexoRow {
   id: string;
