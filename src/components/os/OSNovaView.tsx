@@ -31,7 +31,8 @@ const servicoSchema = z.object({
 
 const formSchema = z.object({
   numeroOS: z.string().min(1, 'Número da OS é obrigatório'),
-  empresaCliente: z.string().min(1, 'Nome do cliente é obrigatório'),
+  companyId: z.string().uuid({ message: 'Selecione uma empresa cadastrada' }),
+  empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
   emissor: z.string().min(1),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
