@@ -173,6 +173,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         responsavel_tecnico_id: form.responsavelTecnicoId,
         numero_os: ordem.numero_os,
         empresa_cliente: ordem.empresa_cliente,
+        company_id: (ordem as any).company_id ?? null,
         tipo_servico: servico.tipo,
         tipo_laudo_nome: tipo.nome,
         responsavel_tecnico_nome: resp.nome,
