@@ -270,13 +270,20 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
                 <Label>Unidade</Label>
                 <Input {...register('unidade')} placeholder="Lapa, Osasco..." />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <Label>Empresa *</Label>
-                <Input {...register('empresa', { required: true })} />
-              </div>
-              <div>
-                <Label>CNPJ *</Label>
-                <Input {...register('cnpj', { required: true })} placeholder="00.000.000/0000-00" />
+                <CompanySelector
+                  value={watch('company_id') || null}
+                  onChange={(id, company) => {
+                    setValue('company_id', id || '', { shouldValidate: true });
+                    setValue('empresa', company?.razao_social || '');
+                    setValue('cnpj', company?.cnpj || '');
+                  }}
+                  legacyLabel={!watch('company_id') && solicitacao?.empresa ? solicitacao.empresa : null}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                </p>
               </div>
               <div>
                 <Label>Nome do Colaborador *</Label>
