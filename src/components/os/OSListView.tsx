@@ -52,6 +52,22 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoOpenedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const osId = searchParams.get('os');
+    if (!osId || autoOpenedRef.current === osId) return;
+    const found = ordens.find(o => o.id === osId);
+    if (found) {
+      autoOpenedRef.current = osId;
+      setSelectedOS(found);
+      setShowDetail(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('os');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, ordens, setSearchParams]);
+
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
       const n = new Set(prev);
