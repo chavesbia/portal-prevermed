@@ -22,6 +22,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { CompanySelector } from '@/components/shared/CompanySelector';
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
