@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -18,6 +19,7 @@ import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
+  const [searchParams] = useSearchParams();
   const { getModulePermissions } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
   const { isFinanceiro } = useUserDepartments();
@@ -54,7 +56,7 @@ export default function GestaoOS() {
         )}
       </div>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs defaultValue={searchParams.get('os') ? 'ordens' : 'dashboard'}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="alertas">Alertas</TabsTrigger>

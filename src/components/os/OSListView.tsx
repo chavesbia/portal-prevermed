@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Eye, Pencil, Trash2, History, MoreHorizontal, ChevronDown, ChevronRight, CheckSquare, CalendarPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,22 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const autoOpenedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const osId = searchParams.get('os');
+    if (!osId || autoOpenedRef.current === osId) return;
+    const found = ordens.find(o => o.id === osId);
+    if (found) {
+      autoOpenedRef.current = osId;
+      setSelectedOS(found);
+      setShowDetail(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('os');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, ordens, setSearchParams]);
 
   const toggleExpand = (id: string) => {
     setExpandedOS(prev => {
