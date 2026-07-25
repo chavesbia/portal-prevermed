@@ -67,6 +67,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   const [prevermedId, setPrevermedId] = useState(MANUAL_SIGNER);
   const [test1Id, setTest1Id] = useState(MANUAL_SIGNER);
   const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
+  const [duplicateCompanies, setDuplicateCompanies] = useState<CompanyOption[]>([]);
+  const [duplicateAcknowledged, setDuplicateAcknowledged] = useState(false);
 
   const { data: placeholders = [] } = useContractPlaceholders(true);
   const { data: respPrevermed = [] } = useContractSignatarios('responsavel_prevermed', true);
