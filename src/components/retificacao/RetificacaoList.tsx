@@ -25,6 +25,7 @@ export interface SolicitacaoRow {
   data_solicitacao: string;
   empresa: string;
   cnpj: string;
+  company_id: string | null;
   unidade: string | null;
   colaborador_nome: string;
   colaborador_cpf: string;
