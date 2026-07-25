@@ -189,6 +189,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    const { count: companyUnitsTotal, error: companyUnitsCountError } = await admin
+      .from('company_units')
+      .select('id', { count: 'exact', head: true });
+
+    console.log(JSON.stringify({
+      event: 'soc_unidades_sync_diagnostics',
+      soc_rows: unidades.length,
+      existing_set_size: existingSet.size,
+      company_units_total: companyUnitsTotal,
+      company_units_total_error: companyUnitsCountError?.message || null,
+      inserted,
+      updated,
+      skipped_count: skipped.length,
+      error_count: errors.length,
+      synced_at: now,
+    }));
+
     return json({
       ok: true,
       total: unidades.length,
