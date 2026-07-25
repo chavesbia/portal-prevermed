@@ -137,6 +137,7 @@ export default function AdminEmpresas() {
       toast.error(e?.message || "Erro ao sincronizar unidades");
     } finally {
       setLoadingUnits(false);
+      loadLastUnitSync();
     }
   };
 
