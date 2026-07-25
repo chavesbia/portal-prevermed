@@ -121,8 +121,23 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
               <FormItem><FormLabel>Número da OS</FormLabel><FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField control={form.control} name="empresaCliente" render={({ field }) => (
-              <FormItem><FormLabel>Empresa Cliente</FormLabel><FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormField control={form.control} name="companyId" render={({ field }) => (
+              <FormItem className="md:col-span-2">
+                <FormLabel>Empresa Cliente</FormLabel>
+                <FormControl>
+                  <CompanySelector
+                    value={field.value}
+                    onChange={(id, company) => {
+                      field.onChange(id ?? undefined);
+                      form.setValue('empresaCliente', company?.razao_social || '', { shouldValidate: true });
+                    }}
+                  />
+                </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                </p>
+                <FormMessage />
+              </FormItem>
             )} />
             <FormField control={form.control} name="contatoCliente" render={({ field }) => (
               <FormItem><FormLabel>Contato do Cliente</FormLabel><FormControl><Input placeholder="Nome do contato" {...field} /></FormControl><FormMessage /></FormItem>
