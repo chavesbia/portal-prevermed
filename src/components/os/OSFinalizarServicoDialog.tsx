@@ -168,6 +168,16 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         .eq('id', servico.id);
       if (svcErr) throw svcErr;
 
+      // Confirmar/atualizar unidade na OS
+      if (unidadeId && unidadeId !== ((ordem as any).unidade_id ?? null)) {
+        const { error: unidErr } = await (supabase as any)
+          .from('ordens_servico')
+          .update({ unidade_id: unidadeId })
+          .eq('id', ordem.id);
+        if (unidErr) throw unidErr;
+      }
+
+
       // Registrar laudo (auto-popula tabela de Laudos)
       await addLaudo({
         ordem_id: ordem.id,
