@@ -242,7 +242,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     return out;
   }, [previewHtml]);
 
-  const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId;
+  const hasPendingDuplicateWarning = duplicateCompanies.length > 0 && !duplicateAcknowledged;
+  const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !hasPendingDuplicateWarning;
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
   const canConfirm = placeholdersFaltando.length === 0;
 
