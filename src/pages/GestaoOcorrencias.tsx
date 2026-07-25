@@ -402,6 +402,7 @@ export default function GestaoOcorrencias() {
       });
 
       form.reset({
+        companyId: undefined as any,
         companyName: '',
         cnpj: '',
         requesterName: profile?.full_name ?? '',
