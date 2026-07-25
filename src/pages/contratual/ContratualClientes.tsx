@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Pencil } from 'lucide-react';
+import { Search, Pencil } from 'lucide-react';
 import { formatCNPJ } from '@/lib/contractual/format';
 import { ContratualClienteDialog } from './ContratualClienteDialog';
 
