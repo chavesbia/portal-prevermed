@@ -348,13 +348,70 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
                   setCompanyId(id);
                   setCompany(opt);
                   setClienteId('');
-                  if (opt) resolveClienteForCompany(opt);
+                  setDuplicateCompanies([]);
+                  setDuplicateAcknowledged(false);
+                  if (opt) {
+                    resolveClienteForCompany(opt);
+                    checkDuplicateCnpj(opt);
+                  }
                 }}
               />
               <p className="text-xs text-muted-foreground">
                 Selecione uma empresa cadastrada e ativa na base sincronizada do SOC.
                 {resolvingCliente && ' Vinculando empresa ao contrato…'}
               </p>
+              {duplicateCompanies.length > 0 && company && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Atenção: CNPJ com mais de um cadastro ativo no SOC</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <ul className="text-sm list-disc pl-5">
+                      <li>
+                        <span className="font-medium">{company.soc_code}</span> — {company.razao_social}{' '}
+                        <span className="text-xs opacity-80">(selecionado)</span>
+                      </li>
+                      {duplicateCompanies.map(d => (
+                        <li key={d.id}>
+                          <span className="font-medium">{d.soc_code}</span> — {d.razao_social}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-sm">
+                      Confirme se este é o cadastro correto para este contrato antes de continuar.
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {duplicateAcknowledged ? (
+                        <span className="text-xs italic opacity-90">
+                          Confirmado: seguindo com {company.razao_social}.
+                        </span>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setDuplicateAcknowledged(true)}
+                        >
+                          Continuar com {company.razao_social}
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setCompanyId(null);
+                          setCompany(null);
+                          setClienteId('');
+                          setDuplicateCompanies([]);
+                          setDuplicateAcknowledged(false);
+                        }}
+                      >
+                        Escolher outro
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
             <div className="space-y-1">
               <Label>Modelo de contrato *</Label>
