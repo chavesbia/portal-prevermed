@@ -303,5 +303,6 @@ export async function executeImport(
     total_exames_atualizados: result.examesAtualizados,
   });
 
+  result.empresasInativas = Array.from(inactiveNames).sort();
   return result;
 }
