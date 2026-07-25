@@ -108,6 +108,17 @@ export default function AdminEmpresas() {
   const [socnetEnabled, setSocnetEnabled] = useState(false);
   const [savingSocnet, setSavingSocnet] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
+  const [lastUnitSync, setLastUnitSync] = useState<string | null>(null);
+
+  const loadLastUnitSync = useCallback(async () => {
+    const { data } = await supabase
+      .from("company_units")
+      .select("synced_at")
+      .order("synced_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastUnitSync(data?.synced_at ?? null);
+  }, []);
 
   const syncUnits = async () => {
     setLoadingUnits(true);
