@@ -183,6 +183,7 @@ export default function GestaoOcorrencias() {
   const form = useForm<OccurrenceFormData>({
     resolver: zodResolver(occurrenceFormSchema),
     defaultValues: {
+      companyId: undefined as any,
       companyName: '',
       cnpj: '',
       requesterName: profile?.full_name ?? '',
@@ -202,6 +203,7 @@ export default function GestaoOcorrencias() {
 
   useEffect(() => {
     form.reset({
+      companyId: undefined as any,
       companyName: '',
       cnpj: '',
       requesterName: profile?.full_name ?? '',
