@@ -143,26 +143,23 @@ Deno.serve(async (req) => {
 
     const rows = Array.from(rowsMap.values());
 
-    // Classify inserted vs updated by looking up existing rows.
-    // Fetch existing (company_id, soc_unit_code) grouping by company_id so we
-    // only match the exact pair, not the cartesian product of both .in() lists.
+    // Classify inserted vs updated. Fetch existing pairs in bulk by company_id
+    // (one query per CHUNK of companies), then filter the exact pair in memory
+    // — avoids the cartesian bug of two independent .in() and avoids the
+    // per-company roundtrips that were hitting the 150s idle timeout.
     const existingSet = new Set<string>();
-    const byCompany = new Map<string, string[]>();
-    for (const r of rows) {
-      const arr = byCompany.get(r.company_id) || [];
-      arr.push(r.soc_unit_code);
-      byCompany.set(r.company_id, arr);
-    }
-    for (const [companyId, unitCodes] of byCompany) {
-      for (let i = 0; i < unitCodes.length; i += CHUNK) {
-        const slice = unitCodes.slice(i, i + CHUNK);
-        const { data, error } = await admin
-          .from('company_units')
-          .select('soc_unit_code')
-          .eq('company_id', companyId)
-          .in('soc_unit_code', slice);
-        if (error) continue;
-        for (const r of data || []) existingSet.add(`${companyId}::${r.soc_unit_code}`);
+    const wantedPairs = new Set(rows.map((r) => `${r.company_id}::${r.soc_unit_code}`));
+    const companyIds = Array.from(new Set(rows.map((r) => r.company_id)));
+    for (let i = 0; i < companyIds.length; i += CHUNK) {
+      const slice = companyIds.slice(i, i + CHUNK);
+      const { data, error } = await admin
+        .from('company_units')
+        .select('company_id, soc_unit_code')
+        .in('company_id', slice);
+      if (error) continue;
+      for (const r of data || []) {
+        const key = `${r.company_id}::${r.soc_unit_code}`;
+        if (wantedPairs.has(key)) existingSet.add(key);
       }
     }
 
