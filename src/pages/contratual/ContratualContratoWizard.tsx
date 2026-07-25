@@ -14,6 +14,7 @@ import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
 import { useContractSignatarios } from '@/hooks/useContractSignatarios';
 import { CPFInput } from '@/components/contratual/CPFInput';
 import { isValidCPF } from '@/lib/contractual/cpf';
+import { CompanySelector, type CompanyOption } from '@/components/shared/CompanySelector';
 
 interface Props {
   open: boolean;
