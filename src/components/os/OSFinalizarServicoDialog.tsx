@@ -22,6 +22,7 @@ import { OS_CUSTO_TIPO_OPTIONS, OSCustoTipo } from '@/types/osCustos';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { UnitSelector } from '@/components/shared/UnitSelector';
 
 interface Props {
   open: boolean;
@@ -60,6 +61,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
     artValidade: null as Date | null,
     artFile: null as File | null,
   });
+  const [unidadeId, setUnidadeId] = useState<string | null>((ordem as any).unidade_id ?? null);
   const [custos, setCustos] = useState<CustoLinha[]>([]);
   const [saving, setSaving] = useState(false);
 
