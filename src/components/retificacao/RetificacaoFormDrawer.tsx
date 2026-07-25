@@ -119,6 +119,7 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
     if (solicitacao) {
       reset({
         data_solicitacao: toLocalInput(solicitacao.data_solicitacao),
+        company_id: solicitacao.company_id || '',
         empresa: solicitacao.empresa || '',
         cnpj: solicitacao.cnpj || '',
         unidade: solicitacao.unidade || '',
@@ -141,8 +142,13 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
+    if (!values.company_id) {
+      toast.error('Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.');
+      return;
+    }
     const payload: any = {
       data_solicitacao: values.data_solicitacao ? new Date(values.data_solicitacao).toISOString() : new Date().toISOString(),
+      company_id: values.company_id,
       empresa: values.empresa.trim(),
       cnpj: values.cnpj.trim(),
       unidade: values.unidade.trim() || null,
