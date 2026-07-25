@@ -24,6 +24,15 @@ function formatCnpj(v: string | null | undefined) {
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 }
 
+const CONTRACT_EXCLUDE_KEYWORDS = ['PARTICULAR', 'TESTE', 'NAO UTILIZAR'];
+
+function normalizeForMatch(s: string): string {
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
+
 interface Props {
   value: string | null | undefined;
   onChange: (companyId: string | null, company: CompanyOption | null) => void;
@@ -32,11 +41,13 @@ interface Props {
   /** Fallback display text when a legacy record has no company_id linked. */
   legacyLabel?: string | null;
   className?: string;
+  /** Exclude internal/test records (PARTICULAR, TESTE, NAO UTILIZAR) — for contract flows. */
+  excludeInternal?: boolean;
 }
 
 export function CompanySelector({
   value, onChange, placeholder = 'Buscar empresa por nome ou CNPJ…',
-  disabled, legacyLabel, className,
+  disabled, legacyLabel, className, excludeInternal,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
