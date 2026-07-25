@@ -525,15 +525,8 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
                       {l.responsavel_tecnico_nome && <> • Resp. Técnico: {l.responsavel_tecnico_nome}</>}
                     </div>
                   </div>
-                  {l.ordem_id && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/gestao-os?os=${l.ordem_id}`)}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
-                    </Button>
-                  )}
+
+
                 </div>
               );
             })}
