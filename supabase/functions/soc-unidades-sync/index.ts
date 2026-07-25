@@ -152,14 +152,22 @@ Deno.serve(async (req) => {
     const companyIds = Array.from(new Set(rows.map((r) => r.company_id)));
     for (let i = 0; i < companyIds.length; i += CHUNK) {
       const slice = companyIds.slice(i, i + CHUNK);
-      const { data, error } = await admin
-        .from('company_units')
-        .select('company_id, soc_unit_code')
-        .in('company_id', slice);
-      if (error) continue;
-      for (const r of data || []) {
-        const key = `${r.company_id}::${r.soc_unit_code}`;
-        if (wantedPairs.has(key)) existingSet.add(key);
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await admin
+          .from('company_units')
+          .select('company_id, soc_unit_code')
+          .in('company_id', slice)
+          .range(from, from + PAGE - 1);
+        if (error) break;
+        const rowsPage = data || [];
+        for (const r of rowsPage) {
+          const key = `${r.company_id}::${r.soc_unit_code}`;
+          if (wantedPairs.has(key)) existingSet.add(key);
+        }
+        if (rowsPage.length < PAGE) break;
+        from += PAGE;
       }
     }
 
