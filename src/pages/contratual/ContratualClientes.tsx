@@ -40,11 +40,8 @@ export default function ContratualClientes({ canEdit }: Props) {
           <Input className="pl-8" placeholder="Buscar por CNPJ ou razão social…"
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        {canEdit && (
-          <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Cliente
-          </Button>
-        )}
+        {/* "Novo Cliente" desativado: novos clientes contratuais são criados automaticamente
+            ao selecionar uma empresa da base mestre do SOC no assistente de Novo Contrato. */}
       </div>
 
       <Card>
