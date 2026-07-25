@@ -73,7 +73,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
   useEffect(() => {
     if (!open) {
-      setStep(1); setClienteId(''); setTemplateId(''); setVersionId('');
+      setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
       setManualValues({});
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
     }
