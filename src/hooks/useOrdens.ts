@@ -100,6 +100,7 @@ export function useOrdens() {
 
   const addOrdem = async (data: {
     numero_os: string;
+    company_id?: string | null;
     empresa_cliente: string;
     contato_cliente?: string;
     responsavel_atual: string;
@@ -119,6 +120,7 @@ export function useOrdens() {
         .from('ordens_servico')
         .insert({
           numero_os: data.numero_os,
+          company_id: data.company_id || null,
           empresa_cliente: data.empresa_cliente,
           contato_cliente: data.contato_cliente || null,
           responsavel_atual: data.responsavel_atual,

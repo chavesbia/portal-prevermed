@@ -44,6 +44,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import type { Database } from '@/integrations/supabase/types';
+import { CompanySelector } from '@/components/shared/CompanySelector';
 
 type OccurrenceTicketRow = {
   id: string;
@@ -71,8 +72,9 @@ type OccurrenceContactOrigin = Database['public']['Enums']['occurrence_contact_o
 type OccurrenceSector = Database['public']['Enums']['occurrence_sector'];
 
 const occurrenceFormSchema = z.object({
-  companyName: z.string().trim().min(1, 'Empresa é obrigatória').max(255, 'Máximo de 255 caracteres'),
-  cnpj: z.string().trim().min(1, 'CNPJ é obrigatório').max(32, 'Máximo de 32 caracteres'),
+  companyId: z.string().uuid({ message: 'Selecione uma empresa cadastrada' }),
+  companyName: z.string().trim().min(1).max(255),
+  cnpj: z.string().trim().max(32).optional().default(''),
   requesterName: z.string().trim().max(120, 'Máximo de 120 caracteres').optional(),
   requesterContact: z.string().trim().max(255, 'Máximo de 255 caracteres').optional(),
   contactOrigin: z.enum(['email', 'telefone', 'whatsapp', 'presencial', 'reuniao']),
@@ -81,20 +83,9 @@ const occurrenceFormSchema = z.object({
   description: z.string().trim().min(1, 'Descrição é obrigatória').max(4000, 'Máximo de 4000 caracteres'),
   unit: z.string().trim().max(120, 'Máximo de 120 caracteres').optional(),
   involvedSectors: z.array(z.enum([
-    'recepcao',
-    'enfermagem',
-    'medico',
-    'liberacao',
-    'faturamento',
-    'comercial',
-    'relacionamento',
-    'financeiro',
-    'engenharia',
-    'operacional',
-    'esocial',
-    'credenciamento',
-    'agendamento',
-    'suporte',
+    'recepcao', 'enfermagem', 'medico', 'liberacao', 'faturamento', 'comercial',
+    'relacionamento', 'financeiro', 'engenharia', 'operacional', 'esocial',
+    'credenciamento', 'agendamento', 'suporte',
   ])).default([]),
   principalAssigneeId: z.string().optional(),
   supportAssigneeIds: z.array(z.string()).default([]),
@@ -192,6 +183,7 @@ export default function GestaoOcorrencias() {
   const form = useForm<OccurrenceFormData>({
     resolver: zodResolver(occurrenceFormSchema),
     defaultValues: {
+      companyId: undefined as any,
       companyName: '',
       cnpj: '',
       requesterName: profile?.full_name ?? '',
@@ -211,6 +203,7 @@ export default function GestaoOcorrencias() {
 
   useEffect(() => {
     form.reset({
+      companyId: undefined as any,
       companyName: '',
       cnpj: '',
       requesterName: profile?.full_name ?? '',
@@ -310,8 +303,9 @@ export default function GestaoOcorrencias() {
     try {
       const ticketPayload: Database['public']['Tables']['occurrence_tickets']['Insert'] = {
         ticket_number: '',
+        company_id: values.companyId,
         company_name: values.companyName.trim(),
-        cnpj: values.cnpj.trim(),
+        cnpj: values.cnpj?.trim() || '',
         requester_name: values.requesterName?.trim() || null,
         requester_contact: values.requesterContact?.trim() || null,
         contact_origin: values.contactOrigin,
@@ -408,6 +402,7 @@ export default function GestaoOcorrencias() {
       });
 
       form.reset({
+        companyId: undefined as any,
         companyName: '',
         cnpj: '',
         requesterName: profile?.full_name ?? '',
@@ -523,7 +518,7 @@ export default function GestaoOcorrencias() {
               <NotebookPen className="h-4 w-4" />
               <AlertTitle>Cadastro inicial</AlertTitle>
               <AlertDescription>
-                Empresa, CNPJ e descrição são obrigatórios. Os anexos são enviados junto da abertura do chamado.
+                Selecione a empresa da base cadastrada e preencha a descrição. Os anexos são enviados junto da abertura do chamado.
               </AlertDescription>
             </Alert>
 
@@ -534,18 +529,22 @@ export default function GestaoOcorrencias() {
                     <h3 className="text-base font-semibold">Identificação</h3>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (
-                      <FormItem className="xl:col-span-2">
+                    <FormField control={form.control} name="companyId" render={({ field }) => (
+                      <FormItem className="xl:col-span-3">
                         <FormLabel>Empresa *</FormLabel>
-                        <FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="cnpj" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CNPJ *</FormLabel>
-                        <FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl>
+                        <FormControl>
+                          <CompanySelector
+                            value={field.value}
+                            onChange={(id, company) => {
+                              field.onChange(id ?? undefined);
+                              form.setValue('companyName', company?.razao_social || '', { shouldValidate: true });
+                              form.setValue('cnpj', company?.cnpj || '', { shouldValidate: true });
+                            }}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )} />

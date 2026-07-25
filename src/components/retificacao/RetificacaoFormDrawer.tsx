@@ -19,6 +19,7 @@ import {
   useRetificacaoAreas, useRetificacaoMotivos, useRetificacaoMedicos,
 } from '@/hooks/useRetificacaoCatalog';
 import type { SolicitacaoRow } from './RetificacaoList';
+import { CompanySelector } from '@/components/shared/CompanySelector';
 
 interface AnexoRow {
   id: string;
@@ -31,6 +32,7 @@ interface AnexoRow {
 
 interface FormValues {
   data_solicitacao: string;
+  company_id: string;
   empresa: string;
   cnpj: string;
   unidade: string;
@@ -47,6 +49,7 @@ interface FormValues {
 
 const emptyValues: FormValues = {
   data_solicitacao: '',
+  company_id: '',
   empresa: '', cnpj: '', unidade: '',
   colaborador_nome: '', colaborador_cpf: '',
   area_id: '', motivo_id: '', descricao: '',
@@ -116,6 +119,7 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
     if (solicitacao) {
       reset({
         data_solicitacao: toLocalInput(solicitacao.data_solicitacao),
+        company_id: solicitacao.company_id || '',
         empresa: solicitacao.empresa || '',
         cnpj: solicitacao.cnpj || '',
         unidade: solicitacao.unidade || '',
@@ -138,8 +142,13 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
+    if (!values.company_id) {
+      toast.error('Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.');
+      return;
+    }
     const payload: any = {
       data_solicitacao: values.data_solicitacao ? new Date(values.data_solicitacao).toISOString() : new Date().toISOString(),
+      company_id: values.company_id,
       empresa: values.empresa.trim(),
       cnpj: values.cnpj.trim(),
       unidade: values.unidade.trim() || null,
@@ -261,13 +270,20 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
                 <Label>Unidade</Label>
                 <Input {...register('unidade')} placeholder="Lapa, Osasco..." />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <Label>Empresa *</Label>
-                <Input {...register('empresa', { required: true })} />
-              </div>
-              <div>
-                <Label>CNPJ *</Label>
-                <Input {...register('cnpj', { required: true })} placeholder="00.000.000/0000-00" />
+                <CompanySelector
+                  value={watch('company_id') || null}
+                  onChange={(id, company) => {
+                    setValue('company_id', id || '', { shouldValidate: true });
+                    setValue('empresa', company?.razao_social || '');
+                    setValue('cnpj', company?.cnpj || '');
+                  }}
+                  legacyLabel={!watch('company_id') && solicitacao?.empresa ? solicitacao.empresa : null}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                </p>
               </div>
               <div>
                 <Label>Nome do Colaborador *</Label>
