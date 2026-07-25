@@ -107,6 +107,27 @@ export default function AdminEmpresas() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [socnetEnabled, setSocnetEnabled] = useState(false);
   const [savingSocnet, setSavingSocnet] = useState(false);
+  const [loadingUnits, setLoadingUnits] = useState(false);
+
+  const syncUnits = async () => {
+    setLoadingUnits(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("soc-unidades-sync");
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(
+          `Unidades sincronizadas: ${data.inserted ?? 0} inseridas, ${data.updated ?? 0} atualizadas` +
+          (data.skipped_count ? ` (${data.skipped_count} puladas — empresa não encontrada)` : "")
+        );
+      } else {
+        toast.error(data?.error || "Falha na sincronização de unidades");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar unidades");
+    } finally {
+      setLoadingUnits(false);
+    }
+  };
 
   const loadSocnetFlag = useCallback(async () => {
     const { data } = await supabase
