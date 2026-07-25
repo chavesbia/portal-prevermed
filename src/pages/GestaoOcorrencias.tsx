@@ -518,7 +518,7 @@ export default function GestaoOcorrencias() {
               <NotebookPen className="h-4 w-4" />
               <AlertTitle>Cadastro inicial</AlertTitle>
               <AlertDescription>
-                Empresa, CNPJ e descrição são obrigatórios. Os anexos são enviados junto da abertura do chamado.
+                Selecione a empresa da base cadastrada e preencha a descrição. Os anexos são enviados junto da abertura do chamado.
               </AlertDescription>
             </Alert>
 
