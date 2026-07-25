@@ -320,15 +320,20 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
         {step === 1 && (
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label>Cliente *</Label>
-              <Select value={clienteId} onValueChange={setClienteId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o cliente…" /></SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Empresa (Cliente) *</Label>
+              <CompanySelector
+                value={companyId}
+                onChange={(id, opt) => {
+                  setCompanyId(id);
+                  setCompany(opt);
+                  setClienteId('');
+                  if (opt) resolveClienteForCompany(opt);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Selecione uma empresa cadastrada e ativa na base sincronizada do SOC.
+                {resolvingCliente && ' Vinculando empresa ao contrato…'}
+              </p>
             </div>
             <div className="space-y-1">
               <Label>Modelo de contrato *</Label>
