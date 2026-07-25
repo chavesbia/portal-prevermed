@@ -529,18 +529,22 @@ export default function GestaoOcorrencias() {
                     <h3 className="text-base font-semibold">Identificação</h3>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (
-                      <FormItem className="xl:col-span-2">
+                    <FormField control={form.control} name="companyId" render={({ field }) => (
+                      <FormItem className="xl:col-span-3">
                         <FormLabel>Empresa *</FormLabel>
-                        <FormControl><Input placeholder="Nome da empresa" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="cnpj" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CNPJ *</FormLabel>
-                        <FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl>
+                        <FormControl>
+                          <CompanySelector
+                            value={field.value}
+                            onChange={(id, company) => {
+                              field.onChange(id ?? undefined);
+                              form.setValue('companyName', company?.razao_social || '', { shouldValidate: true });
+                              form.setValue('cnpj', company?.cnpj || '', { shouldValidate: true });
+                            }}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )} />
