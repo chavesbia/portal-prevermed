@@ -189,18 +189,19 @@ export const CONSELHO_OPTIONS: ConselhoProfissional[] = ['CREA', 'CRF', 'CRM', '
 
 export const statusOSColors: Record<string, string> = {
   'Não iniciado': 'bg-muted text-muted-foreground',
-  'Em andamento': 'bg-primary text-primary-foreground',
+  'Em andamento': 'bg-yellow-500 text-white',
   'Encerrado': 'bg-emerald-600 text-white',
 };
 
 export const statusServicoColors: Record<string, string> = {
   'Não iniciado': 'bg-muted text-muted-foreground',
-  'Em andamento': 'bg-blue-500 text-white',
+  'Em andamento': 'bg-yellow-500 text-white',
   'Agendado': 'bg-indigo-500 text-white',
-  'Em revisão interna': 'bg-yellow-500 text-white',
-  'Aguardando cliente': 'bg-blue-400 text-white',
+  'Em revisão interna': 'bg-amber-600 text-white',
+  'Aguardando cliente': 'bg-blue-500 text-white',
   'Encerrado': 'bg-emerald-600 text-white',
 };
+
 
 // Fase 2 — SLA por OS
 export type SLAStatus = 'em_dia' | 'atencao' | 'atrasado' | 'encerrado' | 'sem_prazo';
