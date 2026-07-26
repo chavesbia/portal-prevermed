@@ -5102,10 +5102,12 @@ export type Database = {
           created_by: string | null
           custo_padrao: number | null
           email: string | null
+          especialidade: string | null
           id: string
           nome: string
           numero_conselho: string | null
           observacoes: string | null
+          pode_ser_responsavel_tecnico: boolean
           telefone: string | null
           tipo: string
           updated_at: string
@@ -5119,10 +5121,12 @@ export type Database = {
           created_by?: string | null
           custo_padrao?: number | null
           email?: string | null
+          especialidade?: string | null
           id?: string
           nome: string
           numero_conselho?: string | null
           observacoes?: string | null
+          pode_ser_responsavel_tecnico?: boolean
           telefone?: string | null
           tipo?: string
           updated_at?: string
@@ -5136,10 +5140,12 @@ export type Database = {
           created_by?: string | null
           custo_padrao?: number | null
           email?: string | null
+          especialidade?: string | null
           id?: string
           nome?: string
           numero_conselho?: string | null
           observacoes?: string | null
+          pode_ser_responsavel_tecnico?: boolean
           telefone?: string | null
           tipo?: string
           updated_at?: string
@@ -5473,6 +5479,7 @@ export type Database = {
           id: string
           nome: string
           numero_registro: string
+          profissional_id: string | null
           updated_at: string
         }
         Insert: {
@@ -5484,6 +5491,7 @@ export type Database = {
           id?: string
           nome: string
           numero_registro: string
+          profissional_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -5495,9 +5503,18 @@ export type Database = {
           id?: string
           nome?: string
           numero_registro?: string
+          profissional_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "responsaveis_tecnicos_profissional_id_fkey"
+            columns: ["profissional_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_templates: {
         Row: {
