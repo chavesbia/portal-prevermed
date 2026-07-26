@@ -1608,6 +1608,62 @@ export type Database = {
         }
         Relationships: []
       }
+      company_contacts: {
+        Row: {
+          company_id: string
+          created_at: string
+          email_1: string | null
+          email_2: string | null
+          id: string
+          nome: string | null
+          ramal_1: string | null
+          ramal_2: string | null
+          soc_contact_code: string
+          synced_at: string | null
+          telefone_1: string | null
+          telefone_2: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email_1?: string | null
+          email_2?: string | null
+          id?: string
+          nome?: string | null
+          ramal_1?: string | null
+          ramal_2?: string | null
+          soc_contact_code: string
+          synced_at?: string | null
+          telefone_1?: string | null
+          telefone_2?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email_1?: string | null
+          email_2?: string | null
+          id?: string
+          nome?: string | null
+          ramal_1?: string | null
+          ramal_2?: string | null
+          soc_contact_code?: string
+          synced_at?: string | null
+          telefone_1?: string | null
+          telefone_2?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_units: {
         Row: {
           bairro: string | null
