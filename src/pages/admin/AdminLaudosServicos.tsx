@@ -1,4 +1,6 @@
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LaudosServicosManager } from "@/components/admin/LaudosServicosManager";
+import { ResponsaveisTecnicosManager } from "@/components/admin/ResponsaveisTecnicosManager";
 
 export default function AdminLaudosServicos() {
   return (
@@ -9,7 +11,18 @@ export default function AdminLaudosServicos() {
           Catálogo central reutilizado em Renovação, Proposta, Contrato, OS e Faturamento.
         </p>
       </div>
-      <LaudosServicosManager />
+      <Tabs defaultValue="catalogo" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
+          <TabsTrigger value="responsaveis">Responsáveis Técnicos</TabsTrigger>
+        </TabsList>
+        <TabsContent value="catalogo">
+          <LaudosServicosManager />
+        </TabsContent>
+        <TabsContent value="responsaveis">
+          <ResponsaveisTecnicosManager />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

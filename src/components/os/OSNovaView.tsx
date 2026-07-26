@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useResponsaveisTecnicos } from '@/hooks/useOSData';
+
 import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,7 +46,7 @@ const formSchema = z.object({
   unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
-  emissor: z.string().min(1),
+  emissor: z.string().min(1, 'Selecione o emissor/elaborador'),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
   prazoEntrega: z.date().optional().nullable(),
   urgente: z.boolean().default(false),
@@ -74,25 +76,37 @@ interface ExistingOS {
 export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { responsaveis } = useResponsaveisTecnicos();
   const [submitting, setSubmitting] = useState(false);
   const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
   const [dupDialogOpen, setDupDialogOpen] = useState(false);
   const [addingServico, setAddingServico] = useState(false);
-  const emissorNome = profile?.full_name || '';
+
+  const responsaveisAtivos = useMemo(() => responsaveis.filter(r => r.ativo), [responsaveis]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
+      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: '',
       dataEmissao: new Date(), prazoEntrega: null,
       urgente: false, motivoUrgencia: '',
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo' }],
     },
   });
 
+  // Pré-seleciona o usuário logado quando ele existir no cadastro de responsáveis
+  useEffect(() => {
+    if (form.getValues('emissor')) return;
+    const nome = (profile?.full_name || '').trim().toLowerCase();
+    if (!nome) return;
+    const match = responsaveisAtivos.find(r => (r.nome || '').trim().toLowerCase().includes(nome) || nome.includes((r.nome || '').trim().toLowerCase()));
+    if (match) form.setValue('emissor', match.nome);
+  }, [responsaveisAtivos, profile?.full_name]);
+
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
   const numeroOS = form.watch('numeroOS');
+
 
   const findExisting = async (numero: string): Promise<ExistingOS | null> => {
     const { data, error } = await supabase
@@ -260,14 +274,26 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             )} />
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-1"><Lock className="h-3 w-3" />Emissor</FormLabel>
-                <FormControl>
-                  <Input readOnly disabled value={field.value || emissorNome} className="bg-muted" />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">Preenchido automaticamente com o usuário logado.</p>
+                <FormLabel>Emissor / Elaborador *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o responsável" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {responsaveisAtivos.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável cadastrado</div>
+                    ) : responsaveisAtivos.map(r => (
+                      <SelectItem key={r.id} value={r.nome}>
+                        {r.nome}{r.conselho ? ` · ${r.conselho} ${r.numero_registro || ''}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione a partir do cadastro de responsáveis técnicos (Administração › Laudos e Serviços) para evitar nomes duplicados.
+                </p>
                 <FormMessage />
               </FormItem>
             )} />
+
 
             <FormField control={form.control} name="dataEmissao" render={({ field }) => (
               <FormItem><FormLabel>Data de Emissão</FormLabel>
