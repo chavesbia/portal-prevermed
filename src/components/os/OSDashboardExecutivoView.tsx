@@ -55,7 +55,7 @@ export function OSDashboardExecutivoView() {
                   <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="Encerradas" stackId="a" fill="hsl(142, 76%, 36%)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Em andamento" stackId="a" fill="hsl(210, 100%, 50%)" />
+                  <Bar dataKey="Em andamento" stackId="a" fill="hsl(45, 93%, 47%)" />
                   <Bar dataKey="Atrasadas" stackId="a" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
