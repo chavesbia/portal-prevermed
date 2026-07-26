@@ -207,8 +207,19 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
-              <FormItem><FormLabel>Número da OS</FormLabel><FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormLabel>Número da OS</FormLabel>
+                <FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl>
+                {duplicate && (
+                  <p className="text-xs text-amber-600 flex items-start gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span>Já existe uma OS #{duplicate.numero_os} cadastrada{duplicate.empresa_cliente ? ` para ${duplicate.empresa_cliente}` : ''}.</span>
+                  </p>
+                )}
+                <FormMessage />
+              </FormItem>
             )} />
+
             <FormField control={form.control} name="companyId" render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Empresa Cliente</FormLabel>
