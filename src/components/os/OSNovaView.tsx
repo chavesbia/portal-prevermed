@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,16 +15,23 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock } from 'lucide-react';
+import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
 import { TIPO_OS_OPTIONS, TIPO_SERVICO_OPTIONS, StatusServico, TipoOS } from '@/types/os';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
+
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
@@ -56,9 +64,20 @@ interface OSNovaViewProps {
   onDone?: () => void;
 }
 
+interface ExistingOS {
+  id: string;
+  numero_os: string;
+  empresa_cliente: string | null;
+  status_os: string | null;
+}
+
 export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
+  const [dupDialogOpen, setDupDialogOpen] = useState(false);
+  const [addingServico, setAddingServico] = useState(false);
   const emissorNome = profile?.full_name || '';
 
   const form = useForm<FormData>({
@@ -73,9 +92,39 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
+  const numeroOS = form.watch('numeroOS');
+
+  const findExisting = async (numero: string): Promise<ExistingOS | null> => {
+    const { data, error } = await supabase
+      .from('ordens_servico')
+      .select('id, numero_os, empresa_cliente, status_os')
+      .eq('numero_os', numero.trim())
+      .limit(1);
+    if (error) return null;
+    return ((data || [])[0] as ExistingOS) || null;
+  };
+
+  // Verificação em tempo real (debounce) enquanto digita
+  useEffect(() => {
+    const numero = (numeroOS || '').trim();
+    if (!numero) { setDuplicate(null); return; }
+    let active = true;
+    const t = setTimeout(async () => {
+      const found = await findExisting(numero);
+      if (active) setDuplicate(found);
+    }, 500);
+    return () => { active = false; clearTimeout(t); };
+  }, [numeroOS]);
 
   const handleSubmit = async (data: FormData) => {
     setSubmitting(true);
+    const existing = await findExisting(data.numeroOS);
+    if (existing) {
+      setDuplicate(existing);
+      setDupDialogOpen(true);
+      setSubmitting(false);
+      return;
+    }
     const dataEmissaoStr = format(data.dataEmissao, 'yyyy-MM-dd');
     const ok = await onSubmit({
       numero_os: data.numeroOS,
@@ -104,6 +153,42 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     setSubmitting(false);
   };
 
+  const handleAbrirExistente = async () => {
+    if (!duplicate) return;
+    setAddingServico(true);
+    try {
+      const servicos = form.getValues('servicos').filter(s => s.tipo);
+      if (servicos.length > 0) {
+        const { error } = await supabase.from('servicos_os').insert(
+          servicos.map(s => ({
+            ordem_id: duplicate.id,
+            tipo: s.tipo,
+            tipo_os: s.tipoOS,
+            status: 'Não iniciado',
+          })) as any,
+        );
+        if (error) throw error;
+        await supabase.from('historico_os').insert({
+          ordem_id: duplicate.id,
+          user_id: profile?.user_id || null,
+          user_name: profile?.full_name || 'Sistema',
+          acao: 'Inclusão de Serviço',
+          comentario: `Serviço(s) adicionado(s) à OS existente: ${servicos.map(s => s.tipo).join(', ')}`,
+        } as any);
+        toast.success('Serviço(s) adicionado(s) à OS existente.');
+      }
+      setDupDialogOpen(false);
+      form.reset();
+      onDone?.();
+      navigate(`/gestao-os?os=${duplicate.id}`);
+    } catch (e: any) {
+      toast.error('Erro ao adicionar serviço: ' + (e.message || ''));
+    } finally {
+      setAddingServico(false);
+    }
+  };
+
+
   const Wrapper = embedded
     ? ({ children }: { children: React.ReactNode }) => <div>{children}</div>
     : ({ children }: { children: React.ReactNode }) => (
@@ -122,8 +207,19 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
-              <FormItem><FormLabel>Número da OS</FormLabel><FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem>
+                <FormLabel>Número da OS</FormLabel>
+                <FormControl><Input placeholder="Ex: 11250" {...field} /></FormControl>
+                {duplicate && (
+                  <p className="text-xs text-amber-600 flex items-start gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                    <span>Já existe uma OS #{duplicate.numero_os} cadastrada{duplicate.empresa_cliente ? ` para ${duplicate.empresa_cliente}` : ''}.</span>
+                  </p>
+                )}
+                <FormMessage />
+              </FormItem>
             )} />
+
             <FormField control={form.control} name="companyId" render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Empresa Cliente</FormLabel>
@@ -281,6 +377,28 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
           </div>
         </form>
       </Form>
+
+      <AlertDialog open={dupDialogOpen} onOpenChange={setDupDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>OS #{duplicate?.numero_os} já existe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe uma Ordem de Serviço com este número
+              {duplicate?.empresa_cliente ? ` (${duplicate.empresa_cliente})` : ''}
+              {duplicate?.status_os ? ` — status: ${duplicate.status_os}` : ''}.
+              Não é possível criar uma OS duplicada. Você pode abrir a OS existente e adicionar
+              o(s) serviço(s) informados neste formulário a ela, ou cancelar e digitar outro número.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleAbrirExistente(); }} disabled={addingServico}>
+              {addingServico ? 'Adicionando…' : 'Abrir OS existente e adicionar serviço'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </Wrapper>
   );
 }
