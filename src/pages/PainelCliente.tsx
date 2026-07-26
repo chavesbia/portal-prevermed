@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2 } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { statusOSColors } from '@/types/os';
 
@@ -418,6 +420,7 @@ function OrdensServicoCard({ companyId, navigate }: { companyId: string; navigat
 interface LaudoRow {
   id: string;
   ordem_id: string | null;
+  unidade_id: string | null;
   tipo_laudo_nome: string | null;
   data_emissao: string | null;
   data_validade: string | null;
@@ -436,31 +439,164 @@ function classifyLaudo(l: LaudoRow, todayISO: string): LaudoStatus {
   return 'valido';
 }
 
+interface UnitInfo {
+  id: string;
+  name: string | null;
+  razao_social: string | null;
+  soc_unit_code: string | null;
+  cidade: string | null;
+  estado: string | null;
+}
+
+interface UnitGroup {
+  key: string;
+  label: string;
+  code: string | null;
+  local: string | null;
+  laudos: LaudoRow[];
+  counts: Record<LaudoStatus, number>;
+  priority: LaudoStatus;
+}
+
+const SECTIONS: { status: LaudoStatus; title: string }[] = [
+  { status: 'vencido', title: '🔴 Vencidos' },
+  { status: 'a_vencer', title: '🟡 Vencendo em breve' },
+  { status: 'valido', title: '🟢 Válidos' },
+];
+
+const STATUS_BADGE: Record<LaudoStatus, { cls: string; label: string }> = {
+  vencido: { cls: 'bg-red-100 text-red-800 hover:bg-red-100 border-red-200', label: 'Vencido' },
+  a_vencer: { cls: 'bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200', label: 'Vence em breve' },
+  valido: { cls: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200', label: 'Válido' },
+  sem_vigencia: { cls: 'bg-muted text-muted-foreground', label: 'Sem vigência' },
+};
+
+const PAGE_SIZE = 15;
+
+function LaudoLine({ l, todayISO }: { l: LaudoRow; todayISO: string }) {
+  const badge = STATUS_BADGE[classifyLaudo(l, todayISO)];
+  return (
+    <div className="rounded-md border p-2.5">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-medium text-sm">{l.tipo_laudo_nome || 'Laudo'}</span>
+        <Badge className={`text-xs ${badge.cls}`}>{badge.label}</Badge>
+        {l.numero_os && <Badge variant="outline" className="text-xs">OS {l.numero_os}</Badge>}
+      </div>
+      <div className="text-xs text-muted-foreground mt-1">
+        Emissão: {formatDate(l.data_emissao)} • Validade: {formatDate(l.data_validade)}
+        {l.responsavel_tecnico_nome && <> • Resp. Técnico: {l.responsavel_tecnico_nome}</>}
+      </div>
+    </div>
+  );
+}
+
+function UnitBlock({ g, todayISO }: { g: UnitGroup; todayISO: string }) {
+  const [open, setOpen] = useState(false);
+  const mixed = (['vencido', 'a_vencer', 'valido', 'sem_vigencia'] as LaudoStatus[])
+    .filter((s) => g.counts[s] > 0).length > 1;
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full rounded-md border p-3 text-left hover:bg-muted/40 transition-colors">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm">{g.label}</span>
+              {g.code && <Badge variant="outline" className="text-xs">Cód. {g.code}</Badge>}
+              {mixed && (
+                <Badge variant="secondary" className="text-xs">Laudos em situações diferentes</Badge>
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {g.local ? `${g.local} • ` : ''}{g.laudos.length} laudo(s)
+              {g.counts.vencido > 0 && ` • ${g.counts.vencido} vencido(s)`}
+              {g.counts.a_vencer > 0 && ` • ${g.counts.a_vencer} vencendo`}
+              {g.counts.valido > 0 && ` • ${g.counts.valido} válido(s)`}
+            </div>
+          </div>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-2 pl-3 space-y-2">
+        {g.laudos.map((l) => <LaudoLine key={l.id} l={l} todayISO={todayISO} />)}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function LaudosSection({
+  title, groups, todayISO, defaultOpen, forceOpen,
+}: { title: string; groups: UnitGroup[]; todayISO: string; defaultOpen: boolean; forceOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const isOpen = forceOpen || open;
+  const visible = groups.slice(0, limit);
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 py-2 text-left">
+        <span className="text-sm font-semibold">{title} ({groups.length})</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-2 pb-2">
+        {groups.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-2">Nenhuma unidade nesta situação.</p>
+        ) : (
+          <>
+            {visible.map((g) => <UnitBlock key={g.key} g={g} todayISO={todayISO} />)}
+            {groups.length > visible.length && (
+              <div className="text-center pt-1">
+                <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
+                  Ver mais ({groups.length - visible.length} restantes)
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
+  const [search, setSearch] = useState('');
+
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-laudos', companyId],
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from('laudos')
-        .select('id, ordem_id, tipo_laudo_nome, data_emissao, data_validade, possui_vigencia, numero_os, responsavel_tecnico_nome')
+        .select('id, ordem_id, unidade_id, tipo_laudo_nome, data_emissao, data_validade, possui_vigencia, numero_os, responsavel_tecnico_nome')
         .eq('company_id', companyId);
       if (error) throw error;
       return (rows ?? []) as LaudoRow[];
     },
   });
 
+  const { data: units } = useQuery({
+    queryKey: ['painel-cliente-units', companyId],
+    queryFn: async () => {
+      const all: UnitInfo[] = [];
+      let from = 0;
+      const step = 1000;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data: page, error } = await supabase
+          .from('company_units')
+          .select('id, name, razao_social, soc_unit_code, cidade, estado')
+          .eq('company_id', companyId)
+          .order('id', { ascending: true })
+          .range(from, from + step - 1);
+        if (error) throw error;
+        all.push(...((page ?? []) as UnitInfo[]));
+        if (!page || page.length < step) break;
+        from += step;
+      }
+      return all;
+    },
+  });
+
   const todayISO = new Date().toISOString().slice(0, 10);
   const rows = data ?? [];
-
-  const order: Record<LaudoStatus, number> = { vencido: 0, a_vencer: 1, valido: 2, sem_vigencia: 3 };
-  const sorted = [...rows].sort((a, b) => {
-    const sa = classifyLaudo(a, todayISO);
-    const sb = classifyLaudo(b, todayISO);
-    if (order[sa] !== order[sb]) return order[sa] - order[sb];
-    const da = a.data_emissao ?? '';
-    const db = b.data_emissao ?? '';
-    return db.localeCompare(da);
-  });
 
   const counts = rows.reduce(
     (acc, l) => {
@@ -469,6 +605,54 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
     },
     { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>,
   );
+
+  const unitMap = new Map((units ?? []).map((u) => [u.id, u]));
+  const order: Record<LaudoStatus, number> = { vencido: 0, a_vencer: 1, valido: 2, sem_vigencia: 3 };
+
+  const groups: UnitGroup[] = [];
+  const semUnidade: LaudoRow[] = [];
+  const byUnit = new Map<string, LaudoRow[]>();
+  for (const l of rows) {
+    if (!l.unidade_id) semUnidade.push(l);
+    else {
+      const list = byUnit.get(l.unidade_id) ?? [];
+      list.push(l);
+      byUnit.set(l.unidade_id, list);
+    }
+  }
+  for (const [unitId, laudos] of byUnit) {
+    const u = unitMap.get(unitId);
+    const c = { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>;
+    laudos.forEach((l) => c[classifyLaudo(l, todayISO)]++);
+    const priority = (['vencido', 'a_vencer', 'valido', 'sem_vigencia'] as LaudoStatus[]).find((s) => c[s] > 0)!;
+    groups.push({
+      key: unitId,
+      label: u?.name || u?.razao_social || u?.soc_unit_code || 'Unidade não identificada',
+      code: u?.soc_unit_code ?? null,
+      local: u ? [u.cidade, u.estado].filter(Boolean).join('/') || null : null,
+      laudos: [...laudos].sort((a, b) => {
+        const d = order[classifyLaudo(a, todayISO)] - order[classifyLaudo(b, todayISO)];
+        return d !== 0 ? d : (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '');
+      }),
+      counts: c,
+      priority,
+    });
+  }
+
+  const term = search.trim().toLowerCase();
+  const matches = (g: UnitGroup) =>
+    !term || g.label.toLowerCase().includes(term) || (g.code ?? '').toLowerCase().includes(term);
+  const filtered = groups.filter(matches);
+
+  const sectionGroups = (status: LaudoStatus) =>
+    filtered
+      .filter((g) => g.priority === status)
+      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+
+  const semUnidadeSorted = [...semUnidade].sort((a, b) => {
+    const d = order[classifyLaudo(a, todayISO)] - order[classifyLaudo(b, todayISO)];
+    return d !== 0 ? d : (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '');
+  });
 
   return (
     <Card>
@@ -479,9 +663,9 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
           </CardTitle>
           {!isLoading && rows.length > 0 && (
             <div className="flex items-center gap-2 text-xs flex-wrap">
-              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Válidos: {counts.valido}</Badge>
-              <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Vencem em breve: {counts.a_vencer}</Badge>
               <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Vencidos: {counts.vencido}</Badge>
+              <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Vencendo em breve: {counts.a_vencer}</Badge>
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Válidos: {counts.valido}</Badge>
               {counts.sem_vigencia > 0 && (
                 <Badge variant="outline">Sem vigência: {counts.sem_vigencia}</Badge>
               )}
@@ -494,45 +678,77 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
           <div className="py-6 flex justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : sorted.length === 0 ? (
+        ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
             Nenhum laudo encontrado para esta empresa.
           </p>
         ) : (
-          <div className="space-y-2">
-            {sorted.map((l) => {
-              const status = classifyLaudo(l, todayISO);
-              const badge =
-                status === 'vencido' ? { cls: 'bg-red-100 text-red-800 hover:bg-red-100 border-red-200', label: 'Vencido' }
-                : status === 'a_vencer' ? { cls: 'bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200', label: 'Vence em breve' }
-                : status === 'valido' ? { cls: 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200', label: 'Válido' }
-                : { cls: 'bg-muted text-muted-foreground', label: 'Sem vigência' };
+          <div className="space-y-1">
+            <div className="relative mb-3">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar unidade por nome ou código…"
+                className="pl-8"
+              />
+            </div>
+
+            {SECTIONS.map((s) => {
+              const gs = sectionGroups(s.status);
               return (
-                <div
-                  key={l.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3 hover:bg-muted/40 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{l.tipo_laudo_nome || 'Laudo'}</span>
-                      <Badge className={`text-xs ${badge.cls}`}>{badge.label}</Badge>
-                      {l.numero_os && (
-                        <Badge variant="outline" className="text-xs">OS {l.numero_os}</Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Emissão: {formatDate(l.data_emissao)} • Validade: {formatDate(l.data_validade)}
-                      {l.responsavel_tecnico_nome && <> • Resp. Técnico: {l.responsavel_tecnico_nome}</>}
-                    </div>
-                  </div>
-
-
-                </div>
+                <LaudosSection
+                  key={s.status}
+                  title={s.title}
+                  groups={gs}
+                  todayISO={todayISO}
+                  defaultOpen={s.status !== 'valido'}
+                  forceOpen={!!term && gs.length > 0}
+                />
               );
             })}
+
+            {sectionGroups('sem_vigencia').length > 0 && (
+              <LaudosSection
+                title="⚪ Sem vigência"
+                groups={sectionGroups('sem_vigencia')}
+                todayISO={todayISO}
+                defaultOpen={false}
+                forceOpen={!!term && sectionGroups('sem_vigencia').length > 0}
+              />
+            )}
+
+            {semUnidadeSorted.length > 0 && (
+              <SemUnidadeSection laudos={semUnidadeSorted} todayISO={todayISO} />
+            )}
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+function SemUnidadeSection({ laudos, todayISO }: { laudos: LaudoRow[]; todayISO: string }) {
+  const [open, setOpen] = useState(false);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const visible = laudos.slice(0, limit);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 py-2 text-left">
+        <span className="text-sm font-semibold">Sem unidade vinculada ({laudos.length})</span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-2 pb-2">
+        {visible.map((l) => <LaudoLine key={l.id} l={l} todayISO={todayISO} />)}
+        {laudos.length > visible.length && (
+          <div className="text-center pt-1">
+            <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
+              Ver mais ({laudos.length - visible.length} restantes)
+            </Button>
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
