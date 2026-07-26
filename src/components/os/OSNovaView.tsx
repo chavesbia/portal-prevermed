@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,16 +15,23 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock } from 'lucide-react';
+import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
 import { TIPO_OS_OPTIONS, TIPO_SERVICO_OPTIONS, StatusServico, TipoOS } from '@/types/os';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
+
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
