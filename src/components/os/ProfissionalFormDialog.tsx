@@ -132,22 +132,40 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Conselho</Label>
-              <Select value={conselhoId || 'none'} onValueChange={v => setConselhoId(v === 'none' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Nenhum —</SelectItem>
-                  {conselhos.map(c => <SelectItem key={c.id} value={c.id}>{c.sigla}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
+              <Label htmlFor="prof-rt" className="cursor-pointer">Pode ser Responsável Técnico?</Label>
             </div>
-            <div className="space-y-2">
-              <Label>Nº do Conselho</Label>
-              <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 12345/UF" />
-            </div>
+            {podeRT && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Ao salvar, este profissional é mantido automaticamente no cadastro de Responsáveis Técnicos usado nos Laudos e nas OS.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Conselho *</Label>
+                    <Select value={conselhoId || 'none'} onValueChange={v => setConselhoId(v === 'none' ? '' : v)}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhum —</SelectItem>
+                        {conselhos.map(c => <SelectItem key={c.id} value={c.id}>{c.sigla}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nº do Registro *</Label>
+                    <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 12345/UF" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Especialidade</Label>
+                  <Input value={especialidade} onChange={e => setEspecialidade(e.target.value)} placeholder="Ex: Técnico em Segurança do Trabalho" />
+                </div>
+              </>
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
