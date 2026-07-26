@@ -161,6 +161,8 @@ export default function AdminEmpresas() {
   const [savingSocnet, setSavingSocnet] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [lastUnitSync, setLastUnitSync] = useState<string | null>(null);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+  const [lastContactSync, setLastContactSync] = useState<string | null>(null);
 
   const loadLastUnitSync = useCallback(async () => {
     const { data } = await supabase
@@ -170,6 +172,16 @@ export default function AdminEmpresas() {
       .limit(1)
       .maybeSingle();
     setLastUnitSync(data?.synced_at ?? null);
+  }, []);
+
+  const loadLastContactSync = useCallback(async () => {
+    const { data } = await supabase
+      .from("company_contacts")
+      .select("synced_at")
+      .order("synced_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastContactSync(data?.synced_at ?? null);
   }, []);
 
   const syncUnits = async () => {
@@ -192,6 +204,28 @@ export default function AdminEmpresas() {
       loadLastUnitSync();
     }
   };
+
+  const syncContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("soc-contatos-sync");
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(
+          `Contatos sincronizados: ${data.inserted ?? 0} inseridos, ${data.updated ?? 0} atualizados` +
+          (data.skipped_count ? ` (${data.skipped_count} pulados — empresa não encontrada)` : "")
+        );
+      } else {
+        toast.error(data?.error || "Falha na sincronização de contatos");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar contatos");
+    } finally {
+      setLoadingContacts(false);
+      loadLastContactSync();
+    }
+  };
+
 
   const loadSocnetFlag = useCallback(async () => {
     const { data } = await supabase
@@ -232,7 +266,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync]);
 
 
   // Companies list
@@ -326,6 +360,14 @@ export default function AdminEmpresas() {
             lastRun: lastUnitSync,
             loading: loadingUnits,
             run: syncUnits,
+          },
+          {
+            key: "contatos",
+            name: "Contatos das Empresas",
+            description: "Contatos (telefones e e-mails) de cada empresa cliente (SOC).",
+            lastRun: lastContactSync,
+            loading: loadingContacts,
+            run: syncContacts,
           },
         ]}
         onRefresh={loadLogs}
