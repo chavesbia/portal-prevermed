@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { statusOSColors } from '@/types/os';
+import { toast } from 'sonner';
 
 function formatDate(v: string | null | undefined) {
   if (!v) return '—';
@@ -198,10 +199,13 @@ export default function PainelCliente() {
 
           <LaudosCard companyId={company.id} navigate={navigate} />
 
+          <ContatosCard companyId={company.id} />
+
           {[
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
             { title: 'Ocorrências', desc: 'Tickets e ocorrências registradas.' },
+
           ].map((s) => (
             <Card key={s.title} className="border-dashed">
               <CardHeader className="pb-2">
@@ -752,3 +756,127 @@ function SemUnidadeSection({ laudos, todayISO }: { laudos: LaudoRow[]; todayISO:
   );
 }
 
+
+interface ContatoRow {
+  id: string;
+  nome: string | null;
+  telefone_1: string | null;
+  ramal_1: string | null;
+  telefone_2: string | null;
+  ramal_2: string | null;
+  email_1: string | null;
+  email_2: string | null;
+}
+
+function CopyableField({ label, value, icon }: { label: string; value: string; icon: 'phone' | 'mail' }) {
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copiado`);
+    } catch {
+      toast.error('Não foi possível copiar');
+    }
+  };
+  return (
+    <div className="flex items-center gap-1.5 min-w-0">
+      {icon === 'phone' ? (
+        <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      ) : (
+        <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      )}
+      <span className="truncate text-sm">{value}</span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0"
+        onClick={copy}
+        aria-label={`Copiar ${label}`}
+        title={`Copiar ${label}`}
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+const CONTATOS_PAGE_SIZE = 5;
+
+function ContatosCard({ companyId }: { companyId: string }) {
+  const [limit, setLimit] = useState(CONTATOS_PAGE_SIZE);
+
+  useEffect(() => setLimit(CONTATOS_PAGE_SIZE), [companyId]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-contatos', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_contacts')
+        .select('id, nome, telefone_1, ramal_1, telefone_2, ramal_2, email_1, email_2')
+        .eq('company_id', companyId)
+        .order('nome', { ascending: true, nullsFirst: false });
+      if (error) throw error;
+      return (data ?? []) as ContatoRow[];
+    },
+    enabled: !!companyId,
+  });
+
+  const contatos = data ?? [];
+  const visible = contatos.slice(0, limit);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Contact className="h-4 w-4" />
+          Contatos
+          {contatos.length > 0 && <Badge variant="secondary">{contatos.length}</Badge>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando contatos...
+          </div>
+        ) : contatos.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Nenhum contato encontrado para esta empresa</div>
+        ) : (
+          <div className="space-y-2">
+            {visible.map((c) => {
+              const tel1 = c.telefone_1?.trim()
+                ? `${c.telefone_1.trim()}${c.ramal_1?.trim() ? ` (ramal ${c.ramal_1.trim()})` : ''}`
+                : null;
+              const tel2 = c.telefone_2?.trim()
+                ? `${c.telefone_2.trim()}${c.ramal_2?.trim() ? ` (ramal ${c.ramal_2.trim()})` : ''}`
+                : null;
+              const em1 = c.email_1?.trim() || null;
+              const em2 = c.email_2?.trim() || null;
+              return (
+                <div key={c.id} className="rounded-md border p-3">
+                  <div className="font-medium text-sm">{c.nome?.trim() || 'Sem nome'}</div>
+                  {!tel1 && !tel2 && !em1 && !em2 ? (
+                    <div className="text-xs text-muted-foreground mt-1">Sem telefone ou e-mail cadastrado</div>
+                  ) : (
+                    <div className="grid gap-1 sm:grid-cols-2 mt-2">
+                      {tel1 && <CopyableField label="Telefone 1" value={tel1} icon="phone" />}
+                      {tel2 && <CopyableField label="Telefone 2" value={tel2} icon="phone" />}
+                      {em1 && <CopyableField label="E-mail 1" value={em1} icon="mail" />}
+                      {em2 && <CopyableField label="E-mail 2" value={em2} icon="mail" />}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {contatos.length > visible.length && (
+              <div className="text-center pt-1">
+                <Button variant="link" size="sm" onClick={() => setLimit((n) => n + CONTATOS_PAGE_SIZE)}>
+                  Ver mais ({contatos.length - visible.length} restantes)
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
