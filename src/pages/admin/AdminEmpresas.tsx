@@ -361,6 +361,14 @@ export default function AdminEmpresas() {
             loading: loadingUnits,
             run: syncUnits,
           },
+          {
+            key: "contatos",
+            name: "Contatos das Empresas",
+            description: "Contatos (telefones e e-mails) de cada empresa cliente (SOC).",
+            lastRun: lastContactSync,
+            loading: loadingContacts,
+            run: syncContacts,
+          },
         ]}
         onRefresh={loadLogs}
         refreshing={loadingLogs}
