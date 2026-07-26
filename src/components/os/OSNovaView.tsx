@@ -64,9 +64,20 @@ interface OSNovaViewProps {
   onDone?: () => void;
 }
 
+interface ExistingOS {
+  id: string;
+  numero_os: string;
+  empresa_cliente: string | null;
+  status_os: string | null;
+}
+
 export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
+  const [dupDialogOpen, setDupDialogOpen] = useState(false);
+  const [addingServico, setAddingServico] = useState(false);
   const emissorNome = profile?.full_name || '';
 
   const form = useForm<FormData>({
@@ -81,9 +92,39 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
+  const numeroOS = form.watch('numeroOS');
+
+  const findExisting = async (numero: string): Promise<ExistingOS | null> => {
+    const { data, error } = await supabase
+      .from('ordens_servico')
+      .select('id, numero_os, empresa_cliente, status_os')
+      .eq('numero_os', numero.trim())
+      .limit(1);
+    if (error) return null;
+    return ((data || [])[0] as ExistingOS) || null;
+  };
+
+  // Verificação em tempo real (debounce) enquanto digita
+  useEffect(() => {
+    const numero = (numeroOS || '').trim();
+    if (!numero) { setDuplicate(null); return; }
+    let active = true;
+    const t = setTimeout(async () => {
+      const found = await findExisting(numero);
+      if (active) setDuplicate(found);
+    }, 500);
+    return () => { active = false; clearTimeout(t); };
+  }, [numeroOS]);
 
   const handleSubmit = async (data: FormData) => {
     setSubmitting(true);
+    const existing = await findExisting(data.numeroOS);
+    if (existing) {
+      setDuplicate(existing);
+      setDupDialogOpen(true);
+      setSubmitting(false);
+      return;
+    }
     const dataEmissaoStr = format(data.dataEmissao, 'yyyy-MM-dd');
     const ok = await onSubmit({
       numero_os: data.numeroOS,
@@ -111,6 +152,42 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     }
     setSubmitting(false);
   };
+
+  const handleAbrirExistente = async () => {
+    if (!duplicate) return;
+    setAddingServico(true);
+    try {
+      const servicos = form.getValues('servicos').filter(s => s.tipo);
+      if (servicos.length > 0) {
+        const { error } = await supabase.from('servicos_os').insert(
+          servicos.map(s => ({
+            ordem_id: duplicate.id,
+            tipo: s.tipo,
+            tipo_os: s.tipoOS,
+            status: 'Não iniciado',
+          })) as any,
+        );
+        if (error) throw error;
+        await supabase.from('historico_os').insert({
+          ordem_id: duplicate.id,
+          user_id: profile?.user_id || null,
+          user_name: profile?.full_name || 'Sistema',
+          acao: 'Inclusão de Serviço',
+          comentario: `Serviço(s) adicionado(s) à OS existente: ${servicos.map(s => s.tipo).join(', ')}`,
+        } as any);
+        toast.success('Serviço(s) adicionado(s) à OS existente.');
+      }
+      setDupDialogOpen(false);
+      form.reset();
+      onDone?.();
+      navigate(`/gestao-os?os=${duplicate.id}`);
+    } catch (e: any) {
+      toast.error('Erro ao adicionar serviço: ' + (e.message || ''));
+    } finally {
+      setAddingServico(false);
+    }
+  };
+
 
   const Wrapper = embedded
     ? ({ children }: { children: React.ReactNode }) => <div>{children}</div>
