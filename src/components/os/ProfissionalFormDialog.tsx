@@ -33,6 +33,9 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
   const [telefone, setTelefone] = useState('');
   const [custo, setCusto] = useState<string>('');
   const [ativo, setAtivo] = useState(true);
+  const [podeRT, setPodeRT] = useState(false);
+  const [especialidade, setEspecialidade] = useState('');
+
   const [obs, setObs] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -49,6 +52,8 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto(profissional.custo_padrao != null ? String(profissional.custo_padrao) : '');
       setAtivo(profissional.ativo);
       setObs(profissional.observacoes || '');
+      setPodeRT(!!profissional.pode_ser_responsavel_tecnico);
+      setEspecialidade(profissional.especialidade || '');
     } else {
       setNome(defaultNome || '');
       setTipo('interno');
@@ -60,12 +65,18 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto('');
       setAtivo(true);
       setObs('');
+      setPodeRT(false);
+      setEspecialidade('');
     }
   }, [open, profissional, defaultNome]);
 
   const handleSave = async () => {
     if (!nome.trim()) {
       toast({ title: 'Atenção', description: 'Nome é obrigatório.', variant: 'destructive' });
+      return;
+    }
+    if (podeRT && (!conselhoId || !numero.trim())) {
+      toast({ title: 'Atenção', description: 'Para Responsável Técnico, informe conselho e número de registro.', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -81,7 +92,10 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       user_id: null,
       ativo,
       observacoes: obs.trim() || null,
+      pode_ser_responsavel_tecnico: podeRT,
+      especialidade: especialidade.trim() || null,
     };
+
     let result: Profissional | null = null;
     if (profissional) {
       const ok = await update(profissional.id, payload);
@@ -132,22 +146,40 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Conselho</Label>
-              <Select value={conselhoId || 'none'} onValueChange={v => setConselhoId(v === 'none' ? '' : v)}>
-                <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Nenhum —</SelectItem>
-                  {conselhos.map(c => <SelectItem key={c.id} value={c.id}>{c.sigla}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
+              <Label htmlFor="prof-rt" className="cursor-pointer">Pode ser Responsável Técnico?</Label>
             </div>
-            <div className="space-y-2">
-              <Label>Nº do Conselho</Label>
-              <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 12345/UF" />
-            </div>
+            {podeRT && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Ao salvar, este profissional é mantido automaticamente no cadastro de Responsáveis Técnicos usado nos Laudos e nas OS.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Conselho *</Label>
+                    <Select value={conselhoId || 'none'} onValueChange={v => setConselhoId(v === 'none' ? '' : v)}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— Nenhum —</SelectItem>
+                        {conselhos.map(c => <SelectItem key={c.id} value={c.id}>{c.sigla}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nº do Registro *</Label>
+                    <Input value={numero} onChange={e => setNumero(e.target.value)} placeholder="Ex: 12345/UF" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Especialidade</Label>
+                  <Input value={especialidade} onChange={e => setEspecialidade(e.target.value)} placeholder="Ex: Técnico em Segurança do Trabalho" />
+                </div>
+              </>
+            )}
           </div>
+
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
