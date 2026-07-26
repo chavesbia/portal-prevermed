@@ -11,11 +11,19 @@ import { Badge } from '@/components/ui/badge';
 import { OrdemServico, statusOSColors, statusServicoColors } from '@/types/os';
 import { differenceInDays } from 'date-fns';
 
+// Paleta padrão de status (OS e serviços): amarelo=andamento, verde=concluído,
+// cinza=não iniciado, azul=aguardando cliente
 const STATUS_COLORS: Record<string, string> = {
   'Não iniciado': 'hsl(215, 15%, 60%)',
-  'Em andamento': 'hsl(210, 100%, 50%)',
+  'Não Iniciado': 'hsl(215, 15%, 60%)',
+  'Em andamento': 'hsl(45, 93%, 47%)',
+  'Em Andamento': 'hsl(45, 93%, 47%)',
   'Encerrado': 'hsl(142, 76%, 36%)',
+  'Concluído': 'hsl(142, 76%, 36%)',
+  'Aguardando Cliente': 'hsl(210, 100%, 50%)',
+  'Aguardando cliente': 'hsl(210, 100%, 50%)',
 };
+
 
 const BAR_COLORS = [
   'hsl(210, 100%, 50%)', 'hsl(200, 100%, 45%)',
