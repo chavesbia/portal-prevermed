@@ -198,10 +198,13 @@ export default function PainelCliente() {
 
           <LaudosCard companyId={company.id} navigate={navigate} />
 
+          <ContatosCard companyId={company.id} />
+
           {[
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
             { title: 'ASOs', desc: 'Atendimentos e liberações de ASO.' },
             { title: 'Ocorrências', desc: 'Tickets e ocorrências registradas.' },
+
           ].map((s) => (
             <Card key={s.title} className="border-dashed">
               <CardHeader className="pb-2">
