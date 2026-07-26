@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronsUpDown, MapPin } from 'lucide-react';
+import { Check, ChevronsUpDown, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
@@ -102,7 +102,21 @@ export function UnitSelector({
               {selected ? unitLabel(selected) : (!companyId ? 'Selecione uma empresa primeiro' : placeholder)}
             </span>
           </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          <span className="flex items-center gap-1 shrink-0">
+            {!!value && !isDisabled && (
+              <span
+                role="button"
+                tabIndex={-1}
+                aria-label="Limpar unidade"
+                className="rounded-sm p-0.5 opacity-60 hover:opacity-100 hover:bg-muted"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(null, null); }}
+              >
+                <X className="h-3.5 w-3.5" />
+              </span>
+            )}
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+          </span>
+
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[380px] p-0" align="start">
