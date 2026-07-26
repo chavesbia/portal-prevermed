@@ -74,25 +74,37 @@ interface ExistingOS {
 export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { responsaveis } = useResponsaveisTecnicos();
   const [submitting, setSubmitting] = useState(false);
   const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
   const [dupDialogOpen, setDupDialogOpen] = useState(false);
   const [addingServico, setAddingServico] = useState(false);
-  const emissorNome = profile?.full_name || '';
+
+  const responsaveisAtivos = useMemo(() => responsaveis.filter(r => r.ativo), [responsaveis]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: emissorNome,
+      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: '',
       dataEmissao: new Date(), prazoEntrega: null,
       urgente: false, motivoUrgencia: '',
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo' }],
     },
   });
 
+  // Pré-seleciona o usuário logado quando ele existir no cadastro de responsáveis
+  useEffect(() => {
+    if (form.getValues('emissor')) return;
+    const nome = (profile?.full_name || '').trim().toLowerCase();
+    if (!nome) return;
+    const match = responsaveisAtivos.find(r => (r.nome || '').trim().toLowerCase().includes(nome) || nome.includes((r.nome || '').trim().toLowerCase()));
+    if (match) form.setValue('emissor', match.nome);
+  }, [responsaveisAtivos, profile?.full_name]);
+
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
   const numeroOS = form.watch('numeroOS');
+
 
   const findExisting = async (numero: string): Promise<ExistingOS | null> => {
     const { data, error } = await supabase
