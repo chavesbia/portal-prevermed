@@ -377,6 +377,28 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
           </div>
         </form>
       </Form>
+
+      <AlertDialog open={dupDialogOpen} onOpenChange={setDupDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>OS #{duplicate?.numero_os} já existe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe uma Ordem de Serviço com este número
+              {duplicate?.empresa_cliente ? ` (${duplicate.empresa_cliente})` : ''}
+              {duplicate?.status_os ? ` — status: ${duplicate.status_os}` : ''}.
+              Não é possível criar uma OS duplicada. Você pode abrir a OS existente e adicionar
+              o(s) serviço(s) informados neste formulário a ela, ou cancelar e digitar outro número.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleAbrirExistente(); }} disabled={addingServico}>
+              {addingServico ? 'Adicionando…' : 'Abrir OS existente e adicionar serviço'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </Wrapper>
   );
 }
