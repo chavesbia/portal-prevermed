@@ -420,6 +420,7 @@ function OrdensServicoCard({ companyId, navigate }: { companyId: string; navigat
 interface LaudoRow {
   id: string;
   ordem_id: string | null;
+  unidade_id: string | null;
   tipo_laudo_nome: string | null;
   data_emissao: string | null;
   data_validade: string | null;
