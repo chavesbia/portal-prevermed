@@ -266,7 +266,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync]);
 
 
   // Companies list
