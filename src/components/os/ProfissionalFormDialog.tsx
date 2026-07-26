@@ -33,6 +33,9 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
   const [telefone, setTelefone] = useState('');
   const [custo, setCusto] = useState<string>('');
   const [ativo, setAtivo] = useState(true);
+  const [podeRT, setPodeRT] = useState(false);
+  const [especialidade, setEspecialidade] = useState('');
+
   const [obs, setObs] = useState('');
   const [saving, setSaving] = useState(false);
 
