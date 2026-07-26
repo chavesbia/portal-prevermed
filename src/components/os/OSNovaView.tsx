@@ -260,14 +260,26 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             )} />
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center gap-1"><Lock className="h-3 w-3" />Emissor</FormLabel>
-                <FormControl>
-                  <Input readOnly disabled value={field.value || emissorNome} className="bg-muted" />
-                </FormControl>
-                <p className="text-xs text-muted-foreground">Preenchido automaticamente com o usuário logado.</p>
+                <FormLabel>Emissor / Elaborador *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o responsável" /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    {responsaveisAtivos.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável cadastrado</div>
+                    ) : responsaveisAtivos.map(r => (
+                      <SelectItem key={r.id} value={r.nome}>
+                        {r.nome}{r.conselho ? ` · ${r.conselho} ${r.numero_registro || ''}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione a partir do cadastro de responsáveis técnicos (Administração › Laudos e Serviços) para evitar nomes duplicados.
+                </p>
                 <FormMessage />
               </FormItem>
             )} />
+
 
             <FormField control={form.control} name="dataEmissao" render={({ field }) => (
               <FormItem><FormLabel>Data de Emissão</FormLabel>
