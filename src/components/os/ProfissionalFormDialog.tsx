@@ -52,6 +52,8 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto(profissional.custo_padrao != null ? String(profissional.custo_padrao) : '');
       setAtivo(profissional.ativo);
       setObs(profissional.observacoes || '');
+      setPodeRT(!!profissional.pode_ser_responsavel_tecnico);
+      setEspecialidade(profissional.especialidade || '');
     } else {
       setNome(defaultNome || '');
       setTipo('interno');
@@ -63,12 +65,18 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto('');
       setAtivo(true);
       setObs('');
+      setPodeRT(false);
+      setEspecialidade('');
     }
   }, [open, profissional, defaultNome]);
 
   const handleSave = async () => {
     if (!nome.trim()) {
       toast({ title: 'Atenção', description: 'Nome é obrigatório.', variant: 'destructive' });
+      return;
+    }
+    if (podeRT && (!conselhoId || !numero.trim())) {
+      toast({ title: 'Atenção', description: 'Para Responsável Técnico, informe conselho e número de registro.', variant: 'destructive' });
       return;
     }
     setSaving(true);
@@ -84,7 +92,10 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       user_id: null,
       ativo,
       observacoes: obs.trim() || null,
+      pode_ser_responsavel_tecnico: podeRT,
+      especialidade: especialidade.trim() || null,
     };
+
     let result: Profissional | null = null;
     if (profissional) {
       const ok = await update(profissional.id, payload);
