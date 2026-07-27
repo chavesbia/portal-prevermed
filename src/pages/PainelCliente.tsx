@@ -193,13 +193,14 @@ export default function PainelCliente() {
 
           <Separator />
 
+          <ContatosCard companyId={company.id} />
+
           <ContratosCard companyId={company.id} navigate={navigate} />
 
           <OrdensServicoCard companyId={company.id} navigate={navigate} />
 
           <LaudosCard companyId={company.id} navigate={navigate} />
 
-          <ContatosCard companyId={company.id} />
 
           {[
             { title: 'Guias', desc: 'Guias de atendimento e status operacional.' },
