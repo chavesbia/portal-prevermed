@@ -1,0 +1,198 @@
+// Sincroniza dados comerciais/financeiros das empresas com o SOC (ExportaDados — Preço)
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+
+const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+function s(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const t = String(v).trim();
+  return t === '' ? null : t;
+}
+
+function int(v: unknown): number | null {
+  const t = s(v);
+  if (!t) return null;
+  const n = parseInt(t.replace(/\D/g, ''), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+function bool(v: unknown): boolean | null {
+  if (v === true) return true;
+  if (v === false) return false;
+  const t = s(v);
+  if (!t) return null;
+  const u = t.toUpperCase();
+  if (['1', 'S', 'SIM', 'TRUE', 'T', 'Y'].includes(u)) return true;
+  if (['0', 'N', 'NAO', 'NÃO', 'FALSE', 'F'].includes(u)) return false;
+  return null;
+}
+
+/** Aceita dd/MM/yyyy, yyyy-MM-dd ou ISO. Retorna yyyy-MM-dd. */
+function dateOnly(v: unknown): string | null {
+  const t = s(v);
+  if (!t) return null;
+  const br = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  return null;
+}
+
+function pick(row: any, keys: string[]): unknown {
+  for (const k of keys) {
+    if (row[k] !== undefined) return row[k];
+    const found = Object.keys(row).find((rk) => rk.toLowerCase() === k.toLowerCase());
+    if (found) return row[found];
+  }
+  return null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+    const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_PRECO');
+    const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS_PRECO');
+    if (!empresa || !codigo || !chave) {
+      return json({
+        error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS_PRECO, SOC_CHAVE_EXPORTA_DADOS_PRECO)',
+      }, 500);
+    }
+
+    const parametro = JSON.stringify({
+      empresa,
+      codigo,
+      chave,
+      tipoSaida: 'json',
+      codigoEmpresa: '',
+    });
+    const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
+
+    const resp = await fetch(url, { method: 'POST' });
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => '');
+      return json({ error: 'Falha ao consultar SOC', status: resp.status, detail: detail.slice(0, 500) }, 502);
+    }
+
+    const buf = await resp.arrayBuffer();
+    const text = new TextDecoder('iso-8859-1').decode(buf);
+    let linhas: any[] = [];
+    try {
+      const parsed = JSON.parse(text);
+      linhas = Array.isArray(parsed) ? parsed : (parsed?.precos || parsed?.data || []);
+    } catch {
+      return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
+    }
+
+    // Uma linha por produto — mantém apenas a PRIMEIRA linha de cada empresa
+    const now = new Date().toISOString();
+    const byCompany = new Map<string, any>();
+    let semCodigo = 0;
+    for (const row of linhas) {
+      const code = s(pick(row, ['codigoEmpresa', 'CODIGOEMPRESA']));
+      if (!code) { semCodigo++; continue; }
+      if (byCompany.has(code)) continue;
+      byCompany.set(code, {
+        subgrupo: s(pick(row, ['nomeSubgrupo', 'NOMESUBGRUPO'])),
+        vidas_ativas: int(pick(row, ['vidasAtivasUltimaContagem', 'VIDASATIVASULTIMACONTAGEM'])),
+        classificacao_cliente: s(pick(row, ['classificacaoCliente', 'CLASSIFICACAOCLIENTE'])),
+        cliente_inadimplente: bool(pick(row, ['flagClienteInadimplente', 'FLAGCLIENTEINADIMPLENTE'])),
+        data_assinatura_contrato: dateOnly(pick(row, ['dataAssinaturaContrato', 'DATAASSINATURACONTRATO'])),
+        preco_synced_at: now,
+      });
+    }
+
+    // Resolve soc_code -> company_id (em blocos, com ordenação estável)
+    const CHUNK = 500;
+    const codes = Array.from(byCompany.keys());
+    const codeToId = new Map<string, string>();
+    for (let i = 0; i < codes.length; i += CHUNK) {
+      const slice = codes.slice(i, i + CHUNK);
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await admin
+          .from('companies')
+          .select('id, soc_code')
+          .in('soc_code', slice)
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+        const page = data || [];
+        for (const r of page) codeToId.set(r.soc_code as string, r.id as string);
+        if (page.length < PAGE) break;
+        from += PAGE;
+      }
+    }
+
+    let updated = 0;
+    const skipped: any[] = [];
+    const errors: any[] = [];
+
+    for (const [code, values] of byCompany) {
+      const companyId = codeToId.get(code);
+      if (!companyId) {
+        skipped.push({ reason: 'empresa_nao_encontrada', codigo_empresa: code });
+        continue;
+      }
+      const { error } = await admin.from('companies').update(values).eq('id', companyId);
+      if (error) {
+        errors.push({ codigo_empresa: code, error: error.message });
+        continue;
+      }
+      updated++;
+    }
+
+    console.log(JSON.stringify({
+      event: 'soc_preco_sync_diagnostics',
+      soc_rows: linhas.length,
+      empresas_distintas: byCompany.size,
+      updated,
+      skipped_count: skipped.length,
+      sem_codigo_empresa: semCodigo,
+      error_count: errors.length,
+      synced_at: now,
+    }));
+
+    return json({
+      ok: true,
+      total_linhas: linhas.length,
+      empresas_distintas: byCompany.size,
+      updated,
+      skipped_count: skipped.length,
+      skipped: skipped.slice(0, 200),
+      sem_codigo_empresa: semCodigo,
+      error_count: errors.length,
+      errors: errors.slice(0, 20),
+      synced_at: now,
+    });
+  } catch (e) {
+    return json({ error: String((e as any)?.message || e) }, 500);
+  }
+});
