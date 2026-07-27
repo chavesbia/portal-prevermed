@@ -404,6 +404,15 @@ export default function AdminEmpresas() {
             loading: loadingContacts,
             run: syncContacts,
           },
+          {
+            key: "preco",
+            name: "Preço / Dados Comerciais",
+            description: "Subgrupo, vidas ativas, classificação, inadimplência e data de assinatura (SOC).",
+            lastRun: lastPrecoSync,
+            loading: loadingPreco,
+            run: syncPreco,
+          },
+
         ]}
         onRefresh={loadLogs}
         refreshing={loadingLogs}
