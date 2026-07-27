@@ -24,6 +24,17 @@ function int(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Aceita "1.234,56" ou "1234.56". */
+function num(v: unknown): number | null {
+  const t = s(v);
+  if (!t) return null;
+  let x = t.replace(/[^\d.,-]/g, '');
+  if (x.includes(',')) x = x.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(x);
+  return Number.isFinite(n) ? n : null;
+}
+
+
 function bool(v: unknown): boolean | null {
   if (v === true) return true;
   if (v === false) return false;
