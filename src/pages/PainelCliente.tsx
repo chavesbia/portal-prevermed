@@ -894,6 +894,7 @@ interface PrecoItemRow {
   valor_produto_pontual: number | null;
   valor_vida_mes: number | null;
   valor_minimo: number | null;
+  minimo_vidas: number | null;
   dia_cobranca: string | null;
 }
 
