@@ -974,16 +974,16 @@ function PrecoCard({ companyId }: { companyId: string }) {
                 <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Classificação do Cliente</div>
-                <div className="font-medium">{info?.classificacao_cliente || '—'}</div>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Contagem</div>
-                <div className="font-medium">{contagem || '—'}</div>
-              </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Relatório de Fatura</div>
-                <div className="font-medium">{info?.tipo_relatorio_fatura || '—'}</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Situação Financeira</div>
+                <div className="font-medium">
+                  {info?.cliente_inadimplente === true ? (
+                    <span className="text-destructive">Inadimplente</span>
+                  ) : info?.cliente_inadimplente === false ? (
+                    'Adimplente'
+                  ) : (
+                    '—'
+                  )}
+                </div>
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">Assinatura do Contrato</div>
@@ -992,6 +992,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
             </div>
 
             <Separator />
+
 
             {items.length === 0 ? (
               <div className="text-sm text-muted-foreground">
