@@ -931,9 +931,6 @@ function PrecoCard({ companyId }: { companyId: string }) {
   const items = data?.items ?? [];
   const visible = items.slice(0, limit);
 
-  const contagem = [info?.tipo_contagem, info?.dia_contagem ? `dia ${info.dia_contagem}` : null]
-    .filter(Boolean)
-    .join(' • ');
 
   const syncedAt = info?.preco_synced_at
     ? new Date(info.preco_synced_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
