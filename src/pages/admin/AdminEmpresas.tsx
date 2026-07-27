@@ -9,35 +9,14 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Loader2, RefreshCw, Building2, ChevronDown, Search, AlertTriangle, Network } from "lucide-react";
+import { Loader2, RefreshCw, Building2, ChevronDown, AlertTriangle, Network } from "lucide-react";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-
-type Company = {
-  id: string;
-  soc_code: string | null;
-  cnpj: string | null;
-  nome_abreviado: string | null;
-  razao_social: string | null;
-  cidade: string | null;
-  estado: string | null;
-  is_active: boolean | null;
-  synced_at: string | null;
-};
 
 const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
-const fmtCnpj = (c: string | null) => {
-  const d = onlyDigits(c || "");
-  if (d.length !== 14) return c || "—";
-  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
-};
 
 type SyncLog = {
   id: string;
@@ -312,44 +291,6 @@ export default function AdminEmpresas() {
   useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); loadLastPrecoSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync, loadLastPrecoSync]);
 
 
-  // Companies list
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loadingCompanies, setLoadingCompanies] = useState(false);
-  const [search, setSearch] = useState("");
-  const [ufFilter, setUfFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("active");
-
-  const loadCompanies = useCallback(async () => {
-    setLoadingCompanies(true);
-    const { data, error } = await supabase
-      .from("companies")
-      .select("id, soc_code, cnpj, nome_abreviado, razao_social, cidade, estado, is_active, synced_at")
-      .order("razao_social", { ascending: true })
-      .limit(5000);
-    if (error) toast.error("Erro ao carregar empresas: " + error.message);
-    else setCompanies((data as Company[]) || []);
-    setLoadingCompanies(false);
-  }, []);
-
-  useEffect(() => { loadCompanies(); }, [loadCompanies]);
-
-  const ufOptions = Array.from(new Set(companies.map((c) => c.estado).filter(Boolean))).sort() as string[];
-
-  const filtered = companies.filter((c) => {
-    if (statusFilter === "active" && !c.is_active) return false;
-    if (statusFilter === "inactive" && c.is_active) return false;
-    if (ufFilter !== "all" && c.estado !== ufFilter) return false;
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      const qDigits = onlyDigits(q);
-      const hay = [
-        c.razao_social, c.nome_abreviado, c.soc_code, c.cidade,
-      ].map((v) => (v || "").toLowerCase()).join(" ");
-      const cnpjDigits = onlyDigits(c.cnpj || "");
-      if (!hay.includes(q) && !(qDigits && cnpjDigits.includes(qDigits))) return false;
-    }
-    return true;
-  });
 
   const sync = async () => {
     setLoading(true);
@@ -370,7 +311,7 @@ export default function AdminEmpresas() {
       } else {
         toast.error(data?.error || "Falha na sincronização");
       }
-      await Promise.all([loadLogs(), loadCompanies()]);
+      await loadLogs();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao sincronizar");
       await loadLogs();
