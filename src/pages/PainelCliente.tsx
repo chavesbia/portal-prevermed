@@ -195,6 +195,8 @@ export default function PainelCliente() {
 
           <ContatosCard companyId={company.id} />
 
+          <PrecoCard companyId={company.id} />
+
           <ContratosCard companyId={company.id} navigate={navigate} />
 
           <OrdensServicoCard companyId={company.id} navigate={navigate} />
