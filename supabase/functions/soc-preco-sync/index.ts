@@ -155,19 +155,29 @@ Deno.serve(async (req) => {
     const skipped: any[] = [];
     const errors: any[] = [];
 
+    // Monta lista de updates e executa em paralelo (evita timeout de 150s)
+    const tasks: { id: string; values: any }[] = [];
     for (const [code, values] of byCompany) {
       const companyId = codeToId.get(code);
       if (!companyId) {
         skipped.push({ reason: 'empresa_nao_encontrada', codigo_empresa: code });
         continue;
       }
-      const { error } = await admin.from('companies').update(values).eq('id', companyId);
-      if (error) {
-        errors.push({ codigo_empresa: code, error: error.message });
-        continue;
-      }
-      updated++;
+      tasks.push({ id: companyId, values });
     }
+
+    const CONCURRENCY = 40;
+    for (let i = 0; i < tasks.length; i += CONCURRENCY) {
+      const slice = tasks.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        slice.map((t) => admin.from('companies').update(t.values).eq('id', t.id)),
+      );
+      results.forEach((r, idx) => {
+        if (r.error) errors.push({ company_id: slice[idx].id, error: r.error.message });
+        else updated++;
+      });
+    }
+
 
     console.log(JSON.stringify({
       event: 'soc_preco_sync_diagnostics',
