@@ -1487,10 +1487,13 @@ export type Database = {
           bairro: string | null
           cep: string | null
           cidade: string | null
+          classificacao_cliente: string | null
+          cliente_inadimplente: boolean | null
           cnpj: string | null
           codigo_cliente_integracao: string | null
           complemento: string | null
           created_at: string
+          data_assinatura_contrato: string | null
           estado: string | null
           id: string
           inscricao_estadual: string | null
@@ -1500,19 +1503,25 @@ export type Database = {
           logradouro: string | null
           nome_abreviado: string | null
           numero: string | null
+          preco_synced_at: string | null
           razao_social: string
           soc_code: string
+          subgrupo: string | null
           synced_at: string | null
           updated_at: string
+          vidas_ativas: number | null
         }
         Insert: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
+          classificacao_cliente?: string | null
+          cliente_inadimplente?: boolean | null
           cnpj?: string | null
           codigo_cliente_integracao?: string | null
           complemento?: string | null
           created_at?: string
+          data_assinatura_contrato?: string | null
           estado?: string | null
           id?: string
           inscricao_estadual?: string | null
@@ -1522,19 +1531,25 @@ export type Database = {
           logradouro?: string | null
           nome_abreviado?: string | null
           numero?: string | null
+          preco_synced_at?: string | null
           razao_social: string
           soc_code: string
+          subgrupo?: string | null
           synced_at?: string | null
           updated_at?: string
+          vidas_ativas?: number | null
         }
         Update: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
+          classificacao_cliente?: string | null
+          cliente_inadimplente?: boolean | null
           cnpj?: string | null
           codigo_cliente_integracao?: string | null
           complemento?: string | null
           created_at?: string
+          data_assinatura_contrato?: string | null
           estado?: string | null
           id?: string
           inscricao_estadual?: string | null
@@ -1544,10 +1559,13 @@ export type Database = {
           logradouro?: string | null
           nome_abreviado?: string | null
           numero?: string | null
+          preco_synced_at?: string | null
           razao_social?: string
           soc_code?: string
+          subgrupo?: string | null
           synced_at?: string | null
           updated_at?: string
+          vidas_ativas?: number | null
         }
         Relationships: []
       }
