@@ -1,0 +1,229 @@
+// Sincroniza responsáveis técnicos pelo PCMSO com o SOC
+// (ExportaDados — "Responsáveis do PCMSO - Por período e empresa")
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+
+const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+function s(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const t = String(v).trim();
+  return t === '' ? null : t;
+}
+
+// SOC devolve datas em dd/mm/yyyy ou yyyy-mm-dd
+function toDate(v: unknown): string | null {
+  const t = s(v);
+  if (!t) return null;
+  const br = t.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return iso[0];
+  return null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  let finalize: (patch: Record<string, unknown>) => Promise<void> = async () => {};
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+
+    const startedAt = new Date().toISOString();
+    const { data: logRow } = await admin
+      .from('companies_sync_log')
+      .insert({
+        sync_type: 'responsaveis_pcmso',
+        started_at: startedAt,
+        status: 'running',
+        triggered_by: (claims?.claims as any)?.sub ?? null,
+      })
+      .select('id')
+      .single();
+    const logId = logRow?.id as string | undefined;
+    finalize = async (patch: Record<string, unknown>) => {
+      if (!logId) return;
+      await admin
+        .from('companies_sync_log')
+        .update({ finished_at: new Date().toISOString(), ...patch })
+        .eq('id', logId);
+    };
+
+    const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+    const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_PCMSO');
+    const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS_PCMSO');
+    if (!empresa || !codigo || !chave) {
+      await finalize({ status: 'error', error_message: 'Credenciais SOC ausentes' });
+      return json({
+        error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS_PCMSO, SOC_CHAVE_EXPORTA_DADOS_PCMSO)',
+      }, 500);
+    }
+
+    const parametro = JSON.stringify({
+      empresa,
+      codigo,
+      chave,
+      tipoSaida: 'json',
+      dataInicio: '01/01/2020',
+      dataFim: '31/12/2999',
+      empresaTrabalho: '',
+    });
+    const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
+
+    const resp = await fetch(url, { method: 'POST' });
+    if (!resp.ok) {
+      const detail = await resp.text().catch(() => '');
+      await finalize({ status: 'error', error_message: `SOC HTTP ${resp.status}` });
+      return json({ error: 'Falha ao consultar SOC', status: resp.status, detail: detail.slice(0, 500) }, 502);
+    }
+
+    const buf = await resp.arrayBuffer();
+    const text = new TextDecoder('iso-8859-1').decode(buf);
+    let linhas: any[] = [];
+    try {
+      const parsed = JSON.parse(text);
+      linhas = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+    } catch {
+      await finalize({ status: 'error', error_message: 'Resposta SOC não é JSON válido' });
+      return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
+    }
+
+    const CHUNK = 500;
+
+    // Mapa soc_code -> company_id
+    const socCodes = Array.from(new Set(
+      linhas.map((r: any) => s(r.EMPRESA)).filter(Boolean) as string[],
+    ));
+    const codeToCompanyId = new Map<string, string>();
+    for (let i = 0; i < socCodes.length; i += CHUNK) {
+      const slice = socCodes.slice(i, i + CHUNK);
+      const { data, error } = await admin.from('companies').select('id, soc_code').in('soc_code', slice);
+      if (error) {
+        await finalize({ status: 'error', error_message: `Falha ao carregar empresas: ${error.message}` });
+        return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+      }
+      for (const r of data || []) codeToCompanyId.set(r.soc_code as string, r.id as string);
+    }
+
+    // Mapa `${company_id}::${soc_unit_code}` -> unidade_id
+    const companyIds = Array.from(new Set(codeToCompanyId.values()));
+    const unitKeyToId = new Map<string, string>();
+    for (let i = 0; i < companyIds.length; i += CHUNK) {
+      const slice = companyIds.slice(i, i + CHUNK);
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await admin
+          .from('company_units')
+          .select('id, company_id, soc_unit_code')
+          .in('company_id', slice)
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) break;
+        const page = data || [];
+        for (const u of page) {
+          if (u.soc_unit_code) unitKeyToId.set(`${u.company_id}::${u.soc_unit_code}`, u.id as string);
+        }
+        if (page.length < PAGE) break;
+        from += PAGE;
+      }
+    }
+
+    const now = new Date().toISOString();
+    const rows: any[] = [];
+    const skipped: any[] = [];
+
+    for (const r of linhas) {
+      const empresaCode = s(r.EMPRESA);
+      const companyId = empresaCode ? codeToCompanyId.get(empresaCode) : undefined;
+      if (!companyId) {
+        skipped.push({
+          reason: 'empresa_nao_encontrada',
+          soc_code: empresaCode,
+          razao_social: s(r.NOMEEMPRESA),
+          motivo: 'Empresa não encontrada na base mestre',
+        });
+        continue;
+      }
+      const unitCode = s(r.CODIGOUNIDADE);
+      rows.push({
+        company_id: companyId,
+        unidade_id: unitCode ? (unitKeyToId.get(`${companyId}::${unitCode}`) ?? null) : null,
+        nome_medico: s(r.NOMEMEDICO),
+        nome_conselho: s(r.NOMECONSELHO),
+        conselho: s(r.CONSELHO),
+        uf_conselho: s(r.UFCONSELHO),
+        email_responsavel: s(r.EMAILRESPONSAVEL),
+        data_inicio: toDate(r.DATAINICIO),
+        data_fim: toDate(r.DATAFIM),
+        synced_at: now,
+      });
+    }
+
+    // Recadastramento total: limpa e insere tudo
+    const { error: delErr } = await admin
+      .from('company_responsaveis_pcmso')
+      .delete()
+      .not('id', 'is', null);
+    if (delErr) {
+      await finalize({ status: 'error', error_message: `Falha ao limpar tabela: ${delErr.message}` });
+      return json({ error: `Falha ao limpar tabela: ${delErr.message}` }, 500);
+    }
+
+    let inserted = 0;
+    const errors: any[] = [];
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      const slice = rows.slice(i, i + CHUNK);
+      const { error } = await admin.from('company_responsaveis_pcmso').insert(slice);
+      if (error) errors.push({ batch: i / CHUNK, message: error.message });
+      else inserted += slice.length;
+    }
+
+    const status = errors.length > 0 ? 'partial' : 'success';
+    await finalize({
+      status,
+      total: linhas.length,
+      inserted,
+      updated: 0,
+      error_count: errors.length,
+      errors,
+      skipped: skipped.slice(0, 500),
+      skipped_count: skipped.length,
+    });
+
+    return json({
+      ok: true,
+      total: linhas.length,
+      inserted,
+      skipped_count: skipped.length,
+      error_count: errors.length,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Erro inesperado';
+    await finalize({ status: 'error', error_message: message });
+    return json({ error: message }, 500);
+  }
+});
