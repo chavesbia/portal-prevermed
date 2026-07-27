@@ -892,6 +892,9 @@ interface PrecoItemRow {
   product_group_name: string | null;
   valor_mensal: number | null;
   valor_produto_pontual: number | null;
+  valor_vida_mes: number | null;
+  valor_minimo: number | null;
+  dia_cobranca: string | null;
 }
 
 function PrecoCard({ companyId }: { companyId: string }) {
