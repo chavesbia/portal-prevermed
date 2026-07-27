@@ -47,6 +47,7 @@ const SYNC_TYPE_LABEL: Record<string, string> = {
   unidades: "Unidades",
   contatos: "Contatos",
   preco: "Preço",
+  responsaveis_pcmso: "Responsáveis PCMSO",
 };
 
 const REASON_LABEL: Record<string, string> = {
