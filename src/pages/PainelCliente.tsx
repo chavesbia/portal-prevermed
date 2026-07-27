@@ -804,7 +804,7 @@ function CopyableField({ label, value, icon }: { label: string; value: string; i
   );
 }
 
-const CONTATOS_PAGE_SIZE = 5;
+const CONTATOS_PAGE_SIZE = 3;
 
 function ContatosCard({ companyId }: { companyId: string }) {
   const [limit, setLimit] = useState(CONTATOS_PAGE_SIZE);
@@ -871,11 +871,18 @@ function ContatosCard({ companyId }: { companyId: string }) {
                 </div>
               );
             })}
-            {contatos.length > visible.length && (
-              <div className="text-center pt-1">
-                <Button variant="link" size="sm" onClick={() => setLimit((n) => n + CONTATOS_PAGE_SIZE)}>
-                  Ver mais ({contatos.length - visible.length} restantes)
-                </Button>
+            {(contatos.length > visible.length || limit > CONTATOS_PAGE_SIZE) && (
+              <div className="flex items-center justify-center gap-2 pt-1">
+                {contatos.length > visible.length && (
+                  <Button variant="link" size="sm" onClick={() => setLimit((n) => n + CONTATOS_PAGE_SIZE)}>
+                    Ver mais ({contatos.length - visible.length} restantes)
+                  </Button>
+                )}
+                {limit > CONTATOS_PAGE_SIZE && (
+                  <Button variant="link" size="sm" onClick={() => setLimit(CONTATOS_PAGE_SIZE)}>
+                    Ver menos
+                  </Button>
+                )}
               </div>
             )}
           </div>
