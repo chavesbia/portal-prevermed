@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { statusOSColors } from '@/types/os';
 import { toast } from 'sonner';
 
@@ -944,15 +945,11 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
-            <span
-              className={
-                info?.cliente_inadimplente === true
-                  ? 'text-sm font-medium text-destructive'
-                  : 'text-sm font-medium text-muted-foreground'
-              }
-            >
-              Inadimplente: {info?.cliente_inadimplente === true ? 'Sim' : 'Não'}
-            </span>
+            {info?.cliente_inadimplente === true ? (
+              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Inadimplente: Sim</Badge>
+            ) : (
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Inadimplente: Não</Badge>
+            )}
           </CardTitle>
           {syncedAt && (
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">
@@ -970,26 +967,33 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Subgrupo</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                  Subgrupo
+                  <span className="normal-case tracking-normal">(Tipo de Cliente)</span>
+                </div>
                 <div className="font-medium">{info?.subgrupo || '—'}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Vidas Ativas</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                  Vidas Ativas
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      O SOC atualiza a contagem de vidas ativas uma vez por mês, todo dia 1. O número exibido
+                      reflete a última contagem sincronizada com o Portal em {syncedAt ?? 'data não disponível'}.
+                      Pode haver variação entre esse número e o quadro de funcionários atual da empresa,
+                      dependendo de quantos dias se passaram desde a última contagem.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Situação Financeira</div>
-                <div className="font-medium">
-                  {info?.cliente_inadimplente === true ? (
-                    <span className="text-destructive">Inadimplente</span>
-                  ) : info?.cliente_inadimplente === false ? (
-                    'Adimplente'
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
             </div>
+
 
             <Separator />
 
@@ -1001,53 +1005,67 @@ function PrecoCard({ companyId }: { companyId: string }) {
             ) : (
               <div className="space-y-2">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Produtos contratados ({items.length})
+                  Produtos Cadastrados ({items.length})
                 </div>
                 {visible.map((it) => {
+                  const nome = it.product_name || 'Produto sem nome';
+                  const isExames = nome.trim().toLowerCase() === 'exames';
                   const mensal = Number(it.valor_mensal ?? 0);
                   const pontual = Number(it.valor_produto_pontual ?? 0);
                   const vida = Number(it.valor_vida_mes ?? 0);
                   const minimo = Number(it.valor_minimo ?? 0);
                   const minVidas = Number(it.minimo_vidas ?? 0);
-                  return (
-                    <div key={it.id} className="rounded-md border p-3 flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-medium text-sm">{it.product_name || 'Produto sem nome'}</div>
-                        {it.product_group_name && (
-                          <div className="text-xs text-muted-foreground">{it.product_group_name}</div>
-                        )}
-                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                          <span>Por vida: {vida > 0 ? formatBRL(vida) : '—'}</span>
-                          <span>Mínimo: {minimo > 0 ? formatBRL(minimo) : '—'}</span>
-                          <span>Dia da cobrança: {it.dia_cobranca || '—'}</span>
+
+                  if (isExames) {
+                    return (
+                      <div key={it.id} className="rounded-md border p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="font-medium text-sm">EXAMES</div>
+                          <div className="text-xs text-muted-foreground whitespace-nowrap">
+                            (cobrança conforme utilização)
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          *Consultar tabela de preços para detalhes de valores
                         </div>
                       </div>
-                      <div className="text-right whitespace-nowrap">
-                        {mensal > 0 ? (
-                          <div className="font-medium text-sm">{formatBRL(mensal)}</div>
-                        ) : pontual > 0 ? (
-                          <div>
-                            <div className="font-medium text-sm">{formatBRL(pontual)}</div>
-                            <div className="text-xs text-muted-foreground">(cobrança pontual)</div>
-                          </div>
-                        ) : vida > 0 ? (
-                          <div>
-                            <div className="font-medium text-sm">{formatBRL(vida)}</div>
-                            <div className="text-xs text-muted-foreground">(por vida/mês)</div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground">Valor não informado</div>
-                        )}
-                        {minVidas > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            Valor Mínimo {formatBRL(minimo)} até {minVidas} Vidas
-                          </div>
-                        )}
-                      </div>
+                    );
+                  }
 
+                  const porVida = vida > 0;
+                  const valor = mensal > 0 ? mensal : pontual > 0 ? pontual : porVida ? vida : null;
+                  const rotulo = mensal > 0 ? null : porVida ? '(por vida/mês)' : '(cobrança pontual)';
+
+                  return (
+                    <div key={it.id} className="rounded-md border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm">{nome}</div>
+                          {it.product_group_name && (
+                            <div className="text-xs text-muted-foreground">{it.product_group_name}</div>
+                          )}
+                        </div>
+                        <div className="text-right whitespace-nowrap">
+                          {valor != null ? (
+                            <div className="font-medium text-sm">{formatBRL(valor)}</div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Valor não informado</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-1 flex items-start justify-between gap-3 text-xs text-muted-foreground">
+                        <span>Dia da cobrança: {it.dia_cobranca || '—'}</span>
+                        {rotulo && <span className="whitespace-nowrap">{rotulo}</span>}
+                      </div>
+                      {porVida && minVidas > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Valor Mínimo {formatBRL(minimo)} até {minVidas} Vidas
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+
 
                 {items.length > visible.length && (
                   <div className="text-center pt-1">
