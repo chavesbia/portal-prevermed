@@ -990,8 +990,13 @@ function PrecoCard({ companyId }: { companyId: string }) {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{info?.vidas_ativas ?? '—'}</span>
+                <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Situação
+                </div>
+                <div className="mt-0.5">
                   {info?.cliente_inadimplente === true ? (
                     <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Inadimplente: Sim</Badge>
                   ) : (
@@ -999,6 +1004,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
                   )}
                 </div>
               </div>
+
 
             </div>
 
