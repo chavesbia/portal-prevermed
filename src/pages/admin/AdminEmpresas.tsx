@@ -163,6 +163,41 @@ export default function AdminEmpresas() {
   const [lastUnitSync, setLastUnitSync] = useState<string | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [lastContactSync, setLastContactSync] = useState<string | null>(null);
+  const [loadingPreco, setLoadingPreco] = useState(false);
+  const [lastPrecoSync, setLastPrecoSync] = useState<string | null>(null);
+
+  const loadLastPrecoSync = useCallback(async () => {
+    const { data } = await supabase
+      .from("companies")
+      .select("preco_synced_at")
+      .not("preco_synced_at", "is", null)
+      .order("preco_synced_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastPrecoSync((data as any)?.preco_synced_at ?? null);
+  }, []);
+
+  const syncPreco = async () => {
+    setLoadingPreco(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("soc-preco-sync");
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(
+          `Preço sincronizado: ${data.updated ?? 0} empresas atualizadas de ${data.total_linhas ?? 0} linhas` +
+          (data.skipped_count ? ` (${data.skipped_count} puladas — empresa não encontrada)` : "")
+        );
+      } else {
+        toast.error(data?.error || "Falha na sincronização de preço");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar preço");
+    } finally {
+      setLoadingPreco(false);
+      loadLastPrecoSync();
+    }
+  };
+
 
   const loadLastUnitSync = useCallback(async () => {
     const { data } = await supabase
@@ -266,7 +301,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); loadLastPrecoSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync, loadLastPrecoSync]);
 
 
   // Companies list
@@ -369,6 +404,15 @@ export default function AdminEmpresas() {
             loading: loadingContacts,
             run: syncContacts,
           },
+          {
+            key: "preco",
+            name: "Preço / Dados Comerciais",
+            description: "Subgrupo, vidas ativas, classificação, inadimplência e data de assinatura (SOC).",
+            lastRun: lastPrecoSync,
+            loading: loadingPreco,
+            run: syncPreco,
+          },
+
         ]}
         onRefresh={loadLogs}
         refreshing={loadingLogs}
