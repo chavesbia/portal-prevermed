@@ -244,12 +244,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert de TODOS os itens de preço (produtos) por empresa
+    const seen = new Set<string>();
+    const itemRows: any[] = [];
+    for (const [code, items] of itemsByCode) {
+      const companyId = codeToId.get(code);
+      if (!companyId) continue;
+      for (const it of items) {
+        if (!it.soc_product_code) continue;
+        const key = `${companyId}|${it.soc_product_code}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        itemRows.push({ ...it, company_id: companyId });
+      }
+    }
+
+    let itemsUpserted = 0;
+    const ITEM_CHUNK = 500;
+    for (let i = 0; i < itemRows.length; i += ITEM_CHUNK) {
+      const slice = itemRows.slice(i, i + ITEM_CHUNK);
+      const { error } = await admin
+        .from('company_pricing_items')
+        .upsert(slice, { onConflict: 'company_id,soc_product_code' });
+      if (error) errors.push({ stage: 'pricing_items', error: error.message });
+      else itemsUpserted += slice.length;
+    }
 
     console.log(JSON.stringify({
       event: 'soc_preco_sync_diagnostics',
       soc_rows: linhas.length,
       empresas_distintas: byCompany.size,
       updated,
+      items_upserted: itemsUpserted,
       skipped_count: skipped.length,
       sem_codigo_empresa: semCodigo,
       error_count: errors.length,
@@ -258,8 +284,8 @@ Deno.serve(async (req) => {
 
     await finalize({
       status: errors.length > 0 ? 'partial' : 'success',
-      total: linhas.length,
-      inserted: 0,
+      total: updated + itemsUpserted,
+      inserted: itemsUpserted,
       updated: updated,
       error_count: errors.length,
       errors: errors.slice(0, 20),
@@ -272,6 +298,7 @@ Deno.serve(async (req) => {
       total_linhas: linhas.length,
       empresas_distintas: byCompany.size,
       updated,
+      pricing_items_upserted: itemsUpserted,
       skipped_count: skipped.length,
       skipped: skipped.slice(0, 200),
       sem_codigo_empresa: semCodigo,
@@ -279,6 +306,7 @@ Deno.serve(async (req) => {
       errors: errors.slice(0, 20),
       synced_at: now,
     });
+
   } catch (e) {
     await finalize({ status: 'error', error_message: String((e as any)?.message || e) });
     return json({ error: String((e as any)?.message || e) }, 500);
