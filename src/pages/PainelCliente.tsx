@@ -945,12 +945,8 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
-            {info?.cliente_inadimplente === true ? (
-              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Inadimplente: Sim</Badge>
-            ) : (
-              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Inadimplente: Não</Badge>
-            )}
           </CardTitle>
+
           {syncedAt && (
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">
               Última sincronização: {syncedAt}
