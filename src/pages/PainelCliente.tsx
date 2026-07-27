@@ -881,3 +881,160 @@ function ContatosCard({ companyId }: { companyId: string }) {
     </Card>
   );
 }
+
+const PRECO_PAGE_SIZE = 10;
+
+interface PrecoItemRow {
+  id: string;
+  product_name: string | null;
+  product_group_name: string | null;
+  valor_mensal: number | null;
+  valor_produto_pontual: number | null;
+}
+
+function PrecoCard({ companyId }: { companyId: string }) {
+  const [limit, setLimit] = useState(PRECO_PAGE_SIZE);
+
+  useEffect(() => setLimit(PRECO_PAGE_SIZE), [companyId]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-preco', companyId],
+    queryFn: async () => {
+      const [companyRes, itemsRes] = await Promise.all([
+        supabase
+          .from('companies')
+          .select('subgrupo, vidas_ativas, classificacao_cliente, cliente_inadimplente, data_assinatura_contrato, dia_contagem, tipo_contagem, tipo_relatorio_fatura, preco_synced_at')
+          .eq('id', companyId)
+          .maybeSingle(),
+        supabase
+          .from('company_pricing_items')
+          .select('id, product_name, product_group_name, valor_mensal, valor_produto_pontual')
+          .eq('company_id', companyId)
+          .order('product_name', { ascending: true, nullsFirst: false }),
+      ]);
+      if (companyRes.error) throw companyRes.error;
+      if (itemsRes.error) throw itemsRes.error;
+      return {
+        info: companyRes.data as any,
+        items: (itemsRes.data ?? []) as PrecoItemRow[],
+      };
+    },
+    enabled: !!companyId,
+  });
+
+  const info = data?.info ?? null;
+  const items = data?.items ?? [];
+  const visible = items.slice(0, limit);
+
+  const contagem = [info?.tipo_contagem, info?.dia_contagem ? `dia ${info.dia_contagem}` : null]
+    .filter(Boolean)
+    .join(' • ');
+
+  const syncedAt = info?.preco_synced_at
+    ? new Date(info.preco_synced_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+    : null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <DollarSign className="h-4 w-4" />
+            Preço / Dados Comerciais
+            {info?.cliente_inadimplente && (
+              <Badge variant="destructive">Cliente Inadimplente</Badge>
+            )}
+          </CardTitle>
+          {syncedAt && (
+            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+              Última sincronização: {syncedAt}
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados comerciais...
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Subgrupo</div>
+                <div className="font-medium">{info?.subgrupo || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Vidas Ativas</div>
+                <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Classificação do Cliente</div>
+                <div className="font-medium">{info?.classificacao_cliente || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Contagem</div>
+                <div className="font-medium">{contagem || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Tipo de Relatório de Fatura</div>
+                <div className="font-medium">{info?.tipo_relatorio_fatura || '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">Assinatura do Contrato</div>
+                <div className="font-medium">{formatDate(info?.data_assinatura_contrato)}</div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {items.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                Nenhuma informação de precificação encontrada para esta empresa
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Produtos contratados ({items.length})
+                </div>
+                {visible.map((it) => {
+                  const mensal = Number(it.valor_mensal ?? 0);
+                  const pontual = Number(it.valor_produto_pontual ?? 0);
+                  return (
+                    <div key={it.id} className="rounded-md border p-3 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-sm">{it.product_name || 'Produto sem nome'}</div>
+                        {it.product_group_name && (
+                          <div className="text-xs text-muted-foreground">{it.product_group_name}</div>
+                        )}
+                      </div>
+                      <div className="text-right whitespace-nowrap">
+                        {mensal > 0 ? (
+                          <div className="font-medium text-sm">{formatBRL(mensal)}</div>
+                        ) : pontual > 0 ? (
+                          <div>
+                            <div className="font-medium text-sm">{formatBRL(pontual)}</div>
+                            <div className="text-xs text-muted-foreground">(cobrança pontual)</div>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">Valor não informado</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {items.length > visible.length && (
+                  <div className="text-center pt-1">
+                    <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PRECO_PAGE_SIZE)}>
+                      Ver mais ({items.length - visible.length} restantes)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
