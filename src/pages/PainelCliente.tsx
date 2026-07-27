@@ -1006,6 +1006,8 @@ function PrecoCard({ companyId }: { companyId: string }) {
                 {visible.map((it) => {
                   const mensal = Number(it.valor_mensal ?? 0);
                   const pontual = Number(it.valor_produto_pontual ?? 0);
+                  const vida = Number(it.valor_vida_mes ?? 0);
+                  const minimo = Number(it.valor_minimo ?? 0);
                   return (
                     <div key={it.id} className="rounded-md border p-3 flex items-start justify-between gap-3">
                       <div>
@@ -1013,6 +1015,11 @@ function PrecoCard({ companyId }: { companyId: string }) {
                         {it.product_group_name && (
                           <div className="text-xs text-muted-foreground">{it.product_group_name}</div>
                         )}
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                          <span>Por vida: {vida > 0 ? formatBRL(vida) : '—'}</span>
+                          <span>Mínimo: {minimo > 0 ? formatBRL(minimo) : '—'}</span>
+                          <span>Dia da cobrança: {it.dia_cobranca || '—'}</span>
+                        </div>
                       </div>
                       <div className="text-right whitespace-nowrap">
                         {mensal > 0 ? (
@@ -1022,6 +1029,11 @@ function PrecoCard({ companyId }: { companyId: string }) {
                             <div className="font-medium text-sm">{formatBRL(pontual)}</div>
                             <div className="text-xs text-muted-foreground">(cobrança pontual)</div>
                           </div>
+                        ) : vida > 0 ? (
+                          <div>
+                            <div className="font-medium text-sm">{formatBRL(vida)}</div>
+                            <div className="text-xs text-muted-foreground">(por vida/mês)</div>
+                          </div>
                         ) : (
                           <div className="text-sm text-muted-foreground">Valor não informado</div>
                         )}
@@ -1029,6 +1041,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
                     </div>
                   );
                 })}
+
                 {items.length > visible.length && (
                   <div className="text-center pt-1">
                     <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PRECO_PAGE_SIZE)}>
