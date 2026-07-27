@@ -151,6 +151,7 @@ export default function AdminEmpresas() {
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [lastContactSync, setLastContactSync] = useState<string | null>(null);
   const [loadingPreco, setLoadingPreco] = useState(false);
+  const [lastPrecoSync, setLastPrecoSync] = useState<string | null>(null);
   const [loadingPcmso, setLoadingPcmso] = useState(false);
   const [lastPcmsoSync, setLastPcmsoSync] = useState<string | null>(null);
 
