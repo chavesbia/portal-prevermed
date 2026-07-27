@@ -894,6 +894,7 @@ interface PrecoItemRow {
   valor_produto_pontual: number | null;
   valor_vida_mes: number | null;
   valor_minimo: number | null;
+  minimo_vidas: number | null;
   dia_cobranca: string | null;
 }
 
@@ -913,7 +914,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
           .maybeSingle(),
         supabase
           .from('company_pricing_items')
-          .select('id, product_name, product_group_name, valor_mensal, valor_produto_pontual, valor_vida_mes, valor_minimo, dia_cobranca')
+          .select('id, product_name, product_group_name, valor_mensal, valor_produto_pontual, valor_vida_mes, valor_minimo, minimo_vidas, dia_cobranca')
           .eq('company_id', companyId)
           .order('product_name', { ascending: true, nullsFirst: false }),
       ]);
@@ -943,9 +944,15 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
-            {info?.cliente_inadimplente && (
-              <Badge variant="destructive">Cliente Inadimplente</Badge>
-            )}
+            <span
+              className={
+                info?.cliente_inadimplente === true
+                  ? 'text-sm font-medium text-destructive'
+                  : 'text-sm font-medium text-muted-foreground'
+              }
+            >
+              Inadimplente: {info?.cliente_inadimplente === true ? 'Sim' : 'Não'}
+            </span>
           </CardTitle>
           {syncedAt && (
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">
@@ -982,10 +989,6 @@ function PrecoCard({ companyId }: { companyId: string }) {
                   )}
                 </div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Assinatura do Contrato</div>
-                <div className="font-medium">{formatDate(info?.data_assinatura_contrato)}</div>
-              </div>
             </div>
 
             <Separator />
@@ -1005,6 +1008,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
                   const pontual = Number(it.valor_produto_pontual ?? 0);
                   const vida = Number(it.valor_vida_mes ?? 0);
                   const minimo = Number(it.valor_minimo ?? 0);
+                  const minVidas = Number(it.minimo_vidas ?? 0);
                   return (
                     <div key={it.id} className="rounded-md border p-3 flex items-start justify-between gap-3">
                       <div>
@@ -1034,7 +1038,13 @@ function PrecoCard({ companyId }: { companyId: string }) {
                         ) : (
                           <div className="text-sm text-muted-foreground">Valor não informado</div>
                         )}
+                        {minVidas > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Valor Mínimo {formatBRL(minimo)} até {minVidas} Vidas
+                          </div>
+                        )}
                       </div>
+
                     </div>
                   );
                 })}
