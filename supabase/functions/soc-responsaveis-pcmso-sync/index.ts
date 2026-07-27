@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
 
 
     // Mapa `${company_id}::${soc_unit_code}` -> unidade_id
-    const companyIds = Array.from(new Set(codeToCompanyId.values()));
+    const companyIds = Array.from(new Set(linhas.map((r: any) => r.__companyId as string)));
     const unitKeyToId = new Map<string, string>();
     for (let i = 0; i < companyIds.length; i += CHUNK) {
       const slice = companyIds.slice(i, i + CHUNK);
