@@ -180,32 +180,40 @@ Deno.serve(async (req) => {
     const rows: any[] = [];
     const skipped: any[] = [];
 
+    const pick = (r: any, names: string[]) => {
+      for (const n of names) {
+        if (r[n] !== undefined && r[n] !== null) return r[n];
+        const up = Object.keys(r).find((k) => k.toLowerCase() === n.toLowerCase());
+        if (up && r[up] !== undefined && r[up] !== null) return r[up];
+      }
+      return null;
+    };
+
     for (const r of linhas) {
-      const empresaCode = s(r.EMPRESA);
-      const companyId = empresaCode ? codeToCompanyId.get(empresaCode) : undefined;
+      const companyId = r.__companyId as string | undefined;
       if (!companyId) {
         skipped.push({
           reason: 'empresa_nao_encontrada',
-          soc_code: empresaCode,
-          razao_social: s(r.NOMEEMPRESA),
+          soc_code: s(r.__socCode),
           motivo: 'Empresa não encontrada na base mestre',
         });
         continue;
       }
-      const unitCode = s(r.CODIGOUNIDADE);
+      const unitCode = s(pick(r, ['codigoUnidade', 'CODIGOUNIDADE']));
       rows.push({
         company_id: companyId,
         unidade_id: unitCode ? (unitKeyToId.get(`${companyId}::${unitCode}`) ?? null) : null,
-        nome_medico: s(r.NOMEMEDICO),
-        nome_conselho: s(r.NOMECONSELHO),
-        conselho: s(r.CONSELHO),
-        uf_conselho: s(r.UFCONSELHO),
-        email_responsavel: s(r.EMAILRESPONSAVEL),
-        data_inicio: toDate(r.DATAINICIO),
-        data_fim: toDate(r.DATAFIM),
+        nome_medico: s(pick(r, ['nomeMedico', 'NOMEMEDICO'])),
+        nome_conselho: s(pick(r, ['nomeConselho', 'NOMECONSELHO'])),
+        conselho: s(pick(r, ['conselho', 'CONSELHO'])),
+        uf_conselho: s(pick(r, ['ufConselho', 'UFCONSELHO'])),
+        email_responsavel: s(pick(r, ['emailResponsavel', 'EMAILRESPONSAVEL'])),
+        data_inicio: toDate(pick(r, ['dataInicio', 'DATAINICIO'])),
+        data_fim: toDate(pick(r, ['dataFim', 'DATAFIM'])),
         synced_at: now,
       });
     }
+
 
     // Recadastramento total: limpa e insere tudo
     const { error: delErr } = await admin
