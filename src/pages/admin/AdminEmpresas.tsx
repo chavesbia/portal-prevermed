@@ -396,6 +396,15 @@ export default function AdminEmpresas() {
             loading: loadingPreco,
             run: syncPreco,
           },
+          {
+            key: "responsaveis_pcmso",
+            name: "Responsáveis PCMSO",
+            description: "Médicos responsáveis pelo PCMSO de cada empresa/unidade (SOC).",
+            lastRun: lastPcmsoSync,
+            loading: loadingPcmso,
+            run: syncPcmso,
+          },
+
 
         ]}
         onRefresh={loadLogs}
