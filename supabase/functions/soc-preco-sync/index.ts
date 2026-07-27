@@ -24,6 +24,17 @@ function int(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** Aceita "1.234,56" ou "1234.56". */
+function num(v: unknown): number | null {
+  const t = s(v);
+  if (!t) return null;
+  let x = t.replace(/[^\d.,-]/g, '');
+  if (x.includes(',')) x = x.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(x);
+  return Number.isFinite(n) ? n : null;
+}
+
+
 function bool(v: unknown): boolean | null {
   if (v === true) return true;
   if (v === false) return false;
@@ -136,23 +147,49 @@ Deno.serve(async (req) => {
       return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
     }
 
-    // Uma linha por produto — mantém apenas a PRIMEIRA linha de cada empresa
+    // Uma linha por produto — dados "da empresa" vêm da PRIMEIRA linha
     const now = new Date().toISOString();
     const byCompany = new Map<string, any>();
+    const itemsByCode = new Map<string, any[]>();
     let semCodigo = 0;
     for (const row of linhas) {
       const code = s(pick(row, ['codigoEmpresa', 'CODIGOEMPRESA']));
       if (!code) { semCodigo++; continue; }
-      if (byCompany.has(code)) continue;
-      byCompany.set(code, {
-        subgrupo: s(pick(row, ['nomeSubgrupo', 'NOMESUBGRUPO'])),
-        vidas_ativas: int(pick(row, ['vidasAtivasUltimaContagem', 'VIDASATIVASULTIMACONTAGEM'])),
-        classificacao_cliente: s(pick(row, ['classificacaoCliente', 'CLASSIFICACAOCLIENTE'])),
-        cliente_inadimplente: bool(pick(row, ['flagClienteInadimplente', 'FLAGCLIENTEINADIMPLENTE'])),
-        data_assinatura_contrato: dateOnly(pick(row, ['dataAssinaturaContrato', 'DATAASSINATURACONTRATO'])),
-        preco_synced_at: now,
-      });
+      if (!byCompany.has(code)) {
+        byCompany.set(code, {
+          subgrupo: s(pick(row, ['nomeSubgrupo', 'NOMESUBGRUPO'])),
+          vidas_ativas: int(pick(row, ['vidasAtivasUltimaContagem', 'VIDASATIVASULTIMACONTAGEM'])),
+          classificacao_cliente: s(pick(row, ['classificacaoCliente', 'CLASSIFICACAOCLIENTE'])),
+          cliente_inadimplente: bool(pick(row, ['flagClienteInadimplente', 'FLAGCLIENTEINADIMPLENTE'])),
+          data_assinatura_contrato: dateOnly(pick(row, ['dataAssinaturaContrato', 'DATAASSINATURACONTRATO'])),
+          dia_contagem: s(pick(row, ['diaContagem', 'DIACONTAGEM'])),
+          tipo_contagem: s(pick(row, ['tipoContagem', 'TIPOCONTAGEM'])),
+          tipo_relatorio_fatura: s(pick(row, ['tipoRelatorioFatura', 'TIPORELATORIOFATURA'])),
+          preco_synced_at: now,
+        });
+      }
+      const item = {
+        soc_product_code: s(pick(row, ['codigoProduto', 'CODIGOPRODUTO'])),
+        product_name: s(pick(row, ['nomeProduto', 'NOMEPRODUTO'])),
+        product_group_code: s(pick(row, ['codigoGrupoProduto', 'CODIGOGRUPOPRODUTO'])),
+        product_group_name: s(pick(row, ['nomeGrupoProduto', 'NOMEGRUPOPRODUTO'])),
+        exames: s(pick(row, ['exames', 'EXAMES'])),
+        valor_produto_pontual: num(pick(row, ['valorProdutoPontual', 'VALORPRODUTOPONTUAL'])),
+        valor_vida_mes: num(pick(row, ['valorVidaMes', 'VALORVIDAMES'])),
+        valor_mensal: num(pick(row, ['valorMensal', 'VALORMENSAL'])),
+        valor_anual: num(pick(row, ['valorAnual', 'VALORANUAL'])),
+        valor_total_parcela: num(pick(row, ['valorTotalParcela', 'VALORTOTALPARCELA'])),
+        valor_minimo: num(pick(row, ['valorMinimo', 'VALORMINIMO'])),
+        minimo_vidas: int(pick(row, ['minimoVidas', 'MINIMOVIDAS'])),
+        dia_cobranca: s(pick(row, ['dia', 'DIA'])),
+        tipo_cobranca: s(pick(row, ['tipoCobranca', 'TIPOCOBRANCA'])),
+        valor_evento: num(pick(row, ['valorEvento', 'VALOREVENTO'])),
+        synced_at: now,
+      };
+      const arr = itemsByCode.get(code);
+      if (arr) arr.push(item); else itemsByCode.set(code, [item]);
     }
+
 
     // Resolve soc_code -> company_id (em blocos, com ordenação estável)
     const CHUNK = 500;
@@ -207,12 +244,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert de TODOS os itens de preço (produtos) por empresa
+    const seen = new Set<string>();
+    const itemRows: any[] = [];
+    for (const [code, items] of itemsByCode) {
+      const companyId = codeToId.get(code);
+      if (!companyId) continue;
+      for (const it of items) {
+        if (!it.soc_product_code) continue;
+        const key = `${companyId}|${it.soc_product_code}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        itemRows.push({ ...it, company_id: companyId });
+      }
+    }
+
+    let itemsUpserted = 0;
+    const ITEM_CHUNK = 500;
+    for (let i = 0; i < itemRows.length; i += ITEM_CHUNK) {
+      const slice = itemRows.slice(i, i + ITEM_CHUNK);
+      const { error } = await admin
+        .from('company_pricing_items')
+        .upsert(slice, { onConflict: 'company_id,soc_product_code' });
+      if (error) errors.push({ stage: 'pricing_items', error: error.message });
+      else itemsUpserted += slice.length;
+    }
 
     console.log(JSON.stringify({
       event: 'soc_preco_sync_diagnostics',
       soc_rows: linhas.length,
       empresas_distintas: byCompany.size,
       updated,
+      items_upserted: itemsUpserted,
       skipped_count: skipped.length,
       sem_codigo_empresa: semCodigo,
       error_count: errors.length,
@@ -221,8 +284,8 @@ Deno.serve(async (req) => {
 
     await finalize({
       status: errors.length > 0 ? 'partial' : 'success',
-      total: linhas.length,
-      inserted: 0,
+      total: updated + itemsUpserted,
+      inserted: itemsUpserted,
       updated: updated,
       error_count: errors.length,
       errors: errors.slice(0, 20),
@@ -235,6 +298,7 @@ Deno.serve(async (req) => {
       total_linhas: linhas.length,
       empresas_distintas: byCompany.size,
       updated,
+      pricing_items_upserted: itemsUpserted,
       skipped_count: skipped.length,
       skipped: skipped.slice(0, 200),
       sem_codigo_empresa: semCodigo,
@@ -242,6 +306,7 @@ Deno.serve(async (req) => {
       errors: errors.slice(0, 20),
       synced_at: now,
     });
+
   } catch (e) {
     await finalize({ status: 'error', error_message: String((e as any)?.message || e) });
     return json({ error: String((e as any)?.message || e) }, 500);

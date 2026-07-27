@@ -1494,6 +1494,7 @@ export type Database = {
           complemento: string | null
           created_at: string
           data_assinatura_contrato: string | null
+          dia_contagem: string | null
           estado: string | null
           id: string
           inscricao_estadual: string | null
@@ -1508,6 +1509,8 @@ export type Database = {
           soc_code: string
           subgrupo: string | null
           synced_at: string | null
+          tipo_contagem: string | null
+          tipo_relatorio_fatura: string | null
           updated_at: string
           vidas_ativas: number | null
         }
@@ -1522,6 +1525,7 @@ export type Database = {
           complemento?: string | null
           created_at?: string
           data_assinatura_contrato?: string | null
+          dia_contagem?: string | null
           estado?: string | null
           id?: string
           inscricao_estadual?: string | null
@@ -1536,6 +1540,8 @@ export type Database = {
           soc_code: string
           subgrupo?: string | null
           synced_at?: string | null
+          tipo_contagem?: string | null
+          tipo_relatorio_fatura?: string | null
           updated_at?: string
           vidas_ativas?: number | null
         }
@@ -1550,6 +1556,7 @@ export type Database = {
           complemento?: string | null
           created_at?: string
           data_assinatura_contrato?: string | null
+          dia_contagem?: string | null
           estado?: string | null
           id?: string
           inscricao_estadual?: string | null
@@ -1564,6 +1571,8 @@ export type Database = {
           soc_code?: string
           subgrupo?: string | null
           synced_at?: string | null
+          tipo_contagem?: string | null
+          tipo_relatorio_fatura?: string | null
           updated_at?: string
           vidas_ativas?: number | null
         }
@@ -1678,6 +1687,80 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_pricing_items: {
+        Row: {
+          company_id: string
+          created_at: string
+          dia_cobranca: string | null
+          exames: string | null
+          id: string
+          minimo_vidas: number | null
+          product_group_code: string | null
+          product_group_name: string | null
+          product_name: string | null
+          soc_product_code: string | null
+          synced_at: string | null
+          tipo_cobranca: string | null
+          valor_anual: number | null
+          valor_evento: number | null
+          valor_mensal: number | null
+          valor_minimo: number | null
+          valor_produto_pontual: number | null
+          valor_total_parcela: number | null
+          valor_vida_mes: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          dia_cobranca?: string | null
+          exames?: string | null
+          id?: string
+          minimo_vidas?: number | null
+          product_group_code?: string | null
+          product_group_name?: string | null
+          product_name?: string | null
+          soc_product_code?: string | null
+          synced_at?: string | null
+          tipo_cobranca?: string | null
+          valor_anual?: number | null
+          valor_evento?: number | null
+          valor_mensal?: number | null
+          valor_minimo?: number | null
+          valor_produto_pontual?: number | null
+          valor_total_parcela?: number | null
+          valor_vida_mes?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          dia_cobranca?: string | null
+          exames?: string | null
+          id?: string
+          minimo_vidas?: number | null
+          product_group_code?: string | null
+          product_group_name?: string | null
+          product_name?: string | null
+          soc_product_code?: string | null
+          synced_at?: string | null
+          tipo_cobranca?: string | null
+          valor_anual?: number | null
+          valor_evento?: number | null
+          valor_mensal?: number | null
+          valor_minimo?: number | null
+          valor_produto_pontual?: number | null
+          valor_total_parcela?: number | null
+          valor_vida_mes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_pricing_items_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
