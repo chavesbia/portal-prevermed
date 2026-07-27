@@ -301,7 +301,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); loadLastPrecoSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync, loadLastPrecoSync]);
 
 
   // Companies list
