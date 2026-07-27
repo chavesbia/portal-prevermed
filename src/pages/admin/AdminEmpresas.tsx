@@ -53,6 +53,7 @@ type SyncLog = {
   skipped: any;
   skipped_count: number;
   triggered_by: string | null;
+  sync_type: string | null;
 };
 
 type SkippedRow = {
@@ -61,6 +62,13 @@ type SkippedRow = {
   soc_code?: string | null;
   razao_social?: string | null;
   cnpj?: string | null;
+};
+
+const SYNC_TYPE_LABEL: Record<string, string> = {
+  empresas: "Empresas",
+  unidades: "Unidades",
+  contatos: "Contatos",
+  preco: "Preço",
 };
 
 const REASON_LABEL: Record<string, string> = {
@@ -375,7 +383,7 @@ export default function AdminEmpresas() {
     <div className="container mx-auto p-6 max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
         <Building2 className="h-7 w-7 text-primary" />
-        <h1 className="text-2xl font-bold">Base Mestre de Empresas (SOC)</h1>
+        <h1 className="text-2xl font-bold">Base de Dados</h1>
       </div>
 
       <SyncList
@@ -634,6 +642,7 @@ export default function AdminEmpresas() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Início</TableHead>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Duração</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -651,6 +660,11 @@ export default function AdminEmpresas() {
                     <>
                       <TableRow key={l.id}>
                         <TableCell className="font-mono text-xs">{fmtDate(l.started_at)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {SYNC_TYPE_LABEL[l.sync_type || "empresas"] || l.sync_type}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-xs">{duration(l.started_at, l.finished_at)}</TableCell>
                         <TableCell>
                           <Badge variant={statusVariant(l.status)}>{l.status}</Badge>
@@ -673,7 +687,7 @@ export default function AdminEmpresas() {
                       </TableRow>
                       {open && hasDetails && (
                         <TableRow key={`${l.id}-details`}>
-                          <TableCell colSpan={8} className="bg-muted/30">
+                          <TableCell colSpan={9} className="bg-muted/30">
                             {l.error_message && (
                               <p className="text-sm text-destructive mb-2">{l.error_message}</p>
                             )}
