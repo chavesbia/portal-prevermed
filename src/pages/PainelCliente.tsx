@@ -942,18 +942,15 @@ function PrecoCard({ companyId }: { companyId: string }) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
-            <span
-              className={
-                info?.cliente_inadimplente === true
-                  ? 'text-sm font-medium text-destructive'
-                  : 'text-sm font-medium text-muted-foreground'
-              }
-            >
-              Inadimplente: {info?.cliente_inadimplente === true ? 'Sim' : 'Não'}
-            </span>
+            {info?.cliente_inadimplente === true ? (
+              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Inadimplente: Sim</Badge>
+            ) : (
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Inadimplente: Não</Badge>
+            )}
           </CardTitle>
           {syncedAt && (
             <span className="text-[11px] text-muted-foreground whitespace-nowrap">
@@ -971,26 +968,33 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Subgrupo</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                  Subgrupo
+                  <span className="normal-case tracking-normal">(Tipo de Cliente)</span>
+                </div>
                 <div className="font-medium">{info?.subgrupo || '—'}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Vidas Ativas</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                  Vidas Ativas
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      O SOC atualiza a contagem de vidas ativas uma vez por mês, todo dia 1. O número exibido
+                      reflete a última contagem sincronizada com o Portal em {syncedAt ?? 'data não disponível'}.
+                      Pode haver variação entre esse número e o quadro de funcionários atual da empresa,
+                      dependendo de quantos dias se passaram desde a última contagem.
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Situação Financeira</div>
-                <div className="font-medium">
-                  {info?.cliente_inadimplente === true ? (
-                    <span className="text-destructive">Inadimplente</span>
-                  ) : info?.cliente_inadimplente === false ? (
-                    'Adimplente'
-                  ) : (
-                    '—'
-                  )}
-                </div>
-              </div>
             </div>
+
 
             <Separator />
 
