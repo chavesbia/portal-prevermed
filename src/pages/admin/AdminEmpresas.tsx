@@ -323,7 +323,7 @@ export default function AdminEmpresas() {
     setLoadingLogs(false);
   }, []);
 
-  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); loadLastPrecoSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync, loadLastPrecoSync]);
+  useEffect(() => { loadLogs(); loadSocnetFlag(); loadLastUnitSync(); loadLastContactSync(); loadLastPrecoSync(); loadLastPcmsoSync(); }, [loadLogs, loadSocnetFlag, loadLastUnitSync, loadLastContactSync, loadLastPrecoSync, loadLastPcmsoSync]);
 
 
 
