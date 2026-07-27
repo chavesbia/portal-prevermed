@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
     const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_UNIDADES');
     const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS_UNIDADES');
     if (!empresa || !codigo || !chave) {
+      await finalize({ status: 'error', error_message: 'Credenciais SOC ausentes' });
       return json({
         error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS_UNIDADES, SOC_CHAVE_EXPORTA_DADOS_UNIDADES)',
       }, 500);
@@ -88,6 +89,7 @@ Deno.serve(async (req) => {
     const resp = await fetch(url, { method: 'POST' });
     if (!resp.ok) {
       const detail = await resp.text().catch(() => '');
+      await finalize({ status: 'error', error_message: `SOC HTTP ${resp.status}` });
       return json({ error: 'Falha ao consultar SOC', status: resp.status, detail: detail.slice(0, 500) }, 502);
     }
 
@@ -98,6 +100,7 @@ Deno.serve(async (req) => {
       const parsed = JSON.parse(text);
       unidades = Array.isArray(parsed) ? parsed : (parsed?.unidades || parsed?.data || []);
     } catch {
+      await finalize({ status: 'error', error_message: 'Resposta SOC não é JSON válido' });
       return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
     }
 
@@ -110,7 +113,10 @@ Deno.serve(async (req) => {
     for (let i = 0; i < socCodes.length; i += CHUNK) {
       const slice = socCodes.slice(i, i + CHUNK);
       const { data, error } = await admin.from('companies').select('id, soc_code').in('soc_code', slice);
-      if (error) return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+      if (error) {
+        await finalize({ status: 'error', error_message: `Falha ao carregar empresas: ${error.message}` });
+        return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+      }
       for (const r of data || []) codeToCompanyId.set(r.soc_code as string, r.id as string);
     }
 
@@ -230,6 +236,17 @@ Deno.serve(async (req) => {
       synced_at: now,
     }));
 
+    await finalize({
+      status: errors.length > 0 ? 'partial' : 'success',
+      total: unidades.length,
+      inserted: inserted,
+      updated: updated,
+      error_count: errors.length,
+      errors: errors.slice(0, 20),
+      skipped: skipped.slice(0, 200),
+      skipped_count: skipped.length,
+    });
+
     return json({
       ok: true,
       total: unidades.length,
@@ -242,6 +259,7 @@ Deno.serve(async (req) => {
       synced_at: now,
     });
   } catch (e) {
+    await finalize({ status: 'error', error_message: String((e as any)?.message || e) });
     return json({ error: String((e as any)?.message || e) }, 500);
   }
 });
