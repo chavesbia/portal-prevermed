@@ -20,6 +20,8 @@ function s(v: unknown): string | null {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  let finalize: (patch: Record<string, unknown>) => Promise<void> = async () => {};
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
@@ -37,6 +39,27 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    // Histórico unificado de sincronizações
+    const startedAt = new Date().toISOString();
+    const { data: logRow } = await admin
+      .from('companies_sync_log')
+      .insert({
+        sync_type: 'contatos',
+        started_at: startedAt,
+        status: 'running',
+        triggered_by: (claims?.claims as any)?.sub ?? null,
+      })
+      .select('id')
+      .single();
+    const logId = logRow?.id as string | undefined;
+    finalize = async (patch: Record<string, unknown>) => {
+      if (!logId) return;
+      await admin
+        .from('companies_sync_log')
+        .update({ finished_at: new Date().toISOString(), ...patch })
+        .eq('id', logId);
+    };
 
     const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
     const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_CONTATOS');
