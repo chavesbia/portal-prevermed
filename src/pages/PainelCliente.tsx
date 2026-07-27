@@ -1063,13 +1063,16 @@ function PrecoCard({ companyId }: { companyId: string }) {
                       </div>
                       <div className="mt-1 flex items-start justify-between gap-3 text-xs text-muted-foreground">
                         <span>Dia da cobrança: {it.dia_cobranca || '—'}</span>
-                        {rotulo && <span className="whitespace-nowrap">{rotulo}</span>}
-                      </div>
-                      {porVida && minVidas > 0 && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          Valor Mínimo {formatBRL(minimo)} até {minVidas} Vidas
+                        <div className="text-right">
+                          {rotulo && <div className="whitespace-nowrap">{rotulo}</div>}
+                          {porVida && minVidas > 0 && (
+                            <div className="whitespace-nowrap mt-0.5">
+                              Valor Mínimo {formatBRL(minimo)} até {minVidas} Vidas
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+
                     </div>
                   );
                 })}
