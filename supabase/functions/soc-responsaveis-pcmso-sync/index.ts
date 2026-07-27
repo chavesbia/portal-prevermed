@@ -82,51 +82,75 @@ Deno.serve(async (req) => {
       }, 500);
     }
 
-    const parametro = JSON.stringify({
-      empresa,
-      codigo,
-      chave,
-      tipoSaida: 'json',
-      dataInicio: '01/01/2020',
-      dataFim: '31/12/2999',
-      empresaTrabalho: '',
-    });
-    const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
-
-    const resp = await fetch(url, { method: 'POST' });
-    if (!resp.ok) {
-      const detail = await resp.text().catch(() => '');
-      await finalize({ status: 'error', error_message: `SOC HTTP ${resp.status}` });
-      return json({ error: 'Falha ao consultar SOC', status: resp.status, detail: detail.slice(0, 500) }, 502);
-    }
-
-    const buf = await resp.arrayBuffer();
-    const text = new TextDecoder('iso-8859-1').decode(buf);
-    let linhas: any[] = [];
-    try {
-      const parsed = JSON.parse(text);
-      linhas = Array.isArray(parsed) ? parsed : (parsed?.data || []);
-    } catch {
-      await finalize({ status: 'error', error_message: 'Resposta SOC não é JSON válido' });
-      return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
-    }
-
     const CHUNK = 500;
 
-    // Mapa soc_code -> company_id
-    const socCodes = Array.from(new Set(
-      linhas.map((r: any) => s(r.EMPRESA)).filter(Boolean) as string[],
-    ));
-    const codeToCompanyId = new Map<string, string>();
-    for (let i = 0; i < socCodes.length; i += CHUNK) {
-      const slice = socCodes.slice(i, i + CHUNK);
-      const { data, error } = await admin.from('companies').select('id, soc_code').in('soc_code', slice);
-      if (error) {
-        await finalize({ status: 'error', error_message: `Falha ao carregar empresas: ${error.message}` });
-        return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+    // Este Exporta Dados exige "empresaTrabalho" (código SOC da empresa cliente).
+    // Portanto consultamos empresa a empresa.
+    const empresas: { id: string; soc_code: string }[] = [];
+    {
+      const PAGE = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await admin
+          .from('companies')
+          .select('id, soc_code')
+          .not('soc_code', 'is', null)
+          .order('id', { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) {
+          await finalize({ status: 'error', error_message: `Falha ao carregar empresas: ${error.message}` });
+          return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+        }
+        const page = (data || []) as any[];
+        for (const c of page) if (c.soc_code) empresas.push({ id: c.id, soc_code: String(c.soc_code) });
+        if (page.length < PAGE) break;
+        from += PAGE;
       }
-      for (const r of data || []) codeToCompanyId.set(r.soc_code as string, r.id as string);
     }
+
+    const fetchEmpresa = async (c: { id: string; soc_code: string }): Promise<any[]> => {
+      const parametro = JSON.stringify({
+        empresa,
+        codigo,
+        chave,
+        tipoSaida: 'json',
+        dataInicio: '01/01/2020',
+        dataFim: '31/12/2999',
+        empresaTrabalho: c.soc_code,
+      });
+      const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
+      const resp = await fetch(url, { method: 'POST' });
+      if (!resp.ok) return [];
+      const buf = await resp.arrayBuffer();
+      const text = new TextDecoder('iso-8859-1').decode(buf);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        return [];
+      }
+      const arr = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+      return (arr as any[]).map((r) => ({ ...r, __companyId: c.id, __socCode: c.soc_code }));
+    };
+
+    const linhas: any[] = [];
+    const socErrors: any[] = [];
+    const CONCURRENCY = 8;
+    for (let i = 0; i < empresas.length; i += CONCURRENCY) {
+      const batch = empresas.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (c) => {
+          try {
+            return await fetchEmpresa(c);
+          } catch (e) {
+            socErrors.push({ soc_code: c.soc_code, message: e instanceof Error ? e.message : 'erro' });
+            return [];
+          }
+        }),
+      );
+      for (const r of results) linhas.push(...r);
+    }
+
 
     // Mapa `${company_id}::${soc_unit_code}` -> unidade_id
     const companyIds = Array.from(new Set(codeToCompanyId.values()));
