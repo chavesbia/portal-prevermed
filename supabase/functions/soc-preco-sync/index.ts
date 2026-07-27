@@ -58,6 +58,8 @@ function pick(row: any, keys: string[]): unknown {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
+  let finalize: (patch: Record<string, unknown>) => Promise<void> = async () => {};
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
@@ -76,10 +78,32 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
+    // Histórico unificado de sincronizações
+    const startedAt = new Date().toISOString();
+    const { data: logRow } = await admin
+      .from('companies_sync_log')
+      .insert({
+        sync_type: 'preco',
+        started_at: startedAt,
+        status: 'running',
+        triggered_by: (claims?.claims as any)?.sub ?? null,
+      })
+      .select('id')
+      .single();
+    const logId = logRow?.id as string | undefined;
+    finalize = async (patch: Record<string, unknown>) => {
+      if (!logId) return;
+      await admin
+        .from('companies_sync_log')
+        .update({ finished_at: new Date().toISOString(), ...patch })
+        .eq('id', logId);
+    };
+
     const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
     const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_DADOS_PRECO');
     const chave = Deno.env.get('SOC_CHAVE_EXPORTA_DADOS_PRECO');
     if (!empresa || !codigo || !chave) {
+      await finalize({ status: 'error', error_message: 'Credenciais SOC ausentes' });
       return json({
         error: 'Credenciais SOC ausentes (SOC_CODIGO_EMPRESA, SOC_CODIGO_EXPORTA_DADOS_PRECO, SOC_CHAVE_EXPORTA_DADOS_PRECO)',
       }, 500);
@@ -97,6 +121,7 @@ Deno.serve(async (req) => {
     const resp = await fetch(url, { method: 'POST' });
     if (!resp.ok) {
       const detail = await resp.text().catch(() => '');
+      await finalize({ status: 'error', error_message: `SOC HTTP ${resp.status}` });
       return json({ error: 'Falha ao consultar SOC', status: resp.status, detail: detail.slice(0, 500) }, 502);
     }
 
@@ -107,6 +132,7 @@ Deno.serve(async (req) => {
       const parsed = JSON.parse(text);
       linhas = Array.isArray(parsed) ? parsed : (parsed?.precos || parsed?.data || []);
     } catch {
+      await finalize({ status: 'error', error_message: 'Resposta SOC não é JSON válido' });
       return json({ error: 'Resposta SOC não é JSON válido', preview: text.slice(0, 500) }, 502);
     }
 
@@ -143,7 +169,10 @@ Deno.serve(async (req) => {
           .in('soc_code', slice)
           .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
-        if (error) return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+        if (error) {
+          await finalize({ status: 'error', error_message: `Falha ao carregar empresas: ${error.message}` });
+          return json({ error: `Falha ao carregar empresas: ${error.message}` }, 500);
+        }
         const page = data || [];
         for (const r of page) codeToId.set(r.soc_code as string, r.id as string);
         if (page.length < PAGE) break;
@@ -190,6 +219,17 @@ Deno.serve(async (req) => {
       synced_at: now,
     }));
 
+    await finalize({
+      status: errors.length > 0 ? 'partial' : 'success',
+      total: linhas.length,
+      inserted: 0,
+      updated: updated,
+      error_count: errors.length,
+      errors: errors.slice(0, 20),
+      skipped: skipped.slice(0, 200),
+      skipped_count: skipped.length,
+    });
+
     return json({
       ok: true,
       total_linhas: linhas.length,
@@ -203,6 +243,7 @@ Deno.serve(async (req) => {
       synced_at: now,
     });
   } catch (e) {
+    await finalize({ status: 'error', error_message: String((e as any)?.message || e) });
     return json({ error: String((e as any)?.message || e) }, 500);
   }
 });
