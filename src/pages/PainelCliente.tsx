@@ -960,12 +960,19 @@ function PrecoCard({ companyId }: { companyId: string }) {
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando dados comerciais...
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 pt-3">
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
                   Subgrupo
-                  <span className="normal-case tracking-normal">(Tipo de Cliente)</span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Tipo de Cliente</TooltipContent>
+                  </Tooltip>
                 </div>
                 <div className="font-medium">{info?.subgrupo || '—'}</div>
               </div>
@@ -979,15 +986,20 @@ function PrecoCard({ companyId }: { companyId: string }) {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs text-xs">
-                      O SOC atualiza a contagem de vidas ativas uma vez por mês, todo dia 1. O número exibido
-                      reflete a última contagem sincronizada com o Portal em {syncedAt ?? 'data não disponível'}.
-                      Pode haver variação entre esse número e o quadro de funcionários atual da empresa,
-                      dependendo de quantos dias se passaram desde a última contagem.
+                      Conforme data da última contagem - dia 1
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <div className="font-medium">{info?.vidas_ativas ?? '—'}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{info?.vidas_ativas ?? '—'}</span>
+                  {info?.cliente_inadimplente === true ? (
+                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Inadimplente: Sim</Badge>
+                  ) : (
+                    <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Inadimplente: Não</Badge>
+                  )}
+                </div>
               </div>
+
             </div>
 
 
