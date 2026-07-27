@@ -215,11 +215,24 @@ Deno.serve(async (req) => {
     }
 
 
+    // Segurança: não apaga a base se o SOC não devolveu nada
+    if (rows.length === 0) {
+      await finalize({
+        status: 'error',
+        error_message: 'SOC não retornou responsáveis (nenhuma linha)',
+        total: 0,
+        error_count: socErrors.length,
+        errors: socErrors.slice(0, 100),
+      });
+      return json({ error: 'SOC não retornou responsáveis', empresas: empresas.length, soc_errors: socErrors.length }, 502);
+    }
+
     // Recadastramento total: limpa e insere tudo
     const { error: delErr } = await admin
       .from('company_responsaveis_pcmso')
       .delete()
       .not('id', 'is', null);
+
     if (delErr) {
       await finalize({ status: 'error', error_message: `Falha ao limpar tabela: ${delErr.message}` });
       return json({ error: `Falha ao limpar tabela: ${delErr.message}` }, 500);
