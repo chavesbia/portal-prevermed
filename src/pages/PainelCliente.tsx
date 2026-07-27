@@ -989,10 +989,6 @@ function PrecoCard({ companyId }: { companyId: string }) {
                   )}
                 </div>
               </div>
-              <div>
-                <div className="text-xs uppercase tracking-wide text-muted-foreground">Assinatura do Contrato</div>
-                <div className="font-medium">{formatDate(info?.data_assinatura_contrato)}</div>
-              </div>
             </div>
 
             <Separator />
