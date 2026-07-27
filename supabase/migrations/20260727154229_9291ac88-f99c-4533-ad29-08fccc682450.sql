@@ -1,0 +1,1 @@
+ALTER TABLE public.companies_sync_log ADD COLUMN IF NOT EXISTS sync_type text NOT NULL DEFAULT 'empresas';

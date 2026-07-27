@@ -1584,6 +1584,7 @@ export type Database = {
           skipped_count: number
           started_at: string
           status: string
+          sync_type: string
           total: number
           triggered_by: string | null
           updated: number
@@ -1602,6 +1603,7 @@ export type Database = {
           skipped_count?: number
           started_at?: string
           status?: string
+          sync_type?: string
           total?: number
           triggered_by?: string | null
           updated?: number
@@ -1620,6 +1622,7 @@ export type Database = {
           skipped_count?: number
           started_at?: string
           status?: string
+          sync_type?: string
           total?: number
           triggered_by?: string | null
           updated?: number
