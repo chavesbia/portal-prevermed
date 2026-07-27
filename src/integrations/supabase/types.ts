@@ -1768,6 +1768,66 @@ export type Database = {
           },
         ]
       }
+      company_responsaveis_pcmso: {
+        Row: {
+          company_id: string
+          conselho: string | null
+          created_at: string
+          data_fim: string | null
+          data_inicio: string | null
+          email_responsavel: string | null
+          id: string
+          nome_conselho: string | null
+          nome_medico: string | null
+          synced_at: string
+          uf_conselho: string | null
+          unidade_id: string | null
+        }
+        Insert: {
+          company_id: string
+          conselho?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          email_responsavel?: string | null
+          id?: string
+          nome_conselho?: string | null
+          nome_medico?: string | null
+          synced_at?: string
+          uf_conselho?: string | null
+          unidade_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          conselho?: string | null
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          email_responsavel?: string | null
+          id?: string
+          nome_conselho?: string | null
+          nome_medico?: string | null
+          synced_at?: string
+          uf_conselho?: string | null
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_responsaveis_pcmso_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_responsaveis_pcmso_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "company_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_units: {
         Row: {
           bairro: string | null
