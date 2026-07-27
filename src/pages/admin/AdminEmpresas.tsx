@@ -170,7 +170,7 @@ export default function AdminEmpresas() {
       if (error) throw error;
       if (data?.ok) {
         toast.success(
-          `Preço sincronizado: ${data.updated ?? 0} empresas atualizadas de ${data.total_linhas ?? 0} linhas` +
+          `Preço sincronizado: ${data.updated ?? 0} empresas atualizadas, ${data.pricing_items_upserted ?? 0} itens de preço gravados` +
           (data.skipped_count ? ` (${data.skipped_count} puladas — empresa não encontrada)` : "")
         );
       } else {
