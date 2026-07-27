@@ -942,7 +942,6 @@ function PrecoCard({ companyId }: { companyId: string }) {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
