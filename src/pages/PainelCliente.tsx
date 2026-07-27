@@ -913,7 +913,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
           .maybeSingle(),
         supabase
           .from('company_pricing_items')
-          .select('id, product_name, product_group_name, valor_mensal, valor_produto_pontual')
+          .select('id, product_name, product_group_name, valor_mensal, valor_produto_pontual, valor_vida_mes, valor_minimo, dia_cobranca')
           .eq('company_id', companyId)
           .order('product_name', { ascending: true, nullsFirst: false }),
       ]);
