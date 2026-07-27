@@ -151,7 +151,41 @@ export default function AdminEmpresas() {
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [lastContactSync, setLastContactSync] = useState<string | null>(null);
   const [loadingPreco, setLoadingPreco] = useState(false);
-  const [lastPrecoSync, setLastPrecoSync] = useState<string | null>(null);
+  const [loadingPcmso, setLoadingPcmso] = useState(false);
+  const [lastPcmsoSync, setLastPcmsoSync] = useState<string | null>(null);
+
+  const loadLastPcmsoSync = useCallback(async () => {
+    const { data } = await supabase
+      .from("company_responsaveis_pcmso")
+      .select("synced_at")
+      .order("synced_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setLastPcmsoSync((data as any)?.synced_at ?? null);
+  }, []);
+
+  const syncPcmso = async () => {
+    setLoadingPcmso(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("soc-responsaveis-pcmso-sync");
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(
+          `Responsáveis PCMSO sincronizados: ${data.inserted ?? 0} registros gravados` +
+          (data.skipped_count ? ` (${data.skipped_count} pulados — empresa não encontrada)` : "")
+        );
+      } else {
+        toast.error(data?.error || "Falha na sincronização de responsáveis PCMSO");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao sincronizar responsáveis PCMSO");
+    } finally {
+      setLoadingPcmso(false);
+      loadLastPcmsoSync();
+      loadLogs();
+    }
+  };
+
 
   const loadLastPrecoSync = useCallback(async () => {
     const { data } = await supabase
