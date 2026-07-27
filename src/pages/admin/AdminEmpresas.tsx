@@ -16,7 +16,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 
 
-const onlyDigits = (s: string) => (s || "").replace(/\D/g, "");
 
 type SyncLog = {
   id: string;
