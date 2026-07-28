@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
       rows.push({
         company_id: companyId,
         unidade_id: unitCode ? (unitKeyToId.get(`${companyId}::${unitCode}`) ?? null) : null,
+        unidade_nome_raw: s(pick(r, ['nomeUnidade', 'NOMEUNIDADE'])),
         nome_medico: s(pick(r, ['nomeMedico', 'NOMEMEDICO'])),
         nome_conselho: s(pick(r, ['nomeConselho', 'NOMECONSELHO'])),
         conselho: s(pick(r, ['conselho', 'CONSELHO'])),

@@ -1113,6 +1113,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
 interface ResponsavelPcmsoRow {
   id: string;
   unidade_id: string | null;
+  unidade_nome_raw: string | null;
   nome_medico: string | null;
   nome_conselho: string | null;
   conselho: string | null;
@@ -1128,7 +1129,7 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('company_responsaveis_pcmso')
-        .select('id, unidade_id, nome_medico, nome_conselho, conselho, uf_conselho, email_responsavel, data_inicio, data_fim')
+        .select('id, unidade_id, unidade_nome_raw, nome_medico, nome_conselho, conselho, uf_conselho, email_responsavel, data_inicio, data_fim')
         .eq('company_id', companyId)
         .order('data_inicio', { ascending: false, nullsFirst: false });
       if (error) throw error;
@@ -1191,7 +1192,9 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Unidade: </span>
-                      <span className="font-medium">{r.unidade_id ? (unitMap[r.unidade_id] || 'Unidade não localizada') : 'Empresa toda'}</span>
+                      <span className="font-medium">
+                        {(r.unidade_id && unitMap[r.unidade_id]) || r.unidade_nome_raw?.trim() || 'Empresa toda'}
+                      </span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Vigência: </span>
