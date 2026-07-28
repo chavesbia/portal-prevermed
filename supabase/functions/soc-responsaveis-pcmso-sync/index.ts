@@ -301,14 +301,19 @@ Deno.serve(async (req) => {
       else inserted += slice.length;
     }
 
-    const status = errors.length > 0 || unitMapErrors.length > 0 ? 'partial' : 'success';
+    const status =
+      errors.length > 0 || unitMapErrors.length > 0 || socErrors.length > 0 ? 'partial' : 'success';
     await finalize({
       status,
       total: linhas.length,
       inserted,
       updated: 0,
-      error_count: errors.length + unitMapErrors.length,
-      errors: [...errors, ...unitMapErrors.map((e) => ({ ...e, scope: 'unit_map' }))],
+      error_count: errors.length + unitMapErrors.length + socErrors.length,
+      errors: [
+        ...errors,
+        ...unitMapErrors.map((e) => ({ ...e, scope: 'unit_map' })),
+        ...socErrors.slice(0, 200),
+      ],
       skipped: skipped.slice(0, 500),
       skipped_count: skipped.length,
     });
@@ -319,10 +324,15 @@ Deno.serve(async (req) => {
       inserted,
       skipped_count: skipped.length,
       error_count: errors.length,
+      empresas_consultadas: empresas.length,
+      empresas_sem_responsavel: empresasSemResponsavel,
+      soc_failures: socErrors.length,
+      soc_failures_sample: socErrors.slice(0, 10),
       unit_map_pairs: unitKeyToId.size,
       unit_map_failed_batches: unitMapErrors.length,
       unidade_id_preenchido: rows.filter((r) => r.unidade_id).length,
     });
+
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Erro inesperado';
     await finalize({ status: 'error', error_message: message });
