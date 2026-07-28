@@ -155,8 +155,10 @@ Deno.serve(async (req) => {
     // Mapa `${company_id}::${soc_unit_code}` -> unidade_id
     const companyIds = Array.from(new Set(linhas.map((r: any) => r.__companyId as string)));
     const unitKeyToId = new Map<string, string>();
-    for (let i = 0; i < companyIds.length; i += CHUNK) {
-      const slice = companyIds.slice(i, i + CHUNK);
+    const unitMapErrors: any[] = [];
+    const UNIT_CHUNK = 50; // evita URL grande demais no PostgREST
+    for (let i = 0; i < companyIds.length; i += UNIT_CHUNK) {
+      const slice = companyIds.slice(i, i + UNIT_CHUNK);
       const PAGE = 1000;
       let from = 0;
       while (true) {
@@ -166,7 +168,21 @@ Deno.serve(async (req) => {
           .in('company_id', slice)
           .order('id', { ascending: true })
           .range(from, from + PAGE - 1);
-        if (error) break;
+        if (error) {
+          const detail = {
+            batch: Math.floor(i / UNIT_CHUNK),
+            offset: from,
+            company_ids: slice.length,
+            first_company_id: slice[0],
+            message: error.message,
+            details: (error as any).details ?? null,
+            hint: (error as any).hint ?? null,
+            code: (error as any).code ?? null,
+          };
+          console.error('[soc-responsaveis-pcmso-sync] falha ao carregar company_units', JSON.stringify(detail));
+          unitMapErrors.push(detail);
+          break;
+        }
         const page = data || [];
         for (const u of page) {
           if (u.soc_unit_code) unitKeyToId.set(`${u.company_id}::${u.soc_unit_code}`, u.id as string);
@@ -175,6 +191,10 @@ Deno.serve(async (req) => {
         from += PAGE;
       }
     }
+    console.log(
+      `[soc-responsaveis-pcmso-sync] mapa de unidades: ${unitKeyToId.size} pares carregados, ${unitMapErrors.length} lotes com falha`,
+    );
+
 
     const now = new Date().toISOString();
     const rows: any[] = [];
@@ -248,14 +268,14 @@ Deno.serve(async (req) => {
       else inserted += slice.length;
     }
 
-    const status = errors.length > 0 ? 'partial' : 'success';
+    const status = errors.length > 0 || unitMapErrors.length > 0 ? 'partial' : 'success';
     await finalize({
       status,
       total: linhas.length,
       inserted,
       updated: 0,
-      error_count: errors.length,
-      errors,
+      error_count: errors.length + unitMapErrors.length,
+      errors: [...errors, ...unitMapErrors.map((e) => ({ ...e, scope: 'unit_map' }))],
       skipped: skipped.slice(0, 500),
       skipped_count: skipped.length,
     });
@@ -266,6 +286,9 @@ Deno.serve(async (req) => {
       inserted,
       skipped_count: skipped.length,
       error_count: errors.length,
+      unit_map_pairs: unitKeyToId.size,
+      unit_map_failed_batches: unitMapErrors.length,
+      unidade_id_preenchido: rows.filter((r) => r.unidade_id).length,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Erro inesperado';
