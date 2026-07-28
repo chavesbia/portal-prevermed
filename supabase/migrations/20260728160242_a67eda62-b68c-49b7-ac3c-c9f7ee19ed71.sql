@@ -1,0 +1,1 @@
+ALTER TABLE public.company_responsaveis_pcmso ADD COLUMN IF NOT EXISTS unidade_nome_raw text;

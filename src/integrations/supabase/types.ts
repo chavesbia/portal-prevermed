@@ -1782,6 +1782,7 @@ export type Database = {
           synced_at: string
           uf_conselho: string | null
           unidade_id: string | null
+          unidade_nome_raw: string | null
         }
         Insert: {
           company_id: string
@@ -1796,6 +1797,7 @@ export type Database = {
           synced_at?: string
           uf_conselho?: string | null
           unidade_id?: string | null
+          unidade_nome_raw?: string | null
         }
         Update: {
           company_id?: string
@@ -1810,6 +1812,7 @@ export type Database = {
           synced_at?: string
           uf_conselho?: string | null
           unidade_id?: string | null
+          unidade_nome_raw?: string | null
         }
         Relationships: [
           {
