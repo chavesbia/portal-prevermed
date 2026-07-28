@@ -1197,13 +1197,43 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
   const unitMap = data?.unitMap ?? {};
   const today = new Date().toISOString().slice(0, 10);
 
+  const [statusFilter, setStatusFilter] = useState<'vigentes' | 'encerrados' | 'todos'>('vigentes');
+  const [search, setSearch] = useState('');
+  const [limit, setLimit] = useState(PCMSO_PAGE_SIZE);
+
+  useEffect(() => {
+    setStatusFilter('vigentes');
+    setSearch('');
+    setLimit(PCMSO_PAGE_SIZE);
+  }, [companyId]);
+
+  useEffect(() => setLimit(PCMSO_PAGE_SIZE), [statusFilter, search]);
+
+  const unitNameOf = (r: ResponsavelPcmsoRow) =>
+    (r.unidade_id && unitMap[r.unidade_id]) || r.unidade_nome_raw?.trim() || 'Empresa toda';
+
+  const q = search.trim().toLowerCase();
+  const filtered = rows
+    .filter((r) => {
+      const vigente = !r.data_fim || r.data_fim >= today;
+      if (statusFilter === 'vigentes' && !vigente) return false;
+      if (statusFilter === 'encerrados' && vigente) return false;
+      if (!q) return true;
+      return (
+        (r.nome_medico ?? '').toLowerCase().includes(q) ||
+        unitNameOf(r).toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => (b.data_inicio ?? '').localeCompare(a.data_inicio ?? ''));
+
+  const visible = filtered.slice(0, limit);
+
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
           <Stethoscope className="h-4 w-4" />
-          Responsáveis PCMSO
-          {rows.length > 0 && <Badge variant="secondary">{rows.length}</Badge>}
+          Responsáveis PCMSO ({filtered.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-3">
@@ -1214,41 +1244,83 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
         ) : rows.length === 0 ? (
           <div className="text-sm text-muted-foreground">Nenhum responsável PCMSO encontrado para esta empresa</div>
         ) : (
-          <div className="space-y-2">
-            {rows.map((r) => {
-              const vigente = !r.data_fim || r.data_fim >= today;
-              const conselho = [r.nome_conselho, r.conselho, r.uf_conselho].filter(Boolean).join(' • ');
-              return (
-                <div key={r.id} className="rounded-md border p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-medium text-sm">{r.nome_medico?.trim() || 'Sem nome'}</div>
-                    <Badge variant="outline" className={vigente ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-muted bg-muted text-muted-foreground'}>
-                      {vigente ? 'Vigente' : 'Encerrado'}
-                    </Badge>
+          <div className="space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex gap-1">
+                {([
+                  ['vigentes', 'Vigentes'],
+                  ['encerrados', 'Encerrados'],
+                  ['todos', 'Todos'],
+                ] as const).map(([value, label]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    variant={statusFilter === value ? 'default' : 'outline'}
+                    onClick={() => setStatusFilter(value)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por médico ou unidade..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8 h-9"
+                />
+              </div>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Nenhum responsável encontrado com os filtros aplicados</div>
+            ) : (
+              <div className="space-y-2">
+                {visible.map((r) => {
+                  const vigente = !r.data_fim || r.data_fim >= today;
+                  const conselho = [r.nome_conselho, r.conselho, r.uf_conselho].filter(Boolean).join(' • ');
+                  return (
+                    <div key={r.id} className="rounded-md border p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-medium text-sm">{r.nome_medico?.trim() || 'Sem nome'}</div>
+                        <Badge variant="outline" className={vigente ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-muted bg-muted text-muted-foreground'}>
+                          {vigente ? 'Vigente' : 'Encerrado'}
+                        </Badge>
+                      </div>
+                      <div className="grid gap-1 sm:grid-cols-2 mt-2 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Conselho: </span>
+                          <span className="font-medium">{conselho || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Vigência: </span>
+                          <span className="font-medium">{formatDate(r.data_inicio)} até {r.data_fim ? formatDate(r.data_fim) : 'indeterminado'}</span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-muted-foreground">Unidade: </span>
+                          <span className="font-medium">{unitNameOf(r)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(filtered.length > visible.length || limit > PCMSO_PAGE_SIZE) && (
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    {filtered.length > visible.length && (
+                      <Button variant="link" size="sm" onClick={() => setLimit(filtered.length)}>
+                        Ver mais ({filtered.length - visible.length} restantes)
+                      </Button>
+                    )}
+                    {limit > PCMSO_PAGE_SIZE && (
+                      <Button variant="link" size="sm" onClick={() => setLimit(PCMSO_PAGE_SIZE)}>
+                        Ver menos
+                      </Button>
+                    )}
                   </div>
-                  <div className="grid gap-1 sm:grid-cols-2 mt-2 text-xs">
-                    <div>
-                      <span className="text-muted-foreground">Conselho: </span>
-                      <span className="font-medium">{conselho || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">E-mail: </span>
-                      <span className="font-medium break-all">{r.email_responsavel?.trim() || '—'}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Unidade: </span>
-                      <span className="font-medium">
-                        {(r.unidade_id && unitMap[r.unidade_id]) || r.unidade_nome_raw?.trim() || 'Empresa toda'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Vigência: </span>
-                      <span className="font-medium">{formatDate(r.data_inicio)} até {r.data_fim ? formatDate(r.data_fim) : 'indeterminado'}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                )}
+              </div>
+            )}
           </div>
         )}
       </CardContent>
