@@ -1109,3 +1109,101 @@ function PrecoCard({ companyId }: { companyId: string }) {
     </Card>
   );
 }
+
+interface ResponsavelPcmsoRow {
+  id: string;
+  unidade_id: string | null;
+  nome_medico: string | null;
+  nome_conselho: string | null;
+  conselho: string | null;
+  uf_conselho: string | null;
+  email_responsavel: string | null;
+  data_inicio: string | null;
+  data_fim: string | null;
+}
+
+function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-resp-pcmso', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('company_responsaveis_pcmso')
+        .select('id, unidade_id, nome_medico, nome_conselho, conselho, uf_conselho, email_responsavel, data_inicio, data_fim')
+        .eq('company_id', companyId)
+        .order('data_inicio', { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      const rows = (data ?? []) as ResponsavelPcmsoRow[];
+      const unitIds = Array.from(new Set(rows.map((r) => r.unidade_id).filter(Boolean))) as string[];
+      let unitMap: Record<string, string> = {};
+      if (unitIds.length > 0) {
+        const { data: units } = await supabase
+          .from('company_units')
+          .select('id, nome_unidade')
+          .in('id', unitIds);
+        unitMap = Object.fromEntries((units ?? []).map((u: any) => [u.id, u.nome_unidade]));
+      }
+      return { rows, unitMap };
+    },
+    enabled: !!companyId,
+  });
+
+  const rows = data?.rows ?? [];
+  const unitMap = data?.unitMap ?? {};
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Stethoscope className="h-4 w-4" />
+          Responsáveis PCMSO
+          {rows.length > 0 && <Badge variant="secondary">{rows.length}</Badge>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-3">
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando responsáveis...
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Nenhum responsável PCMSO encontrado para esta empresa</div>
+        ) : (
+          <div className="space-y-2">
+            {rows.map((r) => {
+              const vigente = !r.data_fim || r.data_fim >= today;
+              const conselho = [r.nome_conselho, r.conselho, r.uf_conselho].filter(Boolean).join(' • ');
+              return (
+                <div key={r.id} className="rounded-md border p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-medium text-sm">{r.nome_medico?.trim() || 'Sem nome'}</div>
+                    <Badge variant="outline" className={vigente ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-muted bg-muted text-muted-foreground'}>
+                      {vigente ? 'Vigente' : 'Encerrado'}
+                    </Badge>
+                  </div>
+                  <div className="grid gap-1 sm:grid-cols-2 mt-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground">Conselho: </span>
+                      <span className="font-medium">{conselho || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">E-mail: </span>
+                      <span className="font-medium break-all">{r.email_responsavel?.trim() || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Unidade: </span>
+                      <span className="font-medium">{r.unidade_id ? (unitMap[r.unidade_id] || 'Unidade não localizada') : 'Empresa toda'}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Vigência: </span>
+                      <span className="font-medium">{formatDate(r.data_inicio)} até {r.data_fim ? formatDate(r.data_fim) : 'indeterminado'}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
