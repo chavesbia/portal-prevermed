@@ -118,6 +118,7 @@ export default function PainelCliente() {
               else navigate('/painel-cliente');
             }}
             placeholder="Buscar empresa por nome ou CNPJ…"
+            hideDuplicateWarning
           />
         </CardContent>
       </Card>
