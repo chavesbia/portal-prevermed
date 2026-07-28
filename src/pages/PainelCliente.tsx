@@ -234,6 +234,45 @@ export default function PainelCliente() {
   );
 }
 
+function DuplicateCnpjBanner({
+  company,
+  onSwitch,
+}: {
+  company: { id: string; cnpj: string | null };
+  onSwitch: (id: string) => void;
+}) {
+  const { data: duplicates = [] } = useDuplicateCnpjCompanies(company);
+  if (duplicates.length === 0) return null;
+  return (
+    <Alert variant="destructive">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>
+        Existe(m) outra(s) {duplicates.length} empresa(s) ativa(s) no SOC com este mesmo CNPJ
+      </AlertTitle>
+      <AlertDescription className="space-y-2">
+        <p className="text-sm">
+          Confirme se você está visualizando o cadastro correto. Clique para trocar:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {duplicates.map(d => (
+            <Button
+              key={d.id}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onSwitch(d.id)}
+            >
+              {d.razao_social} · SOC {d.soc_code}
+            </Button>
+          ))}
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+
+
 function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-contratos', companyId],
