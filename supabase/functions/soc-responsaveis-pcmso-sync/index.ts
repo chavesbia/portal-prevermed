@@ -108,7 +108,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    const fetchEmpresa = async (c: { id: string; soc_code: string }): Promise<any[]> => {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+    // Diferencia "SOC OK com lista vazia" de "SOC recusou/erro" (throttling etc.)
+    const fetchEmpresa = async (
+      c: { id: string; soc_code: string },
+    ): Promise<{ ok: true; rows: any[] } | { ok: false; reason: string }> => {
       const parametro = JSON.stringify({
         empresa,
         codigo,
@@ -119,37 +124,65 @@ Deno.serve(async (req) => {
         empresaTrabalho: c.soc_code,
       });
       const url = `${SOC_URL}?parametro=${encodeURIComponent(parametro)}`;
-      const resp = await fetch(url, { method: 'POST' });
-      if (!resp.ok) return [];
-      const buf = await resp.arrayBuffer();
-      const text = new TextDecoder('iso-8859-1').decode(buf);
-      let parsed: any;
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        return [];
+
+      let lastReason = 'erro desconhecido';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await sleep(1000 * Math.pow(2, attempt - 1)); // 1s, 2s
+        try {
+          const resp = await fetch(url, { method: 'POST' });
+          if (!resp.ok) {
+            lastReason = `HTTP ${resp.status} ${resp.statusText}`;
+            continue;
+          }
+          const buf = await resp.arrayBuffer();
+          const text = new TextDecoder('iso-8859-1').decode(buf);
+          // Respostas de limite/erro do SOC vêm como texto, não JSON
+          if (/limite|excedid|simult|tente novamente|indisponível|indisponivel/i.test(text)) {
+            lastReason = `SOC recusou: ${text.slice(0, 200)}`;
+            continue;
+          }
+          let parsed: any;
+          try {
+            parsed = JSON.parse(text);
+          } catch {
+            lastReason = `resposta não-JSON: ${text.slice(0, 200)}`;
+            continue;
+          }
+          const arr = Array.isArray(parsed) ? parsed : (parsed?.data || []);
+          return {
+            ok: true,
+            rows: (arr as any[]).map((r) => ({ ...r, __companyId: c.id, __socCode: c.soc_code })),
+          };
+        } catch (e) {
+          lastReason = e instanceof Error ? e.message : 'erro de rede';
+        }
       }
-      const arr = Array.isArray(parsed) ? parsed : (parsed?.data || []);
-      return (arr as any[]).map((r) => ({ ...r, __companyId: c.id, __socCode: c.soc_code }));
+      return { ok: false, reason: lastReason };
     };
 
     const linhas: any[] = [];
     const socErrors: any[] = [];
-    const CONCURRENCY = 8;
+    let empresasSemResponsavel = 0;
+    const CONCURRENCY = 4; // SOC documenta limite de 5 chamadas simultâneas
     for (let i = 0; i < empresas.length; i += CONCURRENCY) {
       const batch = empresas.slice(i, i + CONCURRENCY);
-      const results = await Promise.all(
-        batch.map(async (c) => {
-          try {
-            return await fetchEmpresa(c);
-          } catch (e) {
-            socErrors.push({ soc_code: c.soc_code, message: e instanceof Error ? e.message : 'erro' });
-            return [];
-          }
-        }),
-      );
-      for (const r of results) linhas.push(...r);
+      const results = await Promise.all(batch.map((c) => fetchEmpresa(c).then((r) => ({ c, r }))));
+      for (const { c, r } of results) {
+        if (!r.ok) {
+          console.error(
+            `[soc-responsaveis-pcmso-sync] falha real na empresa ${c.soc_code}: ${r.reason}`,
+          );
+          socErrors.push({ scope: 'soc_fetch', soc_code: c.soc_code, company_id: c.id, message: r.reason });
+          continue;
+        }
+        if (r.rows.length === 0) empresasSemResponsavel++;
+        linhas.push(...r.rows);
+      }
     }
+    console.log(
+      `[soc-responsaveis-pcmso-sync] empresas: ${empresas.length}, sem responsável: ${empresasSemResponsavel}, falhas reais: ${socErrors.length}`,
+    );
+
 
 
     // Mapa `${company_id}::${soc_unit_code}` -> unidade_id
@@ -268,14 +301,19 @@ Deno.serve(async (req) => {
       else inserted += slice.length;
     }
 
-    const status = errors.length > 0 || unitMapErrors.length > 0 ? 'partial' : 'success';
+    const status =
+      errors.length > 0 || unitMapErrors.length > 0 || socErrors.length > 0 ? 'partial' : 'success';
     await finalize({
       status,
       total: linhas.length,
       inserted,
       updated: 0,
-      error_count: errors.length + unitMapErrors.length,
-      errors: [...errors, ...unitMapErrors.map((e) => ({ ...e, scope: 'unit_map' }))],
+      error_count: errors.length + unitMapErrors.length + socErrors.length,
+      errors: [
+        ...errors,
+        ...unitMapErrors.map((e) => ({ ...e, scope: 'unit_map' })),
+        ...socErrors.slice(0, 200),
+      ],
       skipped: skipped.slice(0, 500),
       skipped_count: skipped.length,
     });
@@ -286,10 +324,15 @@ Deno.serve(async (req) => {
       inserted,
       skipped_count: skipped.length,
       error_count: errors.length,
+      empresas_consultadas: empresas.length,
+      empresas_sem_responsavel: empresasSemResponsavel,
+      soc_failures: socErrors.length,
+      soc_failures_sample: socErrors.slice(0, 10),
       unit_map_pairs: unitKeyToId.size,
       unit_map_failed_batches: unitMapErrors.length,
       unidade_id_preenchido: rows.filter((r) => r.unidade_id).length,
     });
+
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Erro inesperado';
     await finalize({ status: 'error', error_message: message });
