@@ -1138,9 +1138,9 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
       if (unitIds.length > 0) {
         const { data: units } = await supabase
           .from('company_units')
-          .select('id, nome_unidade')
+          .select('id, name')
           .in('id', unitIds);
-        unitMap = Object.fromEntries((units ?? []).map((u: any) => [u.id, u.nome_unidade]));
+        unitMap = Object.fromEntries((units ?? []).map((u: any) => [u.id, u.name]));
       }
       return { rows, unitMap };
     },
