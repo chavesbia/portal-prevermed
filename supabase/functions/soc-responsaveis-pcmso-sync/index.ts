@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
         codigo,
         chave,
         tipoSaida: 'json',
-        dataInicio: '01/01/2020',
+        dataInicio: '01/01/2000',
         dataFim: '31/12/2999',
         empresaTrabalho: c.soc_code,
       });
