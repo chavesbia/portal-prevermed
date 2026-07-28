@@ -1,0 +1,2 @@
+UPDATE auth.users SET encrypted_password = crypt('prevermed', gen_salt('bf')), updated_at = now() WHERE id = 'cf0dfe31-5fc4-4fbc-b669-3601d18c3a6d';
+UPDATE public.profiles SET must_change_password = true WHERE user_id = 'cf0dfe31-5fc4-4fbc-b669-3601d18c3a6d';
