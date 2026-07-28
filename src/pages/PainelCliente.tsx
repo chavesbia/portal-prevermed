@@ -1168,6 +1168,8 @@ interface ResponsavelPcmsoRow {
   data_fim: string | null;
 }
 
+const PCMSO_PAGE_SIZE = 5;
+
 function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-resp-pcmso', companyId],
