@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { CompanySelector } from '@/components/shared/CompanySelector';
+import { CompanySelector, useDuplicateCnpjCompanies } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -145,6 +145,10 @@ export default function PainelCliente() {
 
       {company && (
         <>
+          <DuplicateCnpjBanner
+            company={company}
+            onSwitch={(id) => { setSelected(id); navigate(`/painel-cliente/${id}`); }}
+          />
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-4 flex-wrap">

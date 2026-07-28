@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, ArrowLeft, ArrowRight, FileSignature, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
 import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
