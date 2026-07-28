@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, ChevronsUpDown, Building2, AlertCircle, X } from 'lucide-react';
+import { Check, ChevronsUpDown, Building2, AlertCircle, AlertTriangle, X } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
@@ -43,11 +44,19 @@ interface Props {
   className?: string;
   /** Exclude internal/test records (PARTICULAR, TESTE, NAO UTILIZAR) — for contract flows. */
   excludeInternal?: boolean;
+  /** Hide the built-in duplicate-CNPJ warning (kept visible by default). */
+  hideDuplicateWarning?: boolean;
+  /**
+   * Notifies the parent when there is a duplicate-CNPJ warning still awaiting
+   * confirmation, so flows can block progression until the user acknowledges it.
+   */
+  onDuplicateWarningChange?: (pending: boolean) => void;
 }
 
 export function CompanySelector({
   value, onChange, placeholder = 'Buscar empresa por nome ou CNPJ…',
   disabled, legacyLabel, className, excludeInternal,
+  hideDuplicateWarning, onDuplicateWarningChange,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -101,6 +110,23 @@ export function CompanySelector({
     });
   }, [companies, excludeInternal]);
 
+  // Other ACTIVE companies in the SOC master sharing the same CNPJ.
+  const duplicates = useMemo(() => {
+    const digits = (selected?.cnpj || '').replace(/\D/g, '');
+    if (!selected || !digits) return [] as CompanyOption[];
+    return companies.filter(
+      c => c.id !== selected.id && (c.cnpj || '').replace(/\D/g, '') === digits,
+    );
+  }, [companies, selected]);
+
+  const [ackCompanyId, setAckCompanyId] = useState<string | null>(null);
+  const duplicateWarningPending =
+    duplicates.length > 0 && !!selected && ackCompanyId !== selected.id;
+
+  useEffect(() => {
+    onDuplicateWarningChange?.(duplicateWarningPending);
+  }, [duplicateWarningPending, onDuplicateWarningChange]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const qDigits = q.replace(/\D/g, '');
@@ -118,6 +144,7 @@ export function CompanySelector({
   }, [visibleCompanies, search]);
 
   return (
+    <div className="space-y-2">
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
@@ -195,7 +222,86 @@ export function CompanySelector({
         </Command>
       </PopoverContent>
     </Popover>
+
+      {!hideDuplicateWarning && duplicates.length > 0 && selected && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Atenção: CNPJ com mais de um cadastro ativo no SOC</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <ul className="text-sm list-disc pl-5">
+              <li>
+                <span className="font-medium">{selected.soc_code}</span> — {selected.razao_social}{' '}
+                <span className="text-xs opacity-80">(selecionado)</span>
+              </li>
+              {duplicates.map(d => (
+                <li key={d.id}>
+                  <span className="font-medium">{d.soc_code}</span> — {d.razao_social}
+                </li>
+              ))}
+            </ul>
+            <p className="text-sm">
+              Confirme se este é o cadastro correto antes de continuar.
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              {duplicateWarningPending ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setAckCompanyId(selected.id)}
+                >
+                  Continuar com {selected.razao_social}
+                </Button>
+              ) : (
+                <span className="text-xs italic opacity-90">
+                  Confirmado: seguindo com {selected.razao_social}.
+                </span>
+              )}
+              {duplicates.map(d => (
+                <Button
+                  key={d.id}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { setAckCompanyId(null); onChange(d.id, d); }}
+                >
+                  Trocar para {d.soc_code}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => { setAckCompanyId(null); onChange(null, null); }}
+              >
+                Escolher outro
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
   );
+}
+
+/** Other ACTIVE companies sharing the same CNPJ as the given company. */
+export function useDuplicateCnpjCompanies(company: { id: string; cnpj: string | null } | null | undefined) {
+  const digits = (company?.cnpj || '').replace(/\D/g, '');
+  return useQuery({
+    queryKey: ['companies-duplicate-cnpj', digits, company?.id],
+    enabled: !!company?.id && digits.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, razao_social, nome_abreviado, cnpj, soc_code')
+        .eq('cnpj', digits)
+        .eq('is_active', true)
+        .neq('id', company!.id);
+      if (error) throw error;
+      return (data || []) as CompanyOption[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 export { formatCnpj as formatCompanyCnpj };

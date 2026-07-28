@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
-import { CompanySelector } from '@/components/shared/CompanySelector';
+import { CompanySelector, useDuplicateCnpjCompanies } from '@/components/shared/CompanySelector';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -145,6 +146,10 @@ export default function PainelCliente() {
 
       {company && (
         <>
+          <DuplicateCnpjBanner
+            company={company}
+            onSwitch={(id) => { setSelected(id); navigate(`/painel-cliente/${id}`); }}
+          />
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -229,6 +234,45 @@ export default function PainelCliente() {
     </div>
   );
 }
+
+function DuplicateCnpjBanner({
+  company,
+  onSwitch,
+}: {
+  company: { id: string; cnpj: string | null };
+  onSwitch: (id: string) => void;
+}) {
+  const { data: duplicates = [] } = useDuplicateCnpjCompanies(company);
+  if (duplicates.length === 0) return null;
+  return (
+    <Alert variant="destructive">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>
+        Existe(m) outra(s) {duplicates.length} empresa(s) ativa(s) no SOC com este mesmo CNPJ
+      </AlertTitle>
+      <AlertDescription className="space-y-2">
+        <p className="text-sm">
+          Confirme se você está visualizando o cadastro correto. Clique para trocar:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {duplicates.map(d => (
+            <Button
+              key={d.id}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onSwitch(d.id)}
+            >
+              {d.razao_social} · SOC {d.soc_code}
+            </Button>
+          ))}
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+
 
 function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
   const { data, isLoading } = useQuery({
