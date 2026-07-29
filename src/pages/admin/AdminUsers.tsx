@@ -640,11 +640,18 @@ export default function AdminUsers() {
   const detailUser = users.find(u => u.user_id === detailUserId) || null;
 
 
-  const filteredUsers = users.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.position?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      user.full_name.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q) ||
+      user.position?.toLowerCase().includes(q);
+    const matchesStatus =
+      statusFilter === 'all' || (user.status || 'active') === statusFilter;
+    const matchesUnit = unitFilter === 'all' || user.unit === unitFilter;
+    return matchesSearch && matchesStatus && matchesUnit;
+  });
+
 
   const getRoleBadge = (role?: string) => {
     switch (role) {
