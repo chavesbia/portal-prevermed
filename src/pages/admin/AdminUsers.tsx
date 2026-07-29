@@ -130,6 +130,9 @@ export default function AdminUsers() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [unitFilter, setUnitFilter] = useState<'all' | 'lapa' | 'osasco'>('all');
+
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -640,11 +643,18 @@ export default function AdminUsers() {
   const detailUser = users.find(u => u.user_id === detailUserId) || null;
 
 
-  const filteredUsers = users.filter(user =>
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.position?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      user.full_name.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q) ||
+      user.position?.toLowerCase().includes(q);
+    const matchesStatus =
+      statusFilter === 'all' || (user.status || 'active') === statusFilter;
+    const matchesUnit = unitFilter === 'all' || user.unit === unitFilter;
+    return matchesSearch && matchesStatus && matchesUnit;
+  });
+
 
   const getRoleBadge = (role?: string) => {
     switch (role) {
@@ -728,6 +738,25 @@ export default function AdminUsers() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 h-9"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="inactive">Inativo</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v as any)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="lapa">Lapa</SelectItem>
+                  <SelectItem value="osasco">Osasco</SelectItem>
+                </SelectContent>
+              </Select>
+
             </div>
           </div>
 
