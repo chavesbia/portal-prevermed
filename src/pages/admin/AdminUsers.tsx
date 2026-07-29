@@ -739,6 +739,25 @@ export default function AdminUsers() {
                 className="pl-9 h-9"
               />
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="inactive">Inativo</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={unitFilter} onValueChange={(v) => setUnitFilter(v as any)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="lapa">Lapa</SelectItem>
+                  <SelectItem value="osasco">Osasco</SelectItem>
+                </SelectContent>
+              </Select>
+
+            </div>
           </div>
 
           <ScrollArea className="flex-1">
