@@ -247,7 +247,7 @@ export default function AdminPermissions() {
           </TabsTrigger>
           <TabsTrigger value="manage" className="gap-2">
             <LayoutGrid className="h-4 w-4" />
-            Gerenciar por Usuário
+            Permissões por Usuário
           </TabsTrigger>
           <TabsTrigger value="auditoria" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
