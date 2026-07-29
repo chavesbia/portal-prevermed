@@ -637,6 +637,9 @@ export default function AdminUsers() {
     }));
   };
 
+  const detailUser = users.find(u => u.user_id === detailUserId) || null;
+
+
   const filteredUsers = users.filter(user =>
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
