@@ -130,6 +130,9 @@ export default function AdminUsers() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+  const [unitFilter, setUnitFilter] = useState<'all' | 'lapa' | 'osasco'>('all');
+
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
