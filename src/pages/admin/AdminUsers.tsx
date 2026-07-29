@@ -63,6 +63,35 @@ import { toast } from 'sonner';
 import BulkImportDialog from '@/components/admin/BulkImportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserAccessPanel } from '@/components/admin/UserAccessPanel';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+
+function formatDateBR(value?: string | null) {
+  if (!value) return null;
+  const [y, m, d] = value.split('T')[0].split('-');
+  if (!y || !m || !d) return value;
+  return `${d}/${m}/${y}`;
+}
+
+function DetailField({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string | null;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium truncate capitalize">{value || '—'}</p>
+      </div>
+    </div>
+  );
+}
 
 type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
 
