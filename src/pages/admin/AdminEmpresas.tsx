@@ -355,12 +355,53 @@ export default function AdminEmpresas() {
     }
   };
 
+  const [loadingSemPcmso, setLoadingSemPcmso] = useState(false);
+
+  const exportSemPcmso = async () => {
+    setLoadingSemPcmso(true);
+    try {
+      const all: any[] = [];
+      const PAGE = 1000;
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("companies")
+          .select("soc_code, razao_social, cnpj, company_responsaveis_pcmso(id)")
+          .eq("is_active", true)
+          .order("razao_social", { ascending: true })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        const page = data || [];
+        all.push(...page);
+        if (page.length < PAGE) break;
+      }
+      const rows = all.filter((c: any) => (c.company_responsaveis_pcmso || []).length === 0);
+      const esc = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const csv = ["Cod SOC,Razao Social,CNPJ", ...rows.map((r: any) => [r.soc_code, r.razao_social, r.cnpj].map(esc).join(","))].join("\n");
+      const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "empresas_sem_responsavel_pcmso.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${rows.length} empresas ativas sem responsável PCMSO`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar lista");
+    } finally {
+      setLoadingSemPcmso(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl space-y-6">
       <div className="flex items-center gap-3">
         <Building2 className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold">Base de Dados</h1>
+        <Button variant="outline" size="sm" className="ml-auto" onClick={exportSemPcmso} disabled={loadingSemPcmso}>
+          {loadingSemPcmso ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Ver empresas sem Responsável PCMSO
+        </Button>
       </div>
+
 
       <SyncList
         items={[
