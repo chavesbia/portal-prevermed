@@ -63,6 +63,35 @@ import { toast } from 'sonner';
 import BulkImportDialog from '@/components/admin/BulkImportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserAccessPanel } from '@/components/admin/UserAccessPanel';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+
+function formatDateBR(value?: string | null) {
+  if (!value) return null;
+  const [y, m, d] = value.split('T')[0].split('-');
+  if (!y || !m || !d) return value;
+  return `${d}/${m}/${y}`;
+}
+
+function DetailField({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: string | null;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium truncate capitalize">{value || '—'}</p>
+      </div>
+    </div>
+  );
+}
 
 type HierarchyPosition = 'director' | 'manager' | 'coordinator' | 'leader' | 'team_member';
 
@@ -102,6 +131,7 @@ export default function AdminUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
@@ -607,6 +637,9 @@ export default function AdminUsers() {
     }));
   };
 
+  const detailUser = users.find(u => u.user_id === detailUserId) || null;
+
+
   const filteredUsers = users.filter(user =>
     user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -662,130 +695,211 @@ export default function AdminUsers() {
         </p>
       </div>
 
-      <Card className="card-elevated">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg">Usuários ({filteredUsers.length})</CardTitle>
-          <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" size="icon" onClick={fetchUsers}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
+          <FileSpreadsheet className="h-4 w-4 mr-2" />
+          Importar
+        </Button>
+        <Button onClick={() => setIsNewUserDialogOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Novo Usuário
+        </Button>
+      </div>
+
+      <div className="border border-border rounded-xl overflow-hidden bg-card flex h-[calc(100vh-20rem)] min-h-[600px]">
+        {/* Master column */}
+        <aside className="w-80 border-r border-border flex flex-col bg-muted/30">
+          <div className="p-4 border-b border-border bg-card space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Usuários
+              </h2>
+              <Badge variant="secondary" className="text-[10px]">{filteredUsers.length}</Badge>
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar usuários..."
+                placeholder="Buscar usuário..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 w-64"
+                className="pl-9 h-9"
               />
             </div>
-            <Button variant="outline" size="icon" onClick={fetchUsers}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" onClick={() => setIsBulkImportOpen(true)}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              Importar
-            </Button>
-            <Button onClick={() => setIsNewUserDialogOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Novo Usuário
-            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+
+          <ScrollArea className="flex-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                Nenhum usuário encontrado.
+              </div>
+            ) : (
+              <ul>
+                {filteredUsers.map((user) => {
+                  const active = user.user_id === detailUserId;
+                  return (
+                    <li key={user.id}>
+                      <button
+                        onClick={() => setDetailUserId(user.user_id)}
+                        className={cn(
+                          'w-full text-left p-3 border-b border-border transition-colors',
+                          active
+                            ? 'bg-card border-l-4 border-l-primary'
+                            : 'hover:bg-muted border-l-4 border-l-transparent'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarImage src={user.profile_photo_url || undefined} />
+                            <AvatarFallback className="text-[10px]">{getInitials(user.full_name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{user.full_name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{user.position || 'Sem cargo'}</p>
+                          </div>
+                          <span
+                            className={cn(
+                              'text-[10px] font-bold uppercase shrink-0 px-1.5 py-0.5 rounded border',
+                              user.status === 'active'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300'
+                                : 'bg-muted text-muted-foreground border-border'
+                            )}
+                          >
+                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </ScrollArea>
+        </aside>
+
+        {/* Detail column */}
+        <main className="flex-1 flex flex-col min-w-0 bg-card">
+          {!detailUser ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+              <Users className="h-16 w-16 text-muted-foreground/40 mb-4" />
+              <h3 className="text-lg font-semibold">Selecione um usuário</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                Escolha um usuário na lista à esquerda para visualizar e gerenciar seus dados.
+              </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Perfil</TableHead>
-                  <TableHead>Departamentos</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Unidade</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.profile_photo_url || undefined} />
-                          <AvatarFallback>{getInitials(user.full_name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{user.full_name}</p>
-                          <p className="text-sm text-muted-foreground">{user.contact_email || user.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.position || '-'}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {user.departments?.length ? (
-                          user.departments.map(dept => (
-                            <Badge 
-                              key={dept.id} 
-                              variant={dept.is_lotacao ? "default" : "outline"}
-                              className="text-xs"
-                            >
-                              {dept.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {user.unit || '-'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Editar Usuário
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleResetPassword(user)}>
-                            <KeyRound className="h-4 w-4 mr-2" />
-                            Resetar Senha
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            {user.status === 'active' ? 'Inativar Usuário' : 'Ativar Usuário'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteUser(user)}
-                            className="text-destructive"
+            <>
+              <div className="p-5 border-b border-border flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={detailUser.profile_photo_url || undefined} />
+                    <AvatarFallback>{getInitials(detailUser.full_name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold truncate">{detailUser.full_name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {detailUser.contact_email || detailUser.email}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      {getRoleBadge(detailUser.role)}
+                      {getStatusBadge(detailUser.status)}
+                      <Badge variant="outline" className="capitalize">{detailUser.unit || '-'}</Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button size="sm" onClick={() => handleEditUser(detailUser)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleResetPassword(detailUser)}>
+                        <KeyRound className="h-4 w-4 mr-2" />
+                        Resetar Senha
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleStatus(detailUser)}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        {detailUser.status === 'active' ? 'Inativar Usuário' : 'Ativar Usuário'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteUser(detailUser)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <div className="p-5 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailField icon={Briefcase} label="Cargo" value={detailUser.position} />
+                    <DetailField icon={User} label="Apelido" value={detailUser.nickname} />
+                    <DetailField icon={AtSign} label="Login" value={detailUser.login} />
+                    <DetailField icon={AtSign} label="Handle interno" value={detailUser.internal_handle} />
+                    <DetailField icon={Phone} label="Ramal" value={detailUser.phone_extension} />
+                    <DetailField icon={MapPin} label="Unidade" value={detailUser.unit} />
+                    <DetailField
+                      icon={Calendar}
+                      label="Nascimento"
+                      value={formatDateBR(detailUser.birth_date)}
+                    />
+                    <DetailField
+                      icon={Calendar}
+                      label="Admissão"
+                      value={formatDateBR(detailUser.start_date)}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Departamentos
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {detailUser.departments?.length ? (
+                        detailUser.departments.map(dept => (
+                          <Badge
+                            key={dept.id}
+                            variant={dept.is_lotacao ? 'default' : 'outline'}
+                            className="text-xs"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                            {dept.name}{dept.is_lotacao ? ' (lotação)' : ''}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Nenhum departamento vinculado</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </main>
+      </div>
+
 
       {/* Edit User Dialog - Unified with all fields */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
