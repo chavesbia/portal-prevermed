@@ -32,10 +32,10 @@ export function OSGestaoVencimentosView() {
   const [filtroResponsavel, setFiltroResponsavel] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
 
-  // Responsável dialog
-  const [respDialogOpen, setRespDialogOpen] = useState(false);
-  const [editingResp, setEditingResp] = useState<ResponsavelTecnico | null>(null);
-  const [respForm, setRespForm] = useState({ nome: '', conselho: 'CREA' as ConselhoProfissional, numero_registro: '', especialidade: '', email: '' });
+  // Responsável Técnico → cadastro unificado de Profissionais
+  const [profDialogOpen, setProfDialogOpen] = useState(false);
+  const [editingProf, setEditingProf] = useState<any>(null);
+  const [defaultNomeProf, setDefaultNomeProf] = useState('');
 
   // Tipo Laudo dialog
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
