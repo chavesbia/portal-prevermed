@@ -18,9 +18,11 @@ interface Props {
   onSaved?: (p: Profissional | null) => void;
   /** Pré-preencher nome ao criar (útil para "novo" inline). */
   defaultNome?: string;
+  /** Pré-marcar "Pode ser Responsável Técnico" ao criar. */
+  defaultPodeRT?: boolean;
 }
 
-export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSaved, defaultNome }: Props) {
+export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSaved, defaultNome, defaultPodeRT }: Props) {
   const { conselhos } = useConselhosClasse();
   const { add, update } = useProfissionais();
 
@@ -65,10 +67,10 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto('');
       setAtivo(true);
       setObs('');
-      setPodeRT(false);
+      setPodeRT(!!defaultPodeRT);
       setEspecialidade('');
     }
-  }, [open, profissional, defaultNome]);
+  }, [open, profissional, defaultNome, defaultPodeRT]);
 
   const handleSave = async () => {
     if (!nome.trim()) {

@@ -15,10 +15,13 @@ import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { StatusVigencia, ResponsavelTecnico, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos, useConfiguracaoAlertas } from '@/hooks/useOSData';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalFormDialog } from './ProfissionalFormDialog';
 import { toast } from '@/hooks/use-toast';
 
 export function OSGestaoVencimentosView() {
-  const { responsaveis, add: addResp, update: updateResp, remove: removeResp } = useResponsaveisTecnicos();
+  const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
+  const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
   const { laudos } = useLaudos();
   const { config: alertaConfig, update: updateAlerta } = useConfiguracaoAlertas();
@@ -29,10 +32,10 @@ export function OSGestaoVencimentosView() {
   const [filtroResponsavel, setFiltroResponsavel] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
 
-  // Responsável dialog
-  const [respDialogOpen, setRespDialogOpen] = useState(false);
-  const [editingResp, setEditingResp] = useState<ResponsavelTecnico | null>(null);
-  const [respForm, setRespForm] = useState({ nome: '', conselho: 'CREA' as ConselhoProfissional, numero_registro: '', especialidade: '', email: '' });
+  // Responsável Técnico → cadastro unificado de Profissionais
+  const [profDialogOpen, setProfDialogOpen] = useState(false);
+  const [editingProf, setEditingProf] = useState<any>(null);
+  const [defaultNomeProf, setDefaultNomeProf] = useState('');
 
   // Tipo Laudo dialog
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
@@ -89,27 +92,16 @@ export function OSGestaoVencimentosView() {
 
   const handleOpenRespDialog = (resp?: ResponsavelTecnico) => {
     if (resp) {
-      setEditingResp(resp);
-      setRespForm({ nome: resp.nome, conselho: resp.conselho, numero_registro: resp.numero_registro, especialidade: resp.especialidade, email: resp.email });
+      const prof = profissionais.find(p => p.id === (resp as any).profissional_id) || null;
+      setEditingProf(prof);
+      setDefaultNomeProf(prof ? '' : resp.nome);
     } else {
-      setEditingResp(null);
-      setRespForm({ nome: '', conselho: 'CREA', numero_registro: '', especialidade: '', email: '' });
+      setEditingProf(null);
+      setDefaultNomeProf('');
     }
-    setRespDialogOpen(true);
+    setProfDialogOpen(true);
   };
 
-  const handleSaveResp = async () => {
-    if (!respForm.nome || !respForm.numero_registro) {
-      toast({ title: 'Atenção', description: 'Preencha nome e registro.', variant: 'destructive' });
-      return;
-    }
-    if (editingResp) {
-      await updateResp(editingResp.id, respForm);
-    } else {
-      await addResp({ ...respForm, ativo: true } as any);
-    }
-    setRespDialogOpen(false);
-  };
 
   const handleOpenTipoDialog = (tipo?: TipoLaudo) => {
     if (tipo) {
@@ -344,32 +336,16 @@ export function OSGestaoVencimentosView() {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog Responsável Técnico */}
-      <Dialog open={respDialogOpen} onOpenChange={setRespDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingResp ? 'Editar' : 'Novo'} Responsável Técnico</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Nome Completo *</Label><Input value={respForm.nome} onChange={e => setRespForm({ ...respForm, nome: e.target.value })} placeholder="Ex: Engª Susana Bezerra" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Conselho *</Label>
-                <Select value={respForm.conselho} onValueChange={v => setRespForm({ ...respForm, conselho: v as ConselhoProfissional })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONSELHO_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2"><Label>Nº Registro *</Label><Input value={respForm.numero_registro} onChange={e => setRespForm({ ...respForm, numero_registro: e.target.value })} placeholder="123456-SP" /></div>
-            </div>
-            <div className="space-y-2"><Label>Especialidade</Label><Input value={respForm.especialidade} onChange={e => setRespForm({ ...respForm, especialidade: e.target.value })} placeholder="Engenheiro de Segurança" /></div>
-            <div className="space-y-2"><Label>E-mail</Label><Input value={respForm.email} onChange={e => setRespForm({ ...respForm, email: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRespDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveResp}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Cadastro unificado de Profissionais (contexto: Responsável Técnico) */}
+      <ProfissionalFormDialog
+        open={profDialogOpen}
+        onOpenChange={setProfDialogOpen}
+        profissional={editingProf}
+        defaultNome={defaultNomeProf}
+        defaultPodeRT
+        onSaved={() => { refreshResponsaveis(); }}
+      />
+
 
       {/* Dialog Tipo Laudo */}
       <Dialog open={tipoDialogOpen} onOpenChange={setTipoDialogOpen}>
