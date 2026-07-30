@@ -15,10 +15,13 @@ import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { StatusVigencia, ResponsavelTecnico, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos, useConfiguracaoAlertas } from '@/hooks/useOSData';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { ProfissionalFormDialog } from './ProfissionalFormDialog';
 import { toast } from '@/hooks/use-toast';
 
 export function OSGestaoVencimentosView() {
-  const { responsaveis, add: addResp, update: updateResp, remove: removeResp } = useResponsaveisTecnicos();
+  const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
+  const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
   const { laudos } = useLaudos();
   const { config: alertaConfig, update: updateAlerta } = useConfiguracaoAlertas();
