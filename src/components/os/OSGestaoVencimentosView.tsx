@@ -92,27 +92,16 @@ export function OSGestaoVencimentosView() {
 
   const handleOpenRespDialog = (resp?: ResponsavelTecnico) => {
     if (resp) {
-      setEditingResp(resp);
-      setRespForm({ nome: resp.nome, conselho: resp.conselho, numero_registro: resp.numero_registro, especialidade: resp.especialidade, email: resp.email });
+      const prof = profissionais.find(p => p.id === (resp as any).profissional_id) || null;
+      setEditingProf(prof);
+      setDefaultNomeProf(prof ? '' : resp.nome);
     } else {
-      setEditingResp(null);
-      setRespForm({ nome: '', conselho: 'CREA', numero_registro: '', especialidade: '', email: '' });
+      setEditingProf(null);
+      setDefaultNomeProf('');
     }
-    setRespDialogOpen(true);
+    setProfDialogOpen(true);
   };
 
-  const handleSaveResp = async () => {
-    if (!respForm.nome || !respForm.numero_registro) {
-      toast({ title: 'Atenção', description: 'Preencha nome e registro.', variant: 'destructive' });
-      return;
-    }
-    if (editingResp) {
-      await updateResp(editingResp.id, respForm);
-    } else {
-      await addResp({ ...respForm, ativo: true } as any);
-    }
-    setRespDialogOpen(false);
-  };
 
   const handleOpenTipoDialog = (tipo?: TipoLaudo) => {
     if (tipo) {
