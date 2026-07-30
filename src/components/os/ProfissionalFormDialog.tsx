@@ -67,10 +67,10 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setCusto('');
       setAtivo(true);
       setObs('');
-      setPodeRT(false);
+      setPodeRT(!!defaultPodeRT);
       setEspecialidade('');
     }
-  }, [open, profissional, defaultNome]);
+  }, [open, profissional, defaultNome, defaultPodeRT]);
 
   const handleSave = async () => {
     if (!nome.trim()) {
