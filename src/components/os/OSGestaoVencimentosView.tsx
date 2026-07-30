@@ -13,14 +13,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, CheckCircle, Clock, FileText, Search, Plus, Bell, Users } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { StatusVigencia, ResponsavelTecnico, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
+import { StatusVigencia, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos, useConfiguracaoAlertas } from '@/hooks/useOSData';
 import { useProfissionais } from '@/hooks/useProfissionais';
-import { ProfissionalFormDialog } from './ProfissionalFormDialog';
 import { toast } from '@/hooks/use-toast';
 
 export function OSGestaoVencimentosView() {
-  const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
+  const { responsaveis } = useResponsaveisTecnicos();
   const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
   const { laudos } = useLaudos();
