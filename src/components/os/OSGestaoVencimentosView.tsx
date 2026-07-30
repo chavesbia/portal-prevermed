@@ -336,32 +336,16 @@ export function OSGestaoVencimentosView() {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog Responsável Técnico */}
-      <Dialog open={respDialogOpen} onOpenChange={setRespDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingResp ? 'Editar' : 'Novo'} Responsável Técnico</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2"><Label>Nome Completo *</Label><Input value={respForm.nome} onChange={e => setRespForm({ ...respForm, nome: e.target.value })} placeholder="Ex: Engª Susana Bezerra" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Conselho *</Label>
-                <Select value={respForm.conselho} onValueChange={v => setRespForm({ ...respForm, conselho: v as ConselhoProfissional })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CONSELHO_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2"><Label>Nº Registro *</Label><Input value={respForm.numero_registro} onChange={e => setRespForm({ ...respForm, numero_registro: e.target.value })} placeholder="123456-SP" /></div>
-            </div>
-            <div className="space-y-2"><Label>Especialidade</Label><Input value={respForm.especialidade} onChange={e => setRespForm({ ...respForm, especialidade: e.target.value })} placeholder="Engenheiro de Segurança" /></div>
-            <div className="space-y-2"><Label>E-mail</Label><Input value={respForm.email} onChange={e => setRespForm({ ...respForm, email: e.target.value })} /></div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRespDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSaveResp}>Salvar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Cadastro unificado de Profissionais (contexto: Responsável Técnico) */}
+      <ProfissionalFormDialog
+        open={profDialogOpen}
+        onOpenChange={setProfDialogOpen}
+        profissional={editingProf}
+        defaultNome={defaultNomeProf}
+        defaultPodeRT
+        onSaved={() => { refreshResponsaveis(); }}
+      />
+
 
       {/* Dialog Tipo Laudo */}
       <Dialog open={tipoDialogOpen} onOpenChange={setTipoDialogOpen}>
