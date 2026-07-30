@@ -13,14 +13,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, CheckCircle, Clock, FileText, Search, Plus, Bell, Users } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { StatusVigencia, ResponsavelTecnico, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
+import { StatusVigencia, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos, useConfiguracaoAlertas } from '@/hooks/useOSData';
 import { useProfissionais } from '@/hooks/useProfissionais';
-import { ProfissionalFormDialog } from './ProfissionalFormDialog';
 import { toast } from '@/hooks/use-toast';
 
 export function OSGestaoVencimentosView() {
-  const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
+  const { responsaveis } = useResponsaveisTecnicos();
   const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
   const { laudos } = useLaudos();
@@ -32,10 +31,6 @@ export function OSGestaoVencimentosView() {
   const [filtroResponsavel, setFiltroResponsavel] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
 
-  // Responsável Técnico → cadastro unificado de Profissionais
-  const [profDialogOpen, setProfDialogOpen] = useState(false);
-  const [editingProf, setEditingProf] = useState<any>(null);
-  const [defaultNomeProf, setDefaultNomeProf] = useState('');
 
   // Tipo Laudo dialog
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
@@ -90,17 +85,12 @@ export function OSGestaoVencimentosView() {
     }
   };
 
-  const handleOpenRespDialog = (resp?: ResponsavelTecnico) => {
-    if (resp) {
-      const prof = profissionais.find(p => p.id === (resp as any).profissional_id) || null;
-      setEditingProf(prof);
-      setDefaultNomeProf(prof ? '' : resp.nome);
-    } else {
-      setEditingProf(null);
-      setDefaultNomeProf('');
-    }
-    setProfDialogOpen(true);
-  };
+  const responsaveisTecnicos = useMemo(
+    () => profissionais.filter(p => p.pode_ser_responsavel_tecnico).sort((a, b) => a.nome.localeCompare(b.nome)),
+    [profissionais],
+  );
+
+
 
 
   const handleOpenTipoDialog = (tipo?: TipoLaudo) => {
@@ -251,27 +241,26 @@ export function OSGestaoVencimentosView() {
         {/* Responsáveis Técnicos Tab */}
         <TabsContent value="responsaveis" className="mt-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div><CardTitle>Responsáveis Técnicos</CardTitle><CardDescription>Cadastro de profissionais habilitados</CardDescription></div>
-              <Button onClick={() => handleOpenRespDialog()}><Plus className="h-4 w-4 mr-1" />Novo</Button>
+            <CardHeader>
+              <CardTitle>Responsáveis Técnicos</CardTitle>
+              <CardDescription>
+                Consulta somente leitura. Para cadastrar ou editar um Responsável Técnico, acesse Gerenciar Usuários → Profissionais.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Conselho</TableHead><TableHead>Registro</TableHead><TableHead className="hidden md:table-cell">Especialidade</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                  <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Conselho</TableHead><TableHead>Registro</TableHead><TableHead className="hidden md:table-cell">Especialidade</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
                   <TableBody>
-                    {responsaveis.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum responsável cadastrado</TableCell></TableRow>
-                    ) : responsaveis.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.nome}</TableCell>
-                        <TableCell><Badge variant="outline">{r.conselho}</Badge></TableCell>
-                        <TableCell>{r.numero_registro}</TableCell>
-                        <TableCell className="hidden md:table-cell">{r.especialidade || '-'}</TableCell>
-                        <TableCell><Badge variant={r.ativo ? 'default' : 'secondary'}>{r.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenRespDialog(r)}>Editar</Button>
-                        </TableCell>
+                    {responsaveisTecnicos.length === 0 ? (
+                      <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum responsável técnico cadastrado</TableCell></TableRow>
+                    ) : responsaveisTecnicos.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.nome}</TableCell>
+                        <TableCell>{p.conselho_sigla ? <Badge variant="outline">{p.conselho_sigla}</Badge> : '-'}</TableCell>
+                        <TableCell>{p.numero_conselho || '-'}</TableCell>
+                        <TableCell className="hidden md:table-cell">{p.especialidade || p.categoria || '-'}</TableCell>
+                        <TableCell><Badge variant={p.ativo ? 'default' : 'secondary'}>{p.ativo ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -280,6 +269,7 @@ export function OSGestaoVencimentosView() {
             </CardContent>
           </Card>
         </TabsContent>
+
 
         {/* Tipos de Laudo Tab */}
         <TabsContent value="tipos" className="mt-4">
@@ -336,15 +326,6 @@ export function OSGestaoVencimentosView() {
         </TabsContent>
       </Tabs>
 
-      {/* Cadastro unificado de Profissionais (contexto: Responsável Técnico) */}
-      <ProfissionalFormDialog
-        open={profDialogOpen}
-        onOpenChange={setProfDialogOpen}
-        profissional={editingProf}
-        defaultNome={defaultNomeProf}
-        defaultPodeRT
-        onSaved={() => { refreshResponsaveis(); }}
-      />
 
 
       {/* Dialog Tipo Laudo */}
