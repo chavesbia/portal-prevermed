@@ -89,8 +89,9 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       nome: nome.trim(),
       tipo,
       categoria,
-      conselho_id: conselhoId || null,
-      numero_conselho: numero.trim() || null,
+      // Conselho/registro/especialidade só fazem sentido para Responsável Técnico
+      conselho_id: podeRT ? (conselhoId || null) : null,
+      numero_conselho: podeRT ? (numero.trim() || null) : null,
       email: email.trim() || null,
       telefone: telefone.trim() || null,
       custo_padrao: custo ? Number(custo) : null,
@@ -99,8 +100,9 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       observacoes: obs.trim() || null,
       pode_ser_responsavel_tecnico: podeRT,
       pode_ser_executor: podeExec,
-      especialidade: especialidade.trim() || null,
+      especialidade: podeRT ? (especialidade.trim() || null) : null,
     };
+
 
     let result: Profissional | null = null;
     if (profissional) {

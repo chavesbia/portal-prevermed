@@ -4,36 +4,59 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Profissional } from '@/types/profissionais';
 
-export function useProfissionais() {
-  const { user } = useAuth();
-  const [profissionais, setProfissionais] = useState<Profissional[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+/**
+ * Store compartilhado entre todas as instâncias do hook.
+ * Sem isso, cada componente (lista, diálogo, seletor) tinha sua própria cópia
+ * e uma edição salva no diálogo não refletia na lista/objeto selecionado.
+ */
+let cache: Profissional[] = [];
+let loading = true;
+let inflight: Promise<void> | null = null;
+const listeners = new Set<() => void>();
 
-  const fetchAll = useCallback(async () => {
-    setIsLoading(true);
+function emit() {
+  listeners.forEach(l => l());
+}
+
+async function loadAll(): Promise<void> {
+  if (inflight) return inflight;
+  loading = true;
+  emit();
+  inflight = (async () => {
     try {
       const { data, error } = await supabase
         .from('profissionais')
         .select('*, conselhos_classe:conselho_id(sigla)')
         .order('nome');
       if (error) throw error;
-      setProfissionais(
-        (data || []).map((p: any) => ({
-          ...p,
-          conselho_sigla: p.conselhos_classe?.sigla ?? null,
-        })) as Profissional[],
-      );
+      cache = (data || []).map((p: any) => ({
+        ...p,
+        conselho_sigla: p.conselhos_classe?.sigla ?? null,
+      })) as Profissional[];
     } catch (e: any) {
       console.error('Erro ao carregar profissionais:', e);
       toast({ title: 'Erro', description: 'Não foi possível carregar profissionais.', variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      loading = false;
+      inflight = null;
+      emit();
     }
-  }, []);
+  })();
+  return inflight;
+}
+
+export function useProfissionais() {
+  const { user } = useAuth();
+  const [, forceRender] = useState(0);
 
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    const l = () => forceRender(n => n + 1);
+    listeners.add(l);
+    if (cache.length === 0 && !inflight) loadAll();
+    return () => { listeners.delete(l); };
+  }, []);
+
+  const fetchAll = useCallback(() => loadAll(), []);
 
   const add = async (input: Omit<Profissional, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'conselho_sigla'>) => {
     const { data, error } = await supabase
@@ -46,8 +69,8 @@ export function useProfissionais() {
       return null;
     }
     toast({ title: 'Sucesso', description: 'Profissional cadastrado.' });
-    await fetchAll();
-    return data as Profissional;
+    await loadAll();
+    return (cache.find(p => p.id === (data as any)?.id) || (data as Profissional)) as Profissional;
   };
 
   const update = async (id: string, patch: Partial<Profissional>) => {
@@ -57,7 +80,7 @@ export function useProfissionais() {
       return false;
     }
     toast({ title: 'Sucesso', description: 'Profissional atualizado.' });
-    await fetchAll();
+    await loadAll();
     return true;
   };
 
@@ -70,9 +93,9 @@ export function useProfissionais() {
       return false;
     }
     toast({ title: 'Excluído', description: 'Profissional removido.' });
-    await fetchAll();
+    await loadAll();
     return true;
   };
 
-  return { profissionais, isLoading, fetchAll, add, update, toggleAtivo, remove };
+  return { profissionais: cache, isLoading: loading, fetchAll, add, update, toggleAtivo, remove };
 }

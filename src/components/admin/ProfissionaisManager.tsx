@@ -16,8 +16,15 @@ export function ProfissionaisManager() {
   const { profissionais, isLoading, toggleAtivo } = useProfissionais();
   const [search, setSearch] = useState('');
   const [showInativos, setShowInativos] = useState(false);
-  const [editing, setEditing] = useState<Profissional | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+
+  // Sempre derivar do dado fresco da lista (evita objeto "selecionado" desatualizado)
+  const editing: Profissional | null = useMemo(
+    () => (editingId ? profissionais.find(p => p.id === editingId) ?? null : null),
+    [editingId, profissionais],
+  );
+
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -39,7 +46,7 @@ export function ProfissionaisManager() {
             o registro de Responsável Técnico usado em Laudos e OS é mantido automaticamente.
           </CardDescription>
         </div>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button onClick={() => { setEditingId(null); setOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />Novo Profissional
         </Button>
       </CardHeader>
@@ -94,7 +101,7 @@ export function ProfissionaisManager() {
                     <Switch checked={p.ativo} onCheckedChange={v => toggleAtivo(p.id, v)} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </TableCell>
