@@ -46,7 +46,7 @@ const formSchema = z.object({
   unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
-  emissor: z.string().min(1, 'Selecione o emissor/elaborador'),
+  emissor: z.string().min(1, 'Usuário emissor não identificado'),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
   prazoEntrega: z.date().optional().nullable(),
   urgente: z.boolean().default(false),
