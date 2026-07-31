@@ -9,6 +9,7 @@ import { OSSLAView } from '@/components/os/OSSLAView';
 import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { Badge } from '@/components/ui/badge';
 import { OrdemServico, statusOSColors, statusServicoColors } from '@/types/os';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { differenceInDays } from 'date-fns';
 
 // Paleta padrão de status (OS e serviços): amarelo=andamento, verde=concluído,
@@ -38,6 +39,7 @@ interface OSDashboardViewProps {
 }
 
 export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: OSDashboardViewProps) {
+  const { profissionais } = useProfissionais();
   const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
   const slaDias = encerradas
     .map(o => o.data_emissao ? differenceInDays(new Date(o.updated_at), new Date(o.data_registro)) : null)
@@ -59,9 +61,16 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     ordens.reduce((acc, o) => { acc[o.status_os] = (acc[o.status_os] || 0) + 1; return acc; }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
 
-  // Responsavel chart data
+  // Executor chart data — contagem por SERVIÇO, agrupado por profissional
+  const profNome = new Map(profissionais.map(p => [p.id, p.nome]));
   const respData = Object.entries(
-    ordens.reduce((acc, o) => { acc[o.responsavel_atual] = (acc[o.responsavel_atual] || 0) + 1; return acc; }, {} as Record<string, number>)
+    ordens.reduce((acc, o) => {
+      (o.servicos || []).forEach(s => {
+        const nome = s.responsavel_id ? (profNome.get(s.responsavel_id) || 'Não atribuído') : 'Não atribuído';
+        acc[nome] = (acc[nome] || 0) + 1;
+      });
+      return acc;
+    }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name: name.split(' ').slice(0, 2).join(' '), fullName: name, value }))
     .sort((a, b) => b.value - a.value);
 
@@ -145,9 +154,9 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
           </CardContent>
         </Card>
 
-        {/* Responsavel Chart */}
+        {/* Executor Chart */}
         <Card>
-          <CardHeader><CardTitle className="text-lg">OS por Responsável</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Serviços por Executor</CardTitle></CardHeader>
           <CardContent>
             <div className="h-[300px]">
               {respData.length > 0 ? (
