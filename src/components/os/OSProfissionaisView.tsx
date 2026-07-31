@@ -101,7 +101,7 @@ export function OSProfissionaisView({ canEdit }: Props) {
                     <th className="pb-2 text-left font-medium text-muted-foreground">Categoria</th>
                     <th className="pb-2 text-left font-medium text-muted-foreground">Tipo</th>
                     <th className="pb-2 text-left font-medium text-muted-foreground">Conselho</th>
-                    <th className="pb-2 text-left font-medium text-muted-foreground hidden md:table-cell">Contato</th>
+                    
                     <th className="pb-2 text-center font-medium text-muted-foreground">Ativo</th>
                     <th className="pb-2 text-right font-medium text-muted-foreground">Ações</th>
                   </tr>
@@ -119,10 +119,8 @@ export function OSProfissionaisView({ canEdit }: Props) {
                       <td className="py-2 text-muted-foreground">
                         {p.conselho_sigla ? `${p.conselho_sigla} ${p.numero_conselho || ''}` : '—'}
                       </td>
-                      <td className="py-2 hidden md:table-cell text-muted-foreground">
-                        {p.email || p.telefone || '—'}
-                      </td>
                       <td className="py-2 text-center">
+
                         <Switch
                           checked={p.ativo}
                           onCheckedChange={v => toggleAtivo(p.id, v)}
