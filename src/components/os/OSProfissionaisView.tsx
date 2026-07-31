@@ -23,8 +23,13 @@ export function OSProfissionaisView({ canEdit }: Props) {
   const [tipo, setTipo] = useState<'todos' | 'interno' | 'externo'>('todos');
   const [ativos, setAtivos] = useState<'todos' | 'ativos' | 'inativos'>('ativos');
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState<Profissional | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const editing: Profissional | null = useMemo(
+    () => (editingId ? profissionais.find(p => p.id === editingId) ?? null : null),
+    [editingId, profissionais],
+  );
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -53,7 +58,7 @@ export function OSProfissionaisView({ canEdit }: Props) {
           <p className="text-muted-foreground text-sm">Profissionais internos e externos responsáveis pelos serviços das OS.</p>
         </div>
         {canEdit && (
-          <Button onClick={() => { setEditing(null); setShowForm(true); }}>
+          <Button onClick={() => { setEditingId(null); setShowForm(true); }}>
             <Plus className="mr-2 h-4 w-4" /> Novo Profissional
           </Button>
         )}
@@ -97,7 +102,6 @@ export function OSProfissionaisView({ canEdit }: Props) {
                     <th className="pb-2 text-left font-medium text-muted-foreground">Tipo</th>
                     <th className="pb-2 text-left font-medium text-muted-foreground">Conselho</th>
                     <th className="pb-2 text-left font-medium text-muted-foreground hidden md:table-cell">Contato</th>
-                    <th className="pb-2 text-right font-medium text-muted-foreground hidden lg:table-cell">Custo padrão</th>
                     <th className="pb-2 text-center font-medium text-muted-foreground">Ativo</th>
                     <th className="pb-2 text-right font-medium text-muted-foreground">Ações</th>
                   </tr>
@@ -118,9 +122,6 @@ export function OSProfissionaisView({ canEdit }: Props) {
                       <td className="py-2 hidden md:table-cell text-muted-foreground">
                         {p.email || p.telefone || '—'}
                       </td>
-                      <td className="py-2 hidden lg:table-cell text-right text-muted-foreground">
-                        {p.custo_padrao != null ? p.custo_padrao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}
-                      </td>
                       <td className="py-2 text-center">
                         <Switch
                           checked={p.ativo}
@@ -131,7 +132,7 @@ export function OSProfissionaisView({ canEdit }: Props) {
                       <td className="py-2 text-right">
                         {canEdit && (
                           <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setShowForm(true); }}>
+                            <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setShowForm(true); }}>
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setDeleteId(p.id)} className="text-destructive">
