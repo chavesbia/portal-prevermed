@@ -154,9 +154,9 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
           </CardContent>
         </Card>
 
-        {/* Responsavel Chart */}
+        {/* Executor Chart */}
         <Card>
-          <CardHeader><CardTitle className="text-lg">OS por Responsável</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-lg">Serviços por Executor</CardTitle></CardHeader>
           <CardContent>
             <div className="h-[300px]">
               {respData.length > 0 ? (
