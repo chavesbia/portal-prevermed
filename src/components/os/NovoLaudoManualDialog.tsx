@@ -61,6 +61,18 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
   const tipoSelecionado = tiposAtivos.find((t: any) => t.id === tipoLaudoId);
   const exigeVigencia = !!(tipoSelecionado as any)?.exige_vigencia;
 
+  const handleTipoChange = (id: string) => {
+    setTipoLaudoId(id);
+    const tipo: any = tiposAtivos.find((t: any) => t.id === id);
+    if (tipo?.prazo_vigencia_padrao) {
+      const base = dataEmissao ? new Date(`${dataEmissao}T00:00:00`) : new Date();
+      base.setDate(base.getDate() + Number(tipo.prazo_vigencia_padrao));
+      setDataValidade(base.toISOString().slice(0, 10));
+    } else {
+      setDataValidade('');
+    }
+  };
+
   const handleCompanyChange = (id: string | null, c: CompanyOption | null) => {
     setCompany(id && c ? { id, nome: c.nome_abreviado || c.razao_social } : null);
     setUnidadeId(null);
@@ -130,7 +142,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Tipo de Laudo *</Label>
-              <Select value={tipoLaudoId} onValueChange={setTipoLaudoId}>
+              <Select value={tipoLaudoId} onValueChange={handleTipoChange}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {tiposAtivos.map((t: any) => (
@@ -162,6 +174,11 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
             <div className="space-y-1.5">
               <Label>Data de Validade {exigeVigencia ? '*' : ''}</Label>
               <Input type="date" value={dataValidade} onChange={(e) => setDataValidade(e.target.value)} />
+              {!exigeVigencia && (tipoSelecionado as any)?.prazo_vigencia_padrao && (
+                <p className="text-xs text-muted-foreground">
+                  Sugestão de revisão em {(tipoSelecionado as any).prazo_vigencia_padrao} dias — opcional, pode editar ou apagar.
+                </p>
+              )}
             </div>
           </div>
 

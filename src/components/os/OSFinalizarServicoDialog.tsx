@@ -83,7 +83,8 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
     setForm(prev => ({
       ...prev,
       tipoLaudoId: tipoId,
-      possuiVigencia: tipo?.exige_vigencia ?? prev.possuiVigencia,
+      // Sugere vigência sempre que o tipo tiver prazo padrão (mesmo quando não é obrigatória)
+      possuiVigencia: tipo?.exige_vigencia || !!tipo?.prazo_vigencia_padrao || prev.possuiVigencia,
       dataValidade: tipo?.prazo_vigencia_padrao ? addDays(new Date(), tipo.prazo_vigencia_padrao) : prev.dataValidade,
       responsavelTecnicoId: '',
     }));
