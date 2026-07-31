@@ -94,14 +94,11 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     },
   });
 
-  // Pré-seleciona o usuário logado quando ele existir no cadastro de responsáveis
+  // Emissor = usuário logado (somente leitura)
   useEffect(() => {
-    if (form.getValues('emissor')) return;
-    const nome = (profile?.full_name || '').trim().toLowerCase();
-    if (!nome) return;
-    const match = responsaveisAtivos.find(r => (r.nome || '').trim().toLowerCase().includes(nome) || nome.includes((r.nome || '').trim().toLowerCase()));
-    if (match) form.setValue('emissor', match.nome);
-  }, [responsaveisAtivos, profile?.full_name]);
+    const nome = (profile?.full_name || '').trim();
+    if (nome) form.setValue('emissor', nome);
+  }, [profile?.full_name]);
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
