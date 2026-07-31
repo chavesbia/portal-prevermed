@@ -274,21 +274,12 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             )} />
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>
-                <FormLabel>Emissor / Elaborador *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o responsável" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {responsaveisAtivos.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável cadastrado</div>
-                    ) : responsaveisAtivos.map(r => (
-                      <SelectItem key={r.id} value={r.nome}>
-                        {r.nome}{r.conselho ? ` · ${r.conselho} ${r.numero_registro || ''}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Usuário Emissor</FormLabel>
+                <FormControl>
+                  <Input value={field.value || ''} readOnly disabled />
+                </FormControl>
                 <p className="text-xs text-muted-foreground">
-                  Selecione a partir do cadastro de responsáveis técnicos (Administração › Laudos e Serviços) para evitar nomes duplicados.
+                  Preenchido automaticamente com o usuário logado no Portal.
                 </p>
                 <FormMessage />
               </FormItem>
