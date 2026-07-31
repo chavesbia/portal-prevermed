@@ -149,9 +149,15 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
           </div>
 
           <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
-              <Label htmlFor="prof-rt" className="cursor-pointer">Pode ser Responsável Técnico?</Label>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
+                <Label htmlFor="prof-rt" className="cursor-pointer">Responsável Técnico</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={podeExec} onCheckedChange={setPodeExec} id="prof-exec" />
+                <Label htmlFor="prof-exec" className="cursor-pointer">Executor</Label>
+              </div>
             </div>
             {podeRT && (
               <>
