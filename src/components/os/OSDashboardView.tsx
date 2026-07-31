@@ -39,6 +39,7 @@ interface OSDashboardViewProps {
 }
 
 export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: OSDashboardViewProps) {
+  const { profissionais } = useProfissionais();
   const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
   const slaDias = encerradas
     .map(o => o.data_emissao ? differenceInDays(new Date(o.updated_at), new Date(o.data_registro)) : null)
