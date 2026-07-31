@@ -61,6 +61,18 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
   const tipoSelecionado = tiposAtivos.find((t: any) => t.id === tipoLaudoId);
   const exigeVigencia = !!(tipoSelecionado as any)?.exige_vigencia;
 
+  const handleTipoChange = (id: string) => {
+    setTipoLaudoId(id);
+    const tipo: any = tiposAtivos.find((t: any) => t.id === id);
+    if (tipo?.prazo_vigencia_padrao) {
+      const base = dataEmissao ? new Date(`${dataEmissao}T00:00:00`) : new Date();
+      base.setDate(base.getDate() + Number(tipo.prazo_vigencia_padrao));
+      setDataValidade(base.toISOString().slice(0, 10));
+    } else {
+      setDataValidade('');
+    }
+  };
+
   const handleCompanyChange = (id: string | null, c: CompanyOption | null) => {
     setCompany(id && c ? { id, nome: c.nome_abreviado || c.razao_social } : null);
     setUnidadeId(null);
