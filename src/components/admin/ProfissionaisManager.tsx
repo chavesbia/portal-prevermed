@@ -16,8 +16,15 @@ export function ProfissionaisManager() {
   const { profissionais, isLoading, toggleAtivo } = useProfissionais();
   const [search, setSearch] = useState('');
   const [showInativos, setShowInativos] = useState(false);
-  const [editing, setEditing] = useState<Profissional | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+
+  // Sempre derivar do dado fresco da lista (evita objeto "selecionado" desatualizado)
+  const editing: Profissional | null = useMemo(
+    () => (editingId ? profissionais.find(p => p.id === editingId) ?? null : null),
+    [editingId, profissionais],
+  );
+
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
