@@ -119,10 +119,8 @@ export function OSProfissionaisView({ canEdit }: Props) {
                       <td className="py-2 text-muted-foreground">
                         {p.conselho_sigla ? `${p.conselho_sigla} ${p.numero_conselho || ''}` : '—'}
                       </td>
-                      <td className="py-2 hidden md:table-cell text-muted-foreground">
-                        {p.email || p.telefone || '—'}
-                      </td>
                       <td className="py-2 text-center">
+
                         <Switch
                           checked={p.ativo}
                           onCheckedChange={v => toggleAtivo(p.id, v)}
