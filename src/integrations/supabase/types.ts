@@ -3479,15 +3479,16 @@ export type Database = {
           empresa_cliente: string
           id: string
           justificativa_sem_vigencia: string | null
-          numero_os: string
+          numero_os: string | null
           observacoes: string | null
-          ordem_id: string
+          ordem_id: string | null
+          origem: string
           possui_art: boolean
           possui_vigencia: boolean
           responsavel_tecnico_id: string
           responsavel_tecnico_nome: string
           responsavel_tecnico_registro: string
-          servico_id: string
+          servico_id: string | null
           tipo_laudo_id: string
           tipo_laudo_nome: string
           tipo_servico: string
@@ -3506,15 +3507,16 @@ export type Database = {
           empresa_cliente: string
           id?: string
           justificativa_sem_vigencia?: string | null
-          numero_os: string
+          numero_os?: string | null
           observacoes?: string | null
-          ordem_id: string
+          ordem_id?: string | null
+          origem?: string
           possui_art?: boolean
           possui_vigencia?: boolean
           responsavel_tecnico_id: string
           responsavel_tecnico_nome: string
           responsavel_tecnico_registro: string
-          servico_id: string
+          servico_id?: string | null
           tipo_laudo_id: string
           tipo_laudo_nome: string
           tipo_servico: string
@@ -3533,15 +3535,16 @@ export type Database = {
           empresa_cliente?: string
           id?: string
           justificativa_sem_vigencia?: string | null
-          numero_os?: string
+          numero_os?: string | null
           observacoes?: string | null
-          ordem_id?: string
+          ordem_id?: string | null
+          origem?: string
           possui_art?: boolean
           possui_vigencia?: boolean
           responsavel_tecnico_id?: string
           responsavel_tecnico_nome?: string
           responsavel_tecnico_registro?: string
-          servico_id?: string
+          servico_id?: string | null
           tipo_laudo_id?: string
           tipo_laudo_nome?: string
           tipo_servico?: string
