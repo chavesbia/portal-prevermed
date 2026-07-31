@@ -719,17 +719,30 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
           <CardTitle className="text-base flex items-center gap-2">
             <FileCheck2 className="h-4 w-4 text-primary" /> Laudos
           </CardTitle>
-          {!isLoading && rows.length > 0 && (
-            <div className="flex items-center gap-2 text-xs flex-wrap">
-              <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Vencidos: {counts.vencido}</Badge>
-              <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Vencendo em breve: {counts.a_vencer}</Badge>
-              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Válidos: {counts.valido}</Badge>
-              {counts.sem_vigencia > 0 && (
-                <Badge variant="outline">Sem vigência: {counts.sem_vigencia}</Badge>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-xs flex-wrap">
+            {!isLoading && rows.length > 0 && (
+              <>
+                <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Vencidos: {counts.vencido}</Badge>
+                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Vencendo em breve: {counts.a_vencer}</Badge>
+                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Válidos: {counts.valido}</Badge>
+                {counts.sem_vigencia > 0 && (
+                  <Badge variant="outline">Sem vigência: {counts.sem_vigencia}</Badge>
+                )}
+              </>
+            )}
+            {canCreateLaudo && (
+              <Button size="sm" variant="outline" className="h-7" onClick={() => setNovoLaudoOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Novo Laudo
+              </Button>
+            )}
+          </div>
         </div>
+        <NovoLaudoManualDialog
+          open={novoLaudoOpen}
+          onOpenChange={setNovoLaudoOpen}
+          companyId={companyId}
+          onSaved={() => queryClient.invalidateQueries({ queryKey: ['painel-cliente-laudos', companyId] })}
+        />
       </CardHeader>
       <CardContent>
         {isLoading ? (
