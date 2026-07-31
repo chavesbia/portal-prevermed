@@ -50,7 +50,7 @@ export function OSFilterBar({ filters, setFilters, responsaveis }: OSFilterBarPr
         </Select>
 
         <Select value={filters.responsavel} onValueChange={(v) => setFilters({ ...filters, responsavel: v })}>
-          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Elaborador/Executor" /></SelectTrigger>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Executor" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             {responsaveis.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}

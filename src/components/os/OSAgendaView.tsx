@@ -201,7 +201,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
             </SelectContent>
           </Select>
           <Select value={filters.responsavel_id} onValueChange={v => setFilters({ ...filters, responsavel_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Elaborador/Executor" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Executor" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {responsaveisComVisitas.map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
@@ -364,9 +364,9 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               </div>
 
               <FormField control={form.control} name="responsavel_id" render={({ field }) => (
-                <FormItem><FormLabel>Elaborador/Executor *</FormLabel>
+                <FormItem><FormLabel>Executor *</FormLabel>
                   <FormControl>
-                    <ProfissionalSelector value={field.value || null} onChange={(id) => field.onChange(id || '')} />
+                    <ProfissionalSelector value={field.value || null} onChange={(id) => field.onChange(id || '')} onlyExecutores />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -492,7 +492,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 <div><span className="text-muted-foreground">Cliente:</span> <strong>{selectedView.empresa_cliente}</strong></div>
                 {svc && <div><span className="text-muted-foreground">Serviço:</span> {svc.tipo} ({svc.tipo_os})</div>}
                 <div><span className="text-muted-foreground">Data:</span> {format(new Date(selectedView.data_visita + 'T00:00:00'), 'dd/MM/yyyy')} {selectedView.hora_visita}</div>
-                <div><span className="text-muted-foreground">Elaborador/Executor:</span> {selectedView.responsavel_nome}</div>
+                <div><span className="text-muted-foreground">Executor:</span> {selectedView.responsavel_nome}</div>
                 <div><span className="text-muted-foreground">Endereço:</span> {selectedView.endereco || <span className="italic text-muted-foreground">Não informado</span>}</div>
                 {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
                   <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>

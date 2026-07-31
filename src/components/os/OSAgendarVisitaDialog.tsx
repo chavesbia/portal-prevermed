@@ -54,7 +54,7 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
 
   const handleSubmit = async () => {
     if (!dataVisita) { toast({ title: 'Atenção', description: 'Selecione a data.', variant: 'destructive' }); return; }
-    if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o Elaborador/Executor.', variant: 'destructive' }); return; }
+    if (!responsavelId) { toast({ title: 'Atenção', description: 'Selecione o Executor.', variant: 'destructive' }); return; }
     if (urgente && !motivoUrgencia.trim()) { toast({ title: 'Atenção', description: 'Informe o motivo da urgência.', variant: 'destructive' }); return; }
     if (hasBloqueio) { toast({ title: 'Conflito', description: 'Resolva os conflitos de agenda antes de salvar.', variant: 'destructive' }); return; }
     setSaving(true);
@@ -126,8 +126,8 @@ export function OSAgendarVisitaDialog({ ordem, open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Elaborador/Executor *</Label>
-            <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} />
+            <Label>Executor *</Label>
+            <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} onlyExecutores />
           </div>
 
 

@@ -189,7 +189,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                             <td className="py-2">
                               <div className="font-medium">{servico.tipo}</div>
                               <div className="text-xs text-muted-foreground">
-                                Elaborador/Executor: {prof?.nome || <span className="italic">— não atribuído —</span>}
+                                Executor: {prof?.nome || <span className="italic">— não atribuído —</span>}
                               </div>
                             </td>
                             <td className="py-2 hidden md:table-cell">
