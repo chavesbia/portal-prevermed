@@ -9,6 +9,7 @@ import { OSSLAView } from '@/components/os/OSSLAView';
 import { OSDashboardExecutivoView } from '@/components/os/OSDashboardExecutivoView';
 import { Badge } from '@/components/ui/badge';
 import { OrdemServico, statusOSColors, statusServicoColors } from '@/types/os';
+import { useProfissionais } from '@/hooks/useProfissionais';
 import { differenceInDays } from 'date-fns';
 
 // Paleta padrão de status (OS e serviços): amarelo=andamento, verde=concluído,
@@ -59,9 +60,16 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     ordens.reduce((acc, o) => { acc[o.status_os] = (acc[o.status_os] || 0) + 1; return acc; }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value }));
 
-  // Responsavel chart data
+  // Executor chart data — contagem por SERVIÇO, agrupado por profissional
+  const profNome = new Map(profissionais.map(p => [p.id, p.nome]));
   const respData = Object.entries(
-    ordens.reduce((acc, o) => { acc[o.responsavel_atual] = (acc[o.responsavel_atual] || 0) + 1; return acc; }, {} as Record<string, number>)
+    ordens.reduce((acc, o) => {
+      (o.servicos || []).forEach(s => {
+        const nome = s.responsavel_id ? (profNome.get(s.responsavel_id) || 'Não atribuído') : 'Não atribuído';
+        acc[nome] = (acc[nome] || 0) + 1;
+      });
+      return acc;
+    }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name: name.split(' ').slice(0, 2).join(' '), fullName: name, value }))
     .sort((a, b) => b.value - a.value);
 
