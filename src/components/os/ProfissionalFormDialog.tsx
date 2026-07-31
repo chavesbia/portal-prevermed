@@ -194,17 +194,9 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Custo padrão (R$)</Label>
-              <Input type="number" step="0.01" value={custo} onChange={e => setCusto(e.target.value)} placeholder="0,00" />
-            </div>
-            <div className="flex items-end gap-3">
-              <div className="flex items-center gap-2">
-                <Switch checked={ativo} onCheckedChange={setAtivo} id="prof-ativo" />
-                <Label htmlFor="prof-ativo">Ativo</Label>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <Switch checked={ativo} onCheckedChange={setAtivo} id="prof-ativo" />
+            <Label htmlFor="prof-ativo">Ativo</Label>
           </div>
 
           <div className="space-y-2">
