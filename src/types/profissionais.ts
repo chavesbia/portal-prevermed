@@ -1,24 +1,16 @@
 export type ProfissionalTipo = 'interno' | 'externo';
 
 export type ProfissionalCategoria =
-  | 'Médico'
-  | 'Psicólogo'
-  | 'Enfermeiro'
-  | 'Engenheiro de Segurança'
-  | 'Técnico de Segurança'
-  | 'Fonoaudiólogo'
-  | 'Ergonomista'
+  | 'Médico(a)'
+  | 'Engenheiro(a) de Segurança do Trabalho'
+  | 'Técnico(a) de Segurança do Trabalho'
   | 'Auxiliar Técnico'
   | 'Outro';
 
 export const PROFISSIONAL_CATEGORIAS: ProfissionalCategoria[] = [
-  'Médico',
-  'Psicólogo',
-  'Enfermeiro',
-  'Engenheiro de Segurança',
-  'Técnico de Segurança',
-  'Fonoaudiólogo',
-  'Ergonomista',
+  'Médico(a)',
+  'Engenheiro(a) de Segurança do Trabalho',
+  'Técnico(a) de Segurança do Trabalho',
   'Auxiliar Técnico',
   'Outro',
 ];
