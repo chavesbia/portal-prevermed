@@ -130,7 +130,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Tipo de Laudo *</Label>
-              <Select value={tipoLaudoId} onValueChange={setTipoLaudoId}>
+              <Select value={tipoLaudoId} onValueChange={handleTipoChange}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {tiposAtivos.map((t: any) => (
@@ -162,6 +162,11 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
             <div className="space-y-1.5">
               <Label>Data de Validade {exigeVigencia ? '*' : ''}</Label>
               <Input type="date" value={dataValidade} onChange={(e) => setDataValidade(e.target.value)} />
+              {!exigeVigencia && (tipoSelecionado as any)?.prazo_vigencia_padrao && (
+                <p className="text-xs text-muted-foreground">
+                  Sugestão de revisão em {(tipoSelecionado as any).prazo_vigencia_padrao} dias — opcional, pode editar ou apagar.
+                </p>
+              )}
             </div>
           </div>
 
