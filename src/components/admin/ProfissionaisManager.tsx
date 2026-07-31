@@ -46,7 +46,7 @@ export function ProfissionaisManager() {
             o registro de Responsável Técnico usado em Laudos e OS é mantido automaticamente.
           </CardDescription>
         </div>
-        <Button onClick={() => { setEditing(null); setOpen(true); }}>
+        <Button onClick={() => { setEditingId(null); setOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />Novo Profissional
         </Button>
       </CardHeader>
@@ -101,7 +101,7 @@ export function ProfissionaisManager() {
                     <Switch checked={p.ativo} onCheckedChange={v => toggleAtivo(p.id, v)} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditingId(p.id); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                   </TableCell>
