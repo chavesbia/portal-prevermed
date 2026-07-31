@@ -1,0 +1,1 @@
+DELETE FROM public.laudos WHERE origem = 'cadastro_manual' AND data_validade = '2027-06-30';
