@@ -188,7 +188,7 @@ export function useOSVisitas() {
 
   /**
    * Detecta conflitos de agendamento:
-   *  - error: mesmo Elaborador/Executor sobreposto (buffer de deslocamento);
+   *  - error: mesmo Executor sobreposto (buffer de deslocamento);
    *  - error: equipamento já reservado no mesmo dia;
    *  - warn : muitos elaboradores fora no mesmo dia (>= threshold).
    */
@@ -218,7 +218,7 @@ export function useOSVisitas() {
       v.data_visita === dataISO,
     );
 
-    // 1) Sobreposição do mesmo Elaborador/Executor
+    // 1) Sobreposição do mesmo Executor
     if (responsavelId) {
       mesmoDia
         .filter(v => v.responsavel_id === responsavelId)
@@ -228,13 +228,13 @@ export function useOSVisitas() {
             if (Math.abs(newHora - outraHora) < bufferMin) {
               conflitos.push({
                 severity: 'error',
-                message: `Elaborador/Executor já agendado às ${v.hora_visita}${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Buffer mínimo: ${bufferMin} min.`,
+                message: `Executor já agendado às ${v.hora_visita}${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Buffer mínimo: ${bufferMin} min.`,
               });
             }
           } else {
             conflitos.push({
               severity: 'error',
-              message: `Elaborador/Executor já possui visita neste dia${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Defina horários para permitir conciliar.`,
+              message: `Executor já possui visita neste dia${v.numero_os ? ` (OS #${v.numero_os})` : ''}. Defina horários para permitir conciliar.`,
             });
           }
         });

@@ -36,6 +36,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
   const [custo, setCusto] = useState<string>('');
   const [ativo, setAtivo] = useState(true);
   const [podeRT, setPodeRT] = useState(false);
+  const [podeExec, setPodeExec] = useState(false);
   const [especialidade, setEspecialidade] = useState('');
 
   const [obs, setObs] = useState('');
@@ -55,6 +56,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setAtivo(profissional.ativo);
       setObs(profissional.observacoes || '');
       setPodeRT(!!profissional.pode_ser_responsavel_tecnico);
+      setPodeExec(!!(profissional as any).pode_ser_executor);
       setEspecialidade(profissional.especialidade || '');
     } else {
       setNome(defaultNome || '');
@@ -68,6 +70,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setAtivo(true);
       setObs('');
       setPodeRT(!!defaultPodeRT);
+      setPodeExec(false);
       setEspecialidade('');
     }
   }, [open, profissional, defaultNome, defaultPodeRT]);
@@ -95,6 +98,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       ativo,
       observacoes: obs.trim() || null,
       pode_ser_responsavel_tecnico: podeRT,
+      pode_ser_executor: podeExec,
       especialidade: especialidade.trim() || null,
     };
 
@@ -149,9 +153,15 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
           </div>
 
           <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
-              <Label htmlFor="prof-rt" className="cursor-pointer">Pode ser Responsável Técnico?</Label>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2">
+                <Switch checked={podeRT} onCheckedChange={setPodeRT} id="prof-rt" />
+                <Label htmlFor="prof-rt" className="cursor-pointer">Responsável Técnico</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={podeExec} onCheckedChange={setPodeExec} id="prof-exec" />
+                <Label htmlFor="prof-exec" className="cursor-pointer">Executor</Label>
+              </div>
             </div>
             {podeRT && (
               <>

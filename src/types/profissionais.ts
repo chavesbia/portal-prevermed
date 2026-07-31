@@ -29,6 +29,7 @@ export interface Profissional {
   ativo: boolean;
   observacoes: string | null;
   pode_ser_responsavel_tecnico?: boolean;
+  pode_ser_executor?: boolean;
   especialidade?: string | null;
 
   created_by: string | null;

@@ -46,7 +46,7 @@ const formSchema = z.object({
   unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
-  emissor: z.string().min(1, 'Selecione o emissor/elaborador'),
+  emissor: z.string().min(1, 'Usuário emissor não identificado'),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
   prazoEntrega: z.date().optional().nullable(),
   urgente: z.boolean().default(false),
@@ -94,14 +94,11 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     },
   });
 
-  // Pré-seleciona o usuário logado quando ele existir no cadastro de responsáveis
+  // Emissor = usuário logado (somente leitura)
   useEffect(() => {
-    if (form.getValues('emissor')) return;
-    const nome = (profile?.full_name || '').trim().toLowerCase();
-    if (!nome) return;
-    const match = responsaveisAtivos.find(r => (r.nome || '').trim().toLowerCase().includes(nome) || nome.includes((r.nome || '').trim().toLowerCase()));
-    if (match) form.setValue('emissor', match.nome);
-  }, [responsaveisAtivos, profile?.full_name]);
+    const nome = (profile?.full_name || '').trim();
+    if (nome) form.setValue('emissor', nome);
+  }, [profile?.full_name]);
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
@@ -274,21 +271,12 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             )} />
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>
-                <FormLabel>Emissor / Elaborador *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecione o responsável" /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {responsaveisAtivos.length === 0 ? (
-                      <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável cadastrado</div>
-                    ) : responsaveisAtivos.map(r => (
-                      <SelectItem key={r.id} value={r.nome}>
-                        {r.nome}{r.conselho ? ` · ${r.conselho} ${r.numero_registro || ''}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>Usuário Emissor</FormLabel>
+                <FormControl>
+                  <Input value={field.value || ''} readOnly disabled />
+                </FormControl>
                 <p className="text-xs text-muted-foreground">
-                  Selecione a partir do cadastro de responsáveis técnicos (Administração › Laudos e Serviços) para evitar nomes duplicados.
+                  Preenchido automaticamente com o usuário logado no Portal.
                 </p>
                 <FormMessage />
               </FormItem>

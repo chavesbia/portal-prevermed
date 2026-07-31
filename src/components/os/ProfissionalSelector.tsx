@@ -12,15 +12,17 @@ interface Props {
   onChange: (id: string | null) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Mostrar somente profissionais marcados como Executor. */
+  onlyExecutores?: boolean;
 }
 
-export function ProfissionalSelector({ value, onChange, placeholder = 'Selecionar responsável', disabled }: Props) {
+export function ProfissionalSelector({ value, onChange, placeholder = 'Selecionar responsável', disabled, onlyExecutores }: Props) {
   const { profissionais } = useProfissionais();
   const [open, setOpen] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [search, setSearch] = useState('');
 
-  const ativos = useMemo(() => profissionais.filter(p => p.ativo), [profissionais]);
+  const ativos = useMemo(() => profissionais.filter(p => p.ativo && (!onlyExecutores || (p as any).pode_ser_executor)), [profissionais, onlyExecutores]);
   const selected = profissionais.find(p => p.id === value);
 
   return (
@@ -62,7 +64,7 @@ export function ProfissionalSelector({ value, onChange, placeholder = 'Seleciona
                     onSelect={() => { onChange(null); setOpen(false); }}
                     className="text-muted-foreground italic"
                   >
-                    Remover responsável
+                    Remover seleção
                   </CommandItem>
                 )}
                 {ativos.map(p => (
