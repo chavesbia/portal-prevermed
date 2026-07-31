@@ -5330,6 +5330,7 @@ export type Database = {
           nome: string
           numero_conselho: string | null
           observacoes: string | null
+          pode_ser_executor: boolean
           pode_ser_responsavel_tecnico: boolean
           telefone: string | null
           tipo: string
@@ -5349,6 +5350,7 @@ export type Database = {
           nome: string
           numero_conselho?: string | null
           observacoes?: string | null
+          pode_ser_executor?: boolean
           pode_ser_responsavel_tecnico?: boolean
           telefone?: string | null
           tipo?: string
@@ -5368,6 +5370,7 @@ export type Database = {
           nome?: string
           numero_conselho?: string | null
           observacoes?: string | null
+          pode_ser_executor?: boolean
           pode_ser_responsavel_tecnico?: boolean
           telefone?: string | null
           tipo?: string
