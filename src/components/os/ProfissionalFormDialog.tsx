@@ -28,7 +28,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
 
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState<ProfissionalTipo>('interno');
-  const [categoria, setCategoria] = useState<ProfissionalCategoria>('Médico');
+  const [categoria, setCategoria] = useState<ProfissionalCategoria>('Médico(a)');
   const [conselhoId, setConselhoId] = useState<string>('');
   const [numero, setNumero] = useState('');
   const [email, setEmail] = useState('');
@@ -59,7 +59,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
     } else {
       setNome(defaultNome || '');
       setTipo('interno');
-      setCategoria('Médico');
+      setCategoria('Médico(a)');
       setConselhoId('');
       setNumero('');
       setEmail('');
