@@ -617,10 +617,7 @@ function LaudosSection({
 
 function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
   const [search, setSearch] = useState('');
-  const [novoLaudoOpen, setNovoLaudoOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const { hasPermission } = useModulePermissions();
-  const canCreateLaudo = hasPermission('/gestao-os', 'create');
+
 
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-laudos', companyId],
