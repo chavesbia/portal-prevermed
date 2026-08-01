@@ -159,6 +159,52 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     }, enabled: !!clienteId,
   });
 
+  // Complementação manual dos dados do cliente (quando faltam na base)
+  const [clienteEdits, setClienteEdits] = useState<Record<string, string>>({});
+  const [savingCliente, setSavingCliente] = useState(false);
+  const setCli = (k: string, v: string) => setClienteEdits(e => ({ ...e, [k]: v }));
+  const cliVal = (k: string) => (clienteEdits[k] ?? (cliente as any)?.[k] ?? '') as string;
+
+  useEffect(() => { setClienteEdits({}); }, [clienteId]);
+
+  const camposClienteObrigatorios = [
+    { key: 'logradouro', label: 'Logradouro' },
+    { key: 'numero', label: 'Número' },
+    { key: 'bairro', label: 'Bairro' },
+    { key: 'cidade', label: 'Cidade' },
+    { key: 'estado', label: 'UF' },
+    { key: 'cep', label: 'CEP' },
+    { key: 'telefone', label: 'Telefone' },
+    { key: 'email', label: 'E-mail' },
+  ];
+  const clienteCamposFaltando = cliente
+    ? camposClienteObrigatorios.filter(c => !String(cliVal(c.key)).trim())
+    : [];
+  const clienteIncompleto = !!cliente && camposClienteObrigatorios.some(
+    c => !String((cliente as any)?.[c.key] || '').trim(),
+  );
+
+  const salvarDadosCliente = async () => {
+    if (!clienteId || Object.keys(clienteEdits).length === 0) return true;
+    setSavingCliente(true);
+    try {
+      const payload: any = {};
+      for (const [k, v] of Object.entries(clienteEdits)) payload[k] = v.trim() || null;
+      const { error } = await supabase.from('contract_clientes').update(payload).eq('id', clienteId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['contract-cliente', clienteId] });
+      setClienteEdits({});
+      return true;
+    } catch (e: any) {
+      toast.error(e.message || 'Falha ao salvar dados do cliente');
+      return false;
+    } finally {
+      setSavingCliente(false);
+    }
+  };
+
+
+
   const { data: version } = useQuery({
     queryKey: ['contract-version', versionId],
     queryFn: async () => {
