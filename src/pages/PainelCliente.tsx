@@ -734,19 +734,8 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
                 )}
               </>
             )}
-            {canCreateLaudo && (
-              <Button size="sm" variant="outline" className="h-7" onClick={() => setNovoLaudoOpen(true)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Novo Laudo
-              </Button>
-            )}
           </div>
         </div>
-        <NovoLaudoManualDialog
-          open={novoLaudoOpen}
-          onOpenChange={setNovoLaudoOpen}
-          companyId={companyId}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['painel-cliente-laudos', companyId] })}
-        />
       </CardHeader>
       <CardContent>
         {isLoading ? (
