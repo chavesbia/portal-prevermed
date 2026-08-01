@@ -90,15 +90,8 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
     }));
   };
 
-  const handleAddResp = async () => {
-    if (!novoResp.nome || !novoResp.numero_registro) {
-      toast({ title: 'Atenção', description: 'Preencha nome e registro.', variant: 'destructive' });
-      return;
-    }
-    await addResp({ ...novoResp, ativo: true } as any);
-    setShowNovoResp(false);
-    setNovoResp({ nome: '', conselho: 'CREA', numero_registro: '', especialidade: '', email: '' });
-  };
+
+
 
   const addCustoLinha = () => setCustos(prev => [...prev, { ...CUSTO_VAZIO }]);
   const updCustoLinha = (i: number, patch: Partial<CustoLinha>) => setCustos(prev => prev.map((c, idx) => idx === i ? { ...c, ...patch } : c));
