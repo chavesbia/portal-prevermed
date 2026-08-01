@@ -43,10 +43,10 @@ const CUSTO_VAZIO: CustoLinha = { tipo: 'deslocamento', descricao: '', valor: ''
 
 export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, onFinalized }: Props) {
   const { user, profile } = useAuth();
-  const { responsaveis, add: addResp } = useResponsaveisTecnicos();
+  const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
   const { add: addLaudo } = useLaudos();
-  const { conselhos, add: addConselho } = useConselhosClasse();
+
   const { addCusto } = useOSCustos(ordem.id);
 
   const [form, setForm] = useState({
