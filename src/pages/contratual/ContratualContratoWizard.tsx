@@ -607,7 +607,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
             <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
           </Button>
           {step < 3 && (
-            <Button onClick={() => setStep(step + 1)}
+            <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
               disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
               Avançar <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
