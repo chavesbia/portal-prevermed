@@ -41,7 +41,9 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
 ];
 
 export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
+  const qc = useQueryClient();
   const [step, setStep] = useState(1);
+
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyOption | null>(null);
   const [clienteId, setClienteId] = useState('');
