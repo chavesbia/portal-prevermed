@@ -446,14 +446,14 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
 
               <div className="space-y-2 mb-3">
-                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 1</Label>
-                {testemunhas.length > 0 && (
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha da Contratada</Label>
+                {respPrevermed.length > 0 && (
                   <Select value={test1Id} onValueChange={(v) => { setTest1Id(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 't1'); }}>
                     <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
-                      {testemunhas.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                      {respPrevermed.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.nome}{s.cargo ? ` — ${s.cargo}` : ''}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -469,18 +469,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha 2</Label>
-                {testemunhas.length > 0 && (
-                  <Select value={test2Id} onValueChange={(v) => { setTest2Id(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 't2'); }}>
-                    <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
-                      {testemunhas.map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha do Contratante</Label>
+
                 <div className="grid grid-cols-3 gap-3">
                   <F label="Nome" v={form.testemunha2_nome} on={v => set('testemunha2_nome', v)} />
                   <div className="space-y-1">
