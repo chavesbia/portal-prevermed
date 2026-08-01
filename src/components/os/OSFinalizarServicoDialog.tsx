@@ -16,7 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { OrdemServico, ServicoOS } from '@/types/os';
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos } from '@/hooks/useOSData';
-import { useConselhosClasse } from '@/hooks/useConselhosClasse';
+import { ProfissionalFormDialog } from '@/components/os/ProfissionalFormDialog';
 import { useOSCustos } from '@/hooks/useOSCustos';
 import { OS_CUSTO_TIPO_OPTIONS, OSCustoTipo } from '@/types/osCustos';
 import { supabase } from '@/integrations/supabase/client';
