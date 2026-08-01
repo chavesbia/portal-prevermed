@@ -29,7 +29,7 @@ export function OSDashboardExecutivoView() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold">Dashboard Executivo</h2>
-        <p className="text-sm text-muted-foreground">Produtividade e carga por responsável — últimos 90 dias.</p>
+        <p className="text-sm text-muted-foreground">Produtividade e carga por executor — últimos 90 dias.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -40,7 +40,7 @@ export function OSDashboardExecutivoView() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg">Carga por Responsável</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">Carga por Executor</CardTitle></CardHeader>
         <CardContent>
           <div className="h-[380px]">
             {isLoading ? (
@@ -76,7 +76,7 @@ export function OSDashboardExecutivoView() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="pb-3 text-left font-medium text-muted-foreground">Responsável</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground">Executor</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Total OS</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Encerradas</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Em andamento</th>
