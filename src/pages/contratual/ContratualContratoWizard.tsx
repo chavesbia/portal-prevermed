@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
 import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -41,7 +41,9 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
 ];
 
 export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
+  const qc = useQueryClient();
   const [step, setStep] = useState(1);
+
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyOption | null>(null);
   const [clienteId, setClienteId] = useState('');
@@ -95,6 +97,23 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       if (qErr) throw qErr;
       if (existing?.id) { setClienteId(existing.id); return; }
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Complementa endereço a partir da base mestre de empresas
+      const { data: comp } = await supabase
+        .from('companies')
+        .select('cep, logradouro, numero, complemento, bairro, cidade, estado')
+        .eq('id', opt.id)
+        .maybeSingle();
+
+      // Telefone/e-mail do primeiro contato cadastrado da empresa
+      const { data: contato } = await supabase
+        .from('company_contacts')
+        .select('telefone_1, email_1, created_at')
+        .eq('company_id', opt.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       const { data: created, error: iErr } = await supabase
         .from('contract_clientes')
         .insert({
@@ -102,6 +121,15 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
           razao_social: opt.razao_social,
           nome_fantasia: opt.nome_abreviado || null,
           cnpj: (opt.cnpj || '').replace(/\D/g, '') || null,
+          cep: comp?.cep || null,
+          logradouro: comp?.logradouro || null,
+          numero: comp?.numero || null,
+          complemento: comp?.complemento || null,
+          bairro: comp?.bairro || null,
+          cidade: comp?.cidade || null,
+          estado: comp?.estado || null,
+          telefone: contato?.telefone_1 || null,
+          email: contato?.email_1 || null,
           created_by: user?.id, updated_by: user?.id,
         })
         .select('id')
@@ -115,6 +143,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       setResolvingCliente(false);
     }
   };
+
 
   const { data: templates = [] } = useQuery({
     queryKey: ['contract-templates-min'],
@@ -131,6 +160,52 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       return data;
     }, enabled: !!clienteId,
   });
+
+  // Complementação manual dos dados do cliente (quando faltam na base)
+  const [clienteEdits, setClienteEdits] = useState<Record<string, string>>({});
+  const [savingCliente, setSavingCliente] = useState(false);
+  const setCli = (k: string, v: string) => setClienteEdits(e => ({ ...e, [k]: v }));
+  const cliVal = (k: string) => (clienteEdits[k] ?? (cliente as any)?.[k] ?? '') as string;
+
+  useEffect(() => { setClienteEdits({}); }, [clienteId]);
+
+  const camposClienteObrigatorios = [
+    { key: 'logradouro', label: 'Logradouro' },
+    { key: 'numero', label: 'Número' },
+    { key: 'bairro', label: 'Bairro' },
+    { key: 'cidade', label: 'Cidade' },
+    { key: 'estado', label: 'UF' },
+    { key: 'cep', label: 'CEP' },
+    { key: 'telefone', label: 'Telefone' },
+    { key: 'email', label: 'E-mail' },
+  ];
+  const clienteCamposFaltando = cliente
+    ? camposClienteObrigatorios.filter(c => !String(cliVal(c.key)).trim())
+    : [];
+  const clienteIncompleto = !!cliente && camposClienteObrigatorios.some(
+    c => !String((cliente as any)?.[c.key] || '').trim(),
+  );
+
+  const salvarDadosCliente = async () => {
+    if (!clienteId || Object.keys(clienteEdits).length === 0) return true;
+    setSavingCliente(true);
+    try {
+      const payload: any = {};
+      for (const [k, v] of Object.entries(clienteEdits)) payload[k] = v.trim() || null;
+      const { error } = await supabase.from('contract_clientes').update(payload).eq('id', clienteId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['contract-cliente', clienteId] });
+      setClienteEdits({});
+      return true;
+    } catch (e: any) {
+      toast.error(e.message || 'Falha ao salvar dados do cliente');
+      return false;
+    } finally {
+      setSavingCliente(false);
+    }
+  };
+
+
 
   const { data: version } = useQuery({
     queryKey: ['contract-version', versionId],
@@ -226,7 +301,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   }, [previewHtml]);
 
   const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending;
-  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
+  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos
+    && clienteCamposFaltando.length === 0 && !savingCliente;
+
   const canConfirm = placeholdersFaltando.length === 0;
 
 
@@ -358,8 +435,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
         {step === 2 && (
           <div className="space-y-4">
+            {clienteIncompleto && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                <h4 className="text-sm font-medium mb-1">Dados do cliente (preenchimento obrigatório)</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  A empresa não possui todos os dados de endereço/contato na base. Complete abaixo — eles serão salvos no cadastro do cliente.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {camposClienteObrigatorios.map(c => (
+                    <F key={c.key} label={`${c.label} *`} v={cliVal(c.key)} on={v => setCli(c.key, v)} />
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <h4 className="text-sm font-medium mb-2">Datas do contrato</h4>
+
               <div className="grid grid-cols-3 gap-3">
                 <F label="Data de emissão *" type="date" v={form.data_emissao} on={v => set('data_emissao', v)} />
                 <F label="Data de assinatura" type="date" v={form.data_assinatura} on={v => set('data_assinatura', v)} />
@@ -516,7 +607,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
             <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
           </Button>
           {step < 3 && (
-            <Button onClick={() => setStep(step + 1)}
+            <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
               disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
               Avançar <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
