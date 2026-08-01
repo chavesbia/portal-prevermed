@@ -301,7 +301,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   }, [previewHtml]);
 
   const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending;
-  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos;
+  const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos
+    && clienteCamposFaltando.length === 0 && !savingCliente;
+
   const canConfirm = placeholdersFaltando.length === 0;
 
 
