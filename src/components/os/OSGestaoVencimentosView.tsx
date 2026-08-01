@@ -17,12 +17,17 @@ import { StatusVigencia, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTION
 import { useResponsaveisTecnicos, useTiposLaudo, useLaudos, useConfiguracaoAlertas } from '@/hooks/useOSData';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
+import { NovoLaudoManualDialog } from '@/components/os/NovoLaudoManualDialog';
 
 export function OSGestaoVencimentosView() {
   const { responsaveis } = useResponsaveisTecnicos();
   const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
-  const { laudos } = useLaudos();
+  const { laudos, refresh: refreshLaudos } = useLaudos();
+  const { hasPermission } = useModulePermissions();
+  const canCreateLaudo = hasPermission('/gestao-os', 'create');
+  const [novoLaudoOpen, setNovoLaudoOpen] = useState(false);
   const { config: alertaConfig, update: updateAlerta } = useConfiguracaoAlertas();
 
   const [activeTab, setActiveTab] = useState('laudos');
@@ -173,6 +178,18 @@ export function OSGestaoVencimentosView() {
 
         {/* Laudos Tab */}
         <TabsContent value="laudos" className="space-y-4 mt-4">
+          {canCreateLaudo && (
+            <div className="flex justify-end">
+              <Button size="sm" onClick={() => setNovoLaudoOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Novo Laudo
+              </Button>
+            </div>
+          )}
+          <NovoLaudoManualDialog
+            open={novoLaudoOpen}
+            onOpenChange={setNovoLaudoOpen}
+            onSaved={refreshLaudos}
+          />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

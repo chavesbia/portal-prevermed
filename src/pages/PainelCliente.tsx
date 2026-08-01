@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle, Plus } from 'lucide-react';
-import { useModulePermissions } from '@/hooks/useModulePermissions';
-import { NovoLaudoManualDialog } from '@/components/os/NovoLaudoManualDialog';
+import { useQuery } from '@tanstack/react-query';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector, useDuplicateCnpjCompanies } from '@/components/shared/CompanySelector';
@@ -617,10 +615,7 @@ function LaudosSection({
 
 function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to: string) => void }) {
   const [search, setSearch] = useState('');
-  const [novoLaudoOpen, setNovoLaudoOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const { hasPermission } = useModulePermissions();
-  const canCreateLaudo = hasPermission('/gestao-os', 'create');
+
 
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-laudos', companyId],
@@ -734,19 +729,8 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
                 )}
               </>
             )}
-            {canCreateLaudo && (
-              <Button size="sm" variant="outline" className="h-7" onClick={() => setNovoLaudoOpen(true)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Novo Laudo
-              </Button>
-            )}
           </div>
         </div>
-        <NovoLaudoManualDialog
-          open={novoLaudoOpen}
-          onOpenChange={setNovoLaudoOpen}
-          companyId={companyId}
-          onSaved={() => queryClient.invalidateQueries({ queryKey: ['painel-cliente-laudos', companyId] })}
-        />
       </CardHeader>
       <CardContent>
         {isLoading ? (

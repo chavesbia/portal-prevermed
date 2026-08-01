@@ -1,0 +1,1 @@
+delete from public.laudos where id = '57cf16a3-7e06-488f-8019-6f0a62cf0b32';
