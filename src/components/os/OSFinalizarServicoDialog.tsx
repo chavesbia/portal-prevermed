@@ -304,68 +304,33 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Responsável Técnico *</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setShowNovoResp(!showNovoResp)}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => setProfDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-1" />Novo
                 </Button>
               </div>
-              {!showNovoResp ? (
-                <>
-                  <Select value={form.responsavelTecnicoId} onValueChange={v => setForm({ ...form, responsavelTecnicoId: v })} disabled={!form.tipoLaudoId}>
-                    <SelectTrigger><SelectValue placeholder={!form.tipoLaudoId ? 'Selecione primeiro o tipo de laudo' : 'Selecione o responsável'} /></SelectTrigger>
-                    <SelectContent>
-                      {respFiltrados.length === 0 ? (
-                        <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável disponível</div>
-                      ) : respFiltrados.map(r => (
-                        <SelectItem key={r.id} value={r.id}>
-                          <div className="flex items-center gap-2"><span>{r.nome}</span><Badge variant="outline" className="text-xs">{r.conselho} {r.numero_registro}</Badge></div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {tipoSelecionado && respFiltrados.length === 0 && (
-                    <p className="text-xs text-destructive">Cadastre um responsável com conselho {tipoSelecionado.conselhos_permitidos.join(' ou ')}</p>
-                  )}
-                </>
-              ) : (
-                <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
-                  <div className="space-y-2"><Label>Nome *</Label><Input value={novoResp.nome} onChange={e => setNovoResp({ ...novoResp, nome: e.target.value })} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Conselho *</Label>
-                        <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setShowNovoConselho(v => !v)}>
-                          <Plus className="h-3 w-3 mr-1" />Novo conselho
-                        </Button>
-                      </div>
-                      {!showNovoConselho ? (
-                        <Select value={novoResp.conselho} onValueChange={v => setNovoResp({ ...novoResp, conselho: v })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>{conselhos.map(c => <SelectItem key={c.id} value={c.sigla}>{c.sigla}</SelectItem>)}</SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="space-y-2 rounded-md border p-2 bg-background">
-                          <Input placeholder="Sigla (ex: MTE)" value={novoConselhoSigla} onChange={e => setNovoConselhoSigla(e.target.value.toUpperCase())} className="h-8" />
-                          <Input placeholder="Descrição (opcional)" value={novoConselhoDesc} onChange={e => setNovoConselhoDesc(e.target.value)} className="h-8" />
-                          <div className="flex gap-2">
-                            <Button type="button" variant="outline" size="sm" className="h-7 text-xs flex-1" onClick={() => { setShowNovoConselho(false); setNovoConselhoSigla(''); setNovoConselhoDesc(''); }}>Cancelar</Button>
-                            <Button type="button" size="sm" className="h-7 text-xs flex-1" onClick={async () => {
-                              if (!novoConselhoSigla.trim()) { toast({ title: 'Atenção', description: 'Informe a sigla.', variant: 'destructive' }); return; }
-                              const c = await addConselho(novoConselhoSigla, novoConselhoDesc);
-                              if (c) { setNovoResp({ ...novoResp, conselho: c.sigla }); setShowNovoConselho(false); setNovoConselhoSigla(''); setNovoConselhoDesc(''); }
-                            }}>Salvar</Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2"><Label>Registro *</Label><Input value={novoResp.numero_registro} onChange={e => setNovoResp({ ...novoResp, numero_registro: e.target.value })} /></div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setShowNovoResp(false)}>Cancelar</Button>
-                    <Button type="button" size="sm" onClick={handleAddResp}>Adicionar</Button>
-                  </div>
-                </div>
+              <Select value={form.responsavelTecnicoId} onValueChange={v => setForm({ ...form, responsavelTecnicoId: v })} disabled={!form.tipoLaudoId}>
+                <SelectTrigger><SelectValue placeholder={!form.tipoLaudoId ? 'Selecione primeiro o tipo de laudo' : 'Selecione o responsável'} /></SelectTrigger>
+                <SelectContent>
+                  {respFiltrados.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">Nenhum responsável disponível</div>
+                  ) : respFiltrados.map(r => (
+                    <SelectItem key={r.id} value={r.id}>
+                      <div className="flex items-center gap-2"><span>{r.nome}</span><Badge variant="outline" className="text-xs">{r.conselho} {r.numero_registro}</Badge></div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {tipoSelecionado && respFiltrados.length === 0 && (
+                <p className="text-xs text-destructive">Cadastre um responsável com conselho {tipoSelecionado.conselhos_permitidos.join(' ou ')}</p>
               )}
+              <ProfissionalFormDialog
+                open={profDialogOpen}
+                onOpenChange={setProfDialogOpen}
+                defaultPodeRT
+                onSaved={async () => { await refreshResponsaveis(); }}
+              />
             </div>
+
 
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
