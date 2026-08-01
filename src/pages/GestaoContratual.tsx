@@ -18,7 +18,6 @@ export default function GestaoContratual() {
   const { hasPermission } = useModulePermissions();
   const { isAdmMaster } = useAuth() as any;
   const canEditModelos = hasPermission(`${MODULE_ROUTE}/modelos`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
-  const canEditModelos = hasPermission(`${MODULE_ROUTE}/modelos`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
   const canEditContratos = hasPermission(`${MODULE_ROUTE}/contratos`, 'edit') || hasPermission(MODULE_ROUTE, 'edit');
 
   const [sp, setSp] = useSearchParams();
