@@ -42,9 +42,6 @@ export default function GestaoContratual() {
             <TabsTrigger value="contratos" className="gap-1.5">
               <FileText className="h-4 w-4" /> Contratos
             </TabsTrigger>
-            <TabsTrigger value="clientes" className="gap-1.5">
-              <Users className="h-4 w-4" /> Clientes
-            </TabsTrigger>
             <TabsTrigger value="modelos" className="gap-1.5">
               <FileCode className="h-4 w-4" /> Modelos
             </TabsTrigger>
@@ -66,9 +63,6 @@ export default function GestaoContratual() {
           </TabsContent>
           <TabsContent value="contratos" className="mt-4">
             <ContratualContratos canEdit={canEditContratos} />
-          </TabsContent>
-          <TabsContent value="clientes" className="mt-4">
-            <ContratualClientes canEdit={canEditClientes} />
           </TabsContent>
           <TabsContent value="modelos" className="mt-4">
             <ContratualModelos canEdit={canEditModelos} />
