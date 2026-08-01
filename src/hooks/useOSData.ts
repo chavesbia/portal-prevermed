@@ -23,39 +23,7 @@ export function useResponsaveisTecnicos() {
 
   useEffect(() => { fetch(); }, [fetch]);
 
-  const add = async (item: Omit<ResponsavelTecnico, 'id' | 'created_at' | 'updated_at'>) => {
-    const { error } = await supabase.from('responsaveis_tecnicos').insert(item as any);
-    if (error) {
-      toast({ title: 'Erro', description: 'Erro ao cadastrar responsável.', variant: 'destructive' });
-      return false;
-    }
-    await fetch();
-    toast({ title: 'Sucesso', description: 'Responsável técnico cadastrado.' });
-    return true;
-  };
-
-  const update = async (id: string, updates: Partial<ResponsavelTecnico>) => {
-    const { error } = await supabase.from('responsaveis_tecnicos').update(updates as any).eq('id', id);
-    if (error) {
-      toast({ title: 'Erro', description: 'Erro ao atualizar responsável.', variant: 'destructive' });
-      return false;
-    }
-    await fetch();
-    toast({ title: 'Sucesso', description: 'Responsável técnico atualizado.' });
-    return true;
-  };
-
-  const remove = async (id: string) => {
-    const { error } = await supabase.from('responsaveis_tecnicos').delete().eq('id', id);
-    if (error) {
-      toast({ title: 'Erro', description: 'Erro ao excluir responsável.', variant: 'destructive' });
-      return false;
-    }
-    await fetch();
-    return true;
-  };
-
-  return { responsaveis: data, isLoading, add, update, remove, refresh: fetch };
+  return { responsaveis: data, isLoading, refresh: fetch };
 }
 
 export function useTiposLaudo() {
