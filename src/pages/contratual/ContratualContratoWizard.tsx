@@ -231,7 +231,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
 
   const aplicarSignatario = (id: string, kind: 'prev' | 't1' | 't2') => {
-    const list = kind === 'prev' ? respPrevermed : testemunhas;
+    // Testemunha da Contratada é sugerida a partir dos responsáveis PreverMed
+    const list = kind === 'prev' || kind === 't1' ? respPrevermed : testemunhas;
     const s = list.find(x => x.id === id);
     if (!s) return;
     if (kind === 'prev') {
@@ -242,6 +243,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       set('testemunha2_nome', s.nome); set('testemunha2_cpf', s.cpf); set('testemunha2_email', s.email || '');
     }
   };
+
 
   const confirmar = async () => {
     setGenerating(true);
