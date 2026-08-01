@@ -95,6 +95,23 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       if (qErr) throw qErr;
       if (existing?.id) { setClienteId(existing.id); return; }
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Complementa endereço a partir da base mestre de empresas
+      const { data: comp } = await supabase
+        .from('companies')
+        .select('cep, logradouro, numero, complemento, bairro, cidade, estado')
+        .eq('id', opt.id)
+        .maybeSingle();
+
+      // Telefone/e-mail do primeiro contato cadastrado da empresa
+      const { data: contato } = await supabase
+        .from('company_contacts')
+        .select('telefone_1, email_1, created_at')
+        .eq('company_id', opt.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       const { data: created, error: iErr } = await supabase
         .from('contract_clientes')
         .insert({
@@ -102,6 +119,15 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
           razao_social: opt.razao_social,
           nome_fantasia: opt.nome_abreviado || null,
           cnpj: (opt.cnpj || '').replace(/\D/g, '') || null,
+          cep: comp?.cep || null,
+          logradouro: comp?.logradouro || null,
+          numero: comp?.numero || null,
+          complemento: comp?.complemento || null,
+          bairro: comp?.bairro || null,
+          cidade: comp?.cidade || null,
+          estado: comp?.estado || null,
+          telefone: contato?.telefone_1 || null,
+          email: contato?.email_1 || null,
           created_by: user?.id, updated_by: user?.id,
         })
         .select('id')
@@ -115,6 +141,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
       setResolvingCliente(false);
     }
   };
+
 
   const { data: templates = [] } = useQuery({
     queryKey: ['contract-templates-min'],
