@@ -65,11 +65,8 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
   const [custos, setCustos] = useState<CustoLinha[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const [showNovoResp, setShowNovoResp] = useState(false);
-  const [novoResp, setNovoResp] = useState({ nome: '', conselho: 'CREA' as string, numero_registro: '', especialidade: '', email: '' });
-  const [showNovoConselho, setShowNovoConselho] = useState(false);
-  const [novoConselhoSigla, setNovoConselhoSigla] = useState('');
-  const [novoConselhoDesc, setNovoConselhoDesc] = useState('');
+  const [profDialogOpen, setProfDialogOpen] = useState(false);
+
 
   const tipoSelecionado = useMemo(() => tiposLaudo.find(t => t.id === form.tipoLaudoId), [tiposLaudo, form.tipoLaudoId]);
 
