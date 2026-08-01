@@ -435,8 +435,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
         {step === 2 && (
           <div className="space-y-4">
+            {clienteIncompleto && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                <h4 className="text-sm font-medium mb-1">Dados do cliente (preenchimento obrigatório)</h4>
+                <p className="text-xs text-muted-foreground mb-2">
+                  A empresa não possui todos os dados de endereço/contato na base. Complete abaixo — eles serão salvos no cadastro do cliente.
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  {camposClienteObrigatorios.map(c => (
+                    <F key={c.key} label={`${c.label} *`} v={cliVal(c.key)} on={v => setCli(c.key, v)} />
+                  ))}
+                </div>
+              </div>
+            )}
             <div>
               <h4 className="text-sm font-medium mb-2">Datas do contrato</h4>
+
               <div className="grid grid-cols-3 gap-3">
                 <F label="Data de emissão *" type="date" v={form.data_emissao} on={v => set('data_emissao', v)} />
                 <F label="Data de assinatura" type="date" v={form.data_assinatura} on={v => set('data_assinatura', v)} />
