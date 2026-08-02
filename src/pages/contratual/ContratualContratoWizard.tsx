@@ -472,37 +472,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   const confirmar = async () => {
     setGenerating(true);
+    finalizedRef.current = true;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const payload: any = {
-        cliente_id: clienteId,
-        template_id: templateId,
-        template_version_id: versionId,
-        status: 'rascunho',
-        data_emissao: form.data_emissao || null,
-        data_assinatura: form.data_assinatura || null,
-        data_inicio: form.data_inicio,
-        vigencia_meses: Number(form.vigencia_meses) || 12,
-        numero_proposta: form.numero_proposta || null,
-        valor_mensal: form.valor_mensal ? Number(form.valor_mensal) : null,
-        qtd_vidas: form.qtd_vidas ? Number(form.qtd_vidas) : null,
-        valor_excedente: form.valor_excedente ? Number(form.valor_excedente) : null,
-        dia_cobranca: form.dia_cobranca ? Number(form.dia_cobranca) : null,
-        multa: form.multa ? Number(form.multa) : null,
-        juros: form.juros ? Number(form.juros) : null,
-        indice_reajuste: form.indice_reajuste || null,
-        prazo_aviso: form.prazo_aviso ? Number(form.prazo_aviso) : null,
-        valor_km: form.valor_km ? Number(form.valor_km) : null,
-        rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null, rep_email: form.rep_email || null,
-        testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
-        testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
-        prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+        ...buildContratoPayload(3),
         campos_personalizados: manualValues,
         html_final: previewHtml,
-        created_by: user?.id, updated_by: user?.id,
+        updated_by: user?.id,
       };
-      const { data: ctr, error } = await supabase.from('contract_contratos').insert(payload).select().single();
-      if (error) throw error;
+      let ctr: any;
+      if (contratoId) {
+        const { data, error } = await supabase.from('contract_contratos')
+          .update(payload).eq('id', contratoId).select().single();
+        if (error) throw error;
+        ctr = data;
+      } else {
+        const { data, error } = await supabase.from('contract_contratos')
+          .insert({ ...payload, status: 'rascunho' as const, created_by: user?.id })
+          .select().single();
+        if (error) throw error;
+        ctr = data;
+      }
+
 
       const signers = [
         { tipo: 'representante', nome: form.rep_nome, cpf: form.rep_cpf, email: form.rep_email },
