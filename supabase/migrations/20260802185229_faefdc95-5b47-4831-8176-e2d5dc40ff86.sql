@@ -1,0 +1,1 @@
+DELETE FROM public.contract_contratos WHERE numero_contrato = 'CTR-2026-0002' AND status = 'rascunho' AND html_final IS NULL;

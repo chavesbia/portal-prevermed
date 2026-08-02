@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, FileDown } from 'lucide-react';
+import { Plus, Eye, FileDown, Pencil } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
@@ -31,13 +31,14 @@ export default function ContratualContratos({ canEdit }: Props) {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const { data: contratos = [], isLoading } = useQuery({
     queryKey: ['contract-contratos', search],
     queryFn: async () => {
       let q = supabase.from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, cliente:contract_clientes(razao_social, cnpj)')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, cliente:contract_clientes(razao_social, cnpj)')
         .order('created_at', { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
@@ -52,13 +53,26 @@ export default function ContratualContratos({ canEdit }: Props) {
     },
   });
 
+  // Rascunho ainda não finalizado (PDF não gerado): reabre o assistente
+  const isRascunhoAberto = (c: any) => c.status === 'rascunho' && !c.html_final;
+
+  const abrirContrato = (c: any) => {
+    if (isRascunhoAberto(c)) {
+      setDraftId(c.id);
+      setWizardOpen(true);
+    } else {
+      setDetailId(c.id);
+    }
+  };
+
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <Input placeholder="Buscar por número, empresa ou CNPJ…" className="max-w-md"
           value={search} onChange={e => setSearch(e.target.value)} />
         {canEdit && (
-          <Button onClick={() => setWizardOpen(true)} className="gap-1.5">
+          <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
             <Plus className="h-4 w-4" /> Novo Contrato
           </Button>
         )}
@@ -85,9 +99,12 @@ export default function ContratualContratos({ canEdit }: Props) {
                   <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nenhum contrato encontrado.</TableCell></TableRow>
                 )}
                 {contratos.map((c: any) => {
-                  const st = STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
+                  const draft = isRascunhoAberto(c);
+                  const st = draft
+                    ? { label: 'Rascunho (em preenchimento)', tone: 'bg-slate-100 text-slate-700' }
+                    : STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => abrirContrato(c)}>
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
                       <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
@@ -95,8 +112,9 @@ export default function ContratualContratos({ canEdit }: Props) {
                       <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDetailId(c.id)}>
-                          <Eye className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" className="h-8 w-8"
+                          onClick={(e) => { e.stopPropagation(); abrirContrato(c); }}>
+                          {draft ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -109,10 +127,13 @@ export default function ContratualContratos({ canEdit }: Props) {
       </Card>
 
       <ContratualContratoWizard
+        key={draftId || 'novo'}
         open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: ['contract-contratos'] }); setWizardOpen(false); setDetailId(id); }}
+        draftId={draftId}
+        onOpenChange={(b) => { setWizardOpen(b); if (!b) { setDraftId(null); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); } }}
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: ['contract-contratos'] }); setWizardOpen(false); setDraftId(null); setDetailId(id); }}
       />
+
 
       <ContratualContratoDetalhe
         contratoId={detailId}

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, FileSignature, Check } from 'lucide-react';
 import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
@@ -20,7 +20,12 @@ interface Props {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   onCreated: (id: string) => void;
+  /** Quando informado, reabre o assistente carregando um contrato em rascunho */
+  draftId?: string | null;
 }
+
+const WIZARD_STEP_KEY = '__wizard_step';
+
 
 const MANUAL_SIGNER = '__manual__';
 
@@ -40,7 +45,21 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
   { key: 'valor_km', label: 'Valor KM rodado (R$)', type: 'number', fonte: 'contrato.valor_km' },
 ];
 
-export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const emptyForm = () => ({
+  numero_proposta: '', valor_mensal: '', qtd_vidas: '', valor_excedente: '',
+  dia_cobranca: '', multa: '', juros: '', vigencia_meses: '12',
+  indice_reajuste: 'IPCA', prazo_aviso: '', valor_km: '',
+  data_emissao: todayISO(),
+  data_assinatura: '',
+  data_inicio: todayISO(),
+  rep_nome: '', rep_cpf: '', rep_email: '',
+  testemunha1_nome: '', testemunha1_cpf: '', testemunha1_email: '',
+  testemunha2_nome: '', testemunha2_cpf: '', testemunha2_email: '',
+  prevermed_nome: '', prevermed_cpf: '', prevermed_email: '',
+});
+
+export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftId = null }: Props) {
   const qc = useQueryClient();
   const [step, setStep] = useState(1);
 
@@ -50,25 +69,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   const [resolvingCliente, setResolvingCliente] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
-  const today = new Date().toISOString().slice(0, 10);
-  const [form, setForm] = useState<any>({
-    numero_proposta: '', valor_mensal: '', qtd_vidas: '', valor_excedente: '',
-    dia_cobranca: '', multa: '', juros: '', vigencia_meses: '12',
-    indice_reajuste: 'IPCA', prazo_aviso: '', valor_km: '',
-    data_emissao: today,
-    data_assinatura: '',
-    data_inicio: today,
-    rep_nome: '', rep_cpf: '', rep_email: '',
-    testemunha1_nome: '', testemunha1_cpf: '', testemunha1_email: '',
-    testemunha2_nome: '', testemunha2_cpf: '', testemunha2_email: '',
-    prevermed_nome: '', prevermed_cpf: '', prevermed_email: '',
-  });
+  const [form, setForm] = useState<any>(emptyForm());
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [prevermedId, setPrevermedId] = useState(MANUAL_SIGNER);
   const [test1Id, setTest1Id] = useState(MANUAL_SIGNER);
   const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
   const [duplicateWarningPending, setDuplicateWarningPending] = useState(false);
+
+  // Rascunho automático
+  const [contratoId, setContratoId] = useState<string | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
+  const creatingDraftRef = useRef(false);
+  const finalizedRef = useRef(false);
+  const hydratingRef = useRef(false);
 
   const { data: placeholders = [] } = useContractPlaceholders(true);
   const { data: respPrevermed = [] } = useContractSignatarios('responsavel_prevermed', true);
@@ -77,13 +93,148 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   useEffect(() => {
     if (!open) {
       setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
-      setManualValues({});
+      setManualValues({}); setForm(emptyForm());
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
       setDuplicateWarningPending(false);
+      setContratoId(null); setDraftSavedAt(null);
+      creatingDraftRef.current = false;
+      finalizedRef.current = false;
     }
   }, [open]);
 
+
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
+
+  // ---------- Rascunho automático ----------
+  const num = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
+
+  const buildContratoPayload = useCallback((currentStep: number) => ({
+    cliente_id: clienteId,
+    template_id: templateId || null,
+    template_version_id: versionId || null,
+    data_emissao: form.data_emissao || null,
+    data_assinatura: form.data_assinatura || null,
+    data_inicio: form.data_inicio || todayISO(),
+    vigencia_meses: Number(form.vigencia_meses) || 12,
+    numero_proposta: form.numero_proposta || null,
+    valor_mensal: num(form.valor_mensal),
+    qtd_vidas: num(form.qtd_vidas),
+    valor_excedente: num(form.valor_excedente),
+    dia_cobranca: num(form.dia_cobranca),
+    multa: num(form.multa),
+    juros: num(form.juros),
+    indice_reajuste: form.indice_reajuste || null,
+    prazo_aviso: num(form.prazo_aviso),
+    valor_km: num(form.valor_km),
+    rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null, rep_email: form.rep_email || null,
+    testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
+    testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
+    prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+    campos_personalizados: { ...manualValues, [WIZARD_STEP_KEY]: currentStep },
+  }), [clienteId, templateId, versionId, form, manualValues]);
+
+  // Carrega rascunho existente
+  useEffect(() => {
+    if (!open || !draftId) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingDraft(true);
+      hydratingRef.current = true;
+      try {
+        const { data, error } = await supabase
+          .from('contract_contratos')
+          .select('*, cliente:contract_clientes(id, company_id)')
+          .eq('id', draftId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data || cancelled) return;
+        const cp = (data.campos_personalizados || {}) as Record<string, any>;
+        const { [WIZARD_STEP_KEY]: savedStep, ...manual } = cp;
+        setContratoId(data.id);
+        setClienteId(data.cliente_id);
+        setCompanyId((data as any).cliente?.company_id ?? null);
+        setTemplateId(data.template_id || '');
+        setVersionId(data.template_version_id || '');
+        setManualValues(manual as Record<string, string>);
+        const str = (v: any) => (v === null || v === undefined ? '' : String(v));
+        setForm({
+          numero_proposta: str(data.numero_proposta),
+          valor_mensal: str(data.valor_mensal), qtd_vidas: str(data.qtd_vidas),
+          valor_excedente: str(data.valor_excedente), dia_cobranca: str(data.dia_cobranca),
+          multa: str(data.multa), juros: str(data.juros),
+          vigencia_meses: str(data.vigencia_meses) || '12',
+          indice_reajuste: str(data.indice_reajuste) || 'IPCA',
+          prazo_aviso: str(data.prazo_aviso), valor_km: str(data.valor_km),
+          data_emissao: str(data.data_emissao) || todayISO(),
+          data_assinatura: str(data.data_assinatura),
+          data_inicio: str(data.data_inicio) || todayISO(),
+          rep_nome: str(data.rep_nome), rep_cpf: str(data.rep_cpf), rep_email: str(data.rep_email),
+          testemunha1_nome: str(data.testemunha1_nome), testemunha1_cpf: str(data.testemunha1_cpf), testemunha1_email: str(data.testemunha1_email),
+          testemunha2_nome: str(data.testemunha2_nome), testemunha2_cpf: str(data.testemunha2_cpf), testemunha2_email: str(data.testemunha2_email),
+          prevermed_nome: str(data.prevermed_nome), prevermed_cpf: str(data.prevermed_cpf), prevermed_email: str(data.prevermed_email),
+        });
+        setStep(Number(savedStep) >= 1 && Number(savedStep) <= 3 ? Number(savedStep) : 1);
+      } catch (e: any) {
+        toast.error(e.message || 'Falha ao carregar rascunho');
+      } finally {
+        if (!cancelled) setLoadingDraft(false);
+        setTimeout(() => { hydratingRef.current = false; }, 300);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draftId]);
+
+  // Cria o rascunho assim que empresa + modelo estiverem definidos
+  useEffect(() => {
+    if (!open || draftId || contratoId || creatingDraftRef.current) return;
+    if (!clienteId || !templateId || !versionId) return;
+    creatingDraftRef.current = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+          .from('contract_contratos')
+          .insert({ ...buildContratoPayload(1), status: 'rascunho' as const, created_by: user?.id, updated_by: user?.id })
+          .select('id')
+          .single();
+        if (error) throw error;
+        setContratoId(data.id);
+        setDraftSavedAt(new Date());
+        qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+      } catch (e: any) {
+        creatingDraftRef.current = false;
+        toast.error(e.message || 'Falha ao criar rascunho do contrato');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draftId, contratoId, clienteId, templateId, versionId]);
+
+  // Autosave com debounce
+  useEffect(() => {
+    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalizedRef.current) return;
+    const t = setTimeout(async () => {
+      if (finalizedRef.current) return;
+      setSavingDraft(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from('contract_contratos')
+          .update({ ...buildContratoPayload(step), updated_by: user?.id })
+          .eq('id', contratoId)
+          .eq('status', 'rascunho');
+        if (error) throw error;
+        setDraftSavedAt(new Date());
+      } catch {
+        /* silencioso: autosave não deve interromper o preenchimento */
+      } finally {
+        setSavingDraft(false);
+      }
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, contratoId, loadingDraft, step, buildContratoPayload]);
+
 
   // Resolve/create contract_clientes record for the selected company
   const resolveClienteForCompany = async (opt: CompanyOption) => {
@@ -216,7 +367,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   });
 
   useEffect(() => {
-    if (templateId) {
+    if (templateId && !hydratingRef.current) {
       const t = templates.find((x: any) => x.id === templateId);
       if (t?.current_version_id) setVersionId(t.current_version_id);
     }
@@ -324,37 +475,29 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
 
   const confirmar = async () => {
     setGenerating(true);
+    finalizedRef.current = true;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const payload: any = {
-        cliente_id: clienteId,
-        template_id: templateId,
-        template_version_id: versionId,
-        status: 'rascunho',
-        data_emissao: form.data_emissao || null,
-        data_assinatura: form.data_assinatura || null,
-        data_inicio: form.data_inicio,
-        vigencia_meses: Number(form.vigencia_meses) || 12,
-        numero_proposta: form.numero_proposta || null,
-        valor_mensal: form.valor_mensal ? Number(form.valor_mensal) : null,
-        qtd_vidas: form.qtd_vidas ? Number(form.qtd_vidas) : null,
-        valor_excedente: form.valor_excedente ? Number(form.valor_excedente) : null,
-        dia_cobranca: form.dia_cobranca ? Number(form.dia_cobranca) : null,
-        multa: form.multa ? Number(form.multa) : null,
-        juros: form.juros ? Number(form.juros) : null,
-        indice_reajuste: form.indice_reajuste || null,
-        prazo_aviso: form.prazo_aviso ? Number(form.prazo_aviso) : null,
-        valor_km: form.valor_km ? Number(form.valor_km) : null,
-        rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null, rep_email: form.rep_email || null,
-        testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
-        testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
-        prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+        ...buildContratoPayload(3),
         campos_personalizados: manualValues,
         html_final: previewHtml,
-        created_by: user?.id, updated_by: user?.id,
+        updated_by: user?.id,
       };
-      const { data: ctr, error } = await supabase.from('contract_contratos').insert(payload).select().single();
-      if (error) throw error;
+      let ctr: any;
+      if (contratoId) {
+        const { data, error } = await supabase.from('contract_contratos')
+          .update(payload).eq('id', contratoId).select().single();
+        if (error) throw error;
+        ctr = data;
+      } else {
+        const { data, error } = await supabase.from('contract_contratos')
+          .insert({ ...payload, status: 'rascunho' as const, created_by: user?.id })
+          .select().single();
+        if (error) throw error;
+        ctr = data;
+      }
+
 
       const signers = [
         { tipo: 'representante', nome: form.rep_nome, cpf: form.rep_cpf, email: form.rep_email },
@@ -395,7 +538,16 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo contrato — passo {step} de 3</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span>{draftId ? 'Rascunho de contrato' : 'Novo contrato'} — passo {step} de 3</span>
+            {loadingDraft && <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> carregando rascunho…</span>}
+            {!loadingDraft && savingDraft && <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> salvando rascunho…</span>}
+            {!loadingDraft && !savingDraft && draftSavedAt && (
+              <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1">
+                <Check className="h-3 w-3" /> rascunho salvo {draftSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {step === 1 && (
