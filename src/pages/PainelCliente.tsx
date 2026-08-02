@@ -886,6 +886,7 @@ function ContatosCard({ companyId }: { companyId: string }) {
           <Contact className="h-4 w-4" />
           Contatos
           {contatos.length > 0 && <Badge variant="secondary">{contatos.length}</Badge>}
+          <SocInfoTooltip />
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -1003,6 +1004,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
+            <SocInfoTooltip />
           </CardTitle>
 
           {syncedAt && (
@@ -1239,6 +1241,7 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
         <CardTitle className="text-base flex items-center gap-2">
           <Stethoscope className="h-4 w-4" />
           Responsáveis PCMSO ({filtered.length})
+          <SocInfoTooltip />
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-3">
