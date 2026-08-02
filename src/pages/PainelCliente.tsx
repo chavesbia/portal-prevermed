@@ -26,6 +26,23 @@ function formatBRL(v: number | null | undefined) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function SocInfoTooltip() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className="text-muted-foreground hover:text-foreground">
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs text-xs">
+        Informações do sistema SOC — em caso de dúvida, confirme diretamente no SOC.
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+
+
 interface Contrato {
   id: string;
   numero_contrato: string | null;
@@ -886,6 +903,7 @@ function ContatosCard({ companyId }: { companyId: string }) {
           <Contact className="h-4 w-4" />
           Contatos
           {contatos.length > 0 && <Badge variant="secondary">{contatos.length}</Badge>}
+          <SocInfoTooltip />
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -1003,6 +1021,7 @@ function PrecoCard({ companyId }: { companyId: string }) {
           <CardTitle className="text-base flex items-center gap-2">
             <DollarSign className="h-4 w-4" />
             Preço / Dados Comerciais
+            <SocInfoTooltip />
           </CardTitle>
 
           {syncedAt && (
@@ -1239,6 +1258,7 @@ function ResponsaveisPcmsoCard({ companyId }: { companyId: string }) {
         <CardTitle className="text-base flex items-center gap-2">
           <Stethoscope className="h-4 w-4" />
           Responsáveis PCMSO ({filtered.length})
+          <SocInfoTooltip />
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-3">
