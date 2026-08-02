@@ -99,9 +99,12 @@ export default function ContratualContratos({ canEdit }: Props) {
                   <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nenhum contrato encontrado.</TableCell></TableRow>
                 )}
                 {contratos.map((c: any) => {
-                  const st = STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
+                  const draft = isRascunhoAberto(c);
+                  const st = draft
+                    ? { label: 'Rascunho (em preenchimento)', tone: 'bg-slate-100 text-slate-700' }
+                    : STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => abrirContrato(c)}>
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
                       <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
@@ -109,8 +112,9 @@ export default function ContratualContratos({ canEdit }: Props) {
                       <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDetailId(c.id)}>
-                          <Eye className="h-4 w-4" />
+                        <Button size="icon" variant="ghost" className="h-8 w-8"
+                          onClick={(e) => { e.stopPropagation(); abrirContrato(c); }}>
+                          {draft ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -123,10 +127,13 @@ export default function ContratualContratos({ canEdit }: Props) {
       </Card>
 
       <ContratualContratoWizard
+        key={draftId || 'novo'}
         open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: ['contract-contratos'] }); setWizardOpen(false); setDetailId(id); }}
+        draftId={draftId}
+        onOpenChange={(b) => { setWizardOpen(b); if (!b) { setDraftId(null); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); } }}
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: ['contract-contratos'] }); setWizardOpen(false); setDraftId(null); setDetailId(id); }}
       />
+
 
       <ContratualContratoDetalhe
         contratoId={detailId}
