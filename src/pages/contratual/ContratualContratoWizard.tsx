@@ -45,7 +45,21 @@ const COMMERCIAL_FIELDS: { key: string; label: string; fonte: string; type?: str
   { key: 'valor_km', label: 'Valor KM rodado (R$)', type: 'number', fonte: 'contrato.valor_km' },
 ];
 
-export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Props) {
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const emptyForm = () => ({
+  numero_proposta: '', valor_mensal: '', qtd_vidas: '', valor_excedente: '',
+  dia_cobranca: '', multa: '', juros: '', vigencia_meses: '12',
+  indice_reajuste: 'IPCA', prazo_aviso: '', valor_km: '',
+  data_emissao: todayISO(),
+  data_assinatura: '',
+  data_inicio: todayISO(),
+  rep_nome: '', rep_cpf: '', rep_email: '',
+  testemunha1_nome: '', testemunha1_cpf: '', testemunha1_email: '',
+  testemunha2_nome: '', testemunha2_cpf: '', testemunha2_email: '',
+  prevermed_nome: '', prevermed_cpf: '', prevermed_email: '',
+});
+
+export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftId = null }: Props) {
   const qc = useQueryClient();
   const [step, setStep] = useState(1);
 
@@ -55,25 +69,21 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   const [resolvingCliente, setResolvingCliente] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
-  const today = new Date().toISOString().slice(0, 10);
-  const [form, setForm] = useState<any>({
-    numero_proposta: '', valor_mensal: '', qtd_vidas: '', valor_excedente: '',
-    dia_cobranca: '', multa: '', juros: '', vigencia_meses: '12',
-    indice_reajuste: 'IPCA', prazo_aviso: '', valor_km: '',
-    data_emissao: today,
-    data_assinatura: '',
-    data_inicio: today,
-    rep_nome: '', rep_cpf: '', rep_email: '',
-    testemunha1_nome: '', testemunha1_cpf: '', testemunha1_email: '',
-    testemunha2_nome: '', testemunha2_cpf: '', testemunha2_email: '',
-    prevermed_nome: '', prevermed_cpf: '', prevermed_email: '',
-  });
+  const [form, setForm] = useState<any>(emptyForm());
   const [manualValues, setManualValues] = useState<Record<string, string>>({});
   const [generating, setGenerating] = useState(false);
   const [prevermedId, setPrevermedId] = useState(MANUAL_SIGNER);
   const [test1Id, setTest1Id] = useState(MANUAL_SIGNER);
   const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
   const [duplicateWarningPending, setDuplicateWarningPending] = useState(false);
+
+  // Rascunho automático
+  const [contratoId, setContratoId] = useState<string | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
+  const creatingDraftRef = useRef(false);
+  const hydratingRef = useRef(false);
 
   const { data: placeholders = [] } = useContractPlaceholders(true);
   const { data: respPrevermed = [] } = useContractSignatarios('responsavel_prevermed', true);
@@ -82,11 +92,14 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated }: Prop
   useEffect(() => {
     if (!open) {
       setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
-      setManualValues({});
+      setManualValues({}); setForm(emptyForm());
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
       setDuplicateWarningPending(false);
+      setContratoId(null); setDraftSavedAt(null);
+      creatingDraftRef.current = false;
     }
   }, [open]);
+
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
