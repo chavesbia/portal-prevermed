@@ -53,14 +53,16 @@ export default function ContratualClientes({ canEdit }: Props) {
                   <TableHead>Razão Social</TableHead>
                   <TableHead>CNPJ</TableHead>
                   <TableHead>Cidade/UF</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>E-mail</TableHead>
                   <TableHead>Situação</TableHead>
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading && <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Carregando…</TableCell></TableRow>}
+                {isLoading && <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Carregando…</TableCell></TableRow>}
                 {!isLoading && clientes.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center py-6 text-muted-foreground">Nenhum cliente cadastrado.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nenhum cliente cadastrado.</TableCell></TableRow>
                 )}
                 {clientes.map((c: any) => (
                   <TableRow key={c.id}>
@@ -70,6 +72,12 @@ export default function ContratualClientes({ canEdit }: Props) {
                     </TableCell>
                     <TableCell className="font-mono text-xs">{formatCNPJ(c.cnpj)}</TableCell>
                     <TableCell>{[c.cidade, c.estado].filter(Boolean).join(' / ')}</TableCell>
+                    <TableCell className="text-sm">
+                      {c.telefone || <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="text-sm max-w-[220px] truncate" title={c.email || ''}>
+                      {c.email || <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>
                       {c.situacao_cadastral && (
                         <Badge variant="secondary" className={
