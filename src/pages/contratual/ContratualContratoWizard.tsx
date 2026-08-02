@@ -538,7 +538,16 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo contrato — passo {step} de 3</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span>{draftId ? 'Rascunho de contrato' : 'Novo contrato'} — passo {step} de 3</span>
+            {loadingDraft && <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> carregando rascunho…</span>}
+            {!loadingDraft && savingDraft && <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> salvando rascunho…</span>}
+            {!loadingDraft && !savingDraft && draftSavedAt && (
+              <span className="text-xs font-normal text-muted-foreground inline-flex items-center gap-1">
+                <Check className="h-3 w-3" /> rascunho salvo {draftSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         {step === 1 && (
