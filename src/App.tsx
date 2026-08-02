@@ -31,7 +31,7 @@ const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Precificacao = lazy(() => import("./pages/Precificacao"));
 const GestaoGuias = lazy(() => import("./pages/GestaoGuias"));
 const GuiaDetalhe = lazy(() => import("./pages/guias/GuiaDetalhe"));
-const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial"));
+// const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial")); // módulo aposentado
 const GestaoOS = lazy(() => import("./pages/GestaoOS"));
 const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
 const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
