@@ -367,7 +367,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   });
 
   useEffect(() => {
-    if (templateId) {
+    if (templateId && !hydratingRef.current) {
       const t = templates.find((x: any) => x.id === templateId);
       if (t?.current_version_id) setVersionId(t.current_version_id);
     }
