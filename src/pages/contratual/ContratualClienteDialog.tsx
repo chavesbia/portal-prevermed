@@ -69,7 +69,7 @@ export function ContratualClienteDialog({ open, onOpenChange, cliente, onSaved }
           <DialogTitle>Contato e Representante Legal</DialogTitle>
           {cliente && (
             <DialogDescription>
-              {cliente.razao_social} · {formatCNPJ(cliente.cnpj)}
+              {cliente.display_razao || cliente.razao_social} · {formatCNPJ(cliente.display_cnpj || cliente.cnpj)}
             </DialogDescription>
           )}
         </DialogHeader>
