@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, ArrowLeft, ArrowRight, FileSignature } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, FileSignature, Check } from 'lucide-react';
 import { buildPlaceholderValues, placeholdersManuais, renderTemplate } from '@/lib/contractual/render';
 import { generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { useContractPlaceholders } from '@/hooks/useContractPlaceholders';
@@ -20,7 +20,12 @@ interface Props {
   open: boolean;
   onOpenChange: (b: boolean) => void;
   onCreated: (id: string) => void;
+  /** Quando informado, reabre o assistente carregando um contrato em rascunho */
+  draftId?: string | null;
 }
+
+const WIZARD_STEP_KEY = '__wizard_step';
+
 
 const MANUAL_SIGNER = '__manual__';
 
