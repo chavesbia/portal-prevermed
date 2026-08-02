@@ -72,7 +72,7 @@ export default function ContratualContratos({ canEdit }: Props) {
         <Input placeholder="Buscar por número, empresa ou CNPJ…" className="max-w-md"
           value={search} onChange={e => setSearch(e.target.value)} />
         {canEdit && (
-          <Button onClick={() => setWizardOpen(true)} className="gap-1.5">
+          <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
             <Plus className="h-4 w-4" /> Novo Contrato
           </Button>
         )}
