@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, FileDown } from 'lucide-react';
+import { Plus, Eye, FileDown, Pencil } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
