@@ -103,6 +103,136 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
+  // ---------- Rascunho automático ----------
+  const num = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
+
+  const buildContratoPayload = useCallback((currentStep: number) => ({
+    cliente_id: clienteId,
+    template_id: templateId || null,
+    template_version_id: versionId || null,
+    data_emissao: form.data_emissao || null,
+    data_assinatura: form.data_assinatura || null,
+    data_inicio: form.data_inicio || todayISO(),
+    vigencia_meses: Number(form.vigencia_meses) || 12,
+    numero_proposta: form.numero_proposta || null,
+    valor_mensal: num(form.valor_mensal),
+    qtd_vidas: num(form.qtd_vidas),
+    valor_excedente: num(form.valor_excedente),
+    dia_cobranca: num(form.dia_cobranca),
+    multa: num(form.multa),
+    juros: num(form.juros),
+    indice_reajuste: form.indice_reajuste || null,
+    prazo_aviso: num(form.prazo_aviso),
+    valor_km: num(form.valor_km),
+    rep_nome: form.rep_nome || null, rep_cpf: form.rep_cpf || null, rep_email: form.rep_email || null,
+    testemunha1_nome: form.testemunha1_nome || null, testemunha1_cpf: form.testemunha1_cpf || null, testemunha1_email: form.testemunha1_email || null,
+    testemunha2_nome: form.testemunha2_nome || null, testemunha2_cpf: form.testemunha2_cpf || null, testemunha2_email: form.testemunha2_email || null,
+    prevermed_nome: form.prevermed_nome || null, prevermed_cpf: form.prevermed_cpf || null, prevermed_email: form.prevermed_email || null,
+    campos_personalizados: { ...manualValues, [WIZARD_STEP_KEY]: currentStep },
+  }), [clienteId, templateId, versionId, form, manualValues]);
+
+  // Carrega rascunho existente
+  useEffect(() => {
+    if (!open || !draftId) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingDraft(true);
+      hydratingRef.current = true;
+      try {
+        const { data, error } = await supabase
+          .from('contract_contratos')
+          .select('*, cliente:contract_clientes(id, company_id)')
+          .eq('id', draftId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data || cancelled) return;
+        const cp = (data.campos_personalizados || {}) as Record<string, any>;
+        const { [WIZARD_STEP_KEY]: savedStep, ...manual } = cp;
+        setContratoId(data.id);
+        setClienteId(data.cliente_id);
+        setCompanyId((data as any).cliente?.company_id ?? null);
+        setTemplateId(data.template_id || '');
+        setVersionId(data.template_version_id || '');
+        setManualValues(manual as Record<string, string>);
+        const str = (v: any) => (v === null || v === undefined ? '' : String(v));
+        setForm({
+          numero_proposta: str(data.numero_proposta),
+          valor_mensal: str(data.valor_mensal), qtd_vidas: str(data.qtd_vidas),
+          valor_excedente: str(data.valor_excedente), dia_cobranca: str(data.dia_cobranca),
+          multa: str(data.multa), juros: str(data.juros),
+          vigencia_meses: str(data.vigencia_meses) || '12',
+          indice_reajuste: str(data.indice_reajuste) || 'IPCA',
+          prazo_aviso: str(data.prazo_aviso), valor_km: str(data.valor_km),
+          data_emissao: str(data.data_emissao) || todayISO(),
+          data_assinatura: str(data.data_assinatura),
+          data_inicio: str(data.data_inicio) || todayISO(),
+          rep_nome: str(data.rep_nome), rep_cpf: str(data.rep_cpf), rep_email: str(data.rep_email),
+          testemunha1_nome: str(data.testemunha1_nome), testemunha1_cpf: str(data.testemunha1_cpf), testemunha1_email: str(data.testemunha1_email),
+          testemunha2_nome: str(data.testemunha2_nome), testemunha2_cpf: str(data.testemunha2_cpf), testemunha2_email: str(data.testemunha2_email),
+          prevermed_nome: str(data.prevermed_nome), prevermed_cpf: str(data.prevermed_cpf), prevermed_email: str(data.prevermed_email),
+        });
+        setStep(Number(savedStep) >= 1 && Number(savedStep) <= 3 ? Number(savedStep) : 1);
+      } catch (e: any) {
+        toast.error(e.message || 'Falha ao carregar rascunho');
+      } finally {
+        if (!cancelled) setLoadingDraft(false);
+        setTimeout(() => { hydratingRef.current = false; }, 300);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draftId]);
+
+  // Cria o rascunho assim que empresa + modelo estiverem definidos
+  useEffect(() => {
+    if (!open || draftId || contratoId || creatingDraftRef.current) return;
+    if (!clienteId || !templateId || !versionId) return;
+    creatingDraftRef.current = true;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data, error } = await supabase
+          .from('contract_contratos')
+          .insert({ ...buildContratoPayload(1), status: 'rascunho' as const, created_by: user?.id, updated_by: user?.id })
+          .select('id')
+          .single();
+        if (error) throw error;
+        setContratoId(data.id);
+        setDraftSavedAt(new Date());
+        qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+      } catch (e: any) {
+        creatingDraftRef.current = false;
+        toast.error(e.message || 'Falha ao criar rascunho do contrato');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draftId, contratoId, clienteId, templateId, versionId]);
+
+  // Autosave com debounce
+  useEffect(() => {
+    if (!open || !contratoId || loadingDraft || hydratingRef.current) return;
+    const t = setTimeout(async () => {
+      setSavingDraft(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const { error } = await supabase
+          .from('contract_contratos')
+          .update({ ...buildContratoPayload(step), updated_by: user?.id })
+          .eq('id', contratoId)
+          .eq('status', 'rascunho');
+        if (error) throw error;
+        setDraftSavedAt(new Date());
+      } catch {
+        /* silencioso: autosave não deve interromper o preenchimento */
+      } finally {
+        setSavingDraft(false);
+      }
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, contratoId, loadingDraft, step, buildContratoPayload]);
+
+
   // Resolve/create contract_clientes record for the selected company
   const resolveClienteForCompany = async (opt: CompanyOption) => {
     setResolvingCliente(true);
