@@ -1,0 +1,1 @@
+UPDATE public.modules SET is_active = false WHERE route = '/carteira-comercial';

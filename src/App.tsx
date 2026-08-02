@@ -31,7 +31,7 @@ const Notificacoes = lazy(() => import("./pages/Notificacoes"));
 const Precificacao = lazy(() => import("./pages/Precificacao"));
 const GestaoGuias = lazy(() => import("./pages/GestaoGuias"));
 const GuiaDetalhe = lazy(() => import("./pages/guias/GuiaDetalhe"));
-const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial"));
+// const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial")); // módulo aposentado
 const GestaoOS = lazy(() => import("./pages/GestaoOS"));
 const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
 const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
@@ -87,7 +87,8 @@ const App = () => (
                 <Route path="/precificacao" element={<Precificacao />} />
                 <Route path="/gestao-guias" element={<GestaoGuias />} />
                 <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
-                <Route path="/carteira-comercial" element={<CarteiraComercial />} />
+                {/* Módulo Comercial aposentado — rota redireciona para a home (reversível) */}
+                <Route path="/carteira-comercial" element={<Navigate to="/" replace />} />
                 <Route path="/gestao-os" element={<GestaoOS />} />
                 <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
                 <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
