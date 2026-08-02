@@ -212,8 +212,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   // Autosave com debounce
   useEffect(() => {
-    if (!open || !contratoId || loadingDraft || hydratingRef.current) return;
+    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalizedRef.current) return;
     const t = setTimeout(async () => {
+      if (finalizedRef.current) return;
       setSavingDraft(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
