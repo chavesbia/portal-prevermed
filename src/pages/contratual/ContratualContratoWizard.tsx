@@ -83,6 +83,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<Date | null>(null);
   const creatingDraftRef = useRef(false);
+  const finalizedRef = useRef(false);
   const hydratingRef = useRef(false);
 
   const { data: placeholders = [] } = useContractPlaceholders(true);
