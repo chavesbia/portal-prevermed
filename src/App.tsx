@@ -87,7 +87,8 @@ const App = () => (
                 <Route path="/precificacao" element={<Precificacao />} />
                 <Route path="/gestao-guias" element={<GestaoGuias />} />
                 <Route path="/guias/:codigo" element={<GuiaDetalhe />} />
-                <Route path="/carteira-comercial" element={<CarteiraComercial />} />
+                {/* Módulo Comercial aposentado — rota redireciona para a home (reversível) */}
+                <Route path="/carteira-comercial" element={<Navigate to="/" replace />} />
                 <Route path="/gestao-os" element={<GestaoOS />} />
                 <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
                 <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
