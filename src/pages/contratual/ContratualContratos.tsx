@@ -31,13 +31,14 @@ export default function ContratualContratos({ canEdit }: Props) {
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const { data: contratos = [], isLoading } = useQuery({
     queryKey: ['contract-contratos', search],
     queryFn: async () => {
       let q = supabase.from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, cliente:contract_clientes(razao_social, cnpj)')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, cliente:contract_clientes(razao_social, cnpj)')
         .order('created_at', { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
@@ -51,6 +52,19 @@ export default function ContratualContratos({ canEdit }: Props) {
       );
     },
   });
+
+  // Rascunho ainda não finalizado (PDF não gerado): reabre o assistente
+  const isRascunhoAberto = (c: any) => c.status === 'rascunho' && !c.html_final;
+
+  const abrirContrato = (c: any) => {
+    if (isRascunhoAberto(c)) {
+      setDraftId(c.id);
+      setWizardOpen(true);
+    } else {
+      setDetailId(c.id);
+    }
+  };
+
 
   return (
     <div className="space-y-3">
