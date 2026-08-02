@@ -26,6 +26,23 @@ function formatBRL(v: number | null | undefined) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function SocInfoTooltip() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className="text-muted-foreground hover:text-foreground">
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs text-xs">
+        Informações do sistema SOC — em caso de dúvida, confirme diretamente no SOC.
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+
+
 interface Contrato {
   id: string;
   numero_contrato: string | null;
