@@ -125,7 +125,10 @@ export default function GestaoOS() {
 
       {canEdit && (
         <Dialog open={novaOpen} onOpenChange={setNovaOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent 
+            className="max-w-4xl max-h-[90vh] overflow-y-auto"
+            onInteractOutside={(e) => e.preventDefault()}
+          >
             <DialogHeader>
               <DialogTitle>Nova Ordem de Serviço</DialogTitle>
               <DialogDescription>Cadastre uma nova OS no sistema.</DialogDescription>
