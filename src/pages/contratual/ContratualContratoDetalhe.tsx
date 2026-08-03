@@ -196,7 +196,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   </Badge>
                 </>
               )}
-              {canEdit && ['rascunho', 'cancelado'].includes(contrato.status) && (
+              {isAdmMaster && ['rascunho', 'cancelado'].includes(contrato.status) && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" className="ml-auto" disabled={deleting}>
