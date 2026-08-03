@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   contratoId: string | null;
