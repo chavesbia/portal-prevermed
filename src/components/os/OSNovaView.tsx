@@ -201,7 +201,8 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
 
   const content = (
-    <Form {...form}>
+    <>
+      <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
