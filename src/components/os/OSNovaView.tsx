@@ -200,22 +200,10 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   };
 
 
-  const Wrapper = embedded
-    ? ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-    : ({ children }: { children: React.ReactNode }) => (
-        <Card>
-          <CardHeader>
-            <CardTitle>Nova Ordem de Serviço</CardTitle>
-            <CardDescription>Cadastre uma nova OS no sistema</CardDescription>
-          </CardHeader>
-          <CardContent>{children}</CardContent>
-        </Card>
-      );
-
-  return (
-    <Wrapper>
+  const content = (
+    <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
               <FormItem>
@@ -412,7 +400,20 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
 
-    </Wrapper>
+  if (embedded) {
+    return <div>{content}</div>;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Nova Ordem de Serviço</CardTitle>
+        <CardDescription>Cadastre uma nova OS no sistema</CardDescription>
+      </CardHeader>
+      <CardContent>{content}</CardContent>
+    </Card>
   );
 }
