@@ -51,6 +51,7 @@ const AdminDocuments = lazy(() => import("./pages/admin/AdminDocuments"));
 const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos"));
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
+const AdminOSSemEmpresa = lazy(() => import("./pages/admin/AdminOSSemEmpresa"));
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
                 <Route path="/admin/revisao-vinculos" element={<Navigate to="/admin/permissoes?tab=revisao-vinculos" replace />} />
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
                 <Route path="/admin/empresas" element={<AdminMasterRoute><AdminEmpresas /></AdminMasterRoute>} />
+                <Route path="/admin/os-sem-empresa" element={<AdminMasterRoute><AdminOSSemEmpresa /></AdminMasterRoute>} />
 
 
                 <Route path="/perfil" element={<Profile />} />
