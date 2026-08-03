@@ -34,6 +34,7 @@ import {
   Package,
   NotebookPen,
   FileEdit,
+  Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -156,6 +157,7 @@ const adminSection: MenuSection = {
   items: [
     { label: 'Usuários e Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Base de Dados', icon: Database, path: '/admin/empresas', adminOnly: true },
+    { label: 'OS sem Empresa', icon: Link2, path: '/admin/os-sem-empresa', adminOnly: true },
     { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
     { label: 'Documentos', icon: FolderOpen, path: '/admin/documentos', adminOnly: true },
     { label: 'Laudos e Serviços', icon: NotebookPen, path: '/admin/laudos-servicos', adminOnly: true },
