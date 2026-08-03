@@ -169,8 +169,17 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       }
 
 
-      // Registrar laudo (auto-popula tabela de Laudos)
-      await addLaudo({
+      // Verificar se já existe um laudo para este serviço e tipo
+      const { data: laudoExistente, error: laudoCheckErr } = await supabase
+        .from('laudos')
+        .select('*')
+        .eq('servico_id', servico.id)
+        .eq('tipo_laudo_id', form.tipoLaudoId)
+        .maybeSingle();
+
+      if (laudoCheckErr) throw laudoCheckErr;
+
+      const laudoData = {
         ordem_id: ordem.id,
         servico_id: servico.id,
         tipo_laudo_id: form.tipoLaudoId,
@@ -183,7 +192,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         tipo_laudo_nome: tipo.nome,
         responsavel_tecnico_nome: resp.nome,
         responsavel_tecnico_registro: `${resp.conselho} ${resp.numero_registro}`,
-        data_emissao: new Date().toISOString().split('T')[0],
+        data_emissao: laudoExistente ? laudoExistente.data_emissao : new Date().toISOString().split('T')[0],
         possui_vigencia: form.possuiVigencia,
         data_validade: form.possuiVigencia && form.dataValidade ? format(form.dataValidade, 'yyyy-MM-dd') : null,
         justificativa_sem_vigencia: !form.possuiVigencia ? form.justificativaSemVigencia : null,
@@ -191,9 +200,22 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         possui_art: form.possuiArt,
         art_numero: form.possuiArt ? form.artNumero : null,
         art_validade: form.possuiArt && form.artValidade ? format(form.artValidade, 'yyyy-MM-dd') : null,
-        art_anexo_url: artPath,
-        created_by: user?.id || null,
-      } as any);
+        art_anexo_url: artPath || (laudoExistente?.art_anexo_url ?? null),
+        updated_at: new Date().toISOString(),
+      };
+
+      if (laudoExistente) {
+        const { error: updErr } = await supabase
+          .from('laudos')
+          .update(laudoData as any)
+          .eq('id', laudoExistente.id);
+        if (updErr) throw updErr;
+      } else {
+        await addLaudo({
+          ...laudoData,
+          created_by: user?.id || null,
+        } as any);
+      }
 
       // Lançar custos reais
       const hoje = new Date().toISOString().split('T')[0];
@@ -212,12 +234,16 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       // Nota: intencionalmente NÃO criamos custo automático de ART; usuário adiciona se aplicável.
 
       // Histórico
+      let historicoComentario = laudoExistente 
+        ? `Laudo ${tipo.nome} atualizado: vigência ${form.possuiVigencia ? `até ${format(form.dataValidade!, 'dd/MM/yyyy')}` : 'removida'}, RT alterado para ${resp.nome} (${resp.conselho} ${resp.numero_registro}).`
+        : `Serviço ${servico.tipo} finalizado. Laudo: ${tipo.nome}. RT: ${resp.nome} (${resp.conselho} ${resp.numero_registro})${form.possuiArt ? ` — ART ${form.artNumero}` : ''}${custos.length ? ` — ${custos.length} custo(s) real(is) registrado(s)` : ''}.`;
+
       await supabase.from('historico_os').insert({
         ordem_id: ordem.id,
         user_id: user?.id || null,
         user_name: profile?.full_name || 'Sistema',
-        acao: 'Finalização de Serviço',
-        comentario: `Serviço ${servico.tipo} finalizado. Laudo: ${tipo.nome}. RT: ${resp.nome} (${resp.conselho} ${resp.numero_registro})${form.possuiArt ? ` — ART ${form.artNumero}` : ''}${custos.length ? ` — ${custos.length} custo(s) real(is) registrado(s)` : ''}.`,
+        acao: laudoExistente ? 'Atualização de Laudo' : 'Finalização de Serviço',
+        comentario: historicoComentario,
         status_anterior: servico.status,
         status_novo: 'Encerrado',
         servico_afetado: servico.tipo,
