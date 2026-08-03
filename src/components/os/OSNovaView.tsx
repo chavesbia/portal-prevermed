@@ -377,7 +377,6 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             <Button type="submit" disabled={submitting}><Save className="mr-2 h-4 w-4" />{submitting ? 'Salvando...' : 'Salvar OS'}</Button>
           </div>
         </form>
-        </form>
       </Form>
 
       <AlertDialog open={dupDialogOpen} onOpenChange={setDupDialogOpen}>
@@ -415,7 +414,5 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
       </CardHeader>
       <CardContent>{content}</CardContent>
     </Card>
-  );
-}
   );
 }
