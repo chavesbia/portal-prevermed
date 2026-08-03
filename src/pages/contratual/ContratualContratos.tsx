@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, FileDown, Pencil } from 'lucide-react';
+import { Plus, Eye, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
 import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
+import { useAuth } from '@/contexts/AuthContext';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   rascunho: { label: 'Rascunho', tone: 'bg-slate-100 text-slate-700' },
@@ -28,11 +31,13 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
 interface Props { canEdit: boolean }
 
 export default function ContratualContratos({ canEdit }: Props) {
+  const { isAdmMaster } = useAuth() as any;
   const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { data: contratos = [], isLoading } = useQuery({
     queryKey: ['contract-contratos', search],
@@ -63,6 +68,23 @@ export default function ContratualContratos({ canEdit }: Props) {
     } else {
       setDetailId(c.id);
     }
+  };
+
+  const excluirContrato = async (id: string, pdfUrl?: string) => {
+    setDeleting(true);
+    try {
+      if (pdfUrl) {
+        await supabase.storage.from('contract-pdfs').remove([pdfUrl]).catch(() => {});
+      }
+      await supabase.from('contract_assinaturas').delete().eq('contrato_id', id);
+      await supabase.from('contract_eventos').delete().eq('contrato_id', id);
+      const { error } = await supabase.from('contract_contratos').delete().eq('id', id);
+      if (error) throw error;
+      toast.success('Contrato excluído');
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+    } catch (e: any) {
+      toast.error(e.message || 'Erro ao excluir contrato');
+    } finally { setDeleting(false); }
   };
 
 
@@ -112,10 +134,37 @@ export default function ContratualContratos({ canEdit }: Props) {
                       <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" className="h-8 w-8"
-                          onClick={(e) => { e.stopPropagation(); abrirContrato(c); }}>
-                          {draft ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" className="h-8 w-8"
+                            onClick={(e) => { e.stopPropagation(); abrirContrato(c); }}>
+                            {draft ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          
+                          {isAdmMaster && ['rascunho', 'cancelado'].includes(c.status) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={(e) => e.stopPropagation()} disabled={deleting}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir contrato {c.numero_contrato}?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação remove o contrato, seus assinantes, eventos e o PDF. Não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => excluirContrato(c.id, c.pdf_url)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
