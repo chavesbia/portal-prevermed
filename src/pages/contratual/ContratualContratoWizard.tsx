@@ -173,7 +173,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           testemunha2_nome: str(data.testemunha2_nome), testemunha2_cpf: str(data.testemunha2_cpf), testemunha2_email: str(data.testemunha2_email),
           prevermed_nome: str(data.prevermed_nome), prevermed_cpf: str(data.prevermed_cpf), prevermed_email: str(data.prevermed_email),
         });
-        const hasBase = !!data.company_id && !!data.cliente_id && !!data.template_id && !!data.template_version_id;
+        const hasBase = !!data.cliente_id && !!data.template_id && !!data.template_version_id;
         const s = Number(savedStep) >= 1 && Number(savedStep) <= 3 ? Number(savedStep) : 1;
         setStep(hasBase ? s : 1);
       } catch (e: any) {
