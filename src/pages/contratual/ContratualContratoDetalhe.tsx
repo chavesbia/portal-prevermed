@@ -176,7 +176,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
               {canEdit && (
                 <Button variant="outline" size="sm" onClick={regenerarPdf} disabled={regen}>
                   {regen ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
-                  Regenerar PDF
+                  Preparar para Envio
                 </Button>
               )}
               {canEdit && contrato.status === 'rascunho' && (
