@@ -201,7 +201,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
 
   const content = (
-    <>
+    <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormField control={form.control} name="numeroOS" render={({ field }) => (
@@ -376,6 +376,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
             <Button type="button" variant="outline" onClick={() => form.reset()}><RotateCcw className="mr-2 h-4 w-4" />Limpar</Button>
             <Button type="submit" disabled={submitting}><Save className="mr-2 h-4 w-4" />{submitting ? 'Salvando...' : 'Salvar OS'}</Button>
           </div>
+        </form>
         </form>
       </Form>
 
