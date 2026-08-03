@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   contratoId: string | null;
@@ -32,6 +33,7 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
 };
 
 export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Props) {
+  const { isAdmMaster } = useAuth() as any;
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -194,7 +196,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   </Badge>
                 </>
               )}
-              {canEdit && ['rascunho', 'cancelado'].includes(contrato.status) && (
+              {isAdmMaster && ['rascunho', 'cancelado'].includes(contrato.status) && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="sm" className="ml-auto" disabled={deleting}>
