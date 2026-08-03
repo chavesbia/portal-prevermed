@@ -32,6 +32,7 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
 };
 
 export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Props) {
+  const { isAdmMaster } = useAuth() as any;
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
   const [sending, setSending] = useState(false);
