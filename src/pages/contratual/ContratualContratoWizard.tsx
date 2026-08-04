@@ -67,6 +67,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   const [company, setCompany] = useState<CompanyOption | null>(null);
   const [clienteId, setClienteId] = useState('');
   const [resolvingCliente, setResolvingCliente] = useState(false);
+  const [resolveError, setResolveError] = useState(false);
   const [templateId, setTemplateId] = useState('');
   const [versionId, setVersionId] = useState('');
   const [form, setForm] = useState<any>(emptyForm());
@@ -92,7 +93,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   useEffect(() => {
     if (!open) {
-      setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setTemplateId(''); setVersionId('');
+      setStep(1); setCompanyId(null); setCompany(null); setClienteId(''); setResolveError(false); setTemplateId(''); setVersionId('');
       setManualValues({}); setForm(emptyForm());
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
       setDuplicateWarningPending(false);
@@ -241,6 +242,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   // Resolve/create contract_clientes record for the selected company
   const resolveClienteForCompany = async (opt: CompanyOption) => {
     setResolvingCliente(true);
+    setResolveError(false);
     try {
       const { data: existing, error: qErr } = await supabase
         .from('contract_clientes')
@@ -292,6 +294,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
     } catch (e: any) {
       toast.error(e.message || 'Falha ao vincular empresa ao contrato');
       setClienteId('');
+      setResolveError(true);
     } finally {
       setResolvingCliente(false);
     }
@@ -453,7 +456,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
     return out;
   }, [previewHtml]);
 
-  const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending;
+  const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending && !resolveError;
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos
     && clienteCamposFaltando.length === 0 && !savingCliente;
 
@@ -553,6 +556,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
         {step === 1 && (
           <div className="space-y-3">
+            {resolveError && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive font-medium">
+                Não foi possível vincular esta empresa ao contrato — verifique se você tem permissão de edição em Gestão 
+                Contratual → Clientes. Fale com o administrador se o problema persistir.
+              </div>
+            )}
             <div className="space-y-1">
               <Label>Empresa (Cliente) *</Label>
               <CompanySelector
@@ -563,6 +572,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
                   setCompanyId(id);
                   setCompany(opt);
                   setClienteId('');
+                  setResolveError(false);
                   if (opt) resolveClienteForCompany(opt);
                 }}
               />
