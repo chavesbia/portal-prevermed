@@ -461,8 +461,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
 
   const aplicarSignatario = (id: string, kind: 'prev' | 't1' | 't2') => {
-    // Testemunha da Contratada é sugerida a partir dos responsáveis PreverMed
-    const list = kind === 'prev' || kind === 't1' ? respPrevermed : testemunhas;
+    const list = kind === 'prev' ? respPrevermed : testemunhas;
     const s = list.find(x => x.id === id);
     if (!s) return;
     if (kind === 'prev') {
