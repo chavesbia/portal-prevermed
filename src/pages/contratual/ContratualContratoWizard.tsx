@@ -692,12 +692,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
               <div className="space-y-2 mb-3">
                 <Label className="text-xs font-semibold uppercase text-muted-foreground">Testemunha da Contratada</Label>
-                {respPrevermed.length > 0 && (
+                {testemunhas.length > 0 && (
                   <Select value={test1Id} onValueChange={(v) => { setTest1Id(v); if (v !== MANUAL_SIGNER) aplicarSignatario(v, 't1'); }}>
                     <SelectTrigger><SelectValue placeholder="Escolher cadastrado…" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value={MANUAL_SIGNER}>Digitar manualmente</SelectItem>
-                      {respPrevermed.map(s => (
+                      {testemunhas.map(s => (
                         <SelectItem key={s.id} value={s.id}>{s.nome}{s.cargo ? ` — ${s.cargo}` : ''}</SelectItem>
                       ))}
                     </SelectContent>
