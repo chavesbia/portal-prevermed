@@ -112,7 +112,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
     queryKey: ['contract-contrato', contratoId],
     queryFn: async () => {
       const { data } = await supabase.from('contract_contratos')
-        .select('*, cliente:contract_clientes(*), assinaturas:contract_assinaturas(*), eventos:contract_eventos(*)')
+        .select('*, cliente:contract_clientes(*), assinaturas:contract_assinaturas(*), eventos:contract_eventos(*), criado_por:profiles!contract_contratos_created_by_fkey(display_name)')
         .eq('id', contratoId).maybeSingle();
       return data;
     },
@@ -247,7 +247,11 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   <Row k="Multa" v={contrato.multa != null ? `${contrato.multa}%` : '-'} />
                   <Row k="Juros" v={contrato.juros != null ? `${contrato.juros}%` : '-'} />
                   <Row k="Aviso prévio" v={contrato.prazo_aviso ? `${contrato.prazo_aviso} dias` : '-'} />
+                  <div className="col-span-2 border-t mt-1.5 pt-1.5 text-[10px] text-muted-foreground italic">
+                    Redigido por: {(contrato as any).criado_por?.display_name || 'Não registrado'}, em {formatDateBR(contrato.created_at)} {new Date(contrato.created_at).toLocaleTimeString('pt-BR').slice(0, 5)}
+                  </div>
                 </Section>
+
               </TabsContent>
 
               <TabsContent value="conteudo" className="mt-3">
