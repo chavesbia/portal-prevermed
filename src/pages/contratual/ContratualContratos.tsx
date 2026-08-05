@@ -58,6 +58,28 @@ export default function ContratualContratos({ canEdit }: Props) {
     },
   });
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('contract-contratos-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'contract_contratos'
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+
   // Rascunho ainda não finalizado (PDF não gerado): reabre o assistente
   const isRascunhoAberto = (c: any) => c.status === 'rascunho' && !c.html_final;
 
