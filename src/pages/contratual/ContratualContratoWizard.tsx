@@ -166,7 +166,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           vigencia_meses: str(data.vigencia_meses) || '12',
           indice_reajuste: str(data.indice_reajuste) || 'IPCA',
           prazo_aviso: str(data.prazo_aviso), valor_km: str(data.valor_km),
-          data_emissao: str(data.data_emissao) || todayISO(),
+          data_emissao: data.status === 'rascunho' ? todayISO() : (str(data.data_emissao) || todayISO()),
           data_assinatura: str(data.data_assinatura),
           data_inicio: str(data.data_inicio) || todayISO(),
           rep_nome: str(data.rep_nome), rep_cpf: str(data.rep_cpf), rep_email: str(data.rep_email),
