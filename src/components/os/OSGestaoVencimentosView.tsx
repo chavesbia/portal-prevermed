@@ -20,6 +20,8 @@ import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { NovoLaudoManualDialog } from '@/components/os/NovoLaudoManualDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function OSGestaoVencimentosView() {
   const { responsaveis } = useResponsaveisTecnicos();
