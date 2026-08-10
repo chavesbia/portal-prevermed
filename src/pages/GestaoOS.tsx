@@ -20,8 +20,9 @@ import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
   const [searchParams] = useSearchParams();
-  const { getModulePermissions } = useModulePermissions();
+  const { getModulePermissions, hasPermission } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
+  const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
   const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, filters, setFilters,
