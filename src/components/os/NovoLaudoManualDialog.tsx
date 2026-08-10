@@ -18,10 +18,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Pré-seleciona a empresa (ex.: quando aberto pelo Painel do Cliente). */
   companyId?: string | null;
+  /** Quando informado, o diálogo abre em modo de edição. */
+  laudo?: any | null;
   onSaved?: () => void;
 }
 
-export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }: Props) {
+export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, onSaved }: Props) {
   const { user } = useAuth();
   const { responsaveis } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
@@ -37,6 +39,28 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
 
   useEffect(() => {
     if (!open) return;
+    if (laudo) {
+      setUnidadeId(laudo.unidade_id ?? null);
+      setTipoLaudoId(laudo.tipo_laudo_id ?? '');
+      setResponsavelId(laudo.responsavel_tecnico_id ?? '');
+      setDataEmissao(laudo.data_emissao ?? new Date().toISOString().slice(0, 10));
+      setDataValidade(laudo.data_validade ?? '');
+      setObservacoes(laudo.observacoes ?? '');
+      if (laudo.company_id) {
+        supabase
+          .from('companies')
+          .select('id, razao_social, nome_abreviado')
+          .eq('id', laudo.company_id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) setCompany({ id: data.id, nome: data.nome_abreviado || data.razao_social });
+            else setCompany({ id: laudo.company_id, nome: laudo.empresa_cliente ?? '' });
+          });
+      } else {
+        setCompany(null);
+      }
+      return;
+    }
     setUnidadeId(null);
     setTipoLaudoId('');
     setResponsavelId('');
@@ -55,7 +79,8 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
       .then(({ data }) => {
         if (data) setCompany({ id: data.id, nome: data.nome_abreviado || data.razao_social });
       });
-  }, [open, companyId]);
+  }, [open, companyId, laudo]);
+
 
   const tiposAtivos = tiposLaudo.filter((t: any) => t.ativo !== false);
   const tipoSelecionado = tiposAtivos.find((t: any) => t.id === tipoLaudoId);
@@ -89,8 +114,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
 
     const rt = responsaveis.find((r) => r.id === responsavelId);
     setSaving(true);
-    const { error } = await supabase.from('laudos').insert({
-      origem: 'cadastro_manual',
+    const payload: any = {
       company_id: company.id,
       unidade_id: unidadeId,
       empresa_cliente: company.nome,
@@ -104,16 +128,22 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
       data_validade: dataValidade || null,
       possui_vigencia: !!dataValidade,
       observacoes: observacoes.trim() || null,
-      created_by: user?.id ?? null,
-    } as any);
+    };
+
+    const { error } = laudo?.id
+      ? await supabase.from('laudos').update(payload).eq('id', laudo.id)
+      : await supabase.from('laudos').insert({ ...payload, origem: 'cadastro_manual', created_by: user?.id ?? null });
     setSaving(false);
 
     if (error) {
-      console.error('Erro ao cadastrar laudo manual:', error);
-      toast({ title: 'Erro', description: 'Não foi possível cadastrar o laudo.', variant: 'destructive' });
+      console.error('Erro ao salvar laudo:', error);
+      toast({ title: 'Erro', description: `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo.`, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Laudo cadastrado', description: 'Laudo manual registrado com sucesso.' });
+    toast({
+      title: laudo?.id ? 'Laudo atualizado' : 'Laudo cadastrado',
+      description: laudo?.id ? 'Alterações salvas com sucesso.' : 'Laudo manual registrado com sucesso.',
+    });
     onSaved?.();
     onOpenChange(false);
   };
@@ -122,11 +152,14 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Novo Laudo Manual</DialogTitle>
+          <DialogTitle>{laudo?.id ? 'Editar Laudo' : 'Novo Laudo Manual'}</DialogTitle>
           <DialogDescription>
-            Cadastro de laudo sem OS — para documentos providenciados pelo próprio cliente.
+            {laudo?.id
+              ? 'Corrija os dados do laudo. Datas retroativas são permitidas.'
+              : 'Cadastro de laudo sem OS — para documentos providenciados pelo próprio cliente.'}
           </DialogDescription>
         </DialogHeader>
+
 
         <div className="space-y-4">
           <div className="space-y-1.5">

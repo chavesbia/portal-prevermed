@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertTriangle, CheckCircle, Clock, FileText, Search, Plus, Bell, Users } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertTriangle, CheckCircle, Clock, FileText, Search, Plus, Bell, Users, Pencil, Trash2 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { StatusVigencia, TipoLaudo, Laudo, ConselhoProfissional, CONSELHO_OPTIONS } from '@/types/os';
@@ -19,6 +20,8 @@ import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { NovoLaudoManualDialog } from '@/components/os/NovoLaudoManualDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function OSGestaoVencimentosView() {
   const { responsaveis } = useResponsaveisTecnicos();
@@ -27,8 +30,28 @@ export function OSGestaoVencimentosView() {
   const { laudos, refresh: refreshLaudos } = useLaudos();
   const { hasPermission } = useModulePermissions();
   const canCreateLaudo = hasPermission('/gestao-os', 'create');
+  const canEditLaudo = hasPermission('/gestao-os', 'edit');
+  const { isAdmMaster } = useAuth();
   const [novoLaudoOpen, setNovoLaudoOpen] = useState(false);
+  const [editingLaudo, setEditingLaudo] = useState<any | null>(null);
+  const [laudoParaExcluir, setLaudoParaExcluir] = useState<any | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const { config: alertaConfig, update: updateAlerta } = useConfiguracaoAlertas();
+
+  const handleExcluirLaudo = async () => {
+    if (!laudoParaExcluir) return;
+    setExcluindo(true);
+    const { error } = await supabase.from('laudos').delete().eq('id', laudoParaExcluir.id);
+    setExcluindo(false);
+    if (error) {
+      console.error('Erro ao excluir laudo:', error);
+      toast({ title: 'Erro', description: 'Não foi possível excluir o laudo.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Laudo excluído', description: 'O laudo foi removido com sucesso.' });
+    setLaudoParaExcluir(null);
+    refreshLaudos();
+  };
 
   const [activeTab, setActiveTab] = useState('laudos');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
@@ -232,11 +255,12 @@ export function OSGestaoVencimentosView() {
                   <TableHead className="hidden lg:table-cell">Emissão</TableHead>
                   <TableHead className="hidden lg:table-cell">Validade</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {laudosFiltrados.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum laudo encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum laudo encontrado</TableCell></TableRow>
                 ) : laudosFiltrados.map(l => (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.numero_os}</TableCell>
@@ -248,12 +272,50 @@ export function OSGestaoVencimentosView() {
                     <TableCell className="hidden lg:table-cell">{format(parseISO(l.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                     <TableCell className="hidden lg:table-cell">{l.data_validade ? format(parseISO(l.data_validade), 'dd/MM/yyyy', { locale: ptBR }) : '-'}</TableCell>
                     <TableCell>{getStatusBadge(calcularStatusVigencia(l))}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {canEditLaudo && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditingLaudo(l)} title="Editar laudo">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {isAdmMaster && (
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setLaudoParaExcluir(l)} title="Excluir laudo">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
+
+          {/* Dialog de edição de laudo */}
+          <NovoLaudoManualDialog
+            open={!!editingLaudo}
+            onOpenChange={(o) => { if (!o) setEditingLaudo(null); }}
+            laudo={editingLaudo}
+            onSaved={refreshLaudos}
+          />
+
+          <AlertDialog open={!!laudoParaExcluir} onOpenChange={(o) => { if (!o) setLaudoParaExcluir(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir laudo</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir este laudo? Essa ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction disabled={excluindo} onClick={(e) => { e.preventDefault(); handleExcluirLaudo(); }}>
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
+
 
         {/* Responsáveis Técnicos Tab */}
         <TabsContent value="responsaveis" className="mt-4">
