@@ -232,11 +232,12 @@ export function OSGestaoVencimentosView() {
                   <TableHead className="hidden lg:table-cell">Emissão</TableHead>
                   <TableHead className="hidden lg:table-cell">Validade</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {laudosFiltrados.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Nenhum laudo encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">Nenhum laudo encontrado</TableCell></TableRow>
                 ) : laudosFiltrados.map(l => (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.numero_os}</TableCell>
@@ -248,12 +249,50 @@ export function OSGestaoVencimentosView() {
                     <TableCell className="hidden lg:table-cell">{format(parseISO(l.data_emissao), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
                     <TableCell className="hidden lg:table-cell">{l.data_validade ? format(parseISO(l.data_validade), 'dd/MM/yyyy', { locale: ptBR }) : '-'}</TableCell>
                     <TableCell>{getStatusBadge(calcularStatusVigencia(l))}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap">
+                      {canEditLaudo && (
+                        <Button variant="ghost" size="sm" onClick={() => setEditingLaudo(l)} title="Editar laudo">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {isAdmMaster && (
+                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setLaudoParaExcluir(l)} title="Excluir laudo">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
+
+          {/* Dialog de edição de laudo */}
+          <NovoLaudoManualDialog
+            open={!!editingLaudo}
+            onOpenChange={(o) => { if (!o) setEditingLaudo(null); }}
+            laudo={editingLaudo}
+            onSaved={refreshLaudos}
+          />
+
+          <AlertDialog open={!!laudoParaExcluir} onOpenChange={(o) => { if (!o) setLaudoParaExcluir(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir laudo</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir este laudo? Essa ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction disabled={excluindo} onClick={(e) => { e.preventDefault(); handleExcluirLaudo(); }}>
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
+
 
         {/* Responsáveis Técnicos Tab */}
         <TabsContent value="responsaveis" className="mt-4">
