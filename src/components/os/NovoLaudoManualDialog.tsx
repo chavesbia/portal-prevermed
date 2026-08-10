@@ -114,8 +114,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
 
     const rt = responsaveis.find((r) => r.id === responsavelId);
     setSaving(true);
-    const { error } = await supabase.from('laudos').insert({
-      origem: 'cadastro_manual',
+    const payload: any = {
       company_id: company.id,
       unidade_id: unidadeId,
       empresa_cliente: company.nome,
@@ -129,16 +128,22 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
       data_validade: dataValidade || null,
       possui_vigencia: !!dataValidade,
       observacoes: observacoes.trim() || null,
-      created_by: user?.id ?? null,
-    } as any);
+    };
+
+    const { error } = laudo?.id
+      ? await supabase.from('laudos').update(payload).eq('id', laudo.id)
+      : await supabase.from('laudos').insert({ ...payload, origem: 'cadastro_manual', created_by: user?.id ?? null });
     setSaving(false);
 
     if (error) {
-      console.error('Erro ao cadastrar laudo manual:', error);
-      toast({ title: 'Erro', description: 'Não foi possível cadastrar o laudo.', variant: 'destructive' });
+      console.error('Erro ao salvar laudo:', error);
+      toast({ title: 'Erro', description: `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo.`, variant: 'destructive' });
       return;
     }
-    toast({ title: 'Laudo cadastrado', description: 'Laudo manual registrado com sucesso.' });
+    toast({
+      title: laudo?.id ? 'Laudo atualizado' : 'Laudo cadastrado',
+      description: laudo?.id ? 'Alterações salvas com sucesso.' : 'Laudo manual registrado com sucesso.',
+    });
     onSaved?.();
     onOpenChange(false);
   };
@@ -147,11 +152,14 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Novo Laudo Manual</DialogTitle>
+          <DialogTitle>{laudo?.id ? 'Editar Laudo' : 'Novo Laudo Manual'}</DialogTitle>
           <DialogDescription>
-            Cadastro de laudo sem OS — para documentos providenciados pelo próprio cliente.
+            {laudo?.id
+              ? 'Corrija os dados do laudo. Datas retroativas são permitidas.'
+              : 'Cadastro de laudo sem OS — para documentos providenciados pelo próprio cliente.'}
           </DialogDescription>
         </DialogHeader>
+
 
         <div className="space-y-4">
           <div className="space-y-1.5">
