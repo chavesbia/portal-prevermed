@@ -18,10 +18,12 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   /** Pré-seleciona a empresa (ex.: quando aberto pelo Painel do Cliente). */
   companyId?: string | null;
+  /** Quando informado, o diálogo abre em modo de edição. */
+  laudo?: any | null;
   onSaved?: () => void;
 }
 
-export function NovoLaudoManualDialog({ open, onOpenChange, companyId, onSaved }: Props) {
+export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, onSaved }: Props) {
   const { user } = useAuth();
   const { responsaveis } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
