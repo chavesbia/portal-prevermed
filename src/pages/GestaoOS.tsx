@@ -124,7 +124,7 @@ export default function GestaoOS() {
         )}
       </Tabs>
 
-      {canEdit && (
+      {canCreateOS && (
         <Dialog open={novaOpen} onOpenChange={setNovaOpen}>
           <DialogContent 
             className="max-w-4xl max-h-[90vh] overflow-y-auto"
