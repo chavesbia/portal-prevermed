@@ -28,8 +28,28 @@ export function OSGestaoVencimentosView() {
   const { laudos, refresh: refreshLaudos } = useLaudos();
   const { hasPermission } = useModulePermissions();
   const canCreateLaudo = hasPermission('/gestao-os', 'create');
+  const canEditLaudo = hasPermission('/gestao-os', 'edit');
+  const { isAdmMaster } = useAuth();
   const [novoLaudoOpen, setNovoLaudoOpen] = useState(false);
+  const [editingLaudo, setEditingLaudo] = useState<any | null>(null);
+  const [laudoParaExcluir, setLaudoParaExcluir] = useState<any | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const { config: alertaConfig, update: updateAlerta } = useConfiguracaoAlertas();
+
+  const handleExcluirLaudo = async () => {
+    if (!laudoParaExcluir) return;
+    setExcluindo(true);
+    const { error } = await supabase.from('laudos').delete().eq('id', laudoParaExcluir.id);
+    setExcluindo(false);
+    if (error) {
+      console.error('Erro ao excluir laudo:', error);
+      toast({ title: 'Erro', description: 'Não foi possível excluir o laudo.', variant: 'destructive' });
+      return;
+    }
+    toast({ title: 'Laudo excluído', description: 'O laudo foi removido com sucesso.' });
+    setLaudoParaExcluir(null);
+    refreshLaudos();
+  };
 
   const [activeTab, setActiveTab] = useState('laudos');
   const [filtroEmpresa, setFiltroEmpresa] = useState('');
