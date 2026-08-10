@@ -50,7 +50,7 @@ export default function GestaoOS() {
           <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
           <p className="text-muted-foreground">Controle de Ordens de Serviço</p>
         </div>
-        {canEdit && (
+        {canCreateOS && (
           <Button onClick={() => setNovaOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova OS
           </Button>
