@@ -20,8 +20,9 @@ import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
   const [searchParams] = useSearchParams();
-  const { getModulePermissions } = useModulePermissions();
+  const { getModulePermissions, hasPermission } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
+  const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
   const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, filters, setFilters,
@@ -49,7 +50,7 @@ export default function GestaoOS() {
           <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
           <p className="text-muted-foreground">Controle de Ordens de Serviço</p>
         </div>
-        {canEdit && (
+        {canCreateOS && (
           <Button onClick={() => setNovaOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova OS
           </Button>
@@ -123,7 +124,7 @@ export default function GestaoOS() {
         )}
       </Tabs>
 
-      {canEdit && (
+      {canCreateOS && (
         <Dialog open={novaOpen} onOpenChange={setNovaOpen}>
           <DialogContent 
             className="max-w-4xl max-h-[90vh] overflow-y-auto"
