@@ -39,6 +39,28 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
 
   useEffect(() => {
     if (!open) return;
+    if (laudo) {
+      setUnidadeId(laudo.unidade_id ?? null);
+      setTipoLaudoId(laudo.tipo_laudo_id ?? '');
+      setResponsavelId(laudo.responsavel_tecnico_id ?? '');
+      setDataEmissao(laudo.data_emissao ?? new Date().toISOString().slice(0, 10));
+      setDataValidade(laudo.data_validade ?? '');
+      setObservacoes(laudo.observacoes ?? '');
+      if (laudo.company_id) {
+        supabase
+          .from('companies')
+          .select('id, razao_social, nome_abreviado')
+          .eq('id', laudo.company_id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) setCompany({ id: data.id, nome: data.nome_abreviado || data.razao_social });
+            else setCompany({ id: laudo.company_id, nome: laudo.empresa_cliente ?? '' });
+          });
+      } else {
+        setCompany(null);
+      }
+      return;
+    }
     setUnidadeId(null);
     setTipoLaudoId('');
     setResponsavelId('');
@@ -57,7 +79,8 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
       .then(({ data }) => {
         if (data) setCompany({ id: data.id, nome: data.nome_abreviado || data.razao_social });
       });
-  }, [open, companyId]);
+  }, [open, companyId, laudo]);
+
 
   const tiposAtivos = tiposLaudo.filter((t: any) => t.ativo !== false);
   const tipoSelecionado = tiposAtivos.find((t: any) => t.id === tipoLaudoId);
