@@ -108,16 +108,30 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
     } finally { setSending(false); }
   };
 
-  const { data: contrato, refetch } = useQuery({
+  const { data: contrato, refetch, isError, error, isLoading } = useQuery({
     queryKey: ['contract-contrato', contratoId],
     queryFn: async () => {
-      const { data } = await supabase.from('contract_contratos')
-        .select('*, cliente:contract_clientes(*), assinaturas:contract_assinaturas(*), eventos:contract_eventos(*), criado_por:profiles!contract_contratos_created_by_fkey(display_name)')
+      const { data, error } = await supabase.from('contract_contratos')
+        .select('*, cliente:contract_clientes(*), assinaturas:contract_assinaturas(*), eventos:contract_eventos(*)')
         .eq('id', contratoId).maybeSingle();
-      return data;
+      if (error) throw error;
+      if (!data) throw new Error('Contrato não encontrado');
+
+      // Busca opcional do autor (não bloqueia o carregamento do contrato)
+      let criado_por: { display_name: string } | null = null;
+      if ((data as any).created_by) {
+        const { data: p } = await supabase
+          .from('profiles')
+          .select('full_name, nickname')
+          .eq('user_id', (data as any).created_by)
+          .maybeSingle();
+        if (p) criado_por = { display_name: (p as any).nickname || (p as any).full_name };
+      }
+      return { ...(data as any), criado_por };
     },
     enabled: !!contratoId,
   });
+
 
   const baixarPdf = async () => {
     if (!contrato?.pdf_url) { toast.error('PDF não disponível'); return; }
