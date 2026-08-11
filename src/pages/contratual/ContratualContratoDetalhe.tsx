@@ -179,9 +179,22 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
           </SheetTitle>
         </SheetHeader>
 
-        {!contrato ? (
+        {isError ? (
+          <div className="py-10 text-center space-y-3">
+            <p className="text-sm text-destructive font-medium">
+              Não foi possível carregar este contrato.
+            </p>
+            <p className="text-xs text-muted-foreground break-words px-4">
+              {(error as any)?.message || 'Erro desconhecido'}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4 mr-1" /> Tentar novamente
+            </Button>
+          </div>
+        ) : isLoading || !contrato ? (
           <div className="py-10 text-center text-muted-foreground">Carregando…</div>
         ) : (
+
           <div className="mt-4 space-y-4">
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={baixarPdf} disabled={!contrato.pdf_url}>
