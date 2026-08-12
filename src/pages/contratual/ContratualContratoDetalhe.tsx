@@ -104,7 +104,9 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
       qc.invalidateQueries({ queryKey: ['contract-contrato', contratoId] });
       qc.invalidateQueries({ queryKey: ['contract-contratos'] });
     } catch (e: any) {
-      toast.error(e.message || 'Erro ao enviar para Autentique');
+      toast.error(e.message || 'Erro ao enviar para Autentique', {
+        duration: 5000,
+      });
     } finally { setSending(false); }
   };
 
