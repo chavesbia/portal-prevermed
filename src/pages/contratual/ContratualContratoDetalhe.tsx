@@ -286,13 +286,15 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                       assinado: 'bg-emerald-100 text-emerald-800',
                       rejeitado: 'bg-red-100 text-red-800',
                       falha: 'bg-red-100 text-red-800 border-red-200',
+                      falha_envio: 'bg-red-500 text-white border-red-600 font-bold animate-pulse',
                     };
-
+ 
                     const statusLabels: Record<string, string> = {
                       pendente: 'Pendente',
                       assinado: 'Assinado',
                       rejeitado: 'Rejeitado',
                       falha: 'Falha',
+                      falha_envio: 'FALHA DE ENVIO',
                     };
 
                     return (
