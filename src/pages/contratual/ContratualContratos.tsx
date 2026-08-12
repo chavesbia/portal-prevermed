@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, Eye, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
+import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
 import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
@@ -14,19 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  rascunho: { label: 'Pronto para Envio', tone: 'bg-blue-100 text-blue-700' },
-  aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
-  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-orange-100 text-orange-800' },
-  assinado: { label: 'Assinado', tone: 'bg-emerald-50 text-emerald-600' },
-  ativo: { label: 'Ativo', tone: 'bg-emerald-100 text-emerald-800' },
-  vencendo_60: { label: 'Vence 60d', tone: 'bg-amber-200 text-amber-900' },
-  vencendo_30: { label: 'Vence 30d', tone: 'bg-amber-200 text-amber-900' },
-  vencendo_15: { label: 'Vence 15d', tone: 'bg-amber-200 text-amber-900' },
-  vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
-  encerrado: { label: 'Encerrado', tone: 'bg-slate-600 text-white' },
-  cancelado: { label: 'Cancelado', tone: 'bg-red-50 text-red-600' },
-};
+
 
 interface Props { canEdit: boolean }
 
@@ -143,10 +132,8 @@ export default function ContratualContratos({ canEdit }: Props) {
                   <TableRow><TableCell colSpan={7} className="text-center py-6 text-muted-foreground">Nenhum contrato encontrado.</TableCell></TableRow>
                 )}
                 {contratos.map((c: any) => {
-                  const draft = isRascunhoAberto(c);
-                  const st = draft
-                    ? { label: 'Em preenchimento', tone: 'bg-slate-100 text-slate-700' }
-                    : STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
+                  const st = getContractStatusDisplay(c);
+
                   return (
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => abrirContrato(c)}>
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
@@ -159,7 +146,7 @@ export default function ContratualContratos({ canEdit }: Props) {
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" className="h-8 w-8"
                             onClick={(e) => { e.stopPropagation(); abrirContrato(c); }}>
-                            {draft ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {isRascunhoAberto(c) ? <Pencil className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                           
                           {isAdmMaster && ['rascunho', 'cancelado'].includes(c.status) && (
