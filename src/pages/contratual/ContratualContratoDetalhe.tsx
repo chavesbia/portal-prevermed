@@ -160,7 +160,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
         contratoId: contrato.id, numero: contrato.numero_contrato, html: contrato.html_final,
       });
       await supabase.from('contract_contratos').update({ pdf_url: path }).eq('id', contrato.id);
-      toast.success('PDF regenerado');
+      toast.success('PDF Pronto');
       refetch();
     } catch (e: any) {
       toast.error(e.message || 'Erro ao gerar PDF');
