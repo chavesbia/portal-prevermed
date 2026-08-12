@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
           signed { created_at ip }
           rejected { created_at ip }
           action { name }
+          email_events { sent opened delivered refused reason }
         }
       }
     }`;
