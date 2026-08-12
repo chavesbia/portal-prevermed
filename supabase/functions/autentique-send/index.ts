@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
 
     // Map signers by email -> autentique signer public_id
     for (const sig of doc.signatures || []) {
-      const match = (contrato.assinaturas || []).find(
+      const match = assinaturas.find(
         (a: any) => a.email?.toLowerCase() === sig.email?.toLowerCase(),
       );
       if (match) {
