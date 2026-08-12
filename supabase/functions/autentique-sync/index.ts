@@ -82,12 +82,22 @@ Deno.serve(async (req) => {
       usedAssinaturaIds.add(match.id);
       const signed = sig.signed?.created_at;
       const rejected = sig.rejected?.created_at;
-      const newStatus = signed ? 'assinado' : rejected ? 'rejeitado' : 'pendente';
+      
+      // Detecta falha de envio: recusado com timestamp e sem entrega
+      const emailRefused = sig.email_events?.find((e: any) => e.refused);
+      const emailDelivered = sig.email_events?.find((e: any) => e.delivered);
+      
+      let newStatus = signed ? 'assinado' : rejected ? 'rejeitado' : 'pendente';
+      if (!signed && !rejected && emailRefused && !emailDelivered) {
+        newStatus = 'falha_envio';
+      }
+
       await admin.from('contract_assinaturas').update({
         autentique_signer_id: sig.public_id,
         status: newStatus,
         data_assinatura: signed || null,
         ip_assinatura: sig.signed?.ip || sig.rejected?.ip || null,
+        erro_detalhe: emailRefused?.reason || null,
       }).eq('id', match.id);
       updated++;
     }
