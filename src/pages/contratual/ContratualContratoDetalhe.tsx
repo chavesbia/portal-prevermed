@@ -206,9 +206,15 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
               )}
               {contrato.autentique_document_id && (
                 <>
-                  <Button variant="outline" size="sm" onClick={sincronizarAutentique} disabled={syncing}>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={sincronizarAutentique} 
+                    disabled={syncing}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md animate-in fade-in zoom-in duration-300"
+                  >
                     {syncing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                    Sincronizar status
+                    Atualizar Assinaturas
                   </Button>
                   <Badge variant="outline" className="text-xs self-center">
                     Autentique: {contrato.autentique_document_id.slice(0, 8)}…
