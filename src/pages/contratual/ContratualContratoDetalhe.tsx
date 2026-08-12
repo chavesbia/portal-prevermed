@@ -288,45 +288,79 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   dangerouslySetInnerHTML={{ __html: contrato.html_final || '<p class="text-muted-foreground">Sem conteúdo</p>' }} />
               </TabsContent>
 
-              <TabsContent value="assinaturas" className="mt-3 space-y-2">
-                {(contrato.assinaturas || []).map((a: any) => (
-                  <div key={a.id} className="border rounded-lg p-3 flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-muted-foreground">{a.tipo.replace('_', ' ')}</div>
-                      <div className="font-medium">{a.nome}</div>
-                      <div className="text-xs text-muted-foreground">{formatCPF(a.cpf)}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {a.status === 'pendente' && contrato.autentique_document_id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => reenviarEmail(a.id)}
-                          disabled={resendingId === a.id || !a.email}
-                          title={!a.email ? 'Signatário sem e-mail cadastrado' : 'Reenviar e-mail de assinatura'}
-                        >
-                          {resendingId === a.id
-                            ? <Loader2 className="h-4 w-4 animate-spin" />
-                            : <Mail className="h-4 w-4 mr-1" />}
-                          {resendingId === a.id ? '' : 'Reenviar e-mail'}
-                        </Button>
-                      )}
-                      <div className="text-right">
-                        <Badge variant="secondary" className={
-                          a.status === 'assinado' ? 'bg-emerald-100 text-emerald-800' :
-                          a.status === 'pendente' ? 'bg-amber-100 text-amber-800' :
-                          a.status === 'rejeitado' ? 'bg-red-100 text-red-800' :
-                          'bg-slate-100 text-slate-700'
-                        }>{a.status}</Badge>
-                        {a.data_assinatura && (
-                          <div className="text-xs text-muted-foreground mt-1">{formatDateBR(a.data_assinatura)}</div>
+              <TabsContent value="assinaturas" className="mt-3 space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {(contrato.assinaturas || []).map((a: any) => {
+                    const statusColors: Record<string, string> = {
+                      pendente: 'bg-amber-100 text-amber-800',
+                      assinado: 'bg-emerald-100 text-emerald-800',
+                      rejeitado: 'bg-red-100 text-red-800',
+                      falha: 'bg-red-100 text-red-800 border-red-200',
+                    };
+
+                    const statusLabels: Record<string, string> = {
+                      pendente: 'Pendente',
+                      assinado: 'Assinado',
+                      rejeitado: 'Rejeitado',
+                      falha: 'Falha',
+                    };
+
+                    return (
+                      <div key={a.id} className={`border rounded-lg p-4 flex flex-col justify-between space-y-3 ${a.status === 'falha' ? 'border-red-200 bg-red-50/30' : 'bg-white'}`}>
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              {a.tipo.replace(/_/g, ' ')}
+                            </div>
+                            <div className="font-semibold text-sm">{a.nome}</div>
+                            <div className="text-xs text-muted-foreground truncate max-w-[200px]" title={a.email}>
+                              {a.email || 'E-mail não cadastrado'}
+                            </div>
+                            {a.cpf && <div className="text-[10px] text-muted-foreground">{formatCPF(a.cpf)}</div>}
+                          </div>
+                          <Badge variant="secondary" className={`whitespace-nowrap ${statusColors[a.status] || 'bg-slate-100 text-slate-700'}`}>
+                            {statusLabels[a.status] || a.status}
+                          </Badge>
+                        </div>
+
+                        {a.erro_mensagem && (
+                          <div className="text-[10px] text-red-600 bg-red-50 p-2 rounded border border-red-100 italic">
+                            {a.erro_mensagem}
+                          </div>
                         )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-dashed">
+                          <div className="text-[10px] text-muted-foreground">
+                            {a.data_assinatura ? `Assinado em: ${formatDateBR(a.data_assinatura)}` : 'Aguardando'}
+                          </div>
+                          {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/5"
+                              onClick={() => reenviarEmail(a.id)}
+                              disabled={resendingId === a.id || !a.email}
+                            >
+                              {resendingId === a.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : (
+                                <Mail className="h-3 w-3 mr-1" />
+                              )}
+                              Reenviar
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
+
                 {(!contrato.assinaturas || contrato.assinaturas.length === 0) && (
-                  <p className="text-sm text-muted-foreground text-center py-6">Nenhum assinante registrado.</p>
+                  <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-xl bg-slate-50/50">
+                    <FileSignature className="h-8 w-8 text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-500 font-medium">Nenhum assinante registrado</p>
+                    <p className="text-xs text-slate-400">Gere o PDF e envie para o Autentique primeiro.</p>
+                  </div>
                 )}
               </TabsContent>
 
