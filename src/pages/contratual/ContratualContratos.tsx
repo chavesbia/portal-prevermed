@@ -9,6 +9,12 @@ import { Plus, Eye, FileDown, Pencil, Trash2 } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { Input } from '@/components/ui/input';
+import { ContratualContratoWizard } from './ContratualContratoWizard';
+import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
+import { useAuth } from '@/contexts/AuthContext';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+
 
 
 interface Props { canEdit: boolean }
