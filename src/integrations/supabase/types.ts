@@ -1987,6 +1987,7 @@ export type Database = {
           created_at: string
           data_assinatura: string | null
           email: string | null
+          erro_detalhe: string | null
           id: string
           ip_assinatura: string | null
           nome: string
@@ -2001,6 +2002,7 @@ export type Database = {
           created_at?: string
           data_assinatura?: string | null
           email?: string | null
+          erro_detalhe?: string | null
           id?: string
           ip_assinatura?: string | null
           nome: string
@@ -2015,6 +2017,7 @@ export type Database = {
           created_at?: string
           data_assinatura?: string | null
           email?: string | null
+          erro_detalhe?: string | null
           id?: string
           ip_assinatura?: string | null
           nome?: string
@@ -6504,6 +6507,7 @@ export type Database = {
         | "assinado"
         | "recusado"
         | "cancelado"
+        | "falha_envio"
       contract_signer_type:
         | "representante"
         | "testemunha_1"
@@ -6817,6 +6821,7 @@ export const Constants = {
         "assinado",
         "recusado",
         "cancelado",
+        "falha_envio",
       ],
       contract_signer_type: [
         "representante",
