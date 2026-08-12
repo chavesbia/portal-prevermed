@@ -206,9 +206,15 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
               )}
               {contrato.autentique_document_id && (
                 <>
-                  <Button variant="outline" size="sm" onClick={sincronizarAutentique} disabled={syncing}>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={sincronizarAutentique} 
+                    disabled={syncing}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-md animate-in fade-in zoom-in duration-300"
+                  >
                     {syncing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
-                    Sincronizar status
+                    Atualizar Assinaturas
                   </Button>
                   <Badge variant="outline" className="text-xs self-center">
                     Autentique: {contrato.autentique_document_id.slice(0, 8)}…
@@ -286,17 +292,19 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                       assinado: 'bg-emerald-100 text-emerald-800',
                       rejeitado: 'bg-red-100 text-red-800',
                       falha: 'bg-red-100 text-red-800 border-red-200',
+                      falha_envio: 'bg-red-500 text-white border-red-600 font-bold animate-pulse',
                     };
-
+ 
                     const statusLabels: Record<string, string> = {
                       pendente: 'Pendente',
                       assinado: 'Assinado',
                       rejeitado: 'Rejeitado',
                       falha: 'Falha',
+                      falha_envio: 'FALHA DE ENVIO',
                     };
 
                     return (
-                      <div key={a.id} className={`border rounded-lg p-4 flex flex-col justify-between space-y-3 ${a.status === 'falha' ? 'border-red-200 bg-red-50/30' : 'bg-white'}`}>
+                      <div key={a.id} className={`border rounded-lg p-4 flex flex-col justify-between space-y-3 ${['falha', 'falha_envio'].includes(a.status) ? 'border-red-200 bg-red-50/30' : 'bg-white'}`}>
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -313,9 +321,9 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                           </Badge>
                         </div>
 
-                        {a.erro_mensagem && (
+                        {(a.erro_mensagem || a.erro_detalhe) && (
                           <div className="text-[10px] text-red-600 bg-red-50 p-2 rounded border border-red-100 italic">
-                            {a.erro_mensagem}
+                            {a.erro_mensagem || a.erro_detalhe}
                           </div>
                         )}
 
@@ -333,7 +341,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
-                          {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
+                          {(a.status === 'pendente' || a.status === 'falha' || a.status === 'falha_envio') && contrato.autentique_document_id && (
                             <Button
                               variant="ghost"
                               size="sm"
