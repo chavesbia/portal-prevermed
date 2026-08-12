@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const { data: isMaster, error: masterErr } = await supabase.rpc('is_adm_master');
     const { data: canEdit, error: editErr } = await supabase.rpc('can_edit_module_route', {
       _user_id: userId,
-      _route: '/gestao-contratual/contratos',
+      _route: '/gestao-contratual',
     });
     if (masterErr || editErr || (!isMaster && !canEdit)) {
       return json({ error: 'Você não tem permissão para gerar PDF deste contrato' }, 403);

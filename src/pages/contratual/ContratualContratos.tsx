@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  rascunho: { label: 'Rascunho', tone: 'bg-slate-100 text-slate-700' },
+  rascunho: { label: 'Pronto para Envio', tone: 'bg-slate-100 text-slate-700' },
   aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
   parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-amber-100 text-amber-800' },
   assinado: { label: 'Assinado', tone: 'bg-emerald-100 text-emerald-800' },
@@ -145,7 +145,7 @@ export default function ContratualContratos({ canEdit }: Props) {
                 {contratos.map((c: any) => {
                   const draft = isRascunhoAberto(c);
                   const st = draft
-                    ? { label: 'Rascunho (em preenchimento)', tone: 'bg-slate-100 text-slate-700' }
+                    ? { label: 'Em preenchimento', tone: 'bg-slate-100 text-slate-700' }
                     : STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
                   return (
                     <TableRow key={c.id} className="cursor-pointer" onClick={() => abrirContrato(c)}>
