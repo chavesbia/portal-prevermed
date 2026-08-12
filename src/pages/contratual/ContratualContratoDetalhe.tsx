@@ -319,41 +319,37 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-2 border-t border-dashed">
-                          <div className="text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-2 pt-2 border-t border-dashed">
+                          <div className="text-[10px] text-muted-foreground flex-1">
                             {a.data_assinatura ? `Assinado em: ${formatDateBR(a.data_assinatura)}` : 'Aguardando'}
                           </div>
-                          <div className="flex items-center gap-2 pt-2 border-t border-dashed">
-                            <div className="text-[10px] text-muted-foreground flex-1">
-                              {a.data_assinatura ? `Assinado em: ${formatDateBR(a.data_assinatura)}` : 'Aguardando'}
-                            </div>
-                            {canEdit && a.status !== 'assinado' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                                onClick={() => setEditingAssinante(a)}
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
-                            {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/5"
-                                onClick={() => reenviarEmail(a.id)}
-                                disabled={resendingId === a.id || !a.email}
-                              >
-                                {resendingId === a.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                ) : (
-                                  <Mail className="h-3 w-3 mr-1" />
-                                )}
-                                Reenviar
-                              </Button>
-                            )}
-                          </div>
+                          {canEdit && a.status !== 'assinado' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                              onClick={() => setEditingAssinante(a)}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/5"
+                              onClick={() => reenviarEmail(a.id)}
+                              disabled={resendingId === a.id || !a.email}
+                            >
+                              {resendingId === a.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              ) : (
+                                <Mail className="h-3 w-3 mr-1" />
+                              )}
+                              Reenviar
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
