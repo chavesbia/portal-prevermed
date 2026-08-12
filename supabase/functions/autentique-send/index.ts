@@ -104,6 +104,12 @@ Deno.serve(async (req) => {
     const respJson = await resp.json();
 
     if (!resp.ok || respJson.errors) {
+      const isCreditsError = respJson.errors?.some((e: any) => e.message === 'unavailable_credits');
+      if (isCreditsError) {
+        return json({ 
+          error: 'Créditos insuficientes no Autentique. Por favor, verifique o saldo da conta da empresa.' 
+        }, 400);
+      }
       return json({ error: 'Autentique error', details: respJson }, 502);
     }
 
