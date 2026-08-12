@@ -152,7 +152,7 @@ export default function ContratualContratos({ canEdit }: Props) {
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
                       <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
-                      <TableCell><Badge variant="secondary" className={st.tone}>{st.label}</Badge></TableCell>
+                      <TableCell><Badge variant="secondary" className={`${st.tone} whitespace-nowrap`}>{st.label}</Badge></TableCell>
                       <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
                       <TableCell className="text-right">
