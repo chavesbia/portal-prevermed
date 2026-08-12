@@ -77,6 +77,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   const [test1Id, setTest1Id] = useState(MANUAL_SIGNER);
   const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
   const [duplicateWarningPending, setDuplicateWarningPending] = useState(false);
+  const [duplicateInfo, setDuplicateInfo] = useState<{ type: 'proposta' | 'vigencia', id: string, numero: string } | null>(null);
 
   // Rascunho automático
   const [contratoId, setContratoId] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       setManualValues({}); setForm(emptyForm());
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
       setDuplicateWarningPending(false);
+      setDuplicateInfo(null);
       setContratoId(null); setDraftSavedAt(null);
       creatingDraftRef.current = false;
       finalizedRef.current = false;
@@ -212,6 +214,59 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, draftId, contratoId, clienteId, templateId, versionId]);
+
+  // Verificação de duplicidade por proposta ou vigência
+  useEffect(() => {
+    if (!open || !clienteId || loadingDraft) return;
+    
+    const checkDuplicates = async () => {
+      try {
+        // 1. Checar número da proposta se preenchido
+        if (form.numero_proposta?.trim()) {
+          const { data: propMatch } = await supabase
+            .from('contract_contratos')
+            .select('id, numero_contrato')
+            .eq('cliente_id', clienteId)
+            .eq('numero_proposta', form.numero_proposta.trim())
+            .neq('id', contratoId || '00000000-0000-0000-0000-000000000000') // Ignora o próprio rascunho
+            .not('status', 'in', '("cancelado","encerrado")')
+            .maybeSingle();
+            
+          if (propMatch) {
+            setDuplicateInfo({ type: 'proposta', id: propMatch.id, numero: propMatch.numero_contrato });
+            return;
+          }
+        }
+
+        // 2. Checar sobreposição de vigência
+        if (form.data_inicio && form.vigencia_meses) {
+          const start = form.data_inicio;
+          const end = new Date(new Date(start + 'T00:00:00').getTime() + Number(form.vigencia_meses) * 30 * 86400000).toISOString().slice(0, 10);
+          
+          const { data: overlaps } = await supabase
+            .from('contract_contratos')
+            .select('id, numero_contrato')
+            .eq('cliente_id', clienteId)
+            .neq('id', contratoId || '00000000-0000-0000-0000-000000000000')
+            .not('status', 'in', '("cancelado","encerrado")')
+            .or(`data_inicio.lte.${end},data_fim.gte.${start}`)
+            .limit(1);
+
+          if (overlaps && overlaps.length > 0) {
+            setDuplicateInfo({ type: 'vigencia', id: overlaps[0].id, numero: overlaps[0].numero_contrato });
+            return;
+          }
+        }
+
+        setDuplicateInfo(null);
+      } catch (err) {
+        console.error('Erro ao verificar duplicidade:', err);
+      }
+    };
+
+    const t = setTimeout(checkDuplicates, 800);
+    return () => clearTimeout(t);
+  }, [open, clienteId, form.numero_proposta, form.data_inicio, form.vigencia_meses, contratoId, loadingDraft]);
 
   // Autosave com debounce
   useEffect(() => {
@@ -556,6 +611,22 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
         {step === 1 && (
           <div className="space-y-3">
+            {duplicateInfo && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800 font-medium flex flex-col gap-1">
+                <p>
+                  Atenção: já existe um contrato para esta empresa com {duplicateInfo.type === 'proposta' ? 'esta mesma proposta' : 'vigência semelhante'} — 
+                  confirme se não é duplicidade antes de continuar.
+                </p>
+                <a 
+                  href={`/gestao-contratual?contrato=${duplicateInfo.id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-bold"
+                >
+                  Ver contrato existente ({duplicateInfo.numero})
+                </a>
+              </div>
+            )}
             {resolveError && (
               <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive font-medium">
                 Não foi possível vincular esta empresa ao contrato — verifique se você tem permissão de edição em Gestão 
