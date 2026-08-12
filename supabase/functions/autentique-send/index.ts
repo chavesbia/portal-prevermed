@@ -43,12 +43,32 @@ Deno.serve(async (req) => {
       .download(contrato.pdf_url);
     if (dlErr || !pdfBlob) return json({ error: 'PDF não encontrado no storage' }, 500);
 
-    const signers = (contrato.assinaturas || [])
+    // Fallback: se não há linhas em contract_assinaturas, cria a partir dos campos do contrato
+    let assinaturas = contrato.assinaturas || [];
+    if (assinaturas.length === 0) {
+      const candidatos = [
+        { tipo: 'contratada', nome: contrato.prevermed_nome, cpf: contrato.prevermed_cpf, email: contrato.prevermed_email },
+        { tipo: 'representante', nome: contrato.rep_nome, cpf: contrato.rep_cpf, email: contrato.rep_email },
+        { tipo: 'testemunha_1', nome: contrato.testemunha1_nome, cpf: contrato.testemunha1_cpf, email: contrato.testemunha1_email },
+        { tipo: 'testemunha_2', nome: contrato.testemunha2_nome, cpf: contrato.testemunha2_cpf, email: contrato.testemunha2_email },
+      ].filter((c) => c.nome && c.email)
+       .map((c) => ({ ...c, contrato_id, nome: String(c.nome).trim(), email: String(c.email).trim(), status: 'pendente' }));
+
+      if (candidatos.length > 0) {
+        const { data: inseridas, error: insErr } = await admin
+          .from('contract_assinaturas').insert(candidatos).select('*');
+        if (insErr) return json({ error: `Erro ao criar signatários: ${insErr.message}` }, 500);
+        assinaturas = inseridas || [];
+      }
+    }
+
+    const signers = assinaturas
       .filter((a: any) => a.email)
       .map((a: any) => ({ email: a.email, action: 'SIGN', name: a.nome }));
     if (signers.length === 0) {
-      return json({ error: 'Nenhum signatário com e-mail cadastrado' }, 400);
+      return json({ error: 'Nenhum signatário com e-mail cadastrado. Edite o contrato e informe os e-mails dos signatários.' }, 400);
     }
+
 
     const apiToken = Deno.env.get('AUTENTIQUE_API_TOKEN');
     if (!apiToken) return json({ error: 'AUTENTIQUE_API_TOKEN ausente' }, 500);
@@ -97,7 +117,7 @@ Deno.serve(async (req) => {
 
     // Map signers by email -> autentique signer public_id
     for (const sig of doc.signatures || []) {
-      const match = (contrato.assinaturas || []).find(
+      const match = assinaturas.find(
         (a: any) => a.email?.toLowerCase() === sig.email?.toLowerCase(),
       );
       if (match) {
