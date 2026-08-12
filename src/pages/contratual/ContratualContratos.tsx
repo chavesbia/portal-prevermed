@@ -15,17 +15,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  rascunho: { label: 'Pronto para Envio', tone: 'bg-slate-100 text-slate-700' },
+  rascunho: { label: 'Pronto para Envio', tone: 'bg-blue-100 text-blue-700' },
   aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
-  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-amber-100 text-amber-800' },
-  assinado: { label: 'Assinado', tone: 'bg-emerald-100 text-emerald-800' },
+  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-orange-100 text-orange-800' },
+  assinado: { label: 'Assinado', tone: 'bg-emerald-50 text-emerald-600' },
   ativo: { label: 'Ativo', tone: 'bg-emerald-100 text-emerald-800' },
-  vencendo_60: { label: 'Vence 60d', tone: 'bg-yellow-100 text-yellow-800' },
-  vencendo_30: { label: 'Vence 30d', tone: 'bg-orange-100 text-orange-800' },
-  vencendo_15: { label: 'Vence 15d', tone: 'bg-red-100 text-red-700' },
+  vencendo_60: { label: 'Vence 60d', tone: 'bg-amber-200 text-amber-900' },
+  vencendo_30: { label: 'Vence 30d', tone: 'bg-amber-200 text-amber-900' },
+  vencendo_15: { label: 'Vence 15d', tone: 'bg-amber-200 text-amber-900' },
   vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
-  encerrado: { label: 'Encerrado', tone: 'bg-slate-200 text-slate-700' },
-  cancelado: { label: 'Cancelado', tone: 'bg-slate-200 text-slate-700' },
+  encerrado: { label: 'Encerrado', tone: 'bg-slate-600 text-white' },
+  cancelado: { label: 'Cancelado', tone: 'bg-red-50 text-red-600' },
 };
 
 interface Props { canEdit: boolean }
