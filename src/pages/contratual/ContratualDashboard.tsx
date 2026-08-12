@@ -4,23 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, FileSignature, AlertTriangle, XCircle, DollarSign, Clock } from 'lucide-react';
 import { formatBRL, formatDateBR, formatCNPJ } from '@/lib/contractual/format';
+import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  rascunho: { label: 'Rascunho', tone: 'bg-slate-100 text-slate-700' },
-  aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
-  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-amber-100 text-amber-800' },
-  assinado: { label: 'Assinado', tone: 'bg-emerald-100 text-emerald-800' },
-  ativo: { label: 'Ativo', tone: 'bg-emerald-100 text-emerald-800' },
-  vencendo_60: { label: 'Vence em 60d', tone: 'bg-yellow-100 text-yellow-800' },
-  vencendo_30: { label: 'Vence em 30d', tone: 'bg-orange-100 text-orange-800' },
-  vencendo_15: { label: 'Vence em 15d', tone: 'bg-red-100 text-red-700' },
-  vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
-  encerrado: { label: 'Encerrado', tone: 'bg-slate-200 text-slate-700' },
-  cancelado: { label: 'Cancelado', tone: 'bg-slate-200 text-slate-700' },
-};
 
 export default function ContratualDashboard() {
   const [filter, setFilter] = useState<string>('todos');
@@ -30,7 +18,7 @@ export default function ContratualDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, cliente:contract_clientes(razao_social, cnpj)')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, html_final, cliente:contract_clientes(razao_social, cnpj)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -104,13 +92,13 @@ export default function ContratualDashboard() {
                   <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Nenhum contrato encontrado.</TableCell></TableRow>
                 )}
                 {filtered.map((c: any) => {
-                  const st = STATUS_LABEL[c.status] || { label: c.status, tone: 'bg-slate-100' };
+                  const st = getContractStatusDisplay(c);
                   return (
                     <TableRow key={c.id}>
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
                       <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
-                      <TableCell><Badge variant="secondary" className={st.tone}>{st.label}</Badge></TableCell>
+                      <TableCell><Badge variant="secondary" className={`${st.tone} whitespace-nowrap`}>{st.label}</Badge></TableCell>
                       <TableCell>{formatDateBR(c.data_inicio)}</TableCell>
                       <TableCell>{formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
