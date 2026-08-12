@@ -5,12 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
+import { AssinanteEditDialog } from './AssinanteEditDialog';
 
 interface Props {
   contratoId: string | null;
@@ -18,19 +20,6 @@ interface Props {
   canEdit: boolean;
 }
 
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  rascunho: { label: 'Rascunho', tone: 'bg-slate-100 text-slate-700' },
-  aguardando_assinatura: { label: 'Aguardando assinatura', tone: 'bg-amber-100 text-amber-800' },
-  parcialmente_assinado: { label: 'Parc. assinado', tone: 'bg-amber-100 text-amber-800' },
-  assinado: { label: 'Assinado', tone: 'bg-emerald-100 text-emerald-800' },
-  ativo: { label: 'Ativo', tone: 'bg-emerald-100 text-emerald-800' },
-  vencendo_60: { label: 'Vence 60d', tone: 'bg-yellow-100 text-yellow-800' },
-  vencendo_30: { label: 'Vence 30d', tone: 'bg-orange-100 text-orange-800' },
-  vencendo_15: { label: 'Vence 15d', tone: 'bg-red-100 text-red-700' },
-  vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
-  encerrado: { label: 'Encerrado', tone: 'bg-slate-200 text-slate-700' },
-  cancelado: { label: 'Cancelado', tone: 'bg-slate-200 text-slate-700' },
-};
 
 export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Props) {
   const { isAdmMaster } = useAuth() as any;
@@ -40,6 +29,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const [deleting, setDeleting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [editingAssinante, setEditingAssinante] = useState<any>(null);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -169,7 +159,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
     } finally { setRegen(false); }
   };
 
-  const st = contrato ? (STATUS_LABEL[contrato.status] || { label: contrato.status, tone: 'bg-slate-100' }) : null;
+  const st = contrato ? getContractStatusDisplay(contrato) : null;
 
   return (
     <Sheet open={!!contratoId} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -329,10 +319,20 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between pt-2 border-t border-dashed">
-                          <div className="text-[10px] text-muted-foreground">
+                        <div className="flex items-center gap-2 pt-2 border-t border-dashed">
+                          <div className="text-[10px] text-muted-foreground flex-1">
                             {a.data_assinatura ? `Assinado em: ${formatDateBR(a.data_assinatura)}` : 'Aguardando'}
                           </div>
+                          {canEdit && a.status !== 'assinado' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                              onClick={() => setEditingAssinante(a)}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
                             <Button
                               variant="ghost"
@@ -382,6 +382,15 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
           </div>
         )}
       </SheetContent>
+
+      <AssinanteEditDialog 
+        open={!!editingAssinante}
+        onOpenChange={(o) => !o && setEditingAssinante(null)}
+        assinante={editingAssinante}
+        contrato={contrato}
+        onSuccess={() => refetch()}
+        regenerarPdf={regenerarPdf}
+      />
     </Sheet>
   );
 }
