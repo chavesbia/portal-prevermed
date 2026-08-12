@@ -298,7 +298,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                     };
 
                     return (
-                      <div key={a.id} className={`border rounded-lg p-4 flex flex-col justify-between space-y-3 ${a.status === 'falha' ? 'border-red-200 bg-red-50/30' : 'bg-white'}`}>
+                      <div key={a.id} className={`border rounded-lg p-4 flex flex-col justify-between space-y-3 ${['falha', 'falha_envio'].includes(a.status) ? 'border-red-200 bg-red-50/30' : 'bg-white'}`}>
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -315,9 +315,9 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                           </Badge>
                         </div>
 
-                        {a.erro_mensagem && (
+                        {(a.erro_mensagem || a.erro_detalhe) && (
                           <div className="text-[10px] text-red-600 bg-red-50 p-2 rounded border border-red-100 italic">
-                            {a.erro_mensagem}
+                            {a.erro_mensagem || a.erro_detalhe}
                           </div>
                         )}
 
@@ -335,7 +335,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                               <Edit2 className="h-3.5 w-3.5" />
                             </Button>
                           )}
-                          {(a.status === 'pendente' || a.status === 'falha') && contrato.autentique_document_id && (
+                          {(a.status === 'pendente' || a.status === 'falha' || a.status === 'falha_envio') && contrato.autentique_document_id && (
                             <Button
                               variant="ghost"
                               size="sm"
