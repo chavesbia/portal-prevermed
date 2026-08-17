@@ -838,23 +838,25 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
         )}
 
 
-        <DialogFooter className="flex sm:justify-between gap-2">
-          <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
-          </Button>
-          {step < 3 && (
-            <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
-              disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
-              Avançar <ArrowRight className="h-4 w-4 ml-1" />
+        {!finalizedRef.current && (
+          <DialogFooter className="flex sm:justify-between gap-2">
+            <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
             </Button>
-          )}
-          {step === 3 && (
-            <Button onClick={confirmar} disabled={generating || !canConfirm}>
-              {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
-              Confirmar e gerar PDF
-            </Button>
-          )}
-        </DialogFooter>
+            {step < 3 && (
+              <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
+                disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
+                Avançar <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+            {step === 3 && (
+              <Button onClick={confirmar} disabled={generating || !canConfirm}>
+                {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
+                Confirmar e gerar PDF
+              </Button>
+            )}
+          </DialogFooter>
+        )}
       </DialogContent>
 
       <AlertDialog open={!!finalizedRef.current && !generating}>
