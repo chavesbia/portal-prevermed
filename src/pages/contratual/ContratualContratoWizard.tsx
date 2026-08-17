@@ -16,6 +16,7 @@ import { useContractSignatarios } from '@/hooks/useContractSignatarios';
 import { CPFInput } from '@/components/contratual/CPFInput';
 import { isValidCPF } from '@/lib/contractual/cpf';
 import { CompanySelector, type CompanyOption } from '@/components/shared/CompanySelector';
+import { validateUniqueEmails } from '@/lib/contractual/validation';
 
 interface Props {
   open: boolean;
