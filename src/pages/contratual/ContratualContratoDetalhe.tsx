@@ -222,7 +222,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   Enviar para Autentique
                 </Button>
               )}
-              {canEdit && ['partialmente_assinado', 'assinado'].includes(contrato.status) && (
+              {canEdit && ['parcialmente_assinado', 'assinado'].includes(contrato.status) && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="text-amber-600 border-amber-200 hover:bg-amber-50" disabled={correcting}>
