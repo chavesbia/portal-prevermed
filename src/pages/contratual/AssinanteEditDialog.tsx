@@ -46,6 +46,21 @@ export function AssinanteEditDialog({
     if (!assinante || !contrato) return;
     setLoading(true);
     try {
+      // Validação de e-mails únicos
+      const signers = [
+        { label: 'Contratante', email: assinante.tipo === 'contratante' ? formData.email : contrato.rep_email },
+        { label: 'Contratada', email: assinante.tipo === 'contratada' ? formData.email : contrato.prevermed_email },
+        { label: 'Testemunha da Contratada', email: assinante.tipo === 'testemunha_contratada' ? formData.email : contrato.testemunha1_email },
+        { label: 'Testemunha do Contratante', email: assinante.tipo === 'testemunha_contratante' ? formData.email : contrato.testemunha2_email },
+      ];
+
+      const errorMsg = validateUniqueEmails(signers);
+      if (errorMsg) {
+        toast.error(errorMsg);
+        setLoading(false);
+        return;
+      }
+
       // 1. Mapear o tipo de assinante para os campos na tabela contract_contratos
       const mapping: Record<string, any> = {
         contratada: { nome: 'prevermed_nome', email: 'prevermed_email', cpf: 'prevermed_cpf' },
