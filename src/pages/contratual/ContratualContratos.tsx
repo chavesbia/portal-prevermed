@@ -197,6 +197,11 @@ export default function ContratualContratos({ canEdit }: Props) {
         contratoId={detailId}
         onClose={() => { setDetailId(null); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); }}
         canEdit={canEdit}
+        onCorrectionRequested={(newId) => {
+          setDetailId(null);
+          setDraftId(newId);
+          setWizardOpen(true);
+        }}
       />
     </div>
   );
