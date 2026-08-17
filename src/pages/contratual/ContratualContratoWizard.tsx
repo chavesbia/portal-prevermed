@@ -859,21 +859,25 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           </DialogFooter>
         )}
         {finalizedRef.current && (
-          <div className="bg-amber-50 border border-amber-200 p-6 rounded-lg text-amber-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
+          <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg text-blue-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
             <div className="flex items-center gap-3">
-              <div className="bg-amber-100 p-2 rounded-full">
-                <Check className="h-6 w-6 text-amber-600" />
+              <div className="bg-blue-100 p-2 rounded-full">
+                <Check className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="text-lg font-bold">Contrato Gerado com Sucesso!</h3>
+              <h3 className="text-lg font-bold text-blue-900">Contrato Gerado com Sucesso!</h3>
             </div>
             
             <div className="space-y-2 text-sm leading-relaxed">
               <p>O PDF foi gerado e o contrato está pronto para envio.</p>
-              <div className="bg-white/50 p-4 rounded border border-amber-200 font-medium">
+              
+              {/* Alerta de bloqueio manual para correções */}
+              <div className="bg-amber-50 p-4 rounded border border-amber-200 font-medium text-amber-900 mt-4">
                 <p className="flex items-center gap-2 mb-1 text-amber-700">
                   <span className="text-xl">⚠️</span> ATENÇÃO - AÇÃO MANUAL NECESSÁRIA
                 </p>
-                <p>Lembre-se de bloquear manualmente o documento antigo no painel do Autentique, para que ninguém assine a versão desatualizada.</p>
+                <p className="text-xs">
+                  Caso este contrato substitua uma versão anterior, lembre-se de <strong>bloquear manualmente o documento antigo</strong> no painel do Autentique para evitar assinaturas duplicadas ou desatualizadas.
+                </p>
               </div>
             </div>
 
@@ -882,12 +886,13 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
                 const id = contratoId;
                 onOpenChange(false);
                 if (id) onCreated(id);
-              }} className="bg-amber-600 hover:bg-amber-700 text-white">
-                Entendido
+              }} className="bg-blue-600 hover:bg-blue-700 text-white">
+                Ver detalhes do contrato
               </Button>
             </div>
           </div>
         )}
+
       </DialogContent>
     </Dialog>
   );
