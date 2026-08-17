@@ -564,7 +564,8 @@ function LaudoLine({ l, todayISO }: { l: LaudoRow; todayISO: string }) {
 }
 
 function UnitBlock({ g, todayISO }: { g: UnitGroup; todayISO: string }) {
-  const [open, setOpen] = useState(false);
+  // Ajuste Fase 6: Blocos com poucos laudos (até 5) já aparecem expandidos por padrão
+  const [open, setOpen] = useState(g.laudos.length <= 5);
   const mixed = (['vencido', 'a_vencer', 'valido', 'sem_vigencia'] as LaudoStatus[])
     .filter((s) => g.counts[s] > 0).length > 1;
   return (
