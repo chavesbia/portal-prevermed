@@ -82,11 +82,11 @@ export function AssinanteEditDialog({
         if (errorContrato) throw errorContrato;
       }
 
-      toast.success('Assinante atualizado localmente');
+      toast.success('Dados atualizados localmente');
       
       // 4. Se já foi enviado ao Autentique, sincronizar a alteração
       if (contrato.autentique_document_id) {
-        toast.loading('Sincronizando alteração com Autentique...', { id: 'sync-autentique' });
+        toast.loading('Sincronizando com Autentique...', { id: 'sync-autentique' });
         
         try {
           const { data, error: syncError } = await supabase.functions.invoke('autentique-update-signer', {
@@ -99,24 +99,24 @@ export function AssinanteEditDialog({
 
           if (syncError) throw syncError;
           
-          toast.success('Sincronizado com Autentique. Disparando reenvio...', { id: 'sync-autentique' });
+          toast.success('Sincronizado. Disparando reenvio...', { id: 'sync-autentique' });
           
           // 5. Disparar reenvio automático após trocar o signatário
           await supabase.functions.invoke('autentique-resend', {
             body: { assinatura_id: assinante.id }
           });
           
-          toast.success('E-mail de assinatura reenviado para o novo endereço', { id: 'sync-autentique' });
+          toast.success('E-mail enviado para o novo endereço', { id: 'sync-autentique' });
         } catch (syncErr: any) {
           console.error('Erro na sincronização Autentique:', syncErr);
-          toast.error('Assinante salvo no banco, mas erro ao sincronizar com Autentique: ' + (syncErr.message || 'Erro desconhecido'), { id: 'sync-autentique' });
+          toast.error('Erro ao sincronizar com Autentique: ' + (syncErr.message || 'Erro desconhecido'), { id: 'sync-autentique' });
         }
       } else {
         // 6. Se NÃO foi enviado ao Autentique e não tem assinaturas, regenerar PDF
         const temAssinaturaRealizada = contrato.assinaturas?.some((a: any) => a.status === 'assinado');
         if (!temAssinaturaRealizada) {
           await regenerarPdf();
-          toast.success('PDF do contrato regenerado com os novos dados');
+          toast.success('PDF do contrato regenerado');
         }
       }
 
