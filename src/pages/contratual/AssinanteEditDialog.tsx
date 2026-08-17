@@ -82,18 +82,42 @@ export function AssinanteEditDialog({
         if (errorContrato) throw errorContrato;
       }
 
-      toast.success('Assinante atualizado');
+      toast.success('Assinante atualizado localmente');
       
-      // 4. Checar se existem assinaturas já realizadas
-      const temAssinaturaRealizada = contrato.assinaturas?.some((a: any) => a.status === 'assinado');
+      // 4. Se já foi enviado ao Autentique, sincronizar a alteração
+      if (contrato.autentique_document_id) {
+        toast.loading('Sincronizando alteração com Autentique...', { id: 'sync-autentique' });
+        
+        try {
+          const { data, error: syncError } = await supabase.functions.invoke('autentique-update-signer', {
+            body: {
+              assinatura_id: assinante.id,
+              novo_nome: formData.nome,
+              novo_email: formData.email
+            }
+          });
 
-      if (!temAssinaturaRealizada) {
-        // Regenere o PDF automaticamente
-        await regenerarPdf();
+          if (syncError) throw syncError;
+          
+          toast.success('Sincronizado com Autentique. Disparando reenvio...', { id: 'sync-autentique' });
+          
+          // 5. Disparar reenvio automático após trocar o signatário
+          await supabase.functions.invoke('autentique-resend', {
+            body: { assinatura_id: assinante.id }
+          });
+          
+          toast.success('E-mail de assinatura reenviado para o novo endereço', { id: 'sync-autentique' });
+        } catch (syncErr: any) {
+          console.error('Erro na sincronização Autentique:', syncErr);
+          toast.error('Assinante salvo no banco, mas erro ao sincronizar com Autentique: ' + (syncErr.message || 'Erro desconhecido'), { id: 'sync-autentique' });
+        }
       } else {
-        toast.info('Este contrato já tem assinatura(s) registrada(s). A correção foi salva no cadastro, mas o PDF já gerado não foi alterado — avalie se é necessário um aditivo ou nova versão do documento.', {
-          duration: 6000,
-        });
+        // 6. Se NÃO foi enviado ao Autentique e não tem assinaturas, regenerar PDF
+        const temAssinaturaRealizada = contrato.assinaturas?.some((a: any) => a.status === 'assinado');
+        if (!temAssinaturaRealizada) {
+          await regenerarPdf();
+          toast.success('PDF do contrato regenerado com os novos dados');
+        }
       }
 
       onSuccess();
