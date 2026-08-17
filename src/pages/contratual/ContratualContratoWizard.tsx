@@ -514,8 +514,18 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   }, [previewHtml]);
 
   const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending && !resolveError;
+  const emailValidationError = useMemo(() => {
+    if (step !== 2) return null;
+    return validateUniqueEmails([
+      { label: 'Contratante', email: form.rep_email },
+      { label: 'Contratada', email: form.prevermed_email },
+      { label: 'Testemunha da Contratada', email: form.testemunha1_email },
+      { label: 'Testemunha do Contratante', email: form.testemunha2_email },
+    ]);
+  }, [step, form.rep_email, form.prevermed_email, form.testemunha1_email, form.testemunha2_email]);
+
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos
-    && clienteCamposFaltando.length === 0 && !savingCliente;
+    && clienteCamposFaltando.length === 0 && !savingCliente && !emailValidationError;
 
   const canConfirm = placeholdersFaltando.length === 0;
 
