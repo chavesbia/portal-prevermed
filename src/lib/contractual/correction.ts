@@ -2,6 +2,38 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 /**
+ * Gera o próximo número de contrato com sufixo de revisão (A, B, C...)
+ */
+async function gerarNumeroComSufixo(numeroOriginal: string): Promise<string> {
+  const match = numeroOriginal.match(/^(CTR-\d{4}-\d{4})([A-Z])?$/);
+  if (!match) return `${numeroOriginal}A`; // Fallback se não seguir o padrão
+
+  const base = match[1];
+  const sufixoAtual = match[2] || '';
+  
+  let proximoSufixo = 'A';
+  if (sufixoAtual) {
+    const charCode = sufixoAtual.charCodeAt(0);
+    proximoSufixo = String.fromCharCode(charCode + 1);
+  }
+
+  const novoNumero = `${base}${proximoSufixo}`;
+
+  // Verificar se já existe (raro, mas segurança)
+  const { data: existe } = await supabase
+    .from('contract_contratos')
+    .select('id')
+    .eq('numero_contrato', novoNumero)
+    .maybeSingle();
+
+  if (existe) {
+    return gerarNumeroComSufixo(novoNumero); // Recursivo se houver colisão
+  }
+
+  return novoNumero;
+}
+
+/**
  * Lógica para cancelar um contrato existente e criar um novo rascunho com os mesmos dados
  * para fins de correção de termos contratuais.
  */
@@ -41,8 +73,10 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
       detalhes: { motivo: 'Correção de termos' }
     });
 
-    // 4. Criar o novo rascunho (draft) copiando os dados
-    // Removemos campos de sistema e IDs de integração
+    // 4. Gerar o número do contrato substituto com sufixo
+    const novoNumero = await gerarNumeroComSufixo(original.numero_contrato);
+
+    // 5. Criar o novo rascunho (draft) copiando os dados
     const { 
       id: _oldId, 
       created_at: _ca, 
@@ -58,6 +92,7 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
       .from('contract_contratos')
       .insert({
         ...dadosParaCopiar,
+        numero_contrato: novoNumero,
         status: 'rascunho',
         created_by: user.id,
         updated_by: user.id,
@@ -67,13 +102,17 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
 
     if (createErr || !novoDraft) throw createErr;
 
-    // 5. Registrar evento no novo contrato
+    // 6. Registrar evento no novo contrato
     await supabase.from('contract_eventos').insert({
       contrato_id: novoDraft.id,
       tipo: 'auditoria',
       descricao: `Substitui o contrato ${original.numero_contrato || 'anterior'} — corrigido para novos termos`,
       performed_by: user.id,
-      detalhes: { contrato_anterior_id: contratoId, numero_anterior: original.numero_contrato }
+      detalhes: { 
+        contrato_anterior_id: contratoId, 
+        numero_anterior: original.numero_contrato,
+        is_revisao: true
+      }
     });
 
     toast.success('Contrato anterior cancelado. Novo rascunho criado para correção.');

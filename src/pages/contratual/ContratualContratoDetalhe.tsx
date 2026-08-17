@@ -183,9 +183,17 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
     <Sheet open={!!contratoId} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {contrato?.numero_contrato || 'Contrato'}
-            {st && <Badge variant="secondary" className={st.tone}>{st.label}</Badge>}
+          <SheetTitle className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {contrato?.numero_contrato || 'Contrato'}
+              {st && <Badge variant="secondary" className={st.tone}>{st.label}</Badge>}
+            </div>
+            {(contrato?.eventos?.some((e: any) => e.detalhes?.is_revisao || e.detalhes?.numero_anterior) || contrato?.numero_contrato?.match(/[A-Z]$/)) && (
+              <div className="text-xs font-normal text-amber-600 flex items-center gap-1">
+                <RefreshCw className="h-3 w-3" />
+                Revisão {contrato.eventos?.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior ? `de ${contrato.eventos.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior}` : ''}
+              </div>
+            )}
           </SheetTitle>
         </SheetHeader>
 
