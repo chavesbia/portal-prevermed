@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { validateUniqueEmails } from '@/lib/contractual/validation';
 
 interface AssinanteEditDialogProps {
   assinante: any;
