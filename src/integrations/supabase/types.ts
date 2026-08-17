@@ -6453,6 +6453,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      soc_full_sync_scheduled: { Args: never; Returns: undefined }
       user_has_module_access: {
         Args: { _module_id: string; _user_id: string }
         Returns: boolean
