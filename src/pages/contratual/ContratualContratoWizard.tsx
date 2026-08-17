@@ -586,7 +586,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       });
 
       toast.success(`Contrato ${ctr.numero_contrato} criado`);
-      onCreated(ctr.id);
+      finalizedRef.current = true; // Mantém o Dialog aberto para mostrar o alerta final
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao criar contrato');
     } finally {
