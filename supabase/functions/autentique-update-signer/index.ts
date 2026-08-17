@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     if (aErr || !assinatura) return json({ error: 'Assinatura não encontrada' }, 404);
     
     const docId = assinatura.contrato?.autentique_document_id;
-    const signerId = assinatura.autentique_signer_id;
+    const oldSignerId = assinatura.autentique_signer_id;
 
     if (!docId) {
       return json({ error: 'Contrato não enviado ao Autentique ainda' }, 400);
@@ -48,22 +48,22 @@ Deno.serve(async (req) => {
     if (!apiToken) return json({ error: 'AUTENTIQUE_API_TOKEN ausente' }, 500);
 
     // 1. Remover signatário antigo (se existir no Autentique)
-    if (signerId) {
+    if (oldSignerId) {
       const removeMutation = `mutation RemoveSigner($documentId: UUID!, $signerId: UUID!) {
         removeSigner(documentId: $documentId, signerId: $signerId)
       }`;
 
+      console.log(`Removendo signatário ${oldSignerId} do documento ${docId}`);
       const removeResp = await fetch(AUTENTIQUE_URL, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: removeMutation, 
-          variables: { documentId: docId, signerId: signerId } 
+          variables: { documentId: docId, signerId: oldSignerId } 
         }),
       });
       const removeJson = await removeResp.json();
       console.log('Autentique removeSigner response:', JSON.stringify(removeJson));
-      // Não falhamos aqui se o signatário não for encontrado, pois podemos estar apenas corrigindo
     }
 
     // 2. Adicionar novo signatário
@@ -75,6 +75,7 @@ Deno.serve(async (req) => {
       }
     }`;
 
+    console.log(`Adicionando signatário ${novo_email} ao documento ${docId}`);
     const addResp = await fetch(AUTENTIQUE_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
@@ -93,6 +94,7 @@ Deno.serve(async (req) => {
     const addJson = await addResp.json();
     
     if (!addResp.ok || addJson.errors) {
+      console.error('Erro Autentique AddSigner:', JSON.stringify(addJson.errors));
       return json({ error: 'Erro ao adicionar signatário no Autentique', details: addJson }, 502);
     }
 
@@ -101,13 +103,19 @@ Deno.serve(async (req) => {
       return json({ error: 'Resposta inválida do Autentique ao adicionar signatário' }, 502);
     }
 
-    // 3. Atualizar banco local com o novo public_id
-    await admin.from('contract_assinaturas').update({
+    console.log(`Novo signatário adicionado com ID: ${newSigner.public_id}`);
+
+    // 3. Atualizar banco local com o novo public_id e os novos dados
+    const { error: updErr } = await admin.from('contract_assinaturas').update({
       autentique_signer_id: newSigner.public_id,
       email: novo_email,
       nome: novo_nome,
       status: 'pendente'
     }).eq('id', assinatura_id);
+
+    if (updErr) {
+      console.error('Erro ao atualizar contract_assinaturas localmente:', updErr);
+    }
 
     // 4. Log do evento
     await admin.from('contract_eventos').insert({
@@ -115,7 +123,7 @@ Deno.serve(async (req) => {
       tipo: 'autentique_signer_updated',
       descricao: `Signatário atualizado no Autentique: ${novo_email}`,
       detalhes: { 
-        old_signer_id: signerId, 
+        old_signer_id: oldSignerId, 
         new_signer_id: newSigner.public_id,
         email: novo_email
       },
@@ -125,6 +133,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, new_signer_id: newSigner.public_id });
 
   } catch (e) {
+    console.error('Erro capturado na function:', e);
     return json({ error: String(e?.message || e) }, 500);
   }
 });
