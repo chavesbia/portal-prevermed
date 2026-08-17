@@ -818,7 +818,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           </div>
         )}
 
-        {step === 3 && (
+        {step === 3 && !finalizedRef.current && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Pré-visualização do contrato. Confirme para gerar o PDF.</p>
             {placeholdersFaltando.length > 0 && (
