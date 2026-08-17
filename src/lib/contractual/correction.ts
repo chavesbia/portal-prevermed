@@ -1,29 +1,28 @@
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 /**
- * Cancela um contrato para correção e cria um novo rascunho com os mesmos dados.
- * 
- * @param contratoId ID do contrato a ser cancelado
- * @param auditoriaMsg Mensagem para o log de auditoria do contrato cancelado
- * @returns O ID do novo rascunho criado
+ * Lógica para cancelar um contrato existente e criar um novo rascunho com os mesmos dados
+ * para fins de correção de termos contratuais.
  */
-export async function cancelarEReenviarContrato(contratoId: string) {
+export async function cancelarEReenviarContrato(contratoId: string): Promise<string> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
+    if (!user) throw new Error('Usuário não autenticado');
 
-    // 1. Buscar dados do contrato atual
-    const { data: contrato, error: fetchError } = await supabase
+    // 1. Buscar dados do contrato original
+    const { data: original, error: fetchErr } = await supabase
       .from('contract_contratos')
       .select('*')
       .eq('id', contratoId)
       .single();
 
-    if (fetchError || !contrato) throw fetchError || new Error("Contrato não encontrado");
+    if (fetchErr || !original) {
+      throw new Error('Não foi possível localizar o contrato original');
+    }
 
-    // 2. Mudar status do contrato ATUAL para cancelado
-    const { error: updateError } = await supabase
+    // 2. Cancelar o contrato atual
+    const { error: cancelErr } = await supabase
       .from('contract_contratos')
       .update({ 
         status: 'cancelado',
@@ -31,67 +30,58 @@ export async function cancelarEReenviarContrato(contratoId: string) {
       })
       .eq('id', contratoId);
 
-    if (updateError) throw updateError;
+    if (cancelErr) throw cancelErr;
 
-    // 3. Registrar na timeline do cancelado
+    // 3. Registrar evento no contrato antigo
     await supabase.from('contract_eventos').insert({
       contrato_id: contratoId,
       tipo: 'auditoria',
-      detalhes: { 
-        mensagem: "Cancelado para correção — ver contrato substituto",
-        data: new Date().toISOString()
-      },
-      created_by: user.id
+      descricao: 'Cancelado para correção — ver contrato substituto',
+      performed_by: user.id,
+      detalhes: { motivo: 'Correção de termos' }
     });
 
-    // 4. Criar o novo rascunho com os mesmos dados
-    // Removemos os campos que não devem ser duplicados ou que devem ser reiniciados
+    // 4. Criar o novo rascunho (draft) copiando os dados
+    // Removemos campos de sistema e IDs de integração
     const { 
       id: _oldId, 
       created_at: _ca, 
       updated_at: _ua, 
       numero_contrato: _num,
-      autentique_document_id: _aut,
+      autentique_document_id: _authId,
       pdf_url: _pdf,
-      status: _stat,
-      ...novoPayload 
-    } = contrato;
+      html_final: _html,
+      ...dadosParaCopiar 
+    } = original;
 
-    // Garante que o status seja rascunho
-    (novoPayload as any).status = 'rascunho';
-    (novoPayload as any).created_by = user.id;
-    (novoPayload as any).updated_by = user.id;
-    
-    // Atualiza data de emissão para hoje se for rascunho novo
-    (novoPayload as any).data_emissao = new Date().toISOString().slice(0, 10);
-
-    const { data: novoContrato, error: insertError } = await supabase
+    const { data: novoDraft, error: createErr } = await supabase
       .from('contract_contratos')
-      .insert(novoPayload)
+      .insert({
+        ...dadosParaCopiar,
+        status: 'rascunho',
+        created_by: user.id,
+        updated_by: user.id,
+      })
       .select('id, numero_contrato')
       .single();
 
-    if (insertError) throw insertError;
+    if (createErr || !novoDraft) throw createErr;
 
-    // 5. Registrar na timeline do NOVO
+    // 5. Registrar evento no novo contrato
     await supabase.from('contract_eventos').insert({
-      contrato_id: novoContrato.id,
+      contrato_id: novoDraft.id,
       tipo: 'auditoria',
-      detalhes: { 
-        mensagem: `Substitui o contrato ${contrato.numero_contrato}`,
-        contrato_anterior_id: contratoId,
-        contrato_anterior_numero: contrato.numero_contrato,
-        data: new Date().toISOString()
-      },
-      created_by: user.id
+      descricao: `Substitui o contrato ${original.numero_contrato || 'anterior'} — corrigido para novos termos`,
+      performed_by: user.id,
+      detalhes: { contrato_anterior_id: contratoId, numero_anterior: original.numero_contrato }
     });
 
-    toast.success("Contrato cancelado e novo rascunho criado");
-    return novoContrato.id;
+    toast.success('Contrato anterior cancelado. Novo rascunho criado para correção.');
+    return novoDraft.id;
 
-  } catch (error: any) {
-    console.error("Erro ao cancelar e reenviar contrato:", error);
-    toast.error(error.message || "Erro ao processar correção");
-    throw error;
+  } catch (e: any) {
+    console.error('Erro ao processar correção de contrato:', e);
+    toast.error(e.message || 'Falha ao processar correção');
+    throw e;
   }
 }
