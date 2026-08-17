@@ -852,9 +852,33 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
               Confirmar e gerar PDF
             </Button>
           )}
-
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={!!finalizedRef.current && !generating}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Contrato Gerado com Sucesso!</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p>O PDF foi gerado e o contrato está pronto para envio.</p>
+              
+              <div className="bg-amber-50 border border-amber-200 p-4 rounded-md text-amber-800 text-sm">
+                <p className="font-bold mb-1">⚠️ ATENÇÃO - AÇÃO MANUAL NECESSÁRIA</p>
+                <p>Lembre-se de bloquear manualmente o documento antigo no painel do Autentique, para que ninguém assine a versão desatualizada.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => {
+              const id = contratoId;
+              onOpenChange(false);
+              if (id) onCreated(id);
+            }}>
+              Entendido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
