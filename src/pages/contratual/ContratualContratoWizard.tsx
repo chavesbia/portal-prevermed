@@ -858,32 +858,37 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
             )}
           </DialogFooter>
         )}
-      </DialogContent>
-
-      <AlertDialog open={!!finalizedRef.current && !generating}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Contrato Gerado com Sucesso!</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
+        {finalizedRef.current && (
+          <div className="bg-amber-50 border border-amber-200 p-6 rounded-lg text-amber-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 p-2 rounded-full">
+                <Check className="h-6 w-6 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold">Contrato Gerado com Sucesso!</h3>
+            </div>
+            
+            <div className="space-y-2 text-sm leading-relaxed">
               <p>O PDF foi gerado e o contrato está pronto para envio.</p>
-              
-              <div className="bg-amber-50 border border-amber-200 p-4 rounded-md text-amber-800 text-sm">
-                <p className="font-bold mb-1">⚠️ ATENÇÃO - AÇÃO MANUAL NECESSÁRIA</p>
+              <div className="bg-white/50 p-4 rounded border border-amber-200 font-medium">
+                <p className="flex items-center gap-2 mb-1 text-amber-700">
+                  <span className="text-xl">⚠️</span> ATENÇÃO - AÇÃO MANUAL NECESSÁRIA
+                </p>
                 <p>Lembre-se de bloquear manualmente o documento antigo no painel do Autentique, para que ninguém assine a versão desatualizada.</p>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => {
-              const id = contratoId;
-              onOpenChange(false);
-              if (id) onCreated(id);
-            }}>
-              Entendido
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => {
+                const id = contratoId;
+                onOpenChange(false);
+                if (id) onCreated(id);
+              }} className="bg-amber-600 hover:bg-amber-700 text-white">
+                Entendido
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
     </Dialog>
   );
 }
