@@ -16,6 +16,7 @@ import { useContractSignatarios } from '@/hooks/useContractSignatarios';
 import { CPFInput } from '@/components/contratual/CPFInput';
 import { isValidCPF } from '@/lib/contractual/cpf';
 import { CompanySelector, type CompanyOption } from '@/components/shared/CompanySelector';
+import { validateUniqueEmails } from '@/lib/contractual/validation';
 
 interface Props {
   open: boolean;
@@ -513,8 +514,18 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   }, [previewHtml]);
 
   const canGoStep2 = !!companyId && !!clienteId && !resolvingCliente && !!templateId && !!versionId && !duplicateWarningPending && !resolveError;
+  const emailValidationError = useMemo(() => {
+    if (step !== 2) return null;
+    return validateUniqueEmails([
+      { label: 'Contratante', email: form.rep_email },
+      { label: 'Contratada', email: form.prevermed_email },
+      { label: 'Testemunha da Contratada', email: form.testemunha1_email },
+      { label: 'Testemunha do Contratante', email: form.testemunha2_email },
+    ]);
+  }, [step, form.rep_email, form.prevermed_email, form.testemunha1_email, form.testemunha2_email]);
+
   const canGoStep3 = canGoStep2 && !!form.data_emissao && !!form.data_inicio && !!form.vigencia_meses && cpfsValidos
-    && clienteCamposFaltando.length === 0 && !savingCliente;
+    && clienteCamposFaltando.length === 0 && !savingCliente && !emailValidationError;
 
   const canConfirm = placeholdersFaltando.length === 0;
 
@@ -812,6 +823,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
             {/* Campos manuais agora aparecem antes dos Assinantes */}
 
+
+            {emailValidationError && (
+              <p className="text-xs text-destructive font-medium border border-destructive/20 bg-destructive/5 p-2 rounded">
+                {emailValidationError}
+              </p>
+            )}
 
             {!cpfsValidos && (
               <p className="text-xs text-destructive">Há CPF(s) inválido(s). Corrija antes de avançar.</p>
