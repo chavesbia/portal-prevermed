@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -585,7 +586,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       });
 
       toast.success(`Contrato ${ctr.numero_contrato} criado`);
-      onCreated(ctr.id);
+      finalizedRef.current = true; // Mantém o Dialog aberto para mostrar o alerta final
+      setContratoId(ctr.id); // Garante que o ID esteja no estado para o botão "Entendido"
+      qc.invalidateQueries({ queryKey: ['contract-contratos'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao criar contrato');
     } finally {
@@ -816,7 +819,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           </div>
         )}
 
-        {step === 3 && (
+        {step === 3 && !finalizedRef.current && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Pré-visualização do contrato. Confirme para gerar o PDF.</p>
             {placeholdersFaltando.length > 0 && (
@@ -836,24 +839,55 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
         )}
 
 
-        <DialogFooter className="flex sm:justify-between gap-2">
-          <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
-          </Button>
-          {step < 3 && (
-            <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
-              disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
-              Avançar <ArrowRight className="h-4 w-4 ml-1" />
+        {!finalizedRef.current && (
+          <DialogFooter className="flex sm:justify-between gap-2">
+            <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
+              <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
             </Button>
-          )}
-          {step === 3 && (
-            <Button onClick={confirmar} disabled={generating || !canConfirm}>
-              {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
-              Confirmar e gerar PDF
-            </Button>
-          )}
+            {step < 3 && (
+              <Button onClick={async () => { if (step === 2 && !(await salvarDadosCliente())) return; setStep(step + 1); }}
+                disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}>
+                Avançar <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+            {step === 3 && (
+              <Button onClick={confirmar} disabled={generating || !canConfirm}>
+                {generating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
+                Confirmar e gerar PDF
+              </Button>
+            )}
+          </DialogFooter>
+        )}
+        {finalizedRef.current && (
+          <div className="bg-amber-50 border border-amber-200 p-6 rounded-lg text-amber-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 p-2 rounded-full">
+                <Check className="h-6 w-6 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold">Contrato Gerado com Sucesso!</h3>
+            </div>
+            
+            <div className="space-y-2 text-sm leading-relaxed">
+              <p>O PDF foi gerado e o contrato está pronto para envio.</p>
+              <div className="bg-white/50 p-4 rounded border border-amber-200 font-medium">
+                <p className="flex items-center gap-2 mb-1 text-amber-700">
+                  <span className="text-xl">⚠️</span> ATENÇÃO - AÇÃO MANUAL NECESSÁRIA
+                </p>
+                <p>Lembre-se de bloquear manualmente o documento antigo no painel do Autentique, para que ninguém assine a versão desatualizada.</p>
+              </div>
+            </div>
 
-        </DialogFooter>
+            <div className="flex justify-end pt-2">
+              <Button onClick={() => {
+                const id = contratoId;
+                onOpenChange(false);
+                if (id) onCreated(id);
+              }} className="bg-amber-600 hover:bg-amber-700 text-white">
+                Entendido
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
