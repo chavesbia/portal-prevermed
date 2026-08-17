@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { AssinanteEditDialog } from './AssinanteEditDialog';
+import { cancelarEReenviarContrato } from '@/lib/contractual/correction';
 
 interface Props {
   contratoId: string | null;
@@ -21,7 +22,7 @@ interface Props {
 }
 
 
-export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Props) {
+export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorrectionRequested }: Props & { onCorrectionRequested?: (newDraftId: string) => void }) {
   const { isAdmMaster } = useAuth() as any;
   const qc = useQueryClient();
   const [regen, setRegen] = useState(false);
@@ -30,6 +31,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
   const [syncing, setSyncing] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingAssinante, setEditingAssinante] = useState<any>(null);
+  const [correcting, setCorrecting] = useState(false);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -98,6 +100,22 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
         duration: 5000,
       });
     } finally { setSending(false); }
+  };
+
+  const handleCorrigirEReenviar = async () => {
+    if (!contratoId) return;
+    setCorrecting(true);
+    try {
+      const newDraftId = await cancelarEReenviarContrato(contratoId);
+      if (onCorrectionRequested) {
+        onCorrectionRequested(newDraftId);
+      }
+      onClose();
+    } catch (e: any) {
+      // erro já tratado na lib
+    } finally {
+      setCorrecting(false);
+    }
   };
 
   const { data: contrato, refetch, isError, error, isLoading } = useQuery({
@@ -203,6 +221,38 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit }: Prop
                   {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
                   Enviar para Autentique
                 </Button>
+              )}
+              {canEdit && ['partialmente_assinado', 'assinado'].includes(contrato.status) && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-amber-600 border-amber-200 hover:bg-amber-50" disabled={correcting}>
+                      {correcting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+                      Corrigir e Reenviar
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Corrigir e Reenviar?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-3 text-sm">
+                        <p>Ao prosseguir:</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>O contrato atual será <strong>CANCELADO</strong>.</li>
+                          <li>Um novo rascunho será criado com todos os dados preenchidos.</li>
+                          <li>Você poderá ajustar os termos e gerar um novo documento.</li>
+                        </ul>
+                        <p className="font-medium text-amber-700">
+                          ⚠️ Lembre-se de bloquear manualmente o documento antigo no painel do Autentique.
+                        </p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleCorrigirEReenviar} className="bg-amber-600 text-white hover:bg-amber-700">
+                        Confirmar Correção
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               {contrato.autentique_document_id && (
                 <>
