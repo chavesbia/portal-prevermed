@@ -824,6 +824,12 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
             {/* Campos manuais agora aparecem antes dos Assinantes */}
 
 
+            {emailValidationError && (
+              <p className="text-xs text-destructive font-medium border border-destructive/20 bg-destructive/5 p-2 rounded">
+                {emailValidationError}
+              </p>
+            )}
+
             {!cpfsValidos && (
               <p className="text-xs text-destructive">Há CPF(s) inválido(s). Corrija antes de avançar.</p>
             )}
