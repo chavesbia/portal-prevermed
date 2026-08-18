@@ -75,7 +75,7 @@ export function TiposServicoOSManager() {
               <TableRow key={tipo.id} className={!tipo.ativo ? "opacity-50" : ""}>
                 <TableCell className="font-medium uppercase">{tipo.nome}</TableCell>
                 <TableCell>
-                  <Badge variant={tipo.ativo ? "success" : "secondary"}>
+                  <Badge variant={tipo.ativo ? "outline" : "secondary"} className={tipo.ativo ? "border-emerald-500 text-emerald-600" : ""}>
                     {tipo.ativo ? "Ativo" : "Inativo"}
                   </Badge>
                 </TableCell>
