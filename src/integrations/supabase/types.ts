@@ -2367,6 +2367,108 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_rescisoes: {
+        Row: {
+          anexo_url: string | null
+          clinica_destino: string | null
+          company_id: string
+          contrato_id: string | null
+          created_at: string
+          created_by: string | null
+          data_prevista_inativacao: string | null
+          data_prevista_ultimo_faturamento: string | null
+          data_real_inativacao: string | null
+          id: string
+          motivo: Database["public"]["Enums"]["contract_rescisao_motivo"]
+          motivo_descricao: string | null
+          numero_contrato_manual: string | null
+          qtd_vidas_manual: number | null
+          solicitante_cargo: string | null
+          solicitante_email: string | null
+          solicitante_nome: string | null
+          solicitante_whatsapp: string | null
+          status: Database["public"]["Enums"]["contract_rescisao_status"]
+          updated_at: string
+          valor_fat_1: number | null
+          valor_fat_2: number | null
+          valor_fat_3: number | null
+          valor_mensal_manual: number | null
+          vigencia_fim_manual: string | null
+          vigencia_inicio_manual: string | null
+        }
+        Insert: {
+          anexo_url?: string | null
+          clinica_destino?: string | null
+          company_id: string
+          contrato_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_prevista_inativacao?: string | null
+          data_prevista_ultimo_faturamento?: string | null
+          data_real_inativacao?: string | null
+          id?: string
+          motivo: Database["public"]["Enums"]["contract_rescisao_motivo"]
+          motivo_descricao?: string | null
+          numero_contrato_manual?: string | null
+          qtd_vidas_manual?: number | null
+          solicitante_cargo?: string | null
+          solicitante_email?: string | null
+          solicitante_nome?: string | null
+          solicitante_whatsapp?: string | null
+          status?: Database["public"]["Enums"]["contract_rescisao_status"]
+          updated_at?: string
+          valor_fat_1?: number | null
+          valor_fat_2?: number | null
+          valor_fat_3?: number | null
+          valor_mensal_manual?: number | null
+          vigencia_fim_manual?: string | null
+          vigencia_inicio_manual?: string | null
+        }
+        Update: {
+          anexo_url?: string | null
+          clinica_destino?: string | null
+          company_id?: string
+          contrato_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_prevista_inativacao?: string | null
+          data_prevista_ultimo_faturamento?: string | null
+          data_real_inativacao?: string | null
+          id?: string
+          motivo?: Database["public"]["Enums"]["contract_rescisao_motivo"]
+          motivo_descricao?: string | null
+          numero_contrato_manual?: string | null
+          qtd_vidas_manual?: number | null
+          solicitante_cargo?: string | null
+          solicitante_email?: string | null
+          solicitante_nome?: string | null
+          solicitante_whatsapp?: string | null
+          status?: Database["public"]["Enums"]["contract_rescisao_status"]
+          updated_at?: string
+          valor_fat_1?: number | null
+          valor_fat_2?: number | null
+          valor_fat_3?: number | null
+          valor_mensal_manual?: number | null
+          vigencia_fim_manual?: string | null
+          vigencia_inicio_manual?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_rescisoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_rescisoes_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contract_contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_signatarios: {
         Row: {
           ativo: boolean
@@ -6501,6 +6603,15 @@ export type Database = {
         | "contrato_pontual"
         | "contrato_parceiras"
         | "outros"
+      contract_rescisao_motivo:
+        | "insatisfacao"
+        | "preco"
+        | "encerramento_atividades"
+        | "transferencia_cnpj"
+        | "mudanca_estrategica"
+        | "alteracao_endereco"
+        | "outro"
+      contract_rescisao_status: "solicitada" | "confirmada"
       contract_signatario_tipo: "responsavel_prevermed" | "testemunha"
       contract_signer_status:
         | "pendente"
@@ -6815,6 +6926,16 @@ export const Constants = {
         "contrato_parceiras",
         "outros",
       ],
+      contract_rescisao_motivo: [
+        "insatisfacao",
+        "preco",
+        "encerramento_atividades",
+        "transferencia_cnpj",
+        "mudanca_estrategica",
+        "alteracao_endereco",
+        "outro",
+      ],
+      contract_rescisao_status: ["solicitada", "confirmada"],
       contract_signatario_tipo: ["responsavel_prevermed", "testemunha"],
       contract_signer_status: [
         "pendente",
