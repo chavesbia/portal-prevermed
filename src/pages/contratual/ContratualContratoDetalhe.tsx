@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2 } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { AssinanteEditDialog } from './AssinanteEditDialog';
 import { cancelarEReenviarContrato } from '@/lib/contractual/correction';
+import { ContratualRescisaoDialog } from './ContratualRescisaoDialog';
 
 interface Props {
   contratoId: string | null;
@@ -32,6 +33,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [editingAssinante, setEditingAssinante] = useState<any>(null);
   const [correcting, setCorrecting] = useState(false);
+  const [rescisaoOpen, setRescisaoOpen] = useState(false);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -262,6 +264,17 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+              {canEdit && contrato.status !== 'cancelado' && contrato.status !== 'encerrado' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => setRescisaoOpen(true)}
+                >
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Rescindir este Contrato
+                </Button>
+              )}
               {contrato.autentique_document_id && (
                 <>
                   <Button 
@@ -458,6 +471,19 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
         onSuccess={() => refetch()}
         regenerarPdf={regenerarPdf}
       />
+      {contrato && (
+        <ContratualRescisaoDialog
+          open={rescisaoOpen}
+          onOpenChange={setRescisaoOpen}
+          initialCompanyId={contrato.company_id}
+          initialContratoId={contrato.id}
+          onSuccess={() => {
+            setRescisaoOpen(false);
+            refetch();
+            qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+          }}
+        />
+      )}
     </Sheet>
   );
 }

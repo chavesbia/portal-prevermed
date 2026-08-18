@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, FileDown, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Eye, FileDown, Pencil, Trash2, XCircle } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
 import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
+import { ContratualRescisaoDialog } from './ContratualRescisaoDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ export default function ContratualContratos({ canEdit }: Props) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [rescisaoOpen, setRescisaoOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const { data: contratos = [], isLoading } = useQuery({
@@ -105,9 +107,14 @@ export default function ContratualContratos({ canEdit }: Props) {
         <Input placeholder="Buscar por número, empresa ou CNPJ…" className="max-w-md"
           value={search} onChange={e => setSearch(e.target.value)} />
         {canEdit && (
-          <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Contrato
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant="outline" onClick={() => setRescisaoOpen(true)} className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50">
+              <XCircle className="h-4 w-4" /> Registrar Rescisão
+            </Button>
+            <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo Contrato
+            </Button>
+          </div>
         )}
       </div>
 
@@ -202,6 +209,12 @@ export default function ContratualContratos({ canEdit }: Props) {
           setDraftId(newId);
           setWizardOpen(true);
         }}
+      />
+
+      <ContratualRescisaoDialog
+        open={rescisaoOpen}
+        onOpenChange={setRescisaoOpen}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ['contract-contratos'] })}
       />
     </div>
   );
