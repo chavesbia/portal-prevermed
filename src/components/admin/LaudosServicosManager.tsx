@@ -183,8 +183,21 @@ export function LaudosServicosManager() {
   }
 
   return (
-    <Card className="animate-fade-in">
-      <CardHeader>
+    <Tabs defaultValue="catalog" className="animate-fade-in">
+      <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsTrigger value="catalog" className="gap-2">
+          <BookOpen className="h-4 w-4" />
+          Catálogo de Laudos e Serviços
+        </TabsTrigger>
+        <TabsTrigger value="os-types" className="gap-2">
+          <Settings2 className="h-4 w-4" />
+          Tipos de Serviço OS
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="catalog">
+        <Card>
+          <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -523,6 +536,25 @@ export function LaudosServicosManager() {
         parentService={composerService}
         allServices={services}
       />
-    </Card>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="os-types">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-primary" />
+              Configuração de Tipos de Serviço OS
+            </CardTitle>
+            <CardDescription>
+              Gerencie a lista de tipos de serviço disponíveis para abertura de novas OS.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TiposServicoOSManager />
+          </CardContent>
+        </Card>
+      </TabsContent>
+
   );
 }
