@@ -207,75 +207,74 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
             </div>
           )}
 
-          {(!isManual || !!initialContratoId) && !isManual && (
-              <div className="space-y-2">
-                <Label>Selecionar Contrato</Label>
-                <Select value={contratoId || ''} onValueChange={setContratoId} disabled={!!initialContratoId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha um contrato ativo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contratos.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.numero_contrato} ({formatDateBR(c.data_inicio)} - {formatDateBR(c.data_fim)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedContrato && (
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-1 px-1">
-                    <span>Vidas: {selectedContrato.qtd_vidas}</span>
-                    <span>Valor: {formatBRL(selectedContrato.valor_mensal)}</span>
-                  </div>
-                )}
-              </div>
-            )}
+          {(!isManual || !!initialContratoId) && (
+            <div className={`space-y-2 ${initialContratoId ? 'md:col-span-2' : ''}`}>
+              <Label>Selecionar Contrato</Label>
+              <Select value={contratoId || ''} onValueChange={setContratoId} disabled={!!initialContratoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um contrato ativo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {contratos.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.numero_contrato} ({formatDateBR(c.data_inicio)} - {formatDateBR(c.data_fim)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedContrato && (
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-1 px-1">
+                  <span>Vidas: {selectedContrato.qtd_vidas}</span>
+                  <span>Valor: {formatBRL(selectedContrato.valor_mensal)}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-            {isManual && (
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <div className="space-y-1">
-                  <Label className="text-xs">Número do Contrato</Label>
-                  <Input
-                    value={formData.numero_contrato_manual}
-                    onChange={e => setFormData({ ...formData, numero_contrato_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Início Vigência</Label>
-                  <Input
-                    type="date"
-                    value={formData.vigencia_inicio_manual}
-                    onChange={e => setFormData({ ...formData, vigencia_inicio_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Fim Vigência</Label>
-                  <Input
-                    type="date"
-                    value={formData.vigencia_fim_manual}
-                    onChange={e => setFormData({ ...formData, vigencia_fim_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Qtd. Vidas</Label>
-                  <Input
-                    type="number"
-                    value={formData.qtd_vidas_manual}
-                    onChange={e => setFormData({ ...formData, qtd_vidas_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Valor Mensal</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.valor_mensal_manual}
-                    onChange={e => setFormData({ ...formData, valor_mensal_manual: e.target.value })}
-                  />
-                </div>
+          {isManual && !initialContratoId && (
+            <div className="grid grid-cols-2 gap-3 mt-2 md:col-span-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Número do Contrato</Label>
+                <Input
+                  value={formData.numero_contrato_manual}
+                  onChange={e => setFormData({ ...formData, numero_contrato_manual: e.target.value })}
+                />
               </div>
-            )}
-          </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Início Vigência</Label>
+                <Input
+                  type="date"
+                  value={formData.vigencia_inicio_manual}
+                  onChange={e => setFormData({ ...formData, vigencia_inicio_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fim Vigência</Label>
+                <Input
+                  type="date"
+                  value={formData.vigencia_fim_manual}
+                  onChange={e => setFormData({ ...formData, vigencia_fim_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Qtd. Vidas</Label>
+                <Input
+                  type="number"
+                  value={formData.qtd_vidas_manual}
+                  onChange={e => setFormData({ ...formData, qtd_vidas_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Valor Mensal</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_mensal_manual}
+                  onChange={e => setFormData({ ...formData, valor_mensal_manual: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="md:col-span-2 border-t pt-4 mt-2">
             <h4 className="font-medium text-sm mb-3">Dados do Solicitante</h4>
@@ -308,10 +307,8 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                         formatted += ') ' + val.slice(2, 6);
                         if (val.length > 6) {
                           if (val.length === 11) {
-                            // celular (11) 98765-4321
                             formatted = '(' + val.slice(0, 2) + ') ' + val.slice(2, 7) + '-' + val.slice(7);
                           } else {
-                            // fixo (11) 3456-7890
                             formatted += '-' + val.slice(6);
                           }
                         }
@@ -433,8 +430,6 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   )}
                 </div>
               </div>
-              
-              {/* Espaço reservado para campos futuros de transferência */}
             </div>
           </div>
 
@@ -465,40 +460,6 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   value={formData.data_prevista_ultimo_faturamento}
                   onChange={e => setFormData({ ...formData, data_prevista_ultimo_faturamento: e.target.value })}
                 />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Anexar Carta de Solicitação</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="file"
-                    className="hidden"
-                    id="anexo-input"
-                    onChange={handleUploadAnexo}
-                    accept=".pdf,.jpg,.jpeg,.png"
-                  />
-                  {!anexoUrl ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full text-xs gap-2"
-                      onClick={() => document.getElementById('anexo-input')?.click()}
-                      disabled={uploading}
-                    >
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                      Escolher arquivo
-                    </Button>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-between border rounded px-2 py-1 bg-green-50">
-                      <div className="flex items-center gap-2 text-xs text-green-700">
-                        <FileText className="h-4 w-4" />
-                        Arquivo anexado
-                      </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAnexoUrl(null)}>
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
