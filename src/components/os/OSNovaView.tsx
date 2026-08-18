@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock, AlertTriangle, X } from 'lucide-react';
 import { TIPO_OS_OPTIONS, TIPO_SERVICO_OPTIONS, StatusServico, TipoOS } from '@/types/os';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -120,6 +120,13 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
       form.setValue('contatoTelefone', selected.telefone_1 || '', { shouldValidate: true });
     }
   }, [contatoCliente, companyContacts]);
+
+  // Resetar ao trocar de empresa
+  useEffect(() => {
+    form.setValue('contatoCliente', '');
+    form.setValue('contatoEmail', '');
+    form.setValue('contatoTelefone', '');
+  }, [companyId]);
 
   // Buscar contatos da empresa
   useEffect(() => {
@@ -309,7 +316,21 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                         field.onChange(e);
                       }}
                       list="company-contacts-list"
+                      className="pr-8"
                     />
+                    {field.value && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          form.setValue('contatoCliente', '');
+                          form.setValue('contatoEmail', '');
+                          form.setValue('contatoTelefone', '');
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                     <datalist id="company-contacts-list">
                       {companyContacts.map((c, i) => (
                         <option key={i} value={c.nome} />
