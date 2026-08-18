@@ -94,13 +94,18 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
 
   // Load contracts for selected company
   useEffect(() => {
-    if (companyId && !initialContratoId) {
+    if (companyId) {
       // Use a generic query to avoid deep type instantiation
-      (supabase.from('contract_contratos') as any)
+      const query = (supabase.from('contract_contratos') as any)
         .select('id, numero_contrato, data_inicio, data_fim, qtd_vidas, valor_mensal')
         .eq('company_id', companyId)
-        .neq('status', 'cancelado')
-        .order('created_at', { ascending: false })
+        .neq('status', 'cancelado');
+      
+      if (initialContratoId) {
+        query.eq('id', initialContratoId);
+      }
+      
+      query.order('created_at', { ascending: false })
         .then(({ data }: any) => setContratos(data || []));
     } else if (!companyId) {
       setContratos([]);
