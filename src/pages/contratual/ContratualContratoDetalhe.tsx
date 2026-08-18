@@ -265,7 +265,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-              {canEdit && contrato.status !== 'cancelado' && contrato.status !== 'encerrado' && (
+              {canEdit && ['ativo', 'vencendo_60', 'vencendo_30', 'vencendo_15'].includes(contrato.status) && (
                 <Button 
                   variant="outline" 
                   size="sm" 
