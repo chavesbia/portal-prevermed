@@ -193,86 +193,88 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2 border p-3 rounded-md bg-muted/30">
-            <div className="flex items-center gap-2 mb-2">
-              <Checkbox
-                id="manual"
-                checked={isManual}
-                onCheckedChange={(checked) => { setIsManual(!!checked); if (checked) setContratoId(null); }}
-                disabled={!!initialContratoId}
-              />
-              <Label htmlFor="manual" className="cursor-pointer">Contrato não está no sistema (preenchimento manual)</Label>
+          {!initialContratoId && (
+            <div className="space-y-2 md:col-span-2 border p-3 rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Checkbox
+                  id="manual"
+                  checked={isManual}
+                  onCheckedChange={(checked) => { setIsManual(!!checked); if (checked) setContratoId(null); }}
+                  disabled={!!initialContratoId}
+                />
+                <Label htmlFor="manual" className="cursor-pointer">Contrato não está no sistema (preenchimento manual)</Label>
+              </div>
             </div>
+          )}
 
-            {!isManual && (
-              <div className="space-y-2">
-                <Label>Selecionar Contrato</Label>
-                <Select value={contratoId || ''} onValueChange={setContratoId} disabled={!!initialContratoId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Escolha um contrato ativo..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contratos.map(c => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.numero_contrato} ({formatDateBR(c.data_inicio)} - {formatDateBR(c.data_fim)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedContrato && (
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-1 px-1">
-                    <span>Vidas: {selectedContrato.qtd_vidas}</span>
-                    <span>Valor: {formatBRL(selectedContrato.valor_mensal)}</span>
-                  </div>
-                )}
-              </div>
-            )}
+          {(!isManual || !!initialContratoId) && (
+            <div className={`space-y-2 ${initialContratoId ? 'md:col-span-2' : ''}`}>
+              <Label>Selecionar Contrato</Label>
+              <Select value={contratoId || ''} onValueChange={setContratoId} disabled={!!initialContratoId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha um contrato ativo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {contratos.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.numero_contrato} ({formatDateBR(c.data_inicio)} - {formatDateBR(c.data_fim)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedContrato && (
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mt-1 px-1">
+                  <span>Vidas: {selectedContrato.qtd_vidas}</span>
+                  <span>Valor: {formatBRL(selectedContrato.valor_mensal)}</span>
+                </div>
+              )}
+            </div>
+          )}
 
-            {isManual && (
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <div className="space-y-1">
-                  <Label className="text-xs">Número do Contrato</Label>
-                  <Input
-                    value={formData.numero_contrato_manual}
-                    onChange={e => setFormData({ ...formData, numero_contrato_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Início Vigência</Label>
-                  <Input
-                    type="date"
-                    value={formData.vigencia_inicio_manual}
-                    onChange={e => setFormData({ ...formData, vigencia_inicio_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Fim Vigência</Label>
-                  <Input
-                    type="date"
-                    value={formData.vigencia_fim_manual}
-                    onChange={e => setFormData({ ...formData, vigencia_fim_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Qtd. Vidas</Label>
-                  <Input
-                    type="number"
-                    value={formData.qtd_vidas_manual}
-                    onChange={e => setFormData({ ...formData, qtd_vidas_manual: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Valor Mensal</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.valor_mensal_manual}
-                    onChange={e => setFormData({ ...formData, valor_mensal_manual: e.target.value })}
-                  />
-                </div>
+          {isManual && !initialContratoId && (
+            <div className="grid grid-cols-2 gap-3 mt-2 md:col-span-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Número do Contrato</Label>
+                <Input
+                  value={formData.numero_contrato_manual}
+                  onChange={e => setFormData({ ...formData, numero_contrato_manual: e.target.value })}
+                />
               </div>
-            )}
-          </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Início Vigência</Label>
+                <Input
+                  type="date"
+                  value={formData.vigencia_inicio_manual}
+                  onChange={e => setFormData({ ...formData, vigencia_inicio_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fim Vigência</Label>
+                <Input
+                  type="date"
+                  value={formData.vigencia_fim_manual}
+                  onChange={e => setFormData({ ...formData, vigencia_fim_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Qtd. Vidas</Label>
+                <Input
+                  type="number"
+                  value={formData.qtd_vidas_manual}
+                  onChange={e => setFormData({ ...formData, qtd_vidas_manual: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Valor Mensal</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.valor_mensal_manual}
+                  onChange={e => setFormData({ ...formData, valor_mensal_manual: e.target.value })}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="md:col-span-2 border-t pt-4 mt-2">
             <h4 className="font-medium text-sm mb-3">Dados do Solicitante</h4>
@@ -295,7 +297,26 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                 <Label className="text-xs">WhatsApp</Label>
                 <Input
                   value={formData.solicitante_whatsapp}
-                  onChange={e => setFormData({ ...formData, solicitante_whatsapp: e.target.value })}
+                  onChange={e => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 11) val = val.slice(0, 11);
+                    let formatted = val;
+                    if (val.length > 0) {
+                      formatted = '(' + val.slice(0, 2);
+                      if (val.length > 2) {
+                        formatted += ') ' + val.slice(2, 6);
+                        if (val.length > 6) {
+                          if (val.length === 11) {
+                            formatted = '(' + val.slice(0, 2) + ') ' + val.slice(2, 7) + '-' + val.slice(7);
+                          } else {
+                            formatted += '-' + val.slice(6);
+                          }
+                        }
+                      }
+                    }
+                    setFormData({ ...formData, solicitante_whatsapp: formatted });
+                  }}
+                  placeholder="(11) 98765-4321"
                 />
               </div>
               <div className="space-y-1">
@@ -360,6 +381,12 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   onChange={e => setFormData({ ...formData, valor_fat_3: e.target.value })}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 border-t pt-4">
+            <h4 className="font-medium text-sm mb-3">Transferência de Prontuários</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Clínica de Destino</Label>
                 <Input
@@ -368,37 +395,7 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   placeholder="Se migrou, para qual clínica?"
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="md:col-span-2 border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Prazos e Documentação</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Data Prevista Inativação</Label>
-                <Input
-                  type="date"
-                  value={formData.data_prevista_inativacao}
-                  onChange={e => setFormData({ ...formData, data_prevista_inativacao: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-blue-600 font-semibold">Data REAL Inativação (Confirmação)</Label>
-                <Input
-                  type="date"
-                  value={formData.data_real_inativacao}
-                  onChange={e => setFormData({ ...formData, data_real_inativacao: e.target.value })}
-                />
-                <p className="text-[10px] text-muted-foreground italic">Ao preencher este campo, o contrato e a rescisão serão finalizados.</p>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Previsão Último Faturamento</Label>
-                <Input
-                  type="date"
-                  value={formData.data_prevista_ultimo_faturamento}
-                  onChange={e => setFormData({ ...formData, data_prevista_ultimo_faturamento: e.target.value })}
-                />
-              </div>
               <div className="space-y-1">
                 <Label className="text-xs">Anexar Carta de Solicitação</Label>
                 <div className="flex items-center gap-2">
@@ -432,6 +429,37 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 border-t pt-4">
+            <h4 className="font-medium text-sm mb-3">Prazos e Datas Internas</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Data Prevista Inativação</Label>
+                <Input
+                  type="date"
+                  value={formData.data_prevista_inativacao}
+                  onChange={e => setFormData({ ...formData, data_prevista_inativacao: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-blue-600 font-semibold">Data REAL Inativação (Confirmação)</Label>
+                <Input
+                  type="date"
+                  value={formData.data_real_inativacao}
+                  onChange={e => setFormData({ ...formData, data_real_inativacao: e.target.value })}
+                />
+                <p className="text-[10px] text-muted-foreground italic">Ao preencher este campo, o contrato e a rescisão serão finalizados.</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Previsão Último Faturamento</Label>
+                <Input
+                  type="date"
+                  value={formData.data_prevista_ultimo_faturamento}
+                  onChange={e => setFormData({ ...formData, data_prevista_ultimo_faturamento: e.target.value })}
+                />
               </div>
             </div>
           </div>

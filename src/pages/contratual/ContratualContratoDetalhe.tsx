@@ -475,7 +475,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
         <ContratualRescisaoDialog
           open={rescisaoOpen}
           onOpenChange={setRescisaoOpen}
-          initialCompanyId={contrato.company_id}
+          initialCompanyId={contrato.cliente?.company_id}
           initialContratoId={contrato.id}
           onSuccess={() => {
             setRescisaoOpen(false);
