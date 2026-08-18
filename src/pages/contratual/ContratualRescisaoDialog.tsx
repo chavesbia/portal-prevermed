@@ -132,7 +132,7 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
 
     setLoading(true);
     try {
-      const payload: any = {
+      const payload: Record<string, any> = {
         company_id: companyId,
         contrato_id: isManual ? null : contratoId,
         solicitante_nome: formData.solicitante_nome || null,
