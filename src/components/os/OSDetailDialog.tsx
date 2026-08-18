@@ -103,8 +103,16 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                   <p className="font-medium">{ordem.empresa_cliente}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground text-xs">Contato</Label>
+                  <Label className="text-muted-foreground text-xs">Contato do Cliente</Label>
                   <p className="font-medium">{ordem.contato_cliente || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground text-xs">E-mail</Label>
+                  <p className="font-medium text-sm">{ordem.contato_email || '-'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-muted-foreground text-xs">Telefone</Label>
+                  <p className="font-medium text-sm">{ordem.contato_telefone || '-'}</p>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Serviços</Label>

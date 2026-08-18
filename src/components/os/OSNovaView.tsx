@@ -46,6 +46,8 @@ const formSchema = z.object({
   unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
+  contatoEmail: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  contatoTelefone: z.string().optional(),
   emissor: z.string().min(1, 'Usuário emissor não identificado'),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
   prazoEntrega: z.date().optional().nullable(),
@@ -81,13 +83,16 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
   const [dupDialogOpen, setDupDialogOpen] = useState(false);
   const [addingServico, setAddingServico] = useState(false);
+  const [companyContacts, setCompanyContacts] = useState<any[]>([]);
+  const [isContactsLoading, setIsContactsLoading] = useState(false);
 
   const responsaveisAtivos = useMemo(() => responsaveis.filter(r => r.ativo), [responsaveis]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '', contatoCliente: '', emissor: '',
+      numeroOS: '', companyId: undefined as any, unidadeId: null, empresaCliente: '',
+      contatoCliente: '', contatoEmail: '', contatoTelefone: '', emissor: '',
       dataEmissao: new Date(), prazoEntrega: null,
       urgente: false, motivoUrgencia: '',
       observacoes: '', servicos: [{ tipo: '', tipoOS: 'Novo' }],
@@ -103,6 +108,42 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'servicos' });
   const urgente = form.watch('urgente');
   const numeroOS = form.watch('numeroOS');
+  const companyId = form.watch('companyId');
+  const contatoCliente = form.watch('contatoCliente');
+
+  // Auto-fill email/phone when a contact is selected
+  useEffect(() => {
+    if (!contatoCliente || !companyContacts.length) return;
+    const selected = companyContacts.find(c => c.nome === contatoCliente);
+    if (selected) {
+      form.setValue('contatoEmail', selected.email_1 || '', { shouldValidate: true });
+      form.setValue('contatoTelefone', selected.telefone_1 || '', { shouldValidate: true });
+    }
+  }, [contatoCliente, companyContacts]);
+
+  // Buscar contatos da empresa
+  useEffect(() => {
+    if (!companyId) {
+      setCompanyContacts([]);
+      return;
+    }
+
+    const fetchContacts = async () => {
+      setIsContactsLoading(true);
+      const { data, error } = await supabase
+        .from('company_contacts')
+        .select('nome, email_1, telefone_1')
+        .eq('company_id', companyId)
+        .order('nome');
+
+      if (!error && data) {
+        setCompanyContacts(data);
+      }
+      setIsContactsLoading(false);
+    };
+
+    fetchContacts();
+  }, [companyId]);
 
 
   const findExisting = async (numero: string): Promise<ExistingOS | null> => {
@@ -142,7 +183,9 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
       company_id: data.companyId,
       unidade_id: data.unidadeId || null,
       empresa_cliente: data.empresaCliente,
-      contato_cliente: data.contatoCliente,
+      contato_cliente: data.contatoCliente || null,
+      contato_email: data.contatoEmail || null,
+      contato_telefone: data.contatoTelefone || null,
       responsavel_atual: data.emissor,
       status_os: 'Não iniciado',
       data_registro: dataEmissaoStr,
@@ -255,7 +298,44 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
               </FormItem>
             )} />
             <FormField control={form.control} name="contatoCliente" render={({ field }) => (
-              <FormItem><FormLabel>Contato do Cliente</FormLabel><FormControl><Input placeholder="Nome do contato" {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem className="relative">
+                <FormLabel>Contato do Cliente</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      placeholder="Nome do contato"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                      }}
+                      list="company-contacts-list"
+                    />
+                    <datalist id="company-contacts-list">
+                      {companyContacts.map((c, i) => (
+                        <option key={i} value={c.nome} />
+                      ))}
+                    </datalist>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+
+            <FormField control={form.control} name="contatoEmail" render={({ field }) => (
+              <FormItem>
+                <FormLabel>E-mail do Contato</FormLabel>
+                <FormControl><Input placeholder="email@exemplo.com" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+
+            <FormField control={form.control} name="contatoTelefone" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefone do Contato</FormLabel>
+                <FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
             )} />
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>

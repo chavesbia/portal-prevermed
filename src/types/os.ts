@@ -40,6 +40,8 @@ export interface OrdemServico {
   numero_os: string;
   empresa_cliente: string;
   contato_cliente: string | null;
+  contato_email: string | null;
+  contato_telefone: string | null;
   responsavel_atual: string;
   status_os: StatusOS;
   data_registro: string;
