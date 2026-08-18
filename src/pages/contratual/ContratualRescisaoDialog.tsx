@@ -95,12 +95,13 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
   // Load contracts for selected company
   useEffect(() => {
     if (companyId && !initialContratoId) {
-      supabase.from('contract_contratos')
+      // Use a generic query to avoid deep type instantiation
+      (supabase.from('contract_contratos') as any)
         .select('id, numero_contrato, data_inicio, data_fim, qtd_vidas, valor_mensal')
         .eq('company_id', companyId)
         .neq('status', 'cancelado')
         .order('created_at', { ascending: false })
-        .then(({ data }) => setContratos(data || []));
+        .then(({ data }: any) => setContratos(data || []));
     } else if (!companyId) {
       setContratos([]);
     }
@@ -132,7 +133,7 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
 
     setLoading(true);
     try {
-      const payload: Record<string, any> = {
+      const payload: any = {
         company_id: companyId,
         contrato_id: isManual ? null : contratoId,
         solicitante_nome: formData.solicitante_nome || null,
@@ -160,7 +161,7 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
         payload.valor_mensal_manual = formData.valor_mensal_manual ? parseFloat(formData.valor_mensal_manual) : null;
       }
 
-      const { error } = await supabase.from('contract_rescisoes').insert(payload);
+      const { error } = await (supabase.from('contract_rescisoes') as any).insert(payload);
       if (error) throw error;
 
       toast.success('Rescisão registrada com sucesso');
@@ -401,7 +402,7 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
               <div className="space-y-1">
                 <Label className="text-xs">Anexar Carta de Solicitação</Label>
                 <div className="flex items-center gap-2">
-                  <Input
+                  <input
                     type="file"
                     className="hidden"
                     id="anexo-input"
