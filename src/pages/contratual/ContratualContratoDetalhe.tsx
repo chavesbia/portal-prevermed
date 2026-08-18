@@ -471,6 +471,19 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
         onSuccess={() => refetch()}
         regenerarPdf={regenerarPdf}
       />
+      {contrato && (
+        <ContratualRescisaoDialog
+          open={rescisaoOpen}
+          onOpenChange={setRescisaoOpen}
+          initialCompanyId={contrato.company_id}
+          initialContratoId={contrato.id}
+          onSuccess={() => {
+            setRescisaoOpen(false);
+            refetch();
+            qc.invalidateQueries({ queryKey: ['contract-contratos'] });
+          }}
+        />
+      )}
     </Sheet>
   );
 }
