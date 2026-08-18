@@ -436,7 +436,13 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                   <FormItem className="flex-1 min-w-[150px]"><FormLabel>Tipo de Serviço</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                      <SelectContent>{TIPO_SERVICO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {tiposServicoDB
+                          .filter(t => t.ativo)
+                          .map(t => (
+                            <SelectItem key={t.id} value={t.nome}>{t.nome}</SelectItem>
+                          ))}
+                      </SelectContent>
                     </Select><FormMessage />
                   </FormItem>
                 )} />
