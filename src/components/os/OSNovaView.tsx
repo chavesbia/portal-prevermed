@@ -109,6 +109,17 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const urgente = form.watch('urgente');
   const numeroOS = form.watch('numeroOS');
   const companyId = form.watch('companyId');
+  const contatoCliente = form.watch('contatoCliente');
+
+  // Auto-fill email/phone when a contact is selected
+  useEffect(() => {
+    if (!contatoCliente || !companyContacts.length) return;
+    const selected = companyContacts.find(c => c.nome === contatoCliente);
+    if (selected) {
+      form.setValue('contatoEmail', selected.email_1 || '', { shouldValidate: true });
+      form.setValue('contatoTelefone', selected.telefone_1 || '', { shouldValidate: true });
+    }
+  }, [contatoCliente, companyContacts]);
 
   // Buscar contatos da empresa
   useEffect(() => {
@@ -310,13 +321,6 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
               </FormItem>
             )} />
 
-            {/* Listener for contact selection to auto-fill email/phone */}
-            <useEffect
-              // This is a bit hacky for a render method, but let's use a standard pattern:
-              // We'll watch contatoCliente and if it matches a contact, we fill the others.
-              // Actually, better to use the onChange above or a separate useEffect.
-              // I will move this logic to a useEffect outside the render.
-            />
 
             <FormField control={form.control} name="contatoEmail" render={({ field }) => (
               <FormItem>
