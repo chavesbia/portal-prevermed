@@ -390,6 +390,37 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
           </div>
 
           <div className="md:col-span-2 border-t pt-4">
+            <h4 className="font-medium text-sm mb-3">Prazos e Datas Internas</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Data Prevista Inativação</Label>
+                <Input
+                  type="date"
+                  value={formData.data_prevista_inativacao}
+                  onChange={e => setFormData({ ...formData, data_prevista_inativacao: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-blue-600 font-semibold">Data REAL Inativação (Confirmação)</Label>
+                <Input
+                  type="date"
+                  value={formData.data_real_inativacao}
+                  onChange={e => setFormData({ ...formData, data_real_inativacao: e.target.value })}
+                />
+                <p className="text-[10px] text-muted-foreground italic">Ao preencher este campo, o contrato e a rescisão serão finalizados.</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Previsão Último Faturamento</Label>
+                <Input
+                  type="date"
+                  value={formData.data_prevista_ultimo_faturamento}
+                  onChange={e => setFormData({ ...formData, data_prevista_ultimo_faturamento: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 border-t pt-4">
             <h4 className="font-medium text-sm mb-3">Transferência de Prontuários</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -434,37 +465,6 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-2 border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Prazos e Datas Internas</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Data Prevista Inativação</Label>
-                <Input
-                  type="date"
-                  value={formData.data_prevista_inativacao}
-                  onChange={e => setFormData({ ...formData, data_prevista_inativacao: e.target.value })}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-blue-600 font-semibold">Data REAL Inativação (Confirmação)</Label>
-                <Input
-                  type="date"
-                  value={formData.data_real_inativacao}
-                  onChange={e => setFormData({ ...formData, data_real_inativacao: e.target.value })}
-                />
-                <p className="text-[10px] text-muted-foreground italic">Ao preencher este campo, o contrato e a rescisão serão finalizados.</p>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Previsão Último Faturamento</Label>
-                <Input
-                  type="date"
-                  value={formData.data_prevista_ultimo_faturamento}
-                  onChange={e => setFormData({ ...formData, data_prevista_ultimo_faturamento: e.target.value })}
-                />
               </div>
             </div>
           </div>
