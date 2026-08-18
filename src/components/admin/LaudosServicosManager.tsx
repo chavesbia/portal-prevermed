@@ -36,6 +36,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   AREA_LABELS,
   CatalogArea,
   CatalogService,
@@ -51,13 +57,13 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Settings2,
   Trash2,
   X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PackageComposerDialog } from "@/components/admin/PackageComposerDialog";
-
-const fmt = (v: number | null) =>
+import { TiposServicoOSManager } from "./TiposServicoOSManager";
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
 const titleCase = (s: string) =>
