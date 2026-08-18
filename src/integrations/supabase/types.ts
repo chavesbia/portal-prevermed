@@ -4307,6 +4307,8 @@ export type Database = {
         Row: {
           company_id: string | null
           contato_cliente: string | null
+          contato_email: string | null
+          contato_telefone: string | null
           contrato_id: string | null
           created_at: string
           created_by: string | null
@@ -4332,6 +4334,8 @@ export type Database = {
         Insert: {
           company_id?: string | null
           contato_cliente?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
           contrato_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -4357,6 +4361,8 @@ export type Database = {
         Update: {
           company_id?: string | null
           contato_cliente?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
           contrato_id?: string | null
           created_at?: string
           created_by?: string | null
