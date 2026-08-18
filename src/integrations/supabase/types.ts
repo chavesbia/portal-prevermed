@@ -4836,6 +4836,13 @@ export type Database = {
             referencedColumns: ["ordem_id"]
           },
           {
+            foreignKeyName: "os_visitas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "os_visitas_servico_id_fkey"
             columns: ["servico_id"]
             isOneToOne: false
