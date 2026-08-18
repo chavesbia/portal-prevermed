@@ -137,7 +137,11 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
 
     if (error) {
       console.error('Erro ao salvar laudo:', error);
-      toast({ title: 'Erro', description: `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo.`, variant: 'destructive' });
+      toast({ 
+        title: 'Erro', 
+        description: `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo: ${error.message}`, 
+        variant: 'destructive' 
+      });
       return;
     }
     toast({
