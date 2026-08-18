@@ -24,7 +24,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Save, RotateCcw, Plus, Trash2, Lock, AlertTriangle, X } from 'lucide-react';
-import { TIPO_OS_OPTIONS, TIPO_SERVICO_OPTIONS, StatusServico, TipoOS } from '@/types/os';
+import { TIPO_OS_OPTIONS, StatusServico, TipoOS } from '@/types/os';
+import { useTiposServicoOS } from '@/hooks/useTiposServicoOS';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -79,6 +80,8 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const { responsaveis } = useResponsaveisTecnicos();
+  const { tipos: tiposServicoDB } = useTiposServicoOS();
+
   const [submitting, setSubmitting] = useState(false);
   const [duplicate, setDuplicate] = useState<ExistingOS | null>(null);
   const [dupDialogOpen, setDupDialogOpen] = useState(false);
@@ -433,7 +436,13 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                   <FormItem className="flex-1 min-w-[150px]"><FormLabel>Tipo de Serviço</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
-                      <SelectContent>{TIPO_SERVICO_OPTIONS.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {tiposServicoDB
+                          .filter(t => t.ativo)
+                          .map(t => (
+                            <SelectItem key={t.id} value={t.nome}>{t.nome}</SelectItem>
+                          ))}
+                      </SelectContent>
                     </Select><FormMessage />
                   </FormItem>
                 )} />

@@ -15,6 +15,7 @@ import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { useTiposServicoOS } from '@/hooks/useTiposServicoOS';
 
 interface Props {
   open: boolean;
@@ -27,6 +28,7 @@ interface Props {
 
 export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSaved, onRequestFinalizar }: Props) {
   const { user, profile } = useAuth();
+  const { tipos: tiposServicoDB } = useTiposServicoOS();
   const [status, setStatus] = useState<StatusServico>(servico.status);
   const [responsavelId, setResponsavelId] = useState<string | null>(servico.responsavel_id);
   const [dataInicio, setDataInicio] = useState<Date | null>(servico.data_inicio ? parseISO(servico.data_inicio) : null);
