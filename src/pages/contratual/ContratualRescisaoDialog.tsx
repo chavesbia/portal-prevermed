@@ -193,18 +193,21 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2 border p-3 rounded-md bg-muted/30">
-            <div className="flex items-center gap-2 mb-2">
-              <Checkbox
-                id="manual"
-                checked={isManual}
-                onCheckedChange={(checked) => { setIsManual(!!checked); if (checked) setContratoId(null); }}
-                disabled={!!initialContratoId}
-              />
-              <Label htmlFor="manual" className="cursor-pointer">Contrato não está no sistema (preenchimento manual)</Label>
+          {!initialContratoId && (
+            <div className="space-y-2 md:col-span-2 border p-3 rounded-md bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Checkbox
+                  id="manual"
+                  checked={isManual}
+                  onCheckedChange={(checked) => { setIsManual(!!checked); if (checked) setContratoId(null); }}
+                  disabled={!!initialContratoId}
+                />
+                <Label htmlFor="manual" className="cursor-pointer">Contrato não está no sistema (preenchimento manual)</Label>
+              </div>
             </div>
+          )}
 
-            {!isManual && (
+          {(!isManual || !!initialContratoId) && !isManual && (
               <div className="space-y-2">
                 <Label>Selecionar Contrato</Label>
                 <Select value={contratoId || ''} onValueChange={setContratoId} disabled={!!initialContratoId}>
@@ -295,7 +298,28 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                 <Label className="text-xs">WhatsApp</Label>
                 <Input
                   value={formData.solicitante_whatsapp}
-                  onChange={e => setFormData({ ...formData, solicitante_whatsapp: e.target.value })}
+                  onChange={e => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 11) val = val.slice(0, 11);
+                    let formatted = val;
+                    if (val.length > 0) {
+                      formatted = '(' + val.slice(0, 2);
+                      if (val.length > 2) {
+                        formatted += ') ' + val.slice(2, 6);
+                        if (val.length > 6) {
+                          if (val.length === 11) {
+                            // celular (11) 98765-4321
+                            formatted = '(' + val.slice(0, 2) + ') ' + val.slice(2, 7) + '-' + val.slice(7);
+                          } else {
+                            // fixo (11) 3456-7890
+                            formatted += '-' + val.slice(6);
+                          }
+                        }
+                      }
+                    }
+                    setFormData({ ...formData, solicitante_whatsapp: formatted });
+                  }}
+                  placeholder="(11) 98765-4321"
                 />
               </div>
               <div className="space-y-1">
@@ -360,6 +384,12 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   onChange={e => setFormData({ ...formData, valor_fat_3: e.target.value })}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 border-t pt-4">
+            <h4 className="font-medium text-sm mb-3">Transferência de Prontuários</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Clínica de Destino</Label>
                 <Input
@@ -368,11 +398,48 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
                   placeholder="Se migrou, para qual clínica?"
                 />
               </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Anexar Carta de Solicitação</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    className="hidden"
+                    id="anexo-input"
+                    onChange={handleUploadAnexo}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                  {!anexoUrl ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full text-xs gap-2"
+                      onClick={() => document.getElementById('anexo-input')?.click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      Escolher arquivo
+                    </Button>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-between border rounded px-2 py-1 bg-green-50">
+                      <div className="flex items-center gap-2 text-xs text-green-700">
+                        <FileText className="h-4 w-4" />
+                        Arquivo anexado
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setAnexoUrl(null)}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Espaço reservado para campos futuros de transferência */}
             </div>
           </div>
 
           <div className="md:col-span-2 border-t pt-4">
-            <h4 className="font-medium text-sm mb-3">Prazos e Documentação</h4>
+            <h4 className="font-medium text-sm mb-3">Prazos e Datas Internas</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Data Prevista Inativação</Label>
