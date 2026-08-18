@@ -27,6 +27,7 @@ export default function ContratualContratos({ canEdit }: Props) {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [rescisaoOpen, setRescisaoOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const { data: contratos = [], isLoading } = useQuery({
@@ -106,9 +107,14 @@ export default function ContratualContratos({ canEdit }: Props) {
         <Input placeholder="Buscar por número, empresa ou CNPJ…" className="max-w-md"
           value={search} onChange={e => setSearch(e.target.value)} />
         {canEdit && (
-          <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Contrato
-          </Button>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button variant="outline" onClick={() => setRescisaoOpen(true)} className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50">
+              <XCircle className="h-4 w-4" /> Registrar Rescisão
+            </Button>
+            <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo Contrato
+            </Button>
+          </div>
         )}
       </div>
 
@@ -203,6 +209,12 @@ export default function ContratualContratos({ canEdit }: Props) {
           setDraftId(newId);
           setWizardOpen(true);
         }}
+      />
+
+      <ContratualRescisaoDialog
+        open={rescisaoOpen}
+        onOpenChange={setRescisaoOpen}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ['contract-contratos'] })}
       />
     </div>
   );
