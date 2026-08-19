@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useAcrescimoFuncao, AcrescimoFuncaoSolicitacao } from '@/hooks/useAcrescimoFuncao';
+import { useAcrescimoFuncao } from '@/hooks/useAcrescimoFuncao';
+import { AcrescimoFuncaoSolicitacao } from '@/types/os';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -273,7 +274,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                 <Label>Empresa *</Label>
                 <CompanySelector 
                   value={formData.company_id} 
-                  onSelect={(id) => setFormData(prev => ({ ...prev, company_id: id, unidade_id: '' }))} 
+                  onChange={(id) => setFormData(prev => ({ ...prev, company_id: id || '', unidade_id: '' }))} 
                 />
               </div>
               <div className="space-y-2">
@@ -281,7 +282,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                 <UnitSelector 
                   companyId={formData.company_id} 
                   value={formData.unidade_id} 
-                  onSelect={(id) => setFormData(prev => ({ ...prev, unidade_id: id }))} 
+                  onChange={(id) => setFormData(prev => ({ ...prev, unidade_id: id || '' }))} 
                 />
               </div>
               <div className="space-y-2">
