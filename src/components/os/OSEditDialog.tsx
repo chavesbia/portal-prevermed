@@ -31,9 +31,10 @@ interface OSEditDialogProps {
   onOpenChange: (open: boolean) => void;
   responsaveis: string[];
   onUpdate: (id: string, data: any) => Promise<boolean>;
+  canEdit?: boolean;
 }
 
-export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDialogProps) {
+export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: canEditProp }: OSEditDialogProps) {
   const { user } = useAuth();
   const { tipos: tiposServicoDB } = useTiposServicoOS();
   const { profissionais } = useProfissionais();
