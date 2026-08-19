@@ -31,9 +31,10 @@ interface OSEditDialogProps {
   onOpenChange: (open: boolean) => void;
   responsaveis: string[];
   onUpdate: (id: string, data: any) => Promise<boolean>;
+  canEdit?: boolean;
 }
 
-export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDialogProps) {
+export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: canEditProp }: OSEditDialogProps) {
   const { user } = useAuth();
   const { tipos: tiposServicoDB } = useTiposServicoOS();
   const { profissionais } = useProfissionais();
@@ -53,10 +54,10 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
   const [newServicoTipo, setNewServicoTipo] = useState('');
   const [newServicoTipoOS, setNewServicoTipoOS] = useState<TipoOS>('Novo');
 
+  const { isAdmMaster } = useAuth();
   const isEmissor = user?.id === ordem.created_by;
   const isNaoIniciado = ordem.status_os === 'Não iniciado';
-  const isAdmMaster = user?.role === 'adm_master';
-  const canEdit = isAdmMaster || (isEmissor && isNaoIniciado);
+  const canEdit = canEditProp !== undefined ? canEditProp : (isAdmMaster || (isEmissor && isNaoIniciado));
 
   useEffect(() => {
     if (!open) return;
@@ -151,7 +152,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
       <Label>{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !value && 'text-muted-foreground')}>
+          <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !value && 'text-muted-foreground')} disabled={!canEdit}>
             {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione'}
             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
           </Button>
@@ -174,15 +175,15 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Número da OS</Label>
-            <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} />
+            <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Empresa Cliente</Label>
-            <Input value={empresaCliente} onChange={(e) => setEmpresaCliente(e.target.value)} />
+            <Input value={empresaCliente} onChange={(e) => setEmpresaCliente(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Contato do Cliente</Label>
-            <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} />
+            <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Emissor da OS</Label>
@@ -191,7 +192,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
           </div>
           <div className="space-y-2">
             <Label>Status da OS</Label>
-            <Select value={statusOS} onValueChange={(v) => setStatusOS(v as StatusOS)}>
+            <Select value={statusOS} onValueChange={(v) => setStatusOS(v as StatusOS)} disabled={!canEdit}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -203,18 +204,18 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
           <div className="space-y-2">
             {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
             <div className="flex items-center gap-2 pt-1">
-              <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
-              <Label htmlFor="urg-edit" className="cursor-pointer text-sm">Urgente</Label>
+              <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} disabled={!canEdit} />
+              <Label htmlFor="urg-edit" className={cn("text-sm", canEdit ? "cursor-pointer" : "opacity-70")}>Urgente</Label>
             </div>
             {urgente && (
-              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
+              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} disabled={!canEdit} />
             )}
           </div>
         </div>
 
         <div className="space-y-2">
           <Label>Observações</Label>
-          <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+          <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} disabled={!canEdit} />
         </div>
 
         <Separator />
@@ -310,10 +311,12 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
-          </Button>
+          {canEdit && (
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="mr-2 h-4 w-4" />
+              {saving ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -81,7 +81,7 @@ export function OSListView({
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
-  const { user } = useAuth();
+  const { user, isAdmMaster } = useAuth();
   const { getModulePermissions } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
   const hasGlobalEdit = permissions?.can_edit ?? false;
@@ -207,7 +207,7 @@ export function OSListView({
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowHistory(true); }}>
                                   <History className="mr-2 h-4 w-4" />Histórico
                                 </DropdownMenuItem>
-                                {user?.role === 'adm_master' && (
+                                {isAdmMaster && (
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => setDeleteId(ordem.id)} className="text-destructive">
@@ -342,7 +342,14 @@ export function OSListView({
       {selectedOS && (
         <>
           <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
-          <OSEditDialog ordem={selectedOS} open={showEdit} onOpenChange={setShowEdit} responsaveis={responsaveis} onUpdate={onUpdateOrdem} />
+          <OSEditDialog 
+            ordem={selectedOS} 
+            open={showEdit} 
+            onOpenChange={setShowEdit} 
+            responsaveis={responsaveis} 
+            onUpdate={onUpdateOrdem}
+            canEdit={hasGlobalEdit || (user?.id === selectedOS?.created_by && selectedOS?.status_os === 'Não iniciado')}
+          />
           <OSHistoryDialog ordem={selectedOS} open={showHistory} onOpenChange={setShowHistory} onGetHistorico={onGetHistorico} />
           <OSAgendarVisitaDialog ordem={selectedOS} open={showAgendar} onOpenChange={setShowAgendar} />
         </>
