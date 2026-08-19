@@ -5442,6 +5442,7 @@ export type Database = {
           ativo: boolean
           categoria: string
           conselho_id: string | null
+          cpf: string | null
           created_at: string
           created_by: string | null
           custo_padrao: number | null
@@ -5462,6 +5463,7 @@ export type Database = {
           ativo?: boolean
           categoria: string
           conselho_id?: string | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           custo_padrao?: number | null
@@ -5482,6 +5484,7 @@ export type Database = {
           ativo?: boolean
           categoria?: string
           conselho_id?: string | null
+          cpf?: string | null
           created_at?: string
           created_by?: string | null
           custo_padrao?: number | null
