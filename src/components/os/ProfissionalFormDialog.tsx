@@ -10,6 +10,7 @@ import { PROFISSIONAL_CATEGORIAS, Profissional, ProfissionalCategoria, Profissio
 import { useConselhosClasse } from '@/hooks/useConselhosClasse';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
   open: boolean;
