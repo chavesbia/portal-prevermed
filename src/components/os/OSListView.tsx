@@ -342,7 +342,14 @@ export function OSListView({
       {selectedOS && (
         <>
           <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
-          <OSEditDialog ordem={selectedOS} open={showEdit} onOpenChange={setShowEdit} responsaveis={responsaveis} onUpdate={onUpdateOrdem} />
+          <OSEditDialog 
+            ordem={selectedOS} 
+            open={showEdit} 
+            onOpenChange={setShowEdit} 
+            responsaveis={responsaveis} 
+            onUpdate={onUpdateOrdem}
+            canEdit={hasGlobalEdit || (user?.id === selectedOS?.created_by && selectedOS?.status_os === 'Não iniciado')}
+          />
           <OSHistoryDialog ordem={selectedOS} open={showHistory} onOpenChange={setShowHistory} onGetHistorico={onGetHistorico} />
           <OSAgendarVisitaDialog ordem={selectedOS} open={showAgendar} onOpenChange={setShowAgendar} />
         </>
