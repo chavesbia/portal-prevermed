@@ -197,7 +197,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-hidden">
+          <div className="rounded-md border">
             <div className="overflow-x-auto w-full">
               <Table>
                 <TableHeader>
@@ -276,8 +276,9 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardContent>
+    </Card>
 
       {/* Dialog Nova Solicitação */}
       <Dialog open={novoOpen} onOpenChange={setNovoOpen}>
