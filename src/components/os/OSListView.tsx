@@ -207,7 +207,7 @@ export function OSListView({
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowHistory(true); }}>
                                   <History className="mr-2 h-4 w-4" />Histórico
                                 </DropdownMenuItem>
-                                {user?.role === 'adm_master' && (
+                                {isAdmMaster && (
                                   <>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => setDeleteId(ordem.id)} className="text-destructive">
