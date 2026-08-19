@@ -176,8 +176,8 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center gap-4 flex-wrap">
+    <div className="space-y-6 w-full max-w-full overflow-hidden">
+      <div className="flex justify-between items-center gap-4 flex-wrap w-full">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExportReport}>
             <FileDown className="h-4 w-4 mr-2" />
@@ -192,12 +192,12 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
         )}
       </div>
 
-      <Card>
+      <Card className="w-full overflow-hidden">
         <CardHeader>
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+        <CardContent className="p-0 sm:p-6">
+          <div className="rounded-md border-x sm:border overflow-hidden">
             <div className="overflow-x-auto w-full">
               <Table>
                 <TableHeader>
