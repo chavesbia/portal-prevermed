@@ -16,6 +16,7 @@ import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
 import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { OSAlertasView } from '@/components/os/OSAlertasView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
+import { OSAcrescimoFuncaoView } from '@/components/os/OSAcrescimoFuncaoView';
 import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
@@ -67,6 +68,7 @@ export default function GestaoOS() {
           <TabsTrigger value="equipamentos">Equipamentos</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
+          <TabsTrigger value="acrescimos">Acréscimo de Função</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
           {isFinanceiro && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
         </TabsList>
@@ -116,6 +118,10 @@ export default function GestaoOS() {
 
         <TabsContent value="vencimentos" className="mt-6">
           <OSGestaoVencimentosView />
+        </TabsContent>
+
+        <TabsContent value="acrescimos" className="mt-6">
+          <OSAcrescimoFuncaoView canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="profissionais" className="mt-6">
