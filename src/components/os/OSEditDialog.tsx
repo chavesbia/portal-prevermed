@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
@@ -12,12 +12,18 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Save } from 'lucide-react';
-import { OrdemServico, StatusOS, STATUS_OS_OPTIONS } from '@/types/os';
+import { CalendarIcon, Save, Plus, Trash2, User } from 'lucide-react';
+import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, ServicoOS, TipoOS } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { useTiposServicoOS } from '@/hooks/useTiposServicoOS';
+import { useProfissionais } from '@/hooks/useProfissionais';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface OSEditDialogProps {
   ordem: OrdemServico;
@@ -28,6 +34,10 @@ interface OSEditDialogProps {
 }
 
 export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDialogProps) {
+  const { user } = useAuth();
+  const { tipos: tiposServicoDB } = useTiposServicoOS();
+  const { profissionais } = useProfissionais();
+  
   const [numeroOS, setNumeroOS] = useState(ordem.numero_os);
   const [empresaCliente, setEmpresaCliente] = useState(ordem.empresa_cliente);
   const [contatoCliente, setContatoCliente] = useState(ordem.contato_cliente || '');
@@ -38,7 +48,15 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
   const [urgente, setUrgente] = useState<boolean>(!!ordem.urgente);
   const [motivoUrgencia, setMotivoUrgencia] = useState<string>(ordem.motivo_urgencia || '');
   const [emissorNome, setEmissorNome] = useState<string>(ordem.responsavel_atual || '');
+  const [servicos, setServicos] = useState<ServicoOS[]>(ordem.servicos || []);
   const [saving, setSaving] = useState(false);
+  const [newServicoTipo, setNewServicoTipo] = useState('');
+  const [newServicoTipoOS, setNewServicoTipoOS] = useState<TipoOS>('Novo');
+
+  const isEmissor = user?.id === ordem.created_by;
+  const isNaoIniciado = ordem.status_os === 'Não iniciado';
+  const isAdmMaster = user?.role === 'adm_master';
+  const canEdit = isAdmMaster || (isEmissor && isNaoIniciado);
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +70,9 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
     setUrgente(!!ordem.urgente);
     setMotivoUrgencia(ordem.motivo_urgencia || '');
     setEmissorNome(ordem.responsavel_atual || '');
+    setServicos(ordem.servicos || []);
+    setNewServicoTipo('');
+    setNewServicoTipoOS('Novo');
 
     // Try to resolve emissor's real name from profiles (created_by)
     (async () => {
@@ -85,6 +106,44 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
     });
     setSaving(false);
     if (ok) onOpenChange(false);
+  };
+
+  const handleAddServico = async () => {
+    if (!newServicoTipo) return;
+    try {
+      const { data, error } = await supabase
+        .from('servicos_os')
+        .insert({
+          ordem_id: ordem.id,
+          tipo: newServicoTipo,
+          tipo_os: newServicoTipoOS,
+          status: 'Não iniciado'
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setServicos(prev => [...prev, data as ServicoOS]);
+      setNewServicoTipo('');
+      toast.success('Serviço adicionado');
+    } catch (e: any) {
+      toast.error('Erro ao adicionar serviço: ' + e.message);
+    }
+  };
+
+  const handleRemoveServico = async (servicoId: string) => {
+    try {
+      const { error } = await supabase
+        .from('servicos_os')
+        .delete()
+        .eq('id', servicoId);
+
+      if (error) throw error;
+      setServicos(prev => prev.filter(s => s.id !== servicoId));
+      toast.success('Serviço removido');
+    } catch (e: any) {
+      toast.error('Erro ao remover serviço: ' + e.message);
+    }
   };
 
   const dateField = (label: string, value: Date | undefined, onChange: (d: Date | undefined) => void) => (
@@ -156,6 +215,97 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate }: OSEditDial
         <div className="space-y-2">
           <Label>Observações</Label>
           <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+        </div>
+
+        <Separator />
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Serviços</h3>
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                <Select value={newServicoTipo} onValueChange={setNewServicoTipo}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Adicionar serviço..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tiposServicoDB.filter(t => t.ativo).map(t => (
+                      <SelectItem key={t.id} value={t.nome}>{t.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={newServicoTipoOS} onValueChange={(v) => setNewServicoTipoOS(v as TipoOS)}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Novo">Novo</SelectItem>
+                    <SelectItem value="Revisão">Revisão</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="icon" onClick={handleAddServico} disabled={!newServicoTipo}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="border rounded-md">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="py-2 px-4 text-left font-medium">Serviço</th>
+                  <th className="py-2 px-4 text-left font-medium">Status</th>
+                  <th className="py-2 px-4 text-left font-medium">Executor</th>
+                  {canEdit && <th className="py-2 px-4 text-right font-medium">Ações</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {servicos.length === 0 ? (
+                  <tr>
+                    <td colSpan={canEdit ? 4 : 3} className="py-8 text-center text-muted-foreground italic">
+                      Nenhum serviço vinculado.
+                    </td>
+                  </tr>
+                ) : (
+                  servicos.map(s => {
+                    const prof = profissionais.find(p => p.id === s.responsavel_id);
+                    const canRemove = canEdit && s.status === 'Não iniciado';
+                    return (
+                      <tr key={s.id} className="border-b last:border-0 hover:bg-muted/30">
+                        <td className="py-2 px-4">
+                          <div className="font-medium">{s.tipo}</div>
+                          <Badge variant="outline" className="text-[10px] h-4 mt-0.5">{s.tipo_os}</Badge>
+                        </td>
+                        <td className="py-2 px-4">
+                          <Badge variant="secondary" className="text-xs">{s.status}</Badge>
+                        </td>
+                        <td className="py-2 px-4 text-muted-foreground text-xs">
+                          {prof ? (
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {prof.nome}
+                            </div>
+                          ) : '—'}
+                        </td>
+                        {canEdit && (
+                          <td className="py-2 px-4 text-right">
+                            {canRemove ? (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleRemoveServico(s.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground uppercase px-2 py-1 bg-muted rounded">Iniciado</span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">
