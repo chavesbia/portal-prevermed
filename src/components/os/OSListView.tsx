@@ -81,7 +81,7 @@ export function OSListView({
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
 
-  const { user } = useAuth();
+  const { user, isAdmMaster } = useAuth();
   const { getModulePermissions } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
   const hasGlobalEdit = permissions?.can_edit ?? false;
