@@ -224,3 +224,30 @@ export const slaStatusLabels: Record<SLAStatus, string> = {
   sem_prazo: 'Sem prazo',
 };
 
+export interface AcrescimoFuncaoSolicitacao {
+  id: string;
+  company_id: string;
+  unidade_id: string | null;
+  solicitante_nome: string;
+  data_solicitacao_cliente: string;
+  observacao: string | null;
+  realizado: boolean;
+  realizado_por: string | null;
+  realizado_em: string | null;
+  valor_total_calculado: number | null;
+  created_at: string;
+  created_by: string | null;
+  company_name?: string;
+  unidade_nome?: string;
+  realizado_por_nome?: string;
+  cargos?: AcrescimoFuncaoCargo[];
+}
+
+export interface AcrescimoFuncaoCargo {
+  id: string;
+  solicitacao_id: string;
+  setor: string;
+  cargo: string;
+}
+
+

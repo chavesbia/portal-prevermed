@@ -1,33 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-export interface AcrescimoFuncaoSolicitacao {
-  id: string;
-  company_id: string;
-  unidade_id: string | null;
-  solicitante_nome: string;
-  data_solicitacao_cliente: string;
-  observacao: string | null;
-  realizado: boolean;
-  realizado_por: string | null;
-  realizado_em: string | null;
-  valor_total_calculado: number | null;
-  created_at: string;
-  created_by: string | null;
-  // Joined
-  company_name?: string;
-  unidade_nome?: string;
-  realizado_por_nome?: string;
-  cargos?: AcrescimoFuncaoCargo[];
-}
-
-export interface AcrescimoFuncaoCargo {
-  id: string;
-  solicitacao_id: string;
-  setor: string;
-  cargo: string;
-}
+import { AcrescimoFuncaoSolicitacao, AcrescimoFuncaoCargo } from "@/types/os";
 
 export function useAcrescimoFuncao() {
   const qc = useQueryClient();
