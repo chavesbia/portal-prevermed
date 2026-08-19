@@ -123,18 +123,23 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
       return;
     }
 
-    const headers = ['Empresa', 'Unidade', 'Solicitante', 'Setor', 'Cargo', 'Data Realização', 'Realizado Por', 'Valor Calculado'];
+    const headers = ['Empresa', 'Unidade', 'Solicitante', 'Setor', 'Cargo', 'Data Realização', 'Realizado Por'];
+    if (isAdmMaster) headers.push('Valor Calculado');
+
     const rows = data.flatMap(s => 
-      (s.cargos || []).map(c => [
-        s.company_name || '',
-        s.unidade_nome || '',
-        s.solicitante_nome,
-        c.setor,
-        c.cargo,
-        s.realizado_em ? format(parseISO(s.realizado_em), 'dd/MM/yyyy HH:mm') : '',
-        s.realizado_por_nome || '',
-        s.valor_total_calculado?.toString() || ''
-      ])
+      (s.cargos || []).map(c => {
+        const row = [
+          s.company_name || '',
+          s.unidade_nome || '',
+          s.solicitante_nome,
+          c.setor,
+          c.cargo,
+          s.realizado_em ? format(parseISO(s.realizado_em), 'dd/MM/yyyy HH:mm') : '',
+          s.realizado_por_nome || ''
+        ];
+        if (isAdmMaster) row.push(s.valor_total_calculado?.toString() || '');
+        return row;
+      })
     );
 
     const csvContent = [
@@ -192,23 +197,24 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Empresa / Unidade</TableHead>
-                  <TableHead>Solicitante</TableHead>
-                  <TableHead>Data Pedido</TableHead>
-                  <TableHead>Cargos</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
+          <div className="rounded-md border overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap min-w-[200px]">Empresa / Unidade</TableHead>
+                    <TableHead className="whitespace-nowrap">Solicitante</TableHead>
+                    <TableHead className="whitespace-nowrap">Data Pedido</TableHead>
+                    <TableHead className="whitespace-nowrap">Cargos</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    {isAdmMaster && <TableHead className="whitespace-nowrap">Valor</TableHead>}
+                    <TableHead className="text-right whitespace-nowrap">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
               <TableBody>
                 {solicitacoes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isAdmMaster ? 7 : 6} className="text-center py-8 text-muted-foreground">
                       Nenhuma solicitação encontrada
                     </TableCell>
                   </TableRow>
@@ -237,11 +243,13 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {s.valor_total_calculado ? (
-                          new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.valor_total_calculado)
-                        ) : '-'}
-                      </TableCell>
+                      {isAdmMaster && (
+                        <TableCell className="whitespace-nowrap">
+                          {s.valor_total_calculado ? (
+                            new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.valor_total_calculado)
+                          ) : '-'}
+                        </TableCell>
+                      )}
                       <TableCell className="text-right">
                         {!s.realizado && canEdit && (
                           <div className="flex items-center justify-end gap-2">
