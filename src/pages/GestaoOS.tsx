@@ -28,6 +28,7 @@ export default function GestaoOS() {
     isLoading, filters, setFilters,
     getFilteredOrdens, addOrdem, updateOrdem, updateOrdemStatus,
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
+    currentPage, setCurrentPage, totalPages, totalCount
   } = useOrdens();
 
   const [novaOpen, setNovaOpen] = useState(false);
@@ -94,6 +95,10 @@ export default function GestaoOS() {
             onDelete={deleteOrdem}
             onGetHistorico={getHistorico}
             onRefresh={fetchOrdens}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalCount={totalCount}
           />
         </TabsContent>
 

@@ -11,6 +11,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { OSFilterBar } from '@/components/os/OSFilterBar';
 import { OSDetailDialog } from '@/components/os/OSDetailDialog';
 import { OSHistoryDialog } from '@/components/os/OSHistoryDialog';
@@ -36,9 +45,27 @@ interface OSListViewProps {
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
   onRefresh?: () => void;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  totalCount?: number;
 }
 
-export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdateStatus, onUpdateOrdem, onDelete, onGetHistorico, onRefresh }: OSListViewProps) {
+export function OSListView({ 
+  ordens, 
+  filters, 
+  setFilters, 
+  responsaveis, 
+  onUpdateStatus, 
+  onUpdateOrdem, 
+  onDelete, 
+  onGetHistorico, 
+  onRefresh,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+  totalCount = 0
+}: OSListViewProps) {
   const { data: feriadosData } = useFeriados();
   const { profissionais } = useProfissionais();
   const feriados = feriadosData || [];
@@ -104,7 +131,7 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Lista de OS ({ordens.length})</CardTitle>
+          <CardTitle className="text-lg">Lista de OS ({totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
           {ordens.length === 0 ? (
@@ -227,6 +254,71 @@ export function OSListView({ ordens, filters, setFilters, responsaveis, onUpdate
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="mt-6 flex flex-col items-center gap-4">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage > 1) onPageChange?.(currentPage - 1);
+                      }}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      return Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, i, arr) => {
+                      const showEllipsis = i > 0 && page - arr[i-1] > 1;
+                      return (
+                        <React.Fragment key={page}>
+                          {showEllipsis && (
+                            <PaginationItem>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === currentPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                onPageChange?.(page);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </React.Fragment>
+                      );
+                    })}
+
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (currentPage < totalPages) onPageChange?.(currentPage + 1);
+                      }}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+              <div className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </div>
             </div>
           )}
         </CardContent>
