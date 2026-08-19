@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
-import { LayoutDashboard, FileText, FileCode, ShieldCheck, Braces, UserRound, Users } from 'lucide-react';
+import { LayoutDashboard, FileText, FileCode, ShieldCheck, Braces, UserRound, Users, FileX } from 'lucide-react';
 import { ProtectedModuleRoute } from '@/components/layout/ProtectedModuleRoute';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ import ContratualAuditoria from './contratual/ContratualAuditoria';
 import ContratualPlaceholders from './contratual/ContratualPlaceholders';
 import ContratualSignatarios from './contratual/ContratualSignatarios';
 import ContratualClientes from './contratual/ContratualClientes';
+import ContratualRescisoes from './contratual/ContratualRescisoes';
 
 const MODULE_ROUTE = '/gestao-contratual';
 
@@ -49,6 +50,9 @@ export default function GestaoContratual() {
             <TabsTrigger value="modelos" className="gap-1.5">
               <FileCode className="h-4 w-4" /> Modelos
             </TabsTrigger>
+            <TabsTrigger value="rescisoes" className="gap-1.5">
+              <FileX className="h-4 w-4" /> Rescisões
+            </TabsTrigger>
             <TabsTrigger value="signatarios" className="gap-1.5">
               <UserRound className="h-4 w-4" /> Signatários
             </TabsTrigger>
@@ -73,6 +77,9 @@ export default function GestaoContratual() {
           </TabsContent>
           <TabsContent value="modelos" className="mt-4">
             <ContratualModelos canEdit={canEditModelos} />
+          </TabsContent>
+          <TabsContent value="rescisoes" className="mt-4">
+            <ContratualRescisoes />
           </TabsContent>
           <TabsContent value="signatarios" className="mt-4">
             <ContratualSignatarios />
