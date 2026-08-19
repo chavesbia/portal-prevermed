@@ -73,10 +73,51 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
       detalhes: { motivo: 'Correção de termos' }
     });
 
-    // 4. Gerar o número do contrato substituto com sufixo
+    // 4. Bloqueio automático via API do Autentique
+    let lockSuccess = false;
+    let lockErrorMsg = '';
+
+    if (original.autentique_document_id) {
+      try {
+        const { data: lockData, error: lockFuncErr } = await supabase.functions.invoke('autentique-lock-document', {
+          body: { contrato_id: contratoId },
+        });
+        
+        if (lockFuncErr || (lockData as any)?.error) {
+          throw new Error((lockData as any)?.error || lockFuncErr?.message);
+        }
+        
+        lockSuccess = true;
+        // Registrar sucesso nos eventos
+        await supabase.from('contract_eventos').insert({
+          contrato_id: contratoId,
+          tipo: 'autentique_lock',
+          descricao: 'Documento bloqueado automaticamente no Autentique via API.',
+          performed_by: user.id
+        });
+      } catch (lockErr: any) {
+        console.error('Falha no bloqueio automático do Autentique:', lockErr);
+        lockErrorMsg = lockErr.message || 'Erro desconhecido';
+        
+        // Registrar falha nos eventos
+        await supabase.from('contract_eventos').insert({
+          contrato_id: contratoId,
+          tipo: 'autentique_lock_failed',
+          descricao: `FALHA ao bloquear documento no Autentique — bloqueio manual necessário. (${lockErrorMsg})`,
+          performed_by: user.id
+        });
+        
+        // Alerta visível na tela
+        toast.error('O bloqueio automático falhou — é necessário bloquear manualmente no painel do Autentique.', {
+          duration: 10000,
+        });
+      }
+    }
+
+    // 5. Gerar o número do contrato substituto com sufixo
     const novoNumero = await gerarNumeroComSufixo(original.numero_contrato);
 
-    // 5. Criar o novo rascunho (draft) copiando os dados
+    // 6. Criar o novo rascunho (draft) copiando os dados
     const { 
       id: _oldId, 
       created_at: _ca, 
@@ -102,7 +143,7 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
 
     if (createErr || !novoDraft) throw createErr;
 
-    // 6. Registrar evento no novo contrato
+    // 7. Registrar evento no novo contrato
     await supabase.from('contract_eventos').insert({
       contrato_id: novoDraft.id,
       tipo: 'auditoria',
@@ -114,6 +155,35 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
         is_revisao: true
       }
     });
+
+    // 8. Criar notificação para ADM Masters
+    try {
+      // Buscar todos os adm_masters
+      const { data: masters } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'adm_master');
+
+      if (masters && masters.length > 0) {
+        const title = `Contrato corrigido: ${original.numero_contrato} → ${novoDraft.numero_contrato}`;
+        const content = lockSuccess 
+          ? "Documento antigo bloqueado automaticamente." 
+          : "ATENÇÃO — bloqueio automático falhou, verifique manualmente no Autentique.";
+
+        const notifications = masters.map(m => ({
+          user_id: m.user_id,
+          title,
+          content,
+          related_id: novoDraft.id,
+          related_type: 'contract_contratos',
+          notification_type: 'contrato_alerta' as any
+        }));
+
+        await supabase.from('notifications').insert(notifications);
+      }
+    } catch (notifErr) {
+      console.error('Erro ao gerar notificações de correção:', notifErr);
+    }
 
     toast.success('Contrato anterior cancelado. Novo rascunho criado para correção.');
     return novoDraft.id;

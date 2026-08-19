@@ -252,7 +252,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                           <li>Você poderá ajustar os termos e gerar um novo documento.</li>
                         </ul>
                         <p className="font-medium text-amber-700">
-                          ⚠️ Lembre-se de bloquear manualmente o documento antigo no painel do Autentique.
+                          O sistema tentará bloquear o documento automaticamente no Autentique. Se falhar, você receberá um alerta para fazer manualmente.
                         </p>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
