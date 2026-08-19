@@ -54,10 +54,10 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
   const [newServicoTipo, setNewServicoTipo] = useState('');
   const [newServicoTipoOS, setNewServicoTipoOS] = useState<TipoOS>('Novo');
 
+  const { isAdmMaster } = useAuth();
   const isEmissor = user?.id === ordem.created_by;
   const isNaoIniciado = ordem.status_os === 'Não iniciado';
-  const isAdmMaster = user?.role === 'adm_master';
-  const canEdit = isAdmMaster || (isEmissor && isNaoIniciado);
+  const canEdit = canEditProp !== undefined ? canEditProp : (isAdmMaster || (isEmissor && isNaoIniciado));
 
   useEffect(() => {
     if (!open) return;
