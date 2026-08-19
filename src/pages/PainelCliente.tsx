@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle, FileX } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector, useDuplicateCnpjCompanies } from '@/components/shared/CompanySelector';
@@ -224,6 +224,8 @@ export default function PainelCliente() {
           <ResponsaveisPcmsoCard companyId={company.id} />
 
 
+          <RescisoesCard companyId={company.id} />
+          
           <ContratosCard companyId={company.id} navigate={navigate} />
 
           <OrdensServicoCard companyId={company.id} navigate={navigate} />
@@ -378,6 +380,81 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
                   >
                     <ExternalLink className="h-3.5 w-3.5 mr-1" /> Abrir
                   </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RescisoesCard({ companyId }: { companyId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['painel-cliente-rescisoes', companyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('contract_rescisoes')
+        .select(`
+          id,
+          numero_contrato_manual,
+          contrato_id,
+          motivo,
+          data_prevista_inativacao,
+          data_real_inativacao,
+          contract_contratos (
+            numero_contrato
+          )
+        `)
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (!isLoading && (!data || data.length === 0)) return null;
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/30">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2 text-amber-900">
+          <FileX className="h-4 w-4" /> Rescisões Contratuais
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="py-6 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {data.map((r) => {
+              const status = r.data_real_inativacao ? 'Confirmada' : 'Solicitada';
+              const contrato = r.contrato_id ? r.contract_contratos?.numero_contrato : r.numero_contrato_manual;
+              return (
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 p-3 bg-white transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">
+                        Contrato: {contrato || '—'}
+                      </span>
+                      <Badge className={r.data_real_inativacao ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}>
+                        {status}
+                      </Badge>
+                      <Badge variant="outline" className="capitalize text-[10px]">
+                        {r.motivo?.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Previsão Inativação: {formatDate(r.data_prevista_inativacao)} 
+                      {r.data_real_inativacao && <> • Data Real: {formatDate(r.data_real_inativacao)}</>}
+                    </div>
+                  </div>
                 </div>
               );
             })}
