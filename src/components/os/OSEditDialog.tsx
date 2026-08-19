@@ -175,15 +175,15 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Número da OS</Label>
-            <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} />
+            <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Empresa Cliente</Label>
-            <Input value={empresaCliente} onChange={(e) => setEmpresaCliente(e.target.value)} />
+            <Input value={empresaCliente} onChange={(e) => setEmpresaCliente(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Contato do Cliente</Label>
-            <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} />
+            <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} disabled={!canEdit} />
           </div>
           <div className="space-y-2">
             <Label>Emissor da OS</Label>
@@ -192,7 +192,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
           </div>
           <div className="space-y-2">
             <Label>Status da OS</Label>
-            <Select value={statusOS} onValueChange={(v) => setStatusOS(v as StatusOS)}>
+            <Select value={statusOS} onValueChange={(v) => setStatusOS(v as StatusOS)} disabled={!canEdit}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -204,18 +204,18 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
           <div className="space-y-2">
             {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
             <div className="flex items-center gap-2 pt-1">
-              <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} />
-              <Label htmlFor="urg-edit" className="cursor-pointer text-sm">Urgente</Label>
+              <Checkbox id="urg-edit" checked={urgente} onCheckedChange={(v) => setUrgente(!!v)} disabled={!canEdit} />
+              <Label htmlFor="urg-edit" className={cn("text-sm", canEdit ? "cursor-pointer" : "opacity-70")}>Urgente</Label>
             </div>
             {urgente && (
-              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} />
+              <Textarea rows={2} placeholder="Motivo da urgência" value={motivoUrgencia} onChange={(e) => setMotivoUrgencia(e.target.value)} disabled={!canEdit} />
             )}
           </div>
         </div>
 
         <div className="space-y-2">
           <Label>Observações</Label>
-          <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} />
+          <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={4} disabled={!canEdit} />
         </div>
 
         <Separator />
