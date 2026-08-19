@@ -72,14 +72,6 @@ export function useOrdens() {
           .from('servicos_os')
           .select('*')
           .in('ordem_id', ordemIds);
-
-        // Apply service-related filters if they exist
-        // Note: This might be tricky because filtering services might exclude OSs from the list
-        // but the prompt says: "A busca de 'servicos_os' vinculados deve buscar só os serviços das OS da página atual"
-        // If we want to filter the OS list based on service properties, we'd need joins or subqueries.
-        // For now, let's keep the service filters client-side or rethink.
-        // Wait, the original code filtered the OS list based on whether ANY of its services matched.
-        // To do this server-side with pagination, we need to filter the ordens_servico table.
         
         const { data: svcData, error: svcError } = await svcQuery;
         if (svcError) throw svcError;
@@ -90,12 +82,6 @@ export function useOrdens() {
         ...o,
         servicos: servicos.filter(s => s.ordem_id === o.id),
       })) as OrdemServico[];
-
-      // Apply remaining filters that require service data (responsavel, tipo_servico, tipo_os)
-      // Since we need to paginate the filtered list, we should really do this in SQL.
-      // However, for now, if these filters are applied, the count might be wrong.
-      // Given the constraints and the common pattern in this project, let's stick to server-side filtering
-      // for the main OS fields and inform that service filtering might be limited or requires a more complex query.
       
       setOrdens(ordensWithServicos);
     } catch (error: any) {
