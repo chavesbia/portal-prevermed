@@ -36,8 +36,6 @@ export function useOrdens() {
       // Apply filters to count and fetch
       if (filters.search) {
         const s = filters.search.toLowerCase();
-        // Since we are filtering in the database now, we need to handle search properly
-        // Note: empresa_cliente is text, numero_os is text
         query = query.or(`empresa_cliente.ilike.%${s}%,numero_os.ilike.%${s}%`);
       }
       
@@ -68,12 +66,11 @@ export function useOrdens() {
       const ordemIds = (data || []).map(o => o.id);
       let servicos: ServicoOS[] = [];
       if (ordemIds.length > 0) {
-        let svcQuery = supabase
+        const { data: svcData, error: svcError } = await supabase
           .from('servicos_os')
           .select('*')
           .in('ordem_id', ordemIds);
         
-        const { data: svcData, error: svcError } = await svcQuery;
         if (svcError) throw svcError;
         servicos = (svcData || []) as ServicoOS[];
       }
