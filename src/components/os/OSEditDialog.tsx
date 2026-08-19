@@ -311,10 +311,12 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Salvando...' : 'Salvar Alterações'}
-          </Button>
+          {canEdit && (
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="mr-2 h-4 w-4" />
+              {saving ? 'Salvando...' : 'Salvar Alterações'}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
