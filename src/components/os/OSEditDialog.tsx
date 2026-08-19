@@ -152,7 +152,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
       <Label>{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !value && 'text-muted-foreground')}>
+          <Button variant="outline" className={cn('w-full pl-3 text-left font-normal', !value && 'text-muted-foreground')} disabled={!canEdit}>
             {value ? format(value, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione'}
             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
           </Button>
