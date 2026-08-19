@@ -27,6 +27,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
   const { add, update } = useProfissionais();
 
   const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
   const [tipo, setTipo] = useState<ProfissionalTipo>('interno');
   const [categoria, setCategoria] = useState<ProfissionalCategoria>('Médico(a)');
   const [conselhoId, setConselhoId] = useState<string>('');
@@ -46,6 +47,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
     if (!open) return;
     if (profissional) {
       setNome(profissional.nome);
+      setCpf(profissional.cpf || '');
       setTipo(profissional.tipo);
       setCategoria(profissional.categoria);
       setConselhoId(profissional.conselho_id || '');
@@ -60,6 +62,7 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       setEspecialidade(profissional.especialidade || '');
     } else {
       setNome(defaultNome || '');
+      setCpf('');
       setTipo('interno');
       setCategoria('Médico(a)');
       setConselhoId('');
@@ -80,13 +83,39 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
       toast({ title: 'Atenção', description: 'Nome é obrigatório.', variant: 'destructive' });
       return;
     }
+    const cleanCpf = cpf.replace(/\D/g, '');
+    if (cleanCpf.length !== 11) {
+      toast({ title: 'Atenção', description: 'CPF deve conter 11 dígitos.', variant: 'destructive' });
+      return;
+    }
+
     if (podeRT && (!conselhoId || !numero.trim())) {
       toast({ title: 'Atenção', description: 'Para Responsável Técnico, informe conselho e número de registro.', variant: 'destructive' });
       return;
     }
     setSaving(true);
+    
+    // Check for duplicate CPF
+    const { data: duplicate } = await supabase
+      .from('profissionais')
+      .select('nome')
+      .eq('cpf', cleanCpf)
+      .neq('id', profissional?.id || '00000000-0000-0000-0000-000000000000')
+      .maybeSingle();
+
+    if (duplicate) {
+      toast({ 
+        title: 'CPF Duplicado', 
+        description: `Este CPF já está cadastrado para ${duplicate.nome}.`, 
+        variant: 'destructive' 
+      });
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       nome: nome.trim(),
+      cpf: cleanCpf,
       tipo,
       categoria,
       // Conselho/registro/especialidade só fazem sentido para Responsável Técnico
@@ -127,9 +156,19 @@ export function ProfissionalFormDialog({ open, onOpenChange, profissional, onSav
         </DialogHeader>
 
         <div className="grid gap-4">
-          <div className="space-y-2">
-            <Label>Nome *</Label>
-            <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" />
+            </div>
+            <div className="space-y-2">
+              <Label>CPF * (só números)</Label>
+              <Input 
+                value={cpf} 
+                onChange={e => setCpf(e.target.value.replace(/\D/g, '').slice(0, 11))} 
+                placeholder="000.000.000-00"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
