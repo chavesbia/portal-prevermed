@@ -199,16 +199,22 @@ export function OSListView({
                                     <Pencil className="mr-2 h-4 w-4" />Editar
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowAgendar(true); }}>
-                                  <CalendarPlus className="mr-2 h-4 w-4" />Agendar Visita
-                                </DropdownMenuItem>
+                                {hasGlobalEdit && (
+                                  <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowAgendar(true); }}>
+                                    <CalendarPlus className="mr-2 h-4 w-4" />Agendar Visita
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowHistory(true); }}>
                                   <History className="mr-2 h-4 w-4" />Histórico
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setDeleteId(ordem.id)} className="text-destructive">
-                                  <Trash2 className="mr-2 h-4 w-4" />Excluir
-                                </DropdownMenuItem>
+                                {user?.role === 'adm_master' && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setDeleteId(ordem.id)} className="text-destructive">
+                                      <Trash2 className="mr-2 h-4 w-4" />Excluir
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </td>
