@@ -32,6 +32,8 @@ import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS,
 import { calcOSSLA } from '@/lib/os/sla';
 import { useFeriados } from '@/hooks/useFeriados';
 import { useProfissionais } from '@/hooks/useProfissionais';
+import { useAuth } from '@/contexts/AuthContext';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
