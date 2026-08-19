@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      acrescimos_funcao_cargos: {
+        Row: {
+          cargo: string
+          id: string
+          setor: string
+          solicitacao_id: string
+        }
+        Insert: {
+          cargo: string
+          id?: string
+          setor: string
+          solicitacao_id: string
+        }
+        Update: {
+          cargo?: string
+          id?: string
+          setor?: string
+          solicitacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acrescimos_funcao_cargos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "acrescimos_funcao_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acrescimos_funcao_solicitacoes: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          data_solicitacao_cliente: string
+          id: string
+          observacao: string | null
+          realizado: boolean | null
+          realizado_em: string | null
+          realizado_por: string | null
+          solicitante_nome: string
+          unidade_id: string | null
+          valor_total_calculado: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          data_solicitacao_cliente: string
+          id?: string
+          observacao?: string | null
+          realizado?: boolean | null
+          realizado_em?: string | null
+          realizado_por?: string | null
+          solicitante_nome: string
+          unidade_id?: string | null
+          valor_total_calculado?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          data_solicitacao_cliente?: string
+          id?: string
+          observacao?: string | null
+          realizado?: boolean | null
+          realizado_em?: string | null
+          realizado_por?: string | null
+          solicitante_nome?: string
+          unidade_id?: string | null
+          valor_total_calculado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acrescimos_funcao_solicitacoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acrescimos_funcao_solicitacoes_realizado_por_fkey"
+            columns: ["realizado_por"]
+            isOneToOne: false
+            referencedRelation: "profissionais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acrescimos_funcao_solicitacoes_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "company_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           content: string
