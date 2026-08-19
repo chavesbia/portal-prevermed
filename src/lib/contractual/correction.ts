@@ -175,7 +175,8 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
           title,
           content,
           related_id: novoDraft.id,
-          related_type: 'contract_contratos'
+          related_type: 'contract_contratos',
+          notification_type: 'contrato_alerta' as any
         }));
 
         await supabase.from('notifications').insert(notifications);
