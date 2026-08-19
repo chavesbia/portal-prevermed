@@ -34,65 +34,21 @@ export function useOrdens() {
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
-          id, 
-          numero_os, 
-          empresa_cliente, 
-          status_os, 
-          data_registro, 
-          prazo_acordado, 
-          updated_at, 
-          created_at, 
-          urgente, 
-          motivo_urgencia,
-          servicos_os (
-            id, 
-            ordem_id, 
-            tipo, 
-            tipo_os, 
-            status, 
-            responsavel_id, 
-            data_inicio, 
-            data_conclusao,
-            equipamentos_os (
-              id,
-              servico_id,
-              equipamento_id,
-              data_inicio,
-              data_fim
-            )
+          *,
+          servicos:servicos_os (
+            *,
+            equipamentos:equipamentos_os (*)
           )
         `);
 
-      // Apply filters to count and fetch
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
-        query = query.or(`empresa_cliente.ilike.%${s}%,numero_os.ilike.%${s}%`);
-      }
-      
-      if (filters.status_os && filters.status_os !== 'all') {
-        query = query.eq('status_os', filters.status_os);
-      }
-
-      if (filters.periodo_inicio) {
-        query = query.gte('data_registro', filters.periodo_inicio.toISOString());
-      }
-      if (filters.periodo_fim) {
-        query = query.lte('data_registro', filters.periodo_fim.toISOString());
-      }
-
-      // Pagination
-      const from = (currentPage - 1) * ITEMS_PER_PAGE;
-      const to = from + ITEMS_PER_PAGE - 1;
-
-      const { data, error, count } = await query
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
       if (error) throw error;
-    } catch (error) {
-      // Catch already handled by try/catch block
+      setAllOrdens((data || []) as OrdemServico[]);
+    } catch (error: any) {
+      console.error('Erro ao carregar todas OS:', error);
+    } finally {
+      setIsLoadingAll(false);
     }
-  }, [filters, currentPage]);
+  }, []);
 
   const fetchOrdens = useCallback(async () => {
     setIsLoading(true);
@@ -171,9 +127,6 @@ export function useOrdens() {
   }, [filters]);
 
   const getFilteredOrdens = useCallback(() => {
-    // The main filtering is now done server-side in fetchOrdens.
-    // However, some filters might still be applied here if we can't do them in SQL easily.
-    // For now, return the current page of ordens.
     return ordens;
   }, [ordens]);
 
@@ -242,6 +195,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS criada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -253,7 +207,7 @@ export function useOrdens() {
 
   const updateOrdemStatus = async (ordemId: string, newStatus: StatusOS, comentario?: string) => {
     try {
-      const ordem = ordens.find(o => o.id === ordemId);
+      const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
       const oldStatus = ordem?.status_os;
 
       const { error } = await supabase
@@ -273,6 +227,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       return true;
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Erro ao atualizar status.', variant: 'destructive' });
@@ -297,7 +252,7 @@ export function useOrdens() {
     },
   ) => {
     try {
-      const ordem = ordens.find(o => o.id === ordemId);
+      const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
       const oldStatus = ordem?.status_os;
 
       const { error } = await supabase
@@ -330,6 +285,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS atualizada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -347,6 +303,7 @@ export function useOrdens() {
         .eq('id', ordemId);
       if (error) throw error;
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS excluída.' });
       return true;
     } catch (error: any) {
@@ -370,18 +327,20 @@ export function useOrdens() {
 
   const getResponsaveis = useCallback(() => {
     const set = new Set<string>();
-    ordens.forEach(o => {
+    allOrdens.forEach(o => {
       (o.servicos || []).forEach(s => {
         const p = profissionais.find(pr => pr.id === s.responsavel_id);
         if (p?.nome) set.add(p.nome);
       });
     });
     return Array.from(set).sort();
-  }, [ordens, profissionais]);
+  }, [allOrdens, profissionais]);
 
   return {
     ordens,
+    allOrdens,
     isLoading,
+    isLoadingAll,
     filters,
     setFilters,
     getFilteredOrdens,
@@ -392,6 +351,7 @@ export function useOrdens() {
     getHistorico,
     getResponsaveis,
     fetchOrdens,
+    fetchAllOrdens,
     currentPage,
     setCurrentPage,
     totalCount,
