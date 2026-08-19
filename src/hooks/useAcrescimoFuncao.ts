@@ -6,25 +6,28 @@ import { AcrescimoFuncaoSolicitacao, AcrescimoFuncaoCargo } from "@/types/os";
 export function useAcrescimoFuncao() {
   const qc = useQueryClient();
 
-  const { data: solicitacoes = [], isLoading } = useQuery({
+  const { data: solicitacoes = [], isLoading, error } = useQuery({
     queryKey: ["acrescimos-funcao-solicitacoes"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("acrescimos_funcao_solicitacoes")
         .select(`
           *,
-          companies (name),
+          companies (razao_social),
           company_units (name),
           profissionais (nome),
           acrescimos_funcao_cargos (*)
         `)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro na busca de solicitações:", error);
+        throw error;
+      }
 
       return (data || []).map((s: any) => ({
         ...s,
-        company_name: s.companies?.name,
+        company_name: s.companies?.razao_social,
         unidade_nome: s.company_units?.name,
         realizado_por_nome: s.profissionais?.nome,
         cargos: s.acrescimos_funcao_cargos,
@@ -106,5 +109,5 @@ export function useAcrescimoFuncao() {
     onError: (e: any) => toast.error("Erro ao atualizar solicitação: " + e.message),
   });
 
-  return { solicitacoes, isLoading, createSolicitacao, markAsRealizado };
+  return { solicitacoes, isLoading, error, createSolicitacao, markAsRealizado };
 }

@@ -21,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
-  const { solicitacoes, isLoading, createSolicitacao, markAsRealizado } = useAcrescimoFuncao();
+  const { solicitacoes, isLoading, error, createSolicitacao, markAsRealizado } = useAcrescimoFuncao();
   const { profissionais } = useProfissionais();
   const { isAdmMaster } = useAuth();
   const [novoOpen, setNovoOpen] = useState(false);
@@ -156,6 +156,16 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="text-destructive font-semibold">Erro ao carregar solicitações</div>
+        <div className="text-sm text-muted-foreground">{(error as any).message || 'Erro desconhecido'}</div>
+        <Button variant="outline" onClick={() => window.location.reload()}>Tentar Novamente</Button>
       </div>
     );
   }
