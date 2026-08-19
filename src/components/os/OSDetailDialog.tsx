@@ -20,6 +20,7 @@ import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
 
 import { OSAnexosTab } from './OSAnexosTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OSDetailDialogProps {
   ordem: OrdemServico;
@@ -35,7 +36,15 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
-  const canEdit = getModulePermissions('/gestao-os')?.can_edit ?? false;
+  const { user } = useAuth();
+  
+  const permissions = getModulePermissions('/gestao-os');
+  const hasGlobalEdit = permissions?.can_edit ?? false;
+  
+  // O emissor pode editar se a OS ainda não foi iniciada (status "Não iniciado")
+  const isEmissor = user?.id === ordem.created_by;
+  const isNaoIniciado = ordem.status_os === 'Não iniciado';
+  const canEdit = hasGlobalEdit || (isEmissor && isNaoIniciado);
 
 
   useEffect(() => {
