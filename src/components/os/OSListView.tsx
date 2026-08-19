@@ -32,6 +32,8 @@ import { OrdemServico, ServicoOS, statusOSColors, statusServicoColors, StatusOS,
 import { calcOSSLA } from '@/lib/os/sla';
 import { useFeriados } from '@/hooks/useFeriados';
 import { useProfissionais } from '@/hooks/useProfissionais';
+import { useAuth } from '@/contexts/AuthContext';
+import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -78,6 +80,11 @@ export function OSListView({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
+
+  const { user } = useAuth();
+  const { getModulePermissions } = useModulePermissions();
+  const permissions = getModulePermissions('/gestao-os');
+  const hasGlobalEdit = permissions?.can_edit ?? false;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const autoOpenedRef = useRef<string | null>(null);
@@ -187,9 +194,11 @@ export function OSListView({
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowDetail(true); }}>
                                   <Eye className="mr-2 h-4 w-4" />Visualizar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowEdit(true); }}>
-                                  <Pencil className="mr-2 h-4 w-4" />Editar
-                                </DropdownMenuItem>
+                                {(hasGlobalEdit || (user?.id === ordem.created_by && ordem.status_os === 'Não iniciado')) && (
+                                  <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowEdit(true); }}>
+                                    <Pencil className="mr-2 h-4 w-4" />Editar
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => { setSelectedOS(ordem); setShowAgendar(true); }}>
                                   <CalendarPlus className="mr-2 h-4 w-4" />Agendar Visita
                                 </DropdownMenuItem>
