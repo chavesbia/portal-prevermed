@@ -26,8 +26,8 @@ export default function GestaoOS() {
   const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
   const { isFinanceiro } = useUserDepartments();
   const {
-    isLoading, filters, setFilters,
-    getFilteredOrdens, addOrdem, updateOrdem, updateOrdemStatus,
+    isLoading, isLoadingAll, filters, setFilters,
+    getFilteredOrdens, allOrdens, addOrdem, updateOrdem, updateOrdemStatus,
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
     currentPage, setCurrentPage, totalPages, totalCount
   } = useOrdens();
@@ -75,7 +75,7 @@ export default function GestaoOS() {
 
         <TabsContent value="dashboard" className="mt-6">
           <OSDashboardView
-            ordens={filteredOrdens}
+            ordens={allOrdens}
             filters={filters}
             setFilters={setFilters}
             responsaveis={responsaveis}
@@ -105,15 +105,15 @@ export default function GestaoOS() {
         </TabsContent>
 
         <TabsContent value="agenda" className="mt-6">
-          <OSAgendaView ordens={filteredOrdens} canEdit={canEdit} />
+          <OSAgendaView ordens={allOrdens} canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="equipamentos" className="mt-6">
-          <OSEquipamentosView ordens={filteredOrdens} canEdit={canEdit} />
+          <OSEquipamentosView ordens={allOrdens} canEdit={canEdit} />
         </TabsContent>
 
         <TabsContent value="historico" className="mt-6">
-          <OSHistoricoGeralView ordens={filteredOrdens} />
+          <OSHistoricoGeralView ordens={allOrdens} />
         </TabsContent>
 
         <TabsContent value="vencimentos" className="mt-6">

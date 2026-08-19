@@ -21,10 +21,34 @@ export function useOrdens() {
   const { user, profile } = useAuth();
   const { profissionais } = useProfissionais();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  const [allOrdens, setAllOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAll, setIsLoadingAll] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  const fetchAllOrdens = useCallback(async () => {
+    setIsLoadingAll(true);
+    try {
+      const { data, error } = await supabase
+        .from('ordens_servico')
+        .select(`
+          *,
+          servicos:servicos_os (
+            *,
+            equipamentos:equipamentos_os (*)
+          )
+        `);
+
+      if (error) throw error;
+      setAllOrdens((data || []) as OrdemServico[]);
+    } catch (error: any) {
+      console.error('Erro ao carregar todas OS:', error);
+    } finally {
+      setIsLoadingAll(false);
+    }
+  }, []);
 
   const fetchOrdens = useCallback(async () => {
     setIsLoading(true);
@@ -93,15 +117,16 @@ export function useOrdens() {
     fetchOrdens();
   }, [fetchOrdens]);
 
+  useEffect(() => {
+    fetchAllOrdens();
+  }, [fetchAllOrdens]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
 
   const getFilteredOrdens = useCallback(() => {
-    // The main filtering is now done server-side in fetchOrdens.
-    // However, some filters might still be applied here if we can't do them in SQL easily.
-    // For now, return the current page of ordens.
     return ordens;
   }, [ordens]);
 
@@ -170,6 +195,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS criada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -181,7 +207,7 @@ export function useOrdens() {
 
   const updateOrdemStatus = async (ordemId: string, newStatus: StatusOS, comentario?: string) => {
     try {
-      const ordem = ordens.find(o => o.id === ordemId);
+      const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
       const oldStatus = ordem?.status_os;
 
       const { error } = await supabase
@@ -201,6 +227,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       return true;
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Erro ao atualizar status.', variant: 'destructive' });
@@ -225,7 +252,7 @@ export function useOrdens() {
     },
   ) => {
     try {
-      const ordem = ordens.find(o => o.id === ordemId);
+      const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
       const oldStatus = ordem?.status_os;
 
       const { error } = await supabase
@@ -258,6 +285,7 @@ export function useOrdens() {
       });
 
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS atualizada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -275,6 +303,7 @@ export function useOrdens() {
         .eq('id', ordemId);
       if (error) throw error;
       await fetchOrdens();
+      await fetchAllOrdens();
       toast({ title: 'Sucesso', description: 'OS excluída.' });
       return true;
     } catch (error: any) {
@@ -298,18 +327,20 @@ export function useOrdens() {
 
   const getResponsaveis = useCallback(() => {
     const set = new Set<string>();
-    ordens.forEach(o => {
+    allOrdens.forEach(o => {
       (o.servicos || []).forEach(s => {
         const p = profissionais.find(pr => pr.id === s.responsavel_id);
         if (p?.nome) set.add(p.nome);
       });
     });
     return Array.from(set).sort();
-  }, [ordens, profissionais]);
+  }, [allOrdens, profissionais]);
 
   return {
     ordens,
+    allOrdens,
     isLoading,
+    isLoadingAll,
     filters,
     setFilters,
     getFilteredOrdens,
@@ -320,6 +351,7 @@ export function useOrdens() {
     getHistorico,
     getResponsaveis,
     fetchOrdens,
+    fetchAllOrdens,
     currentPage,
     setCurrentPage,
     totalCount,
