@@ -21,10 +21,78 @@ export function useOrdens() {
   const { user, profile } = useAuth();
   const { profissionais } = useProfissionais();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  const [allOrdens, setAllOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAll, setIsLoadingAll] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  const fetchAllOrdens = useCallback(async () => {
+    setIsLoadingAll(true);
+    try {
+      const { data, error } = await supabase
+        .from('ordens_servico')
+        .select(`
+          id, 
+          numero_os, 
+          empresa_cliente, 
+          status_os, 
+          data_registro, 
+          prazo_acordado, 
+          updated_at, 
+          created_at, 
+          urgente, 
+          motivo_urgencia,
+          servicos_os (
+            id, 
+            ordem_id, 
+            tipo, 
+            tipo_os, 
+            status, 
+            responsavel_id, 
+            data_inicio, 
+            data_conclusao,
+            equipamentos_os (
+              id,
+              servico_id,
+              equipamento_id,
+              data_inicio,
+              data_fim
+            )
+          )
+        `);
+
+      // Apply filters to count and fetch
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        query = query.or(`empresa_cliente.ilike.%${s}%,numero_os.ilike.%${s}%`);
+      }
+      
+      if (filters.status_os && filters.status_os !== 'all') {
+        query = query.eq('status_os', filters.status_os);
+      }
+
+      if (filters.periodo_inicio) {
+        query = query.gte('data_registro', filters.periodo_inicio.toISOString());
+      }
+      if (filters.periodo_fim) {
+        query = query.lte('data_registro', filters.periodo_fim.toISOString());
+      }
+
+      // Pagination
+      const from = (currentPage - 1) * ITEMS_PER_PAGE;
+      const to = from + ITEMS_PER_PAGE - 1;
+
+      const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+    } catch (error) {
+      // Catch already handled by try/catch block
+    }
+  }, [filters, currentPage]);
 
   const fetchOrdens = useCallback(async () => {
     setIsLoading(true);
@@ -92,6 +160,10 @@ export function useOrdens() {
   useEffect(() => {
     fetchOrdens();
   }, [fetchOrdens]);
+
+  useEffect(() => {
+    fetchAllOrdens();
+  }, [fetchAllOrdens]);
 
   // Reset page when filters change
   useEffect(() => {
