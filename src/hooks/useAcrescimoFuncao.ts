@@ -142,7 +142,7 @@ export function useAcrescimoFuncao() {
       if (pricingData?.valor_produto_pontual) {
         valorCalculado = pricingData.valor_produto_pontual * num_cargos;
       } else {
-        toast.warning("Preço do serviço 000000062 não encontrado para esta empresa — valor não calculado, revisar manualmente.");
+        toast.warning("Preço do serviço 'Acréscimo de Função' (código 62/000000062) não encontrado para esta empresa — valor não calculado.");
       }
 
       const { error: updateError } = await supabase
