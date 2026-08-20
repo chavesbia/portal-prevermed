@@ -36,8 +36,7 @@ export function useOrdens() {
         .select(`
           *,
           servicos:servicos_os (
-            *,
-            equipamentos:equipamentos_os (*)
+            *
           )
         `);
 
@@ -45,6 +44,11 @@ export function useOrdens() {
       setAllOrdens((data || []) as OrdemServico[]);
     } catch (error: any) {
       console.error('Erro ao carregar todas OS:', error);
+      toast({
+        title: 'Erro no Dashboard',
+        description: 'Não foi possível carregar os dados completos das OS. O dashboard pode estar incompleto.',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoadingAll(false);
     }
