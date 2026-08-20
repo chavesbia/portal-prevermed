@@ -69,6 +69,61 @@ export function useAcrescimoFuncao() {
     onError: (e: any) => toast.error("Erro ao criar solicitação: " + e.message),
   });
 
+  const updateSolicitacao = useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      solicitacao: Partial<Omit<AcrescimoFuncaoSolicitacao, "id" | "cargos">>;
+      cargos: Omit<AcrescimoFuncaoCargo, "id" | "solicitacao_id">[];
+    }) => {
+      const { error: solicitacaoError } = await supabase
+        .from("acrescimos_funcao_solicitacoes")
+        .update(payload.solicitacao)
+        .eq("id", payload.id);
+
+      if (solicitacaoError) throw solicitacaoError;
+
+      // Simplificado: remove cargos antigos e insere novos
+      const { error: deleteError } = await supabase
+        .from("acrescimos_funcao_cargos")
+        .delete()
+        .eq("solicitacao_id", payload.id);
+      
+      if (deleteError) throw deleteError;
+
+      if (payload.cargos.length > 0) {
+        const cargosPayload = payload.cargos.map(c => ({
+          ...c,
+          solicitacao_id: payload.id,
+        }));
+        const { error: cargosError } = await supabase
+          .from("acrescimos_funcao_cargos")
+          .insert(cargosPayload);
+
+        if (cargosError) throw cargosError;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Solicitação atualizada com sucesso");
+      qc.invalidateQueries({ queryKey: ["acrescimos-funcao-solicitacoes"] });
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar solicitação: " + e.message),
+  });
+
+  const deleteSolicitacao = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("acrescimos_funcao_solicitacoes")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Solicitação excluída com sucesso");
+      qc.invalidateQueries({ queryKey: ["acrescimos-funcao-solicitacoes"] });
+    },
+    onError: (e: any) => toast.error("Erro ao excluir solicitação: " + e.message),
+  });
+
   const markAsRealizado = useMutation({
     mutationFn: async ({ id, realizado_por, company_id, num_cargos }: { id: string; realizado_por: string; company_id: string; num_cargos: number }) => {
       // 1. Buscar preço do serviço 000000062 para esta empresa
@@ -109,5 +164,13 @@ export function useAcrescimoFuncao() {
     onError: (e: any) => toast.error("Erro ao atualizar solicitação: " + e.message),
   });
 
-  return { solicitacoes, isLoading, error, createSolicitacao, markAsRealizado };
+  return { 
+    solicitacoes, 
+    isLoading, 
+    error, 
+    createSolicitacao, 
+    updateSolicitacao,
+    deleteSolicitacao,
+    markAsRealizado 
+  };
 }
