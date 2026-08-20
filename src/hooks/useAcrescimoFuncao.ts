@@ -131,7 +131,7 @@ export function useAcrescimoFuncao() {
         .from("company_pricing_items")
         .select("valor_produto_pontual")
         .eq("company_id", company_id)
-        .eq("soc_product_code", "000000062")
+        .or(`soc_product_code.eq.62,soc_product_code.eq.000000062`)
         .maybeSingle();
 
       if (pricingError) {
