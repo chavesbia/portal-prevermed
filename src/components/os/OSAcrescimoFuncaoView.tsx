@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAcrescimoFuncao } from '@/hooks/useAcrescimoFuncao';
 import { AcrescimoFuncaoSolicitacao } from '@/types/os';
 import { useProfissionais } from '@/hooks/useProfissionais';
@@ -15,19 +15,32 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
-import { Plus, Trash2, CheckCircle, Clock, FileDown, Loader2 } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Clock, FileDown, Loader2, Edit, Calendar } from 'lucide-react';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
-  const { solicitacoes, isLoading, error, createSolicitacao, markAsRealizado } = useAcrescimoFuncao();
+  const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado } = useAcrescimoFuncao();
   const { profissionais } = useProfissionais();
   const { isAdmMaster } = useAuth();
-  const [novoOpen, setNovoOpen] = useState(false);
+  
+  const [formOpen, setFormOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [realizarOpen, setRealizarOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  
   const [selectedSolicitacao, setSelectedSolicitacao] = useState<AcrescimoFuncaoSolicitacao | null>(null);
   const [realizadoPor, setRealizadoPor] = useState('');
+  
+  // Report period state
+  const [reportRange, setReportRange] = useState({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
+  });
 
   // Form State
   const [formData, setFormData] = useState({
@@ -59,6 +72,34 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     setFormData(prev => ({ ...prev, cargos: newCargos }));
   };
 
+  const handleOpenNew = () => {
+    setIsEditing(false);
+    setSelectedSolicitacao(null);
+    setFormData({
+      company_id: '',
+      unidade_id: '',
+      solicitante_nome: '',
+      data_solicitacao_cliente: format(new Date(), 'yyyy-MM-dd'),
+      observacao: '',
+      cargos: [{ setor: '', cargo: '' }]
+    });
+    setFormOpen(true);
+  };
+
+  const handleEdit = (s: AcrescimoFuncaoSolicitacao) => {
+    setIsEditing(true);
+    setSelectedSolicitacao(s);
+    setFormData({
+      company_id: s.company_id,
+      unidade_id: s.unidade_id || '',
+      solicitante_nome: s.solicitante_nome,
+      data_solicitacao_cliente: s.data_solicitacao_cliente,
+      observacao: s.observacao || '',
+      cargos: s.cargos?.map(c => ({ setor: c.setor, cargo: c.cargo })) || [{ setor: '', cargo: '' }]
+    });
+    setFormOpen(true);
+  };
+
   const handleSubmit = async () => {
     if (!formData.company_id || !formData.solicitante_nome || formData.cargos.some(c => !c.setor || !c.cargo)) {
       toast.error('Preencha todos os campos obrigatórios');
@@ -66,25 +107,39 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     }
 
     try {
-      await createSolicitacao.mutateAsync({
-        solicitacao: {
-          company_id: formData.company_id,
-          unidade_id: formData.unidade_id || null,
-          solicitante_nome: formData.solicitante_nome,
-          data_solicitacao_cliente: formData.data_solicitacao_cliente,
-          observacao: formData.observacao || null,
-        },
-        cargos: formData.cargos
-      });
-      setNovoOpen(false);
-      setFormData({
-        company_id: '',
-        unidade_id: '',
-        solicitante_nome: '',
-        data_solicitacao_cliente: format(new Date(), 'yyyy-MM-dd'),
-        observacao: '',
-        cargos: [{ setor: '', cargo: '' }]
-      });
+      if (isEditing && selectedSolicitacao) {
+        await updateSolicitacao.mutateAsync({
+          id: selectedSolicitacao.id,
+          solicitacao: {
+            company_id: formData.company_id,
+            unidade_id: formData.unidade_id || null,
+            solicitante_nome: formData.solicitante_nome,
+            data_solicitacao_cliente: formData.data_solicitacao_cliente,
+            observacao: formData.observacao || null,
+          },
+          cargos: formData.cargos
+        });
+      } else {
+        await createSolicitacao.mutateAsync({
+          solicitacao: {
+            company_id: formData.company_id,
+            unidade_id: formData.unidade_id || null,
+            solicitante_nome: formData.solicitante_nome,
+            data_solicitacao_cliente: formData.data_solicitacao_cliente,
+            observacao: formData.observacao || null,
+          },
+          cargos: formData.cargos
+        });
+      }
+      setFormOpen(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSolicitacao.mutateAsync(id);
     } catch (error) {
       console.error(error);
     }
@@ -108,18 +163,19 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   };
 
   const handleExportReport = () => {
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
+    if (!reportRange.from || !reportRange.to) {
+      toast.error("Selecione um período válido");
+      return;
+    }
 
     const data = solicitacoes.filter(s => 
       s.realizado && 
       s.realizado_em && 
-      isWithinInterval(parseISO(s.realizado_em), { start, end })
+      isWithinInterval(parseISO(s.realizado_em), { start: reportRange.from, end: reportRange.to })
     );
 
     if (data.length === 0) {
-      toast.info('Nenhuma solicitação realizada encontrada no período atual');
+      toast.info('Nenhuma solicitação realizada encontrada no período selecionado');
       return;
     }
 
@@ -151,10 +207,11 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_acrescimo_funcao_${format(now, 'MM_yyyy')}.csv`);
+    link.setAttribute('download', `relatorio_acrescimo_funcao_${format(reportRange.from, 'ddMMyyyy')}_${format(reportRange.to, 'ddMMyyyy')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setExportOpen(false);
   };
 
   if (isLoading) {
@@ -176,28 +233,28 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-hidden">
+    <div className="space-y-6 w-full max-w-full overflow-hidden px-1">
       <div className="flex justify-between items-center gap-4 flex-wrap w-full">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportReport}>
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
             <FileDown className="h-4 w-4 mr-2" />
             Gerar Relatório do Período
           </Button>
         </div>
         {canEdit && (
-          <Button onClick={() => setNovoOpen(true)}>
+          <Button onClick={handleOpenNew}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Solicitação
           </Button>
         )}
       </div>
 
-      <Card className="w-full overflow-hidden">
-        <CardHeader>
+      <Card className="w-full overflow-hidden border-none sm:border shadow-none sm:shadow-sm">
+        <CardHeader className="px-2 sm:px-6">
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
         <CardContent className="p-0 sm:p-6">
-          <div className="rounded-md border-x sm:border overflow-hidden">
+          <div className="rounded-md sm:border overflow-hidden">
             <div className="overflow-x-auto w-full">
               <Table>
                 <TableHeader>
@@ -208,7 +265,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                     <TableHead className="whitespace-nowrap">Cargos</TableHead>
                     <TableHead className="whitespace-nowrap">Status</TableHead>
                     {isAdmMaster && <TableHead className="whitespace-nowrap">Valor</TableHead>}
-                    <TableHead className="text-right whitespace-nowrap">Ações</TableHead>
+                    <TableHead className="text-right whitespace-nowrap min-w-[120px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
@@ -222,11 +279,11 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                   solicitacoes.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>
-                        <div className="font-medium">{s.company_name}</div>
-                        <div className="text-xs text-muted-foreground">{s.unidade_nome || 'Matriz/Geral'}</div>
+                        <div className="font-medium truncate max-w-[250px]" title={s.company_name}>{s.company_name}</div>
+                        <div className="text-xs text-muted-foreground truncate max-w-[200px]">{s.unidade_nome || 'Matriz/Geral'}</div>
                       </TableCell>
-                      <TableCell>{s.solicitante_nome}</TableCell>
-                      <TableCell>{format(parseISO(s.data_solicitacao_cliente), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="whitespace-nowrap">{s.solicitante_nome}</TableCell>
+                      <TableCell className="whitespace-nowrap">{format(parseISO(s.data_solicitacao_cliente), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">{s.cargos?.length || 0} cargo(s)</Badge>
                       </TableCell>
@@ -251,24 +308,68 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                         </TableCell>
                       )}
                       <TableCell className="text-right">
-                        {!s.realizado && canEdit && (
-                          <div className="flex items-center justify-end gap-2">
-                            <Checkbox 
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedSolicitacao(s);
-                                  setRealizarOpen(true);
-                                }
-                              }}
-                            />
-                            <span className="text-xs text-muted-foreground">Marcar Realizado</span>
-                          </div>
-                        )}
-                        {s.realizado && (
-                          <div className="text-xs text-muted-foreground">
-                            Por: {s.realizado_por_nome}
-                          </div>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {!s.realizado && canEdit && (
+                            <div className="flex items-center gap-2 mr-2">
+                              <Checkbox 
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedSolicitacao(s);
+                                    setRealizarOpen(true);
+                                  }
+                                }}
+                              />
+                              <span className="text-[10px] text-muted-foreground hidden sm:inline">Realizar</span>
+                            </div>
+                          )}
+                          
+                          {(isAdmMaster || (!s.realizado && canEdit)) && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-primary" 
+                              onClick={() => handleEdit(s)}
+                              title="Editar"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          {isAdmMaster && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-destructive"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir Solicitação?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isso removerá permanentemente a solicitação e seus cargos vinculados.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+
+                          {s.realizado && !isAdmMaster && (
+                            <div className="text-[10px] text-muted-foreground italic truncate max-w-[100px]">
+                              Realizado por {s.realizado_por_nome}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -280,11 +381,11 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
       </CardContent>
     </Card>
 
-      {/* Dialog Nova Solicitação */}
-      <Dialog open={novoOpen} onOpenChange={setNovoOpen}>
+      {/* Dialog Formulário (Novo/Edição) */}
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Solicitação de Acréscimo</DialogTitle>
+            <DialogTitle>{isEditing ? 'Editar Solicitação' : 'Nova Solicitação de Acréscimo'}</DialogTitle>
             <DialogDescription>Preencha os dados da solicitação do cliente.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
@@ -368,10 +469,10 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNovoOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSubmit} disabled={createSolicitacao.isPending}>
-              {createSolicitacao.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Salvar Solicitação
+            <Button variant="outline" onClick={() => setFormOpen(false)}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={createSolicitacao.isPending || updateSolicitacao.isPending}>
+              {(createSolicitacao.isPending || updateSolicitacao.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {isEditing ? 'Salvar Alterações' : 'Salvar Solicitação'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -405,6 +506,65 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
             <Button variant="outline" onClick={() => setRealizarOpen(false)}>Cancelar</Button>
             <Button onClick={handleMarkRealizado} disabled={!realizadoPor || markAsRealizado.isPending}>
               Confirmar e Calcular
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Relatório */}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Exportar Relatório</DialogTitle>
+            <DialogDescription>Selecione o período de realização para gerar o arquivo CSV.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col space-y-2">
+                <Label>Data Inicial</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {reportRange.from ? format(reportRange.from, 'dd/MM/yyyy') : 'Selecione'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reportRange.from}
+                      onSelect={(date) => date && setReportRange(prev => ({ ...prev, from: date }))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Label>Data Final</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {reportRange.to ? format(reportRange.to, 'dd/MM/yyyy') : 'Selecione'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reportRange.to}
+                      onSelect={(date) => date && setReportRange(prev => ({ ...prev, to: date }))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>Cancelar</Button>
+            <Button onClick={handleExportReport}>
+              <FileDown className="h-4 w-4 mr-2" />
+              Gerar CSV
             </Button>
           </DialogFooter>
         </DialogContent>
