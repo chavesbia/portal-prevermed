@@ -25,8 +25,17 @@ export function useOrdens() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAll, setIsLoadingAll] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Debounce search filter to avoid excessive server requests
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [filters.search]);
 
   const fetchAllOrdens = useCallback(async () => {
     setIsLoadingAll(true);
@@ -38,7 +47,8 @@ export function useOrdens() {
           servicos:servicos_os (
             *
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setAllOrdens((data || []) as OrdemServico[]);
@@ -62,8 +72,8 @@ export function useOrdens() {
         .select('*', { count: 'exact' });
 
       // Apply filters to count and fetch
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
+      if (debouncedSearch) {
+        const s = debouncedSearch.toLowerCase();
         query = query.or(`empresa_cliente.ilike.%${s}%,numero_os.ilike.%${s}%`);
       }
       
@@ -115,7 +125,7 @@ export function useOrdens() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, currentPage]);
+  }, [debouncedSearch, filters.status_os, filters.periodo_inicio, filters.periodo_fim, currentPage]);
 
   useEffect(() => {
     fetchOrdens();
