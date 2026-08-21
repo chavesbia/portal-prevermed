@@ -274,7 +274,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   useEffect(() => {
     if (!open || !contratoId || loadingDraft || hydratingRef.current || finalized) return;
     const t = setTimeout(async () => {
-      if (finalizedRef.current) return;
+      if (finalized) return;
       setSavingDraft(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
