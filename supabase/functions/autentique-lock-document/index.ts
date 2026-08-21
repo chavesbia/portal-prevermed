@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     if (!apiToken) return json({ error: 'AUTENTIQUE_API_TOKEN ausente' }, 500);
 
     // Mutation para editar documento e definir deadline_at para agora (bloqueio)
-    const mutation = `mutation UpdateDocument($id: UUID!, $document: DocumentInput!) {
+    const mutation = `mutation UpdateDocument($id: UUID!, $document: UpdateDocumentInput!) {
       updateDocument(id: $id, document: $document) {
         id
         name
