@@ -1,0 +1,1 @@
+SELECT public.soc_full_sync_scheduled();
