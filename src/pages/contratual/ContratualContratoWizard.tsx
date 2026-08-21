@@ -856,7 +856,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
         )}
 
 
-        {!finalizedRef.current && (
+        {!finalized && (
           <DialogFooter className="flex sm:justify-between gap-2">
             <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
