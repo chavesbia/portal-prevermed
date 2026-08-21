@@ -48,9 +48,11 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
 
   const isEncerrar = status === 'Encerrado';
   const statusChanged = status !== servico.status;
+  const executorChanged = responsavelId !== servico.responsavel_id;
 
   const handleSave = async () => {
-    if (isEncerrar) {
+    // Check if it's JUST an executor change OR if we are moving to "Encerrado"
+    if (isEncerrar && statusChanged) {
       onOpenChange(false);
       onRequestFinalizar();
       return;
