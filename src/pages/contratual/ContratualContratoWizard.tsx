@@ -103,7 +103,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       setDuplicateInfo(null);
       setContratoId(null); setDraftSavedAt(null);
       creatingDraftRef.current = false;
-      finalizedRef.current = false;
+      setFinalized(false);
     }
   }, [open]);
 
