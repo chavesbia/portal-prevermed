@@ -544,9 +544,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   };
 
 
+  const [finalized, setFinalized] = useState(false);
   const confirmar = async () => {
     setGenerating(true);
-    finalizedRef.current = true;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const payload: any = {
