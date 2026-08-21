@@ -103,7 +103,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       setDuplicateInfo(null);
       setContratoId(null); setDraftSavedAt(null);
       creatingDraftRef.current = false;
-      finalizedRef.current = false;
+      setFinalized(false);
     }
   }, [open]);
 
@@ -272,9 +272,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   // Autosave com debounce
   useEffect(() => {
-    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalizedRef.current) return;
+    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalized) return;
     const t = setTimeout(async () => {
-      if (finalizedRef.current) return;
+      if (finalized) return;
       setSavingDraft(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -544,9 +544,9 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   };
 
 
+  const [finalized, setFinalized] = useState(false);
   const confirmar = async () => {
     setGenerating(true);
-    finalizedRef.current = true;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const payload: any = {
@@ -597,8 +597,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       });
 
       toast.success(`Contrato ${ctr.numero_contrato} criado`);
-      finalizedRef.current = true; // Mantém o Dialog aberto para mostrar o alerta final
-      setContratoId(ctr.id); // Garante que o ID esteja no estado para o botão "Entendido"
+      setFinalized(true);
+      setContratoId(ctr.id);
       qc.invalidateQueries({ queryKey: ['contract-contratos'] });
     } catch (e: any) {
       toast.error(e.message || 'Erro ao criar contrato');
@@ -836,7 +836,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           </div>
         )}
 
-        {step === 3 && !finalizedRef.current && (
+        {step === 3 && !finalized && (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Pré-visualização do contrato. Confirme para gerar o PDF.</p>
             {placeholdersFaltando.length > 0 && (
@@ -856,7 +856,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
         )}
 
 
-        {!finalizedRef.current && (
+        {!finalized && (
           <DialogFooter className="flex sm:justify-between gap-2">
             <Button variant="outline" onClick={() => step === 1 ? onOpenChange(false) : setStep(step - 1)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> {step === 1 ? 'Cancelar' : 'Voltar'}
@@ -875,7 +875,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
             )}
           </DialogFooter>
         )}
-        {finalizedRef.current && (
+        {finalized && (
           <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg text-blue-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-full">
