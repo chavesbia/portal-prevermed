@@ -275,7 +275,18 @@ export function useOrdens() {
   ) => {
     try {
       const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
-      const oldStatus = ordem?.status_os;
+      if (!ordem) throw new Error('OS não encontrada para atualização');
+      
+      const oldStatus = ordem.status_os;
+      
+      // Track changes for history
+      const changes: string[] = [];
+      if (ordem.numero_os !== data.numero_os) changes.push(`Número: ${ordem.numero_os} → ${data.numero_os}`);
+      if (ordem.empresa_cliente !== data.empresa_cliente) changes.push(`Empresa: ${ordem.empresa_cliente} → ${data.empresa_cliente}`);
+      if ((ordem.contato_cliente || '') !== (data.contato_cliente || '')) changes.push(`Contato: ${ordem.contato_cliente || 'N/A'} → ${data.contato_cliente || 'N/A'}`);
+      if (ordem.status_os !== data.status_os) changes.push(`Status OS: ${ordem.status_os} → ${data.status_os}`);
+      if (ordem.prazo_acordado !== (data.prazo_acordado || null)) changes.push(`Prazo: ${ordem.prazo_acordado || 'N/A'} → ${data.prazo_acordado || 'N/A'}`);
+      if (!!ordem.urgente !== !!data.urgente) changes.push(`Urgente: ${ordem.urgente ? 'Sim' : 'Não'} → ${data.urgente ? 'Sim' : 'Não'}`);
 
       const { error } = await supabase
         .from('ordens_servico')
@@ -285,8 +296,7 @@ export function useOrdens() {
           contato_cliente: data.contato_cliente ?? null,
           responsavel_atual: data.responsavel_atual,
           status_os: data.status_os,
-          data_registro: data.data_registro,
-          data_emissao: data.data_emissao ?? null,
+          // Removed data_registro and data_emissao from update as per requirement
           prazo_acordado: data.prazo_acordado ?? null,
           observacoes: data.observacoes ?? null,
           urgente: data.urgente ?? false,
@@ -301,7 +311,7 @@ export function useOrdens() {
         user_id: user?.id || null,
         user_name: profile?.full_name || 'Sistema',
         acao: 'Edição',
-        comentario: 'Dados da OS atualizados.',
+        comentario: changes.length > 0 ? `Dados da OS atualizados: ${changes.join('; ')}` : 'Dados da OS atualizados.',
         status_anterior: oldStatus || null,
         status_novo: data.status_os,
       });
