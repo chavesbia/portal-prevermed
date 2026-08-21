@@ -48,9 +48,11 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
 
   const isEncerrar = status === 'Encerrado';
   const statusChanged = status !== servico.status;
+  const executorChanged = responsavelId !== servico.responsavel_id;
 
   const handleSave = async () => {
-    if (isEncerrar) {
+    // Check if it's JUST an executor change OR if we are moving to "Encerrado"
+    if (isEncerrar && statusChanged) {
       onOpenChange(false);
       onRequestFinalizar();
       return;
@@ -75,16 +77,25 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
         observacoes: observacoes || null,
       } as any).eq('id', servico.id);
       if (error) throw error;
-
-      if (statusChanged) {
+      
+      // Detailed history logging
+      const changes: string[] = [];
+      if (statusChanged) changes.push(`status: ${servico.status} → ${status}`);
+      if (executorChanged) {
+        const oldExec = servico.responsavel_id ? 'atribuído' : 'não atribuído';
+        const newExec = responsavelId ? 'novo executor' : 'removido';
+        changes.push(`executor: ${oldExec} → ${newExec}`);
+      }
+      
+      if (changes.length > 0) {
         await supabase.from('historico_os').insert({
           ordem_id: ordem.id,
           user_id: user?.id || null,
           user_name: profile?.full_name || 'Sistema',
           acao: 'Atualização de Serviço',
-          comentario: `Serviço ${servico.tipo}: status alterado de ${servico.status} para ${status}`,
-          status_anterior: servico.status,
-          status_novo: status,
+          comentario: `Serviço ${servico.tipo} atualizado: ${changes.join(', ')}`,
+          status_anterior: statusChanged ? servico.status : null,
+          status_novo: statusChanged ? status : null,
           servico_afetado: servico.tipo,
         });
       }

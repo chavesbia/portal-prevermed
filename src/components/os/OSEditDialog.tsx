@@ -200,7 +200,13 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
             </Select>
             <p className="text-xs text-muted-foreground">Normalmente automático conforme os serviços.</p>
           </div>
-          {dateField('Data de Emissão', dataEmissao, setDataEmissao)}
+          <div className="space-y-2">
+            <Label>Data de Emissão</Label>
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+              {dataEmissao ? format(dataEmissao, 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">Campo fixo definido no registro.</p>
+          </div>
           <div className="space-y-2">
             {dateField('Prazo de Entrega', prazoAcordado, setPrazoAcordado)}
             <div className="flex items-center gap-2 pt-1">
