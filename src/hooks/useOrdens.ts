@@ -41,6 +41,7 @@ export function useOrdens() {
   const fetchAllOrdens = useCallback(async () => {
     setIsLoadingAll(true);
     try {
+      console.log('fetchAllOrdens: Inicianco busca de todas as OS...');
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
@@ -51,7 +52,11 @@ export function useOrdens() {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('fetchAllOrdens error:', error);
+        throw error;
+      }
+      
       console.log('fetchAllOrdens result:', data?.length || 0, 'items');
       setAllOrdens((data || []) as OrdemServico[]);
     } catch (error: any) {
