@@ -80,6 +80,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
   const [test2Id, setTest2Id] = useState(MANUAL_SIGNER);
   const [duplicateWarningPending, setDuplicateWarningPending] = useState(false);
   const [duplicateInfo, setDuplicateInfo] = useState<{ type: 'proposta' | 'vigencia', id: string, numero: string } | null>(null);
+  const [isCorrection, setIsCorrection] = useState(false);
+  const [lockStatus, setLockStatus] = useState<{ success: boolean; error?: string } | null>(null);
 
   // Rascunho automático
   const [contratoId, setContratoId] = useState<string | null>(null);
@@ -101,6 +103,8 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
       setPrevermedId(MANUAL_SIGNER); setTest1Id(MANUAL_SIGNER); setTest2Id(MANUAL_SIGNER);
       setDuplicateWarningPending(false);
       setDuplicateInfo(null);
+      setIsCorrection(false);
+      setLockStatus(null);
       setContratoId(null); setDraftSavedAt(null);
       creatingDraftRef.current = false;
       setFinalized(false);
@@ -178,6 +182,32 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
           testemunha2_nome: str(data.testemunha2_nome), testemunha2_cpf: str(data.testemunha2_cpf), testemunha2_email: str(data.testemunha2_email),
           prevermed_nome: str(data.prevermed_nome), prevermed_cpf: str(data.prevermed_cpf), prevermed_email: str(data.prevermed_email),
         });
+
+        // Verifica se é uma correção baseada nos campos_personalizados
+        if (cp.is_revisao || cp.contrato_anterior_id) {
+          setIsCorrection(true);
+          // O status do bloqueio pode ter sido registrado em eventos ou metadados
+          // Como o Wizard é aberto imediatamente após o cancelEReenviarContrato, 
+          // poderíamos passar isso via state ou buscar o último evento de bloqueio.
+          // Para simplificar e ser preciso, vamos buscar se houve falha de bloqueio no contrato anterior.
+          if (cp.contrato_anterior_id) {
+            const { data: lockEvent } = await supabase
+              .from('contract_eventos')
+              .select('tipo, detalhes')
+              .eq('contrato_id', cp.contrato_anterior_id)
+              .in('tipo', ['autentique_lock', 'autentique_lock_failed'])
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            if (lockEvent) {
+              setLockStatus({ 
+                success: lockEvent.tipo === 'autentique_lock',
+                error: lockEvent.tipo === 'autentique_lock_failed' ? 'Falha na API' : undefined
+              });
+            }
+          }
+        }
         const hasBase = !!data.cliente_id && !!data.template_id && !!data.template_version_id;
         const s = Number(savedStep) >= 1 && Number(savedStep) <= 3 ? Number(savedStep) : 1;
         setStep(hasBase ? s : 1);
@@ -888,14 +918,26 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
               <p>O PDF foi gerado e o contrato está pronto para envio.</p>
               
               {/* Alerta de bloqueio manual para correções */}
-              <div className="bg-amber-50 p-4 rounded border border-amber-200 font-medium text-amber-900 mt-4">
-                <p className="flex items-center gap-2 mb-1 text-amber-700">
-                  <span className="text-xl">⚠️</span> ATENÇÃO - AÇÃO MANUAL NECESSÁRIA
-                </p>
-                <p className="text-xs">
-                  Caso este contrato substitua uma versão anterior, lembre-se de <strong>bloquear manualmente o documento antigo</strong> no painel do Autentique para evitar assinaturas duplicadas ou desatualizadas.
-                </p>
-              </div>
+              {isCorrection && (
+                <>
+                  {lockStatus?.success ? (
+                    <div className="bg-green-50 p-4 rounded border border-green-200 font-medium text-green-900 mt-4">
+                      <p className="flex items-center gap-2 text-xs">
+                        <Check className="h-4 w-4 text-green-600" /> ✅ Documento anterior bloqueado automaticamente no Autentique — nenhuma ação manual necessária.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 p-4 rounded border border-amber-200 font-medium text-amber-900 mt-4">
+                      <p className="flex items-center gap-2 mb-1 text-amber-700">
+                        <span className="text-xl">⚠️</span> ATENÇÃO - AÇÃO MANUAL NECESSÁRIA
+                      </p>
+                      <p className="text-xs">
+                        Caso este contrato substitua uma versão anterior, lembre-se de <strong>bloquear manualmente o documento antigo</strong> no painel do Autentique para evitar assinaturas duplicadas ou desatualizadas.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="flex justify-end pt-2">
