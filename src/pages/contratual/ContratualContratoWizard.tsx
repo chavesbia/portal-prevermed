@@ -272,7 +272,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
 
   // Autosave com debounce
   useEffect(() => {
-    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalizedRef.current) return;
+    if (!open || !contratoId || loadingDraft || hydratingRef.current || finalized) return;
     const t = setTimeout(async () => {
       if (finalizedRef.current) return;
       setSavingDraft(true);
