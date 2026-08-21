@@ -23,6 +23,7 @@ export function useOrdens() {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [allOrdens, setAllOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoadingAll, setIsLoadingAll] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
@@ -51,6 +52,7 @@ export function useOrdens() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('fetchAllOrdens result:', data?.length || 0, 'items');
       setAllOrdens((data || []) as OrdemServico[]);
     } catch (error: any) {
       console.error('Erro ao carregar todas OS:', error);
@@ -124,6 +126,7 @@ export function useOrdens() {
       toast({ title: 'Erro', description: 'Erro ao carregar ordens de serviço.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
+      setIsInitialLoading(false);
     }
   }, [debouncedSearch, filters.status_os, filters.periodo_inicio, filters.periodo_fim, currentPage]);
 
@@ -354,6 +357,7 @@ export function useOrdens() {
     ordens,
     allOrdens,
     isLoading,
+    isInitialLoading,
     isLoadingAll,
     filters,
     setFilters,

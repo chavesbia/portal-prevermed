@@ -26,7 +26,7 @@ export default function GestaoOS() {
   const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
   const { isFinanceiro } = useUserDepartments();
   const {
-    isLoading, isLoadingAll, filters, setFilters,
+    isLoading, isInitialLoading, isLoadingAll, filters, setFilters,
     getFilteredOrdens, allOrdens, addOrdem, updateOrdem, updateOrdemStatus,
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
     currentPage, setCurrentPage, totalPages, totalCount
@@ -37,7 +37,7 @@ export default function GestaoOS() {
   const responsaveis = getResponsaveis();
   const canEdit = permissions?.can_edit ?? false;
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
