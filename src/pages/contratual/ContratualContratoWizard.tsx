@@ -875,7 +875,7 @@ export function ContratualContratoWizard({ open, onOpenChange, onCreated, draftI
             )}
           </DialogFooter>
         )}
-        {finalizedRef.current && (
+        {finalized && (
           <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg text-blue-900 space-y-4 my-4 animate-in fade-in zoom-in duration-300">
             <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-full">
