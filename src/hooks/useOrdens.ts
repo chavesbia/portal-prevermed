@@ -23,14 +23,25 @@ export function useOrdens() {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [allOrdens, setAllOrdens] = useState<OrdemServico[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isLoadingAll, setIsLoadingAll] = useState(true);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Debounce search filter to avoid excessive server requests
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [filters.search]);
 
   const fetchAllOrdens = useCallback(async () => {
     setIsLoadingAll(true);
     try {
+      console.log('fetchAllOrdens: Inicianco busca de todas as OS...');
       const { data, error } = await supabase
         .from('ordens_servico')
         .select(`
@@ -38,9 +49,15 @@ export function useOrdens() {
           servicos:servicos_os (
             *
           )
-        `);
+        `)
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('fetchAllOrdens error:', error);
+        throw error;
+      }
+      
+      console.log('fetchAllOrdens result:', data?.length || 0, 'items');
       setAllOrdens((data || []) as OrdemServico[]);
     } catch (error: any) {
       console.error('Erro ao carregar todas OS:', error);
@@ -62,8 +79,8 @@ export function useOrdens() {
         .select('*', { count: 'exact' });
 
       // Apply filters to count and fetch
-      if (filters.search) {
-        const s = filters.search.toLowerCase();
+      if (debouncedSearch) {
+        const s = debouncedSearch.toLowerCase();
         query = query.or(`empresa_cliente.ilike.%${s}%,numero_os.ilike.%${s}%`);
       }
       
@@ -114,8 +131,9 @@ export function useOrdens() {
       toast({ title: 'Erro', description: 'Erro ao carregar ordens de serviço.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
+      setIsInitialLoading(false);
     }
-  }, [filters, currentPage]);
+  }, [debouncedSearch, filters.status_os, filters.periodo_inicio, filters.periodo_fim, currentPage]);
 
   useEffect(() => {
     fetchOrdens();
@@ -344,6 +362,7 @@ export function useOrdens() {
     ordens,
     allOrdens,
     isLoading,
+    isInitialLoading,
     isLoadingAll,
     filters,
     setFilters,
