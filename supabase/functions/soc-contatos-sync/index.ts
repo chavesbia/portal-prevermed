@@ -25,19 +25,26 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const token = authHeader.replace('Bearer ', '');
+    const internalSecret = Deno.env.get('SOC_SYNC_INTERNAL_SECRET');
+    const isInternal = Boolean(internalSecret) && req.headers.get('x-soc-sync-secret') === internalSecret;
 
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      supabaseUrl,
+      anonKey,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const { data: claims, error: claimsErr } = isInternal
+      ? { data: null, error: null }
+      : await supabase.auth.getClaims(token);
+    if (!isInternal && (claimsErr || !claims?.claims)) return json({ error: 'Unauthorized' }, 401);
 
     const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      supabaseUrl,
+      serviceRoleKey,
     );
 
     // Histórico unificado de sincronizações
@@ -48,7 +55,7 @@ Deno.serve(async (req) => {
         sync_type: 'contatos',
         started_at: startedAt,
         status: 'running',
-        triggered_by: (claims?.claims as any)?.sub ?? null,
+        triggered_by: isInternal ? null : (claims?.claims as any)?.sub ?? null,
       })
       .select('id')
       .single();

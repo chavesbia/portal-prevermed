@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.autentique-sync-all]
 verify_jwt = false
+
+[functions.soc-full-sync-scheduled]
+verify_jwt = false
