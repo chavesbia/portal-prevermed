@@ -23,8 +23,9 @@ Deno.serve(async (req) => {
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const internalSecret = Deno.env.get('SOC_SYNC_INTERNAL_SECRET');
 
-  if (!anonKey || !serviceRoleKey || !supabaseUrl) {
+  if (!anonKey || !serviceRoleKey || !supabaseUrl || !internalSecret) {
     return json({ error: 'Configuração interna indisponível' }, 500);
   }
 
@@ -51,6 +52,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
             apikey: serviceRoleKey,
             Authorization: `Bearer ${serviceRoleKey}`,
+            'x-soc-sync-secret': internalSecret,
           },
           body: JSON.stringify({ scheduled: true, triggered_at: startedAt }),
         });

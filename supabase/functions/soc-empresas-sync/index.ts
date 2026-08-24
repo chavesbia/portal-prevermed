@@ -32,7 +32,8 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const token = authHeader.replace('Bearer ', '');
-    const isInternal = token === serviceRoleKey;
+    const internalSecret = Deno.env.get('SOC_SYNC_INTERNAL_SECRET');
+    const isInternal = Boolean(internalSecret) && req.headers.get('x-soc-sync-secret') === internalSecret;
 
     const supabase = createClient(
       supabaseUrl,
