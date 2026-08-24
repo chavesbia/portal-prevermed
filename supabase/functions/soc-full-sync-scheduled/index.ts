@@ -16,6 +16,18 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function jwtRole(token: string): string | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const parsed = JSON.parse(atob(normalized));
+    return typeof parsed?.role === 'string' ? parsed.role : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
@@ -30,7 +42,7 @@ Deno.serve(async (req) => {
   }
 
   const token = authHeader?.replace(/^Bearer\s+/i, '') ?? '';
-  let authorized = token === anonKey;
+  let authorized = token === anonKey || jwtRole(token) === 'anon';
 
   if (!authorized && token) {
     const client = createClient(supabaseUrl, anonKey, {
