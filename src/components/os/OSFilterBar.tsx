@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { OSFilters, STATUS_OS_OPTIONS, TIPO_SERVICO_OPTIONS, TIPO_OS_OPTIONS } from '@/types/os';
+import { OSFilters, STATUS_OS_OPTIONS, STATUS_SERVICO_OPTIONS, TIPO_SERVICO_OPTIONS, TIPO_OS_OPTIONS, SEM_EXECUTOR } from '@/types/os';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -19,13 +19,13 @@ interface OSFilterBarProps {
 export function OSFilterBar({ filters, setFilters, responsaveis }: OSFilterBarProps) {
   const clearFilters = () => {
     setFilters({
-      search: '', status_os: '', responsavel: '',
+      search: '', status_os: '', status_servico: '', responsavel: '',
       tipo_servico: '', tipo_os: '',
       periodo_inicio: null, periodo_fim: null,
     });
   };
 
-  const hasActive = filters.search || filters.status_os || filters.responsavel ||
+  const hasActive = filters.search || filters.status_os || filters.status_servico || filters.responsavel ||
     filters.tipo_servico || filters.tipo_os || filters.periodo_inicio || filters.periodo_fim;
 
   return (
@@ -49,10 +49,19 @@ export function OSFilterBar({ filters, setFilters, responsaveis }: OSFilterBarPr
           </SelectContent>
         </Select>
 
+        <Select value={filters.status_servico} onValueChange={(v) => setFilters({ ...filters, status_servico: v })}>
+          <SelectTrigger className="w-[190px]"><SelectValue placeholder="Status do Serviço" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os serviços</SelectItem>
+            {STATUS_SERVICO_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+
         <Select value={filters.responsavel} onValueChange={(v) => setFilters({ ...filters, responsavel: v })}>
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Executor" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value={SEM_EXECUTOR}>Sem Executor</SelectItem>
             {responsaveis.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
           </SelectContent>
         </Select>
