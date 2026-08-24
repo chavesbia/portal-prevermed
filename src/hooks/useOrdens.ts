@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { OrdemServico, ServicoOS, HistoricoOS, OSFilters, StatusOS, TipoOS, StatusServico } from '@/types/os';
+import { OrdemServico, ServicoOS, HistoricoOS, OSFilters, StatusOS, TipoOS, StatusServico, SEM_EXECUTOR } from '@/types/os';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { toast } from '@/hooks/use-toast';
@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 const defaultFilters: OSFilters = {
   search: '',
   status_os: '',
+  status_servico: '',
   responsavel: '',
   tipo_servico: '',
   tipo_os: '',
@@ -88,6 +89,30 @@ export function useOrdens() {
         query = query.eq('status_os', filters.status_os);
       }
 
+      // Filtros baseados em serviços (status do serviço / executor)
+      const filtraStatusServico = !!filters.status_servico && filters.status_servico !== 'all';
+      const filtraSemExecutor = filters.responsavel === SEM_EXECUTOR;
+      const filtraExecutorNome = !!filters.responsavel && filters.responsavel !== 'all' && !filtraSemExecutor;
+
+      if (filtraStatusServico || filtraSemExecutor || filtraExecutorNome) {
+        let svcQuery = supabase.from('servicos_os').select('ordem_id');
+        if (filtraStatusServico) svcQuery = svcQuery.eq('status', filters.status_servico);
+        if (filtraSemExecutor) svcQuery = svcQuery.is('responsavel_id', null);
+        if (filtraExecutorNome) {
+          const ids = profissionais.filter(p => p.nome === filters.responsavel).map(p => p.id);
+          svcQuery = svcQuery.in('responsavel_id', ids.length > 0 ? ids : ['00000000-0000-0000-0000-000000000000']);
+        }
+        const { data: svcMatch, error: svcMatchError } = await svcQuery;
+        if (svcMatchError) throw svcMatchError;
+        const matchIds = Array.from(new Set((svcMatch || []).map(s => s.ordem_id)));
+        if (matchIds.length === 0) {
+          setTotalCount(0);
+          setOrdens([]);
+          return;
+        }
+        query = query.in('id', matchIds);
+      }
+
       if (filters.periodo_inicio) {
         query = query.gte('data_registro', filters.periodo_inicio.toISOString());
       }
@@ -133,7 +158,7 @@ export function useOrdens() {
       setIsLoading(false);
       setIsInitialLoading(false);
     }
-  }, [debouncedSearch, filters.status_os, filters.periodo_inicio, filters.periodo_fim, currentPage]);
+  }, [debouncedSearch, filters.status_os, filters.status_servico, filters.responsavel, filters.periodo_inicio, filters.periodo_fim, currentPage, profissionais]);
 
   useEffect(() => {
     fetchOrdens();

@@ -154,9 +154,12 @@ export interface ConfiguracaoAlerta {
   updated_at: string;
 }
 
+export const SEM_EXECUTOR = '__sem_executor__';
+
 export interface OSFilters {
   search: string;
   status_os: string;
+  status_servico: string;
   responsavel: string;
   tipo_servico: string;
   tipo_os: string;
