@@ -28,20 +28,26 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const token = authHeader.replace('Bearer ', '');
+    const isInternal = token === serviceRoleKey;
 
     const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
+      supabaseUrl,
+      anonKey,
       { global: { headers: { Authorization: authHeader } } },
     );
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
-    const userId = claims.claims.sub as string;
+    const { data: claims, error: claimsErr } = isInternal
+      ? { data: null, error: null }
+      : await supabase.auth.getClaims(token);
+    if (!isInternal && (claimsErr || !claims?.claims)) return json({ error: 'Unauthorized' }, 401);
+    const userId = isInternal ? null : claims?.claims?.sub as string;
 
     const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      supabaseUrl,
+      serviceRoleKey,
     );
 
     const startedAt = new Date().toISOString();
