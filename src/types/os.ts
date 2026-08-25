@@ -229,6 +229,8 @@ export const slaStatusLabels: Record<SLAStatus, string> = {
 
 export interface AcrescimoFuncaoSolicitacao {
   id: string;
+  numero?: string | null;
+  realizado_por_user_id?: string | null;
   company_id: string;
   unidade_id: string | null;
   solicitante_nome: string;

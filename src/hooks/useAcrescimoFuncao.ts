@@ -29,7 +29,7 @@ export function useAcrescimoFuncao() {
         ...s,
         company_name: s.companies?.razao_social,
         unidade_nome: s.company_units?.name,
-        realizado_por_nome: s.profissionais?.nome,
+        realizado_por_nome: s.realizado_por_nome || s.profissionais?.nome,
         cargos: s.acrescimos_funcao_cargos,
       })) as AcrescimoFuncaoSolicitacao[];
     },
@@ -111,21 +111,48 @@ export function useAcrescimoFuncao() {
 
   const deleteSolicitacao = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      // Remove os cargos vinculados antes (evita bloqueio por FK)
+      const { error: cargosError } = await supabase
+        .from("acrescimos_funcao_cargos")
+        .delete()
+        .eq("solicitacao_id", id);
+      if (cargosError) throw cargosError;
+
+      const { data, error } = await supabase
         .from("acrescimos_funcao_solicitacoes")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("Nenhum registro foi excluído — você não tem permissão para excluir esta solicitação.");
+      }
+      return id;
     },
-    onSuccess: () => {
+    onSuccess: (id) => {
       toast.success("Solicitação excluída com sucesso");
+      qc.setQueryData(["acrescimos-funcao-solicitacoes"], (old: any) =>
+        Array.isArray(old) ? old.filter((s: any) => s.id !== id) : old
+      );
       qc.invalidateQueries({ queryKey: ["acrescimos-funcao-solicitacoes"] });
     },
     onError: (e: any) => toast.error("Erro ao excluir solicitação: " + e.message),
   });
 
   const markAsRealizado = useMutation({
-    mutationFn: async ({ id, realizado_por, company_id, num_cargos }: { id: string; realizado_por: string; company_id: string; num_cargos: number }) => {
+    mutationFn: async ({ id, company_id, num_cargos }: { id: string; company_id: string; num_cargos: number }) => {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id;
+      let nomeUsuario = authData.user?.email || "Usuário";
+      if (userId) {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (perfil?.full_name) nomeUsuario = perfil.full_name;
+      }
+
       // 1. Buscar preço do serviço 000000062 para esta empresa
       const { data: pricingData, error: pricingError } = await supabase
         .from("company_pricing_items")
@@ -149,7 +176,8 @@ export function useAcrescimoFuncao() {
         .from("acrescimos_funcao_solicitacoes")
         .update({
           realizado: true,
-          realizado_por,
+          realizado_por_user_id: userId,
+          realizado_por_nome: nomeUsuario,
           realizado_em: new Date().toISOString(),
           valor_total_calculado: valorCalculado,
         })
