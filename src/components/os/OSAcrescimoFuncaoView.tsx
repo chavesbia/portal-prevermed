@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAcrescimoFuncao } from '@/hooks/useAcrescimoFuncao';
 import { AcrescimoFuncaoSolicitacao } from '@/types/os';
-import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -25,7 +23,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado } = useAcrescimoFuncao();
-  const { profissionais } = useProfissionais();
   const { isAdmMaster, profile, user } = useAuth();
   
   const [formOpen, setFormOpen] = useState(false);
@@ -34,7 +31,6 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   const [exportOpen, setExportOpen] = useState(false);
   
   const [selectedSolicitacao, setSelectedSolicitacao] = useState<AcrescimoFuncaoSolicitacao | null>(null);
-  const [realizadoPor, setRealizadoPor] = useState('');
   
   // Report period state
   const [reportRange, setReportRange] = useState({
@@ -155,7 +151,6 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
       });
       setRealizarOpen(false);
       setSelectedSolicitacao(null);
-      setRealizadoPor('');
     } catch (error) {
       console.error(error);
     }
