@@ -120,8 +120,6 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
     if (!companyId || !company) return toast.error('Selecione a empresa');
     if (!form.data_inicio || !form.data_fim) return toast.error('Informe o início e o fim da vigência');
     if (new Date(form.data_fim) < new Date(form.data_inicio)) return toast.error('A data de fim deve ser posterior à de início');
-    if (!form.qtd_vidas) return toast.error('Informe a quantidade de vidas');
-    if (!form.valor_mensal) return toast.error('Informe o valor mensal');
     if (!pdfPath) return toast.error('Anexe o PDF assinado do contrato');
 
     setSaving(true);
