@@ -36,6 +36,16 @@ function formatCnpj(v: string | null | undefined) {
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 }
 
+function formatEndereco(c: any) {
+  const linha1 = [c?.logradouro, c?.numero].filter(Boolean).join(', ');
+  const partes = [linha1, c?.complemento, c?.bairro, [c?.cidade, c?.estado].filter(Boolean).join(' - '), c?.cep]
+    .map((p: any) => (typeof p === 'string' ? p.trim() : p))
+    .filter(Boolean);
+  return partes.length ? partes.join(', ') : null;
+}
+
+
+
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
