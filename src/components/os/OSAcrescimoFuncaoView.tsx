@@ -268,10 +268,71 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
         )}
       </div>
 
+      <Card className="w-full">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="space-y-1">
+              <Label className="text-xs">Data inicial</Label>
+              <Input
+                type="date"
+                value={filtros.dataInicial}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicial: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Data final</Label>
+              <Input
+                type="date"
+                value={filtros.dataFinal}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataFinal: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Empresa</Label>
+              <CompanySelector
+                value={filtros.companyId}
+                onChange={(id) => setFiltros(prev => ({ ...prev, companyId: id || '' }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <Select
+                value={filtros.status}
+                onValueChange={(v) => setFiltros(prev => ({ ...prev, status: v as typeof prev.status }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="realizado">Realizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {filtrosAtivos && (
+            <div className="flex items-center justify-between mt-3">
+              <span className="text-xs text-muted-foreground">
+                {solicitacoesFiltradas.length} de {solicitacoes.length} solicitações
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFiltros({ dataInicial: '', dataFinal: '', companyId: '', status: 'todos' })}
+              >
+                Limpar filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="w-full overflow-hidden border-none sm:border shadow-none sm:shadow-sm">
         <CardHeader className="px-2 sm:px-6">
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
+
         <CardContent className="p-0 sm:p-6">
           <div className="rounded-md sm:border overflow-hidden">
             <div className="overflow-x-auto w-full">
