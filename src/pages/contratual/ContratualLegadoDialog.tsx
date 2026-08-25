@@ -211,12 +211,16 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
               <Input type="date" value={form.data_fim} onChange={e => set('data_fim', e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Quantidade de vidas *</Label>
-              <Input type="number" min={0} value={form.qtd_vidas} onChange={e => set('qtd_vidas', e.target.value)} />
+              <Label>Quantidade de vidas</Label>
+              <Input type="number" min={0} value={form.qtd_vidas} onChange={e => set('qtd_vidas', e.target.value)} placeholder="Opcional" />
             </div>
             <div className="space-y-1.5">
-              <Label>Valor mensal (R$) *</Label>
-              <Input type="number" min={0} step="0.01" value={form.valor_mensal} onChange={e => set('valor_mensal', e.target.value)} />
+              <Label>Valor mensal (R$)</Label>
+              <Input type="number" min={0} step="0.01" value={form.valor_mensal} onChange={e => set('valor_mensal', e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Modalidade</Label>
+              <ModalidadeSelector value={modalidadeId} onChange={setModalidadeId} />
             </div>
             <div className="space-y-1.5">
               <Label>Status inicial *</Label>
