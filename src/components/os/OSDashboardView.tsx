@@ -170,7 +170,8 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
                     <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="hsl(var(--border))" />
                     <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                     <YAxis dataKey="name" type="category" width={100} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <Tooltip content={<ChartTooltip unidade="serviços" />} />
+
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                       {respData.map((_, i) => <Cell key={i} fill="hsl(210, 100%, 50%)" />)}
                     </Bar>
