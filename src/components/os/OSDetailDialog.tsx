@@ -68,16 +68,17 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   }, [open, ordem.created_by]);
 
   useEffect(() => {
-    if (!open || !ordem.company_id) { setEmpresaCnpj(null); return; }
+    const companyId = (ordem as any).company_id as string | undefined;
+    if (!open || !companyId) { setEmpresaCnpj(null); return; }
     (async () => {
       const { data } = await supabase
         .from('companies')
         .select('cnpj')
-        .eq('id', ordem.company_id)
+        .eq('id', companyId)
         .maybeSingle();
       setEmpresaCnpj((data as any)?.cnpj || null);
     })();
-  }, [open, ordem.company_id]);
+  }, [open, (ordem as any).company_id]);
 
 
 
