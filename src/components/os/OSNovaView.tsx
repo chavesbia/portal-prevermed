@@ -284,15 +284,20 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                       field.onChange(id ?? undefined);
                       form.setValue('empresaCliente', company?.razao_social || '', { shouldValidate: true });
                       form.setValue('unidadeId', null);
+                      setEmpresaCnpj(company?.cnpj || null);
                     }}
                   />
                 </FormControl>
+                {empresaCnpj && (
+                  <p className="text-xs font-medium">CNPJ: {formatCnpj(empresaCnpj)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
                 </p>
                 <FormMessage />
               </FormItem>
             )} />
+
             <FormField control={form.control} name="unidadeId" render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Unidade (opcional)</FormLabel>
