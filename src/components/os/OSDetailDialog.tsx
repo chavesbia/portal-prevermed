@@ -29,11 +29,19 @@ interface OSDetailDialogProps {
   onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
 }
 
+function formatCnpj(v: string | null | undefined) {
+  if (!v) return '';
+  const d = v.replace(/\D/g, '');
+  if (d.length !== 14) return v;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
+  const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const { user } = useAuth();
