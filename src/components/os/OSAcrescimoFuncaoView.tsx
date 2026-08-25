@@ -40,6 +40,28 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     to: endOfMonth(new Date())
   });
 
+  // Filtros da listagem
+  const [filtros, setFiltros] = useState({
+    dataInicial: '',
+    dataFinal: '',
+    companyId: '',
+    status: 'todos' as 'todos' | 'pendente' | 'realizado'
+  });
+
+  const solicitacoesFiltradas = useMemo(() => {
+    return solicitacoes.filter((s) => {
+      if (filtros.companyId && s.company_id !== filtros.companyId) return false;
+      if (filtros.status === 'pendente' && s.realizado) return false;
+      if (filtros.status === 'realizado' && !s.realizado) return false;
+      if (filtros.dataInicial && s.data_solicitacao_cliente < filtros.dataInicial) return false;
+      if (filtros.dataFinal && s.data_solicitacao_cliente > filtros.dataFinal) return false;
+      return true;
+    });
+  }, [solicitacoes, filtros]);
+
+  const filtrosAtivos = !!(filtros.dataInicial || filtros.dataFinal || filtros.companyId || filtros.status !== 'todos');
+
+
   // Form State
   const [formData, setFormData] = useState({
     company_id: '',
