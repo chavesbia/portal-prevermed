@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAcrescimoFuncao } from '@/hooks/useAcrescimoFuncao';
 import { AcrescimoFuncaoSolicitacao } from '@/types/os';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,8 @@ import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado } = useAcrescimoFuncao();
@@ -37,6 +39,28 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date())
   });
+
+  // Filtros da listagem
+  const [filtros, setFiltros] = useState({
+    dataInicial: '',
+    dataFinal: '',
+    companyId: '',
+    status: 'todos' as 'todos' | 'pendente' | 'realizado'
+  });
+
+  const solicitacoesFiltradas = useMemo(() => {
+    return solicitacoes.filter((s) => {
+      if (filtros.companyId && s.company_id !== filtros.companyId) return false;
+      if (filtros.status === 'pendente' && s.realizado) return false;
+      if (filtros.status === 'realizado' && !s.realizado) return false;
+      if (filtros.dataInicial && s.data_solicitacao_cliente < filtros.dataInicial) return false;
+      if (filtros.dataFinal && s.data_solicitacao_cliente > filtros.dataFinal) return false;
+      return true;
+    });
+  }, [solicitacoes, filtros]);
+
+  const filtrosAtivos = !!(filtros.dataInicial || filtros.dataFinal || filtros.companyId || filtros.status !== 'todos');
+
 
   // Form State
   const [formData, setFormData] = useState({
@@ -244,10 +268,71 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
         )}
       </div>
 
+      <Card className="w-full">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="space-y-1">
+              <Label className="text-xs">Data inicial</Label>
+              <Input
+                type="date"
+                value={filtros.dataInicial}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicial: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Data final</Label>
+              <Input
+                type="date"
+                value={filtros.dataFinal}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataFinal: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Empresa</Label>
+              <CompanySelector
+                value={filtros.companyId}
+                onChange={(id) => setFiltros(prev => ({ ...prev, companyId: id || '' }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <Select
+                value={filtros.status}
+                onValueChange={(v) => setFiltros(prev => ({ ...prev, status: v as typeof prev.status }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="realizado">Realizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {filtrosAtivos && (
+            <div className="flex items-center justify-between mt-3">
+              <span className="text-xs text-muted-foreground">
+                {solicitacoesFiltradas.length} de {solicitacoes.length} solicitações
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFiltros({ dataInicial: '', dataFinal: '', companyId: '', status: 'todos' })}
+              >
+                Limpar filtros
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card className="w-full overflow-hidden border-none sm:border shadow-none sm:shadow-sm">
         <CardHeader className="px-2 sm:px-6">
           <CardTitle>Solicitações de Acréscimo de Função</CardTitle>
         </CardHeader>
+
         <CardContent className="p-0 sm:p-6">
           <div className="rounded-md sm:border overflow-hidden">
             <div className="overflow-x-auto w-full">
@@ -265,14 +350,14 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                {solicitacoes.length === 0 ? (
+                {solicitacoesFiltradas.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isAdmMaster ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Nenhuma solicitação encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
-                  solicitacoes.map((s) => (
+                  solicitacoesFiltradas.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{s.numero || '—'}</TableCell>
                       <TableCell>
@@ -282,8 +367,28 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                       <TableCell className="whitespace-nowrap">{s.solicitante_nome}</TableCell>
                       <TableCell className="whitespace-nowrap">{format(parseISO(s.data_solicitacao_cliente), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{s.cargos?.length || 0} cargo(s)</Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="secondary" className="cursor-default">{s.cargos?.length || 0} cargo(s)</Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[320px]">
+                              {(s.cargos || []).length === 0 ? (
+                                <span className="text-xs">Nenhum cargo</span>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  {(s.cargos || []).map((c, i) => (
+                                    <div key={i} className="text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]">
+                                      {c.setor} — {c.cargo}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
+
                       <TableCell>
                         {s.realizado ? (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
@@ -307,16 +412,24 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {!s.realizado && canEdit && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 mr-2"
-                              onClick={() => { setSelectedSolicitacao(s); setRealizarOpen(true); }}
-                            >
-                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                              Realizado
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-emerald-600"
+                                    onClick={() => { setSelectedSolicitacao(s); setRealizarOpen(true); }}
+                                    aria-label="Marcar como Realizado"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Marcar como Realizado</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
+
                           
                           {(isAdmMaster || (!s.realizado && canEdit)) && (
                             <Button 
