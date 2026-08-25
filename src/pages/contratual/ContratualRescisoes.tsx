@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, FileX, Info } from 'lucide-react';
 import { formatDateBR } from '@/lib/contractual/format';
+import { ContratualRescisaoDetalhe } from './ContratualRescisaoDetalhe';
+
 import { 
   Tooltip,
   TooltipContent,
