@@ -22,6 +22,8 @@ import {
 
 export default function ContratualRescisoes() {
   const [search, setSearch] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
+
 
   const { data: rescisoes, isLoading } = useQuery({
     queryKey: ['contract-rescisoes-list'],
