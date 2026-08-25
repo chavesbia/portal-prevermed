@@ -36,6 +36,13 @@ import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
 
 
+function formatCnpj(v: string | null | undefined) {
+  if (!v) return '';
+  const d = v.replace(/\D/g, '');
+  if (d.length !== 14) return v;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
   tipoOS: z.enum(['Novo', 'Revisão']),
