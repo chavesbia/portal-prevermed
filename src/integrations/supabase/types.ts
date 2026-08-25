@@ -2247,8 +2247,10 @@ export type Database = {
           juros: number | null
           multa: number | null
           numero_contrato: string | null
+          numero_original: string | null
           numero_proposta: string | null
           observacoes: string | null
+          origem: string
           pdf_url: string | null
           prazo_aviso: number | null
           prevermed_cpf: string | null
@@ -2291,8 +2293,10 @@ export type Database = {
           juros?: number | null
           multa?: number | null
           numero_contrato?: string | null
+          numero_original?: string | null
           numero_proposta?: string | null
           observacoes?: string | null
+          origem?: string
           pdf_url?: string | null
           prazo_aviso?: number | null
           prevermed_cpf?: string | null
@@ -2335,8 +2339,10 @@ export type Database = {
           juros?: number | null
           multa?: number | null
           numero_contrato?: string | null
+          numero_original?: string | null
           numero_proposta?: string | null
           observacoes?: string | null
+          origem?: string
           pdf_url?: string | null
           prazo_aviso?: number | null
           prevermed_cpf?: string | null
