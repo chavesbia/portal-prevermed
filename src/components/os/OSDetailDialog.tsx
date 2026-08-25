@@ -36,12 +36,24 @@ function formatCnpj(v: string | null | undefined) {
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
 }
 
+function formatEndereco(c: any) {
+  const linha1 = [c?.logradouro, c?.numero].filter(Boolean).join(', ');
+  const partes = [linha1, c?.complemento, c?.bairro, [c?.cidade, c?.estado].filter(Boolean).join(' - '), c?.cep]
+    .map((p: any) => (typeof p === 'string' ? p.trim() : p))
+    .filter(Boolean);
+  return partes.length ? partes.join(', ') : null;
+}
+
+
+
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
   const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
+  const [empresaEndereco, setEmpresaEndereco] = useState<string | null>(null);
+
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const { user } = useAuth();
@@ -69,16 +81,19 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
   useEffect(() => {
     const companyId = (ordem as any).company_id as string | undefined;
-    if (!open || !companyId) { setEmpresaCnpj(null); return; }
+    if (!open || !companyId) { setEmpresaCnpj(null); setEmpresaEndereco(null); return; }
     (async () => {
       const { data } = await supabase
         .from('companies')
-        .select('cnpj')
+        .select('cnpj, logradouro, numero, complemento, bairro, cidade, estado, cep')
         .eq('id', companyId)
         .maybeSingle();
-      setEmpresaCnpj((data as any)?.cnpj || null);
+      const c = data as any;
+      setEmpresaCnpj(c?.cnpj || null);
+      setEmpresaEndereco(c ? formatEndereco(c) : null);
     })();
   }, [open, (ordem as any).company_id]);
+
 
 
 
@@ -137,6 +152,16 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                     <p className="text-xs text-muted-foreground">CNPJ: {formatCnpj(empresaCnpj)}</p>
                   )}
                 </div>
+                {empresaEndereco && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Endereço do CNPJ</Label>
+                    <p className="font-medium">{empresaEndereco}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Confirme o local real da visita — nem sempre coincide com o endereço do CNPJ.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Contato do Cliente</Label>
                   <p className="font-medium">{ordem.contato_cliente || '-'}</p>
