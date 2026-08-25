@@ -233,13 +233,18 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
               <Button variant="outline" size="sm" onClick={baixarPdf} disabled={!contrato.pdf_url}>
                 <FileDown className="h-4 w-4 mr-1" /> Baixar PDF
               </Button>
-              {canEdit && contrato.status === 'rascunho' && (
+              {isLegado && canEdit && (
+                <Button variant="outline" size="sm" onClick={() => setEditLegadoOpen(true)}>
+                  <Edit2 className="h-4 w-4 mr-1" /> Editar Dados
+                </Button>
+              )}
+              {!isLegado && canEdit && contrato.status === 'rascunho' && (
                 <Button variant="outline" size="sm" onClick={regenerarPdf} disabled={regen}>
                   {regen ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
                   Preparar para Envio
                 </Button>
               )}
-              {canEdit && contrato.status === 'rascunho' && (
+              {!isLegado && canEdit && contrato.status === 'rascunho' && (
                 <Button size="sm" onClick={enviarAutentique} disabled={sending || !contrato.pdf_url}>
                   {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
                   Enviar para Autentique
