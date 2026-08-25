@@ -370,7 +370,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Badge variant="secondary" className="cursor-default">{s.cargos?.length || 0} cargo(s)</Badge>
+                              <Badge variant="secondary" className="cursor-default whitespace-nowrap">{s.cargos?.length || 0} cargo(s)</Badge>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-[320px]">
                               {(s.cargos || []).length === 0 ? (
