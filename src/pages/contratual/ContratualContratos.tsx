@@ -111,6 +111,9 @@ export default function ContratualContratos({ canEdit }: Props) {
             <Button variant="outline" onClick={() => setRescisaoOpen(true)} className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50">
               <XCircle className="h-4 w-4" /> Registrar Rescisão
             </Button>
+            <Button variant="outline" onClick={() => setLegadoOpen(true)} className="gap-1.5">
+              <Archive className="h-4 w-4" /> Cadastrar Contrato Legado
+            </Button>
             <Button onClick={() => { setDraftId(null); setWizardOpen(true); }} className="gap-1.5">
               <Plus className="h-4 w-4" /> Novo Contrato
             </Button>
