@@ -29,11 +29,19 @@ interface OSDetailDialogProps {
   onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
 }
 
+function formatCnpj(v: string | null | undefined) {
+  if (!v) return '';
+  const d = v.replace(/\D/g, '');
+  if (d.length !== 14) return v;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
+  const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const { user } = useAuth();
@@ -58,6 +66,21 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
       setEmissorNome((data as any)?.full_name || null);
     })();
   }, [open, ordem.created_by]);
+
+  useEffect(() => {
+    const companyId = (ordem as any).company_id as string | undefined;
+    if (!open || !companyId) { setEmpresaCnpj(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from('companies')
+        .select('cnpj')
+        .eq('id', companyId)
+        .maybeSingle();
+      setEmpresaCnpj((data as any)?.cnpj || null);
+    })();
+  }, [open, (ordem as any).company_id]);
+
+
 
   useEffect(() => {
     if (!open) return;
@@ -110,6 +133,9 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Cliente</Label>
                   <p className="font-medium">{ordem.empresa_cliente}</p>
+                  {empresaCnpj && (
+                    <p className="text-xs text-muted-foreground">CNPJ: {formatCnpj(empresaCnpj)}</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Contato do Cliente</Label>

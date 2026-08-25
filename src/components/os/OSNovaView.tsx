@@ -36,6 +36,13 @@ import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
 
 
+function formatCnpj(v: string | null | undefined) {
+  if (!v) return '';
+  const d = v.replace(/\D/g, '');
+  if (d.length !== 14) return v;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
+
 const servicoSchema = z.object({
   tipo: z.string().min(1, 'Tipo é obrigatório'),
   tipoOS: z.enum(['Novo', 'Revisão']),
@@ -89,6 +96,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const [addingServico, setAddingServico] = useState(false);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [isContactsLoading, setIsContactsLoading] = useState(false);
+  const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
 
   const responsaveisAtivos = useMemo(() => responsaveis.filter(r => r.ativo), [responsaveis]);
 
@@ -283,15 +291,20 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                       field.onChange(id ?? undefined);
                       form.setValue('empresaCliente', company?.razao_social || '', { shouldValidate: true });
                       form.setValue('unidadeId', null);
+                      setEmpresaCnpj(company?.cnpj || null);
                     }}
                   />
                 </FormControl>
+                {empresaCnpj && (
+                  <p className="text-xs font-medium">CNPJ: {formatCnpj(empresaCnpj)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Selecione uma empresa cadastrada. Se a empresa não aparecer na lista, ela precisa ser cadastrada no SOC primeiro.
                 </p>
                 <FormMessage />
               </FormItem>
             )} />
+
             <FormField control={form.control} name="unidadeId" render={({ field }) => (
               <FormItem className="md:col-span-2">
                 <FormLabel>Unidade (opcional)</FormLabel>
