@@ -36,7 +36,7 @@ export default function ContratualContratos({ canEdit }: Props) {
     queryKey: ['contract-contratos', search],
     queryFn: async () => {
       let q = supabase.from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, cliente:contract_clientes(razao_social, cnpj)')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, origem, numero_original, cliente:contract_clientes(razao_social, cnpj)')
         .order('created_at', { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
