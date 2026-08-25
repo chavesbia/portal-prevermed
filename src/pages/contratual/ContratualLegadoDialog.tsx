@@ -37,6 +37,7 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
   const [form, setForm] = useState<any>(empty);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyOption | null>(null);
+  const [modalidadeId, setModalidadeId] = useState<string | null>(null);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [pdfName, setPdfName] = useState<string>('');
   const [uploading, setUploading] = useState(false);
