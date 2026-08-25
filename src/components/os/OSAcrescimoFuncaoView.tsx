@@ -412,16 +412,24 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {!s.realizado && canEdit && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 mr-2"
-                              onClick={() => { setSelectedSolicitacao(s); setRealizarOpen(true); }}
-                            >
-                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                              Realizado
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-emerald-600"
+                                    onClick={() => { setSelectedSolicitacao(s); setRealizarOpen(true); }}
+                                    aria-label="Marcar como Realizado"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Marcar como Realizado</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
+
                           
                           {(isAdmMaster || (!s.realizado && canEdit)) && (
                             <Button 
