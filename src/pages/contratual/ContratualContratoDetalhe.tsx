@@ -149,7 +149,8 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
     if (!contrato?.pdf_url) { toast.error('PDF não disponível'); return; }
     try {
       // Baixa direto do Storage via SDK (não usa URL pública — evita bloqueio por adblock/Edge)
-      const { data, error } = await supabase.storage.from('contract-pdfs').download(contrato.pdf_url);
+      const bucket = (contrato as any).origem === 'legado' ? 'contract-legados' : 'contract-pdfs';
+      const { data, error } = await supabase.storage.from(bucket).download(contrato.pdf_url);
       if (error || !data) throw error || new Error('Falha ao baixar PDF');
       const blobUrl = URL.createObjectURL(data);
       const a = document.createElement('a');
