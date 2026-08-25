@@ -47,8 +47,9 @@ const formSchema = z.object({
   unidadeId: z.string().uuid().optional().nullable(),
   empresaCliente: z.string().min(1),
   contatoCliente: z.string().optional(),
-  contatoEmail: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  contatoTelefone: z.string().optional(),
+  contatoEmail: z.string().trim().min(1, 'E-mail do contato é obrigatório').email('E-mail inválido'),
+  contatoTelefone: z.string().trim().min(1, 'Telefone do contato é obrigatório'),
+
   emissor: z.string().min(1, 'Usuário emissor não identificado'),
   dataEmissao: z.date({ required_error: 'Data de emissão é obrigatória' }),
   prazoEntrega: z.date().optional().nullable(),
@@ -348,7 +349,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
             <FormField control={form.control} name="contatoEmail" render={({ field }) => (
               <FormItem>
-                <FormLabel>E-mail do Contato</FormLabel>
+                <FormLabel>E-mail do Contato *</FormLabel>
                 <FormControl><Input placeholder="email@exemplo.com" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
@@ -356,11 +357,12 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
             <FormField control={form.control} name="contatoTelefone" render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefone do Contato</FormLabel>
+                <FormLabel>Telefone do Contato *</FormLabel>
                 <FormControl><Input placeholder="(00) 00000-0000" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
+
             <FormField control={form.control} name="emissor" render={({ field }) => (
               <FormItem>
                 <FormLabel>Usuário Emissor</FormLabel>
