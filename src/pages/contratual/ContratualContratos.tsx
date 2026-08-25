@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, FileDown, Pencil, Trash2, XCircle } from 'lucide-react';
+import { Plus, Eye, FileDown, Pencil, Trash2, XCircle, Archive } from 'lucide-react';
 import { formatCNPJ, formatBRL, formatDateBR } from '@/lib/contractual/format';
 import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/statusLabels';
 import { Input } from '@/components/ui/input';
 import { ContratualContratoWizard } from './ContratualContratoWizard';
 import { ContratualContratoDetalhe } from './ContratualContratoDetalhe';
 import { ContratualRescisaoDialog } from './ContratualRescisaoDialog';
+import { ContratualLegadoDialog } from './ContratualLegadoDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export default function ContratualContratos({ canEdit }: Props) {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [rescisaoOpen, setRescisaoOpen] = useState(false);
+  const [legadoOpen, setLegadoOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const { data: contratos = [], isLoading } = useQuery({
