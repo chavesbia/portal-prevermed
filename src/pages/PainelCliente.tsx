@@ -391,6 +391,7 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
 }
 
 function RescisoesCard({ companyId }: { companyId: string }) {
+  const [detailId, setDetailId] = useState<string | null>(null);
   const { data, isLoading } = useQuery({
     queryKey: ['painel-cliente-rescisoes', companyId],
     queryFn: async () => {
@@ -398,6 +399,7 @@ function RescisoesCard({ companyId }: { companyId: string }) {
         .from('contract_rescisoes')
         .select(`
           id,
+          numero,
           numero_contrato_manual,
           contrato_id,
           motivo,
