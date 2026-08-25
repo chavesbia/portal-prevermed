@@ -180,8 +180,11 @@ export function useOrdens() {
   const addOrdem = async (data: {
     numero_os: string;
     company_id?: string | null;
+    unidade_id?: string | null;
     empresa_cliente: string;
     contato_cliente?: string;
+    contato_email?: string | null;
+    contato_telefone?: string | null;
     responsavel_atual: string;
     status_os: StatusOS;
     data_registro: string;
@@ -200,8 +203,11 @@ export function useOrdens() {
         .insert({
           numero_os: data.numero_os,
           company_id: data.company_id || null,
+          unidade_id: data.unidade_id || null,
           empresa_cliente: data.empresa_cliente,
           contato_cliente: data.contato_cliente || null,
+          contato_email: data.contato_email || null,
+          contato_telefone: data.contato_telefone || null,
           responsavel_atual: data.responsavel_atual,
           status_os: data.status_os,
           data_registro: data.data_registro,
@@ -286,8 +292,11 @@ export function useOrdens() {
     ordemId: string,
     data: {
       numero_os: string;
+      company_id?: string | null;
       empresa_cliente: string;
       contato_cliente?: string | null;
+      contato_email?: string | null;
+      contato_telefone?: string | null;
       responsavel_atual: string;
       status_os: StatusOS;
       data_registro: string;
@@ -317,8 +326,11 @@ export function useOrdens() {
         .from('ordens_servico')
         .update({
           numero_os: data.numero_os,
+          ...(data.company_id !== undefined ? { company_id: data.company_id } : {}),
           empresa_cliente: data.empresa_cliente,
           contato_cliente: data.contato_cliente ?? null,
+          ...(data.contato_email !== undefined ? { contato_email: data.contato_email } : {}),
+          ...(data.contato_telefone !== undefined ? { contato_telefone: data.contato_telefone } : {}),
           responsavel_atual: data.responsavel_atual,
           status_os: data.status_os,
           // Removed data_registro and data_emissao from update as per requirement
