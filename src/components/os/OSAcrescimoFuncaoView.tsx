@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAcrescimoFuncao } from '@/hooks/useAcrescimoFuncao';
 import { AcrescimoFuncaoSolicitacao } from '@/types/os';
 import { useAuth } from '@/contexts/AuthContext';
