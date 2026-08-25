@@ -95,17 +95,22 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
   // Recent table (first 8)
   const recent = ordens.slice(0, 8);
 
-  const ChartTooltip = ({ active, payload }: any) => {
+  const ChartTooltip = ({ active, payload, unidade = 'OS' }: any) => {
     if (active && payload?.length) {
+      const valor = payload[0].value;
+      const unidadeLabel = unidade === 'OS'
+        ? 'OS'
+        : valor === 1 ? 'serviço' : 'serviços';
       return (
         <div className="rounded-lg border bg-card p-3 shadow-lg">
           <p className="font-medium">{payload[0].name || payload[0].payload?.fullName || payload[0].payload?.name}</p>
-          <p className="text-sm text-muted-foreground">{payload[0].value} OS</p>
+          <p className="text-sm text-muted-foreground">{valor} {unidadeLabel}</p>
         </div>
       );
     }
     return null;
   };
+
 
   return (
     <div className="space-y-6">
