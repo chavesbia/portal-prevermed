@@ -98,6 +98,14 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
   // Recent table (first 8)
   const recent = ordens.slice(0, 8);
 
+  const [expandedOS, setExpandedOS] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) => setExpandedOS(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+
   const ChartTooltip = ({ active, payload, unidade = 'OS' }: any) => {
     if (active && payload?.length) {
       const valor = payload[0].value;
