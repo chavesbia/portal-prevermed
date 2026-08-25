@@ -50,10 +50,13 @@ export type Database = {
           created_by: string | null
           data_solicitacao_cliente: string
           id: string
+          numero: string | null
           observacao: string | null
           realizado: boolean | null
           realizado_em: string | null
           realizado_por: string | null
+          realizado_por_nome: string | null
+          realizado_por_user_id: string | null
           solicitante_nome: string
           unidade_id: string | null
           valor_total_calculado: number | null
@@ -64,10 +67,13 @@ export type Database = {
           created_by?: string | null
           data_solicitacao_cliente: string
           id?: string
+          numero?: string | null
           observacao?: string | null
           realizado?: boolean | null
           realizado_em?: string | null
           realizado_por?: string | null
+          realizado_por_nome?: string | null
+          realizado_por_user_id?: string | null
           solicitante_nome: string
           unidade_id?: string | null
           valor_total_calculado?: number | null
@@ -78,10 +84,13 @@ export type Database = {
           created_by?: string | null
           data_solicitacao_cliente?: string
           id?: string
+          numero?: string | null
           observacao?: string | null
           realizado?: boolean | null
           realizado_em?: string | null
           realizado_por?: string | null
+          realizado_por_nome?: string | null
+          realizado_por_user_id?: string | null
           solicitante_nome?: string
           unidade_id?: string | null
           valor_total_calculado?: number | null
