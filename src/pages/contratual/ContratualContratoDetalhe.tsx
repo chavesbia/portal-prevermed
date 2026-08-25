@@ -181,17 +181,28 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   };
 
   const st = contrato ? getContractStatusDisplay(contrato) : null;
+  const isLegado = (contrato as any)?.origem === 'legado';
 
   return (
     <Sheet open={!!contratoId} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {contrato?.numero_contrato || 'Contrato'}
               {st && <Badge variant="secondary" className={st.tone}>{st.label}</Badge>}
+              {isLegado && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 gap-1">
+                  <Archive className="h-3 w-3" /> Legado
+                </Badge>
+              )}
             </div>
-            {(contrato?.eventos?.some((e: any) => e.detalhes?.is_revisao || e.detalhes?.numero_anterior) || contrato?.numero_contrato?.match(/[A-Z]$/)) && (
+            {isLegado && (contrato as any)?.numero_original && (
+              <div className="text-xs font-normal text-muted-foreground">
+                Número original: <span className="font-medium text-foreground">{(contrato as any).numero_original}</span>
+              </div>
+            )}
+            {!isLegado && (contrato?.eventos?.some((e: any) => e.detalhes?.is_revisao || e.detalhes?.numero_anterior) || contrato?.numero_contrato?.match(/[A-Z]$/)) && (
               <div className="text-xs font-normal text-amber-600 flex items-center gap-1">
                 <RefreshCw className="h-3 w-3" />
                 Revisão {contrato.eventos?.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior ? `de ${contrato.eventos.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior}` : ''}
