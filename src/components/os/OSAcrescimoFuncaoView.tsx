@@ -26,7 +26,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado } = useAcrescimoFuncao();
   const { profissionais } = useProfissionais();
-  const { isAdmMaster } = useAuth();
+  const { isAdmMaster, profile, user } = useAuth();
   
   const [formOpen, setFormOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -146,11 +146,10 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
   };
 
   const handleMarkRealizado = async () => {
-    if (!selectedSolicitacao || !realizadoPor) return;
+    if (!selectedSolicitacao) return;
     try {
       await markAsRealizado.mutateAsync({
         id: selectedSolicitacao.id,
-        realizado_por: realizadoPor,
         company_id: selectedSolicitacao.company_id,
         num_cargos: selectedSolicitacao.cargos?.length || 0
       });
@@ -179,12 +178,13 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
       return;
     }
 
-    const headers = ['Empresa', 'Unidade', 'Solicitante', 'Setor', 'Cargo', 'Data Realização', 'Realizado Por'];
+    const headers = ['Nº', 'Empresa', 'Unidade', 'Solicitante', 'Setor', 'Cargo', 'Data Realização', 'Realizado Por'];
     if (isAdmMaster) headers.push('Valor Calculado');
 
     const rows = data.flatMap(s => 
       (s.cargos || []).map(c => {
         const row = [
+          s.numero || '',
           s.company_name || '',
           s.unidade_nome || '',
           s.solicitante_nome,
@@ -259,6 +259,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="whitespace-nowrap">Nº</TableHead>
                     <TableHead className="whitespace-nowrap min-w-[200px]">Empresa / Unidade</TableHead>
                     <TableHead className="whitespace-nowrap">Solicitante</TableHead>
                     <TableHead className="whitespace-nowrap">Data Pedido</TableHead>
@@ -271,13 +272,14 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
               <TableBody>
                 {solicitacoes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmMaster ? 7 : 6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={isAdmMaster ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Nenhuma solicitação encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
                   solicitacoes.map((s) => (
                     <TableRow key={s.id}>
+                      <TableCell className="whitespace-nowrap font-mono text-xs">{s.numero || '—'}</TableCell>
                       <TableCell>
                         <div className="font-medium truncate max-w-[250px]" title={s.company_name}>{s.company_name}</div>
                         <div className="text-xs text-muted-foreground truncate max-w-[200px]">{s.unidade_nome || 'Matriz/Geral'}</div>
@@ -310,17 +312,15 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           {!s.realizado && canEdit && (
-                            <div className="flex items-center gap-2 mr-2">
-                              <Checkbox 
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setSelectedSolicitacao(s);
-                                    setRealizarOpen(true);
-                                  }
-                                }}
-                              />
-                              <span className="text-[10px] text-muted-foreground hidden sm:inline">Realizar</span>
-                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 mr-2"
+                              onClick={() => { setSelectedSolicitacao(s); setRealizarOpen(true); }}
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                              Realizado
+                            </Button>
                           )}
                           
                           {(isAdmMaster || (!s.realizado && canEdit)) && (
@@ -484,27 +484,16 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
           <DialogHeader>
             <DialogTitle>Marcar como Realizado</DialogTitle>
             <DialogDescription>
-              Selecione quem realizou o cadastro dos novos cargos.
+              O registro será feito automaticamente em seu nome, com data e hora atuais.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Realizado por *</Label>
-              <Select value={realizadoPor} onValueChange={setRealizadoPor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o profissional" />
-                </SelectTrigger>
-                <SelectContent>
-                  {profissionais.filter(p => p.ativo).map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="py-4 space-y-2 text-sm">
+            <div><span className="text-muted-foreground">Realizado por: </span><span className="font-medium">{profile?.full_name || user?.email}</span></div>
+            <div><span className="text-muted-foreground">Data/hora: </span><span className="font-medium">{format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRealizarOpen(false)}>Cancelar</Button>
-            <Button onClick={handleMarkRealizado} disabled={!realizadoPor || markAsRealizado.isPending}>
+            <Button onClick={handleMarkRealizado} disabled={markAsRealizado.isPending}>
               Confirmar e Calcular
             </Button>
           </DialogFooter>
