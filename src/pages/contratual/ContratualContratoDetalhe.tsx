@@ -250,7 +250,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   Enviar para Autentique
                 </Button>
               )}
-              {canEdit && ['parcialmente_assinado', 'assinado'].includes(contrato.status) && (
+              {!isLegado && canEdit && ['parcialmente_assinado', 'assinado'].includes(contrato.status) && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="text-amber-600 border-amber-200 hover:bg-amber-50" disabled={correcting}>
@@ -293,7 +293,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   Rescindir este Contrato
                 </Button>
               )}
-              {contrato.autentique_document_id && (
+              {!isLegado && contrato.autentique_document_id && (
                 <>
                   <Button 
                     variant="default" 
