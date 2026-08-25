@@ -367,8 +367,28 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                       <TableCell className="whitespace-nowrap">{s.solicitante_nome}</TableCell>
                       <TableCell className="whitespace-nowrap">{format(parseISO(s.data_solicitacao_cliente), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{s.cargos?.length || 0} cargo(s)</Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="secondary" className="cursor-default">{s.cargos?.length || 0} cargo(s)</Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-[320px]">
+                              {(s.cargos || []).length === 0 ? (
+                                <span className="text-xs">Nenhum cargo</span>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  {(s.cargos || []).map((c, i) => (
+                                    <div key={i} className="text-xs whitespace-nowrap overflow-hidden text-ellipsis max-w-[300px]">
+                                      {c.setor} — {c.cargo}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
+
                       <TableCell>
                         {s.realizado ? (
                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
