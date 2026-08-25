@@ -55,8 +55,9 @@ export default function ContratualRescisoes() {
     const soc = r.companies?.soc_code?.toLowerCase() || '';
     const num = r.contract_contratos?.numero_contrato?.toLowerCase() || '';
     const manual = r.numero_contrato_manual?.toLowerCase() || '';
-    
-    return razao.includes(term) || soc.includes(term) || num.includes(term) || manual.includes(term);
+    const numero = r.numero?.toLowerCase() || '';
+
+    return razao.includes(term) || soc.includes(term) || num.includes(term) || manual.includes(term) || numero.includes(term);
   });
 
   if (isLoading) {
