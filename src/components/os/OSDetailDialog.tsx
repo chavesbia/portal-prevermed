@@ -152,6 +152,16 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                     <p className="text-xs text-muted-foreground">CNPJ: {formatCnpj(empresaCnpj)}</p>
                   )}
                 </div>
+                {empresaEndereco && (
+                  <div className="space-y-1">
+                    <Label className="text-muted-foreground text-xs">Endereço do CNPJ</Label>
+                    <p className="font-medium">{empresaEndereco}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Confirme o local real da visita — nem sempre coincide com o endereço do CNPJ.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Contato do Cliente</Label>
                   <p className="font-medium">{ordem.contato_cliente || '-'}</p>
