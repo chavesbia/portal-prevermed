@@ -438,10 +438,13 @@ function RescisoesCard({ companyId }: { companyId: string }) {
               return (
                 <div
                   key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 p-3 bg-white transition-colors"
+                  role="button"
+                  onClick={() => setDetailId(r.id)}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 p-3 bg-white transition-colors cursor-pointer hover:bg-amber-50"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
+                      {r.numero && <span className="font-mono text-xs text-muted-foreground">{r.numero}</span>}
                       <span className="font-medium">
                         Contrato: {contrato || '—'}
                       </span>
@@ -463,6 +466,7 @@ function RescisoesCard({ companyId }: { companyId: string }) {
           </div>
         )}
       </CardContent>
+      <ContratualRescisaoDetalhe rescisaoId={detailId} onClose={() => setDetailId(null)} />
     </Card>
   );
 }
