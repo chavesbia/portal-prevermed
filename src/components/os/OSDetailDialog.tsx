@@ -42,6 +42,8 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [saving, setSaving] = useState(false);
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
   const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
+  const [empresaEndereco, setEmpresaEndereco] = useState<string | null>(null);
+
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
   const { user } = useAuth();
