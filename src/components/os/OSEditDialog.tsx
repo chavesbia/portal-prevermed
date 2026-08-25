@@ -24,6 +24,8 @@ import { useTiposServicoOS } from '@/hooks/useTiposServicoOS';
 import { useProfissionais } from '@/hooks/useProfissionais';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { CompanySelector, formatCompanyCnpj } from '@/components/shared/CompanySelector';
+import { X } from 'lucide-react';
 
 interface OSEditDialogProps {
   ordem: OrdemServico;
@@ -42,6 +44,11 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
   const [numeroOS, setNumeroOS] = useState(ordem.numero_os);
   const [empresaCliente, setEmpresaCliente] = useState(ordem.empresa_cliente);
   const [contatoCliente, setContatoCliente] = useState(ordem.contato_cliente || '');
+  const [contatoEmail, setContatoEmail] = useState<string>((ordem as any).contato_email || '');
+  const [contatoTelefone, setContatoTelefone] = useState<string>((ordem as any).contato_telefone || '');
+  const [companyId, setCompanyId] = useState<string | null>((ordem as any).company_id || null);
+  const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
+  const [companyContacts, setCompanyContacts] = useState<{ nome: string; email_1: string | null; telefone_1: string | null }[]>([]);
   const [statusOS, setStatusOS] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [dataEmissao, setDataEmissao] = useState<Date | undefined>(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
   const [prazoAcordado, setPrazoAcordado] = useState<Date | undefined>(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
@@ -64,6 +71,9 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
     setNumeroOS(ordem.numero_os);
     setEmpresaCliente(ordem.empresa_cliente);
     setContatoCliente(ordem.contato_cliente || '');
+    setContatoEmail((ordem as any).contato_email || '');
+    setContatoTelefone((ordem as any).contato_telefone || '');
+    setCompanyId((ordem as any).company_id || null);
     setStatusOS(ordem.status_os as StatusOS);
     setDataEmissao(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
     setPrazoAcordado(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
@@ -88,6 +98,29 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
     })();
   }, [ordem, open]);
 
+  // Contatos e CNPJ da empresa vinculada (mesma lógica da Nova OS)
+  useEffect(() => {
+    if (!open || !companyId) { setCompanyContacts([]); setEmpresaCnpj(null); return; }
+    (async () => {
+      const [{ data: contacts }, { data: comp }] = await Promise.all([
+        supabase.from('company_contacts').select('nome, email_1, telefone_1').eq('company_id', companyId).order('nome'),
+        supabase.from('companies').select('cnpj').eq('id', companyId).maybeSingle(),
+      ]);
+      setCompanyContacts((contacts as any) || []);
+      setEmpresaCnpj((comp as any)?.cnpj || null);
+    })();
+  }, [companyId, open]);
+
+  // Autopreenche e-mail/telefone ao escolher um contato do SOC
+  useEffect(() => {
+    if (!contatoCliente || !companyContacts.length) return;
+    const selected = companyContacts.find(c => c.nome === contatoCliente);
+    if (selected) {
+      setContatoEmail(selected.email_1 || '');
+      setContatoTelefone(selected.telefone_1 || '');
+    }
+  }, [contatoCliente, companyContacts]);
+
   const handleSave = async () => {
     if (!numeroOS || !empresaCliente || !dataEmissao) return;
     if (urgente && !motivoUrgencia.trim()) return;
@@ -96,7 +129,10 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
     const ok = await onUpdate(ordem.id, {
       numero_os: numeroOS,
       empresa_cliente: empresaCliente,
+      company_id: companyId,
       contato_cliente: contatoCliente || null,
+      contato_email: contatoEmail.trim() || null,
+      contato_telefone: contatoTelefone.trim() || null,
       status_os: statusOS,
       data_registro: dataEmissaoStr,
       data_emissao: dataEmissaoStr,
@@ -177,13 +213,60 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
             <Label>Número da OS</Label>
             <Input value={numeroOS} onChange={(e) => setNumeroOS(e.target.value)} disabled={!canEdit} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <Label>Empresa Cliente</Label>
-            <Input value={empresaCliente} onChange={(e) => setEmpresaCliente(e.target.value)} disabled={!canEdit} />
+            <CompanySelector
+              value={companyId}
+              legacyLabel={empresaCliente}
+              disabled={!canEdit || !isAdmMaster}
+              onChange={(id, company) => {
+                setCompanyId(id);
+                setEmpresaCliente(company?.razao_social || '');
+                setEmpresaCnpj(company?.cnpj || null);
+                setContatoCliente('');
+                setContatoEmail('');
+                setContatoTelefone('');
+              }}
+            />
+            {empresaCnpj && <p className="text-xs font-medium">CNPJ: {formatCompanyCnpj(empresaCnpj)}</p>}
+            <p className="text-xs text-muted-foreground">
+              {isAdmMaster
+                ? 'Trocar a empresa de uma OS existente afeta o histórico — altere apenas para corrigir vínculo errado.'
+                : 'A empresa vinculada só pode ser alterada por um ADM Master.'}
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Contato do Cliente</Label>
-            <Input value={contatoCliente} onChange={(e) => setContatoCliente(e.target.value)} disabled={!canEdit} />
+            <div className="relative">
+              <Input
+                value={contatoCliente}
+                onChange={(e) => setContatoCliente(e.target.value)}
+                disabled={!canEdit}
+                placeholder="Nome do contato"
+                list="os-edit-contacts-list"
+                className="pr-8"
+              />
+              {contatoCliente && canEdit && (
+                <button
+                  type="button"
+                  onClick={() => { setContatoCliente(''); setContatoEmail(''); setContatoTelefone(''); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              <datalist id="os-edit-contacts-list">
+                {companyContacts.map((c, i) => <option key={i} value={c.nome} />)}
+              </datalist>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>E-mail do Contato</Label>
+            <Input type="email" value={contatoEmail} onChange={(e) => setContatoEmail(e.target.value)} disabled={!canEdit} placeholder="email@exemplo.com" />
+          </div>
+          <div className="space-y-2">
+            <Label>Telefone do Contato</Label>
+            <Input value={contatoTelefone} onChange={(e) => setContatoTelefone(e.target.value)} disabled={!canEdit} placeholder="(00) 00000-0000" />
           </div>
           <div className="space-y-2">
             <Label>Emissor da OS</Label>
