@@ -103,7 +103,7 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
         : valor === 1 ? 'serviço' : 'serviços';
       return (
         <div className="rounded-lg border bg-card p-3 shadow-lg">
-          <p className="font-medium">{payload[0].name || payload[0].payload?.fullName || payload[0].payload?.name}</p>
+          <p className="font-medium">{payload[0].payload?.fullName || payload[0].payload?.name || payload[0].name}</p>
           <p className="text-sm text-muted-foreground">{valor} {unidadeLabel}</p>
         </div>
       );
