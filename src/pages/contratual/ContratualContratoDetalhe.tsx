@@ -339,8 +339,8 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
             <Tabs defaultValue="dados">
               <TabsList>
                 <TabsTrigger value="dados">Dados</TabsTrigger>
-                <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
-                <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
+                {!isLegado && <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>}
+                {!isLegado && <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>}
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
               </TabsList>
 
