@@ -221,6 +221,12 @@ export default function ContratualContratos({ canEdit }: Props) {
         onOpenChange={setRescisaoOpen}
         onSuccess={() => qc.invalidateQueries({ queryKey: ['contract-contratos'] })}
       />
+
+      <ContratualLegadoDialog
+        open={legadoOpen}
+        onOpenChange={setLegadoOpen}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ['contract-contratos'] })}
+      />
     </div>
   );
 }
