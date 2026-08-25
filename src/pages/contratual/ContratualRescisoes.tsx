@@ -149,6 +149,9 @@ export default function ContratualRescisoes() {
           </TableBody>
         </Table>
       </div>
+
+      <ContratualRescisaoDetalhe rescisaoId={detailId} onClose={() => setDetailId(null)} />
     </div>
+
   );
 }
