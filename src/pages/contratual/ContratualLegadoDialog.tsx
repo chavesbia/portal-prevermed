@@ -48,6 +48,7 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
       setForm(empty);
       setCompanyId(null);
       setCompany(null);
+      setModalidadeId(null);
       setPdfPath(null);
       setPdfName('');
     }
