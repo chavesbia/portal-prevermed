@@ -92,25 +92,38 @@ export function ContratualRescisaoDialog({ open, onOpenChange, initialCompanyId,
     }
   }, [open, initialCompanyId, initialContratoId]);
 
-  // Load contracts for selected company
+  // Load contracts for selected company (contract_contratos liga-se à empresa via cliente_id)
   useEffect(() => {
-    if (companyId) {
-      // Use a generic query to avoid deep type instantiation
-      const query = (supabase.from('contract_contratos') as any)
-        .select('id, numero_contrato, data_inicio, data_fim, qtd_vidas, valor_mensal')
-        .eq('company_id', companyId)
-        .neq('status', 'cancelado');
-      
-      if (initialContratoId) {
-        query.eq('id', initialContratoId);
-      }
-      
-      query.order('created_at', { ascending: false })
-        .then(({ data }: any) => setContratos(data || []));
-    } else if (!companyId) {
+    let cancelled = false;
+    if (!companyId) {
       setContratos([]);
+      return;
     }
+    (async () => {
+      const { data: clientes } = await supabase
+        .from('contract_clientes')
+        .select('id')
+        .eq('company_id', companyId);
+      const clienteIds = (clientes || []).map((c: any) => c.id);
+      if (clienteIds.length === 0) {
+        if (!cancelled) setContratos([]);
+        return;
+      }
+      let query = (supabase.from('contract_contratos') as any)
+        .select('id, numero_contrato, data_inicio, data_fim, qtd_vidas, valor_mensal')
+        .in('cliente_id', clienteIds)
+        .neq('status', 'cancelado');
+
+      if (initialContratoId) {
+        query = query.eq('id', initialContratoId);
+      }
+
+      const { data } = await query.order('created_at', { ascending: false });
+      if (!cancelled) setContratos(data || []);
+    })();
+    return () => { cancelled = true; };
   }, [companyId, initialContratoId]);
+
 
   const handleUploadAnexo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
