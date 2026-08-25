@@ -89,6 +89,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
   const [addingServico, setAddingServico] = useState(false);
   const [companyContacts, setCompanyContacts] = useState<any[]>([]);
   const [isContactsLoading, setIsContactsLoading] = useState(false);
+  const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
 
   const responsaveisAtivos = useMemo(() => responsaveis.filter(r => r.ativo), [responsaveis]);
 
