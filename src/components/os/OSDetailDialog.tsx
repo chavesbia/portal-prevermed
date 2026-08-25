@@ -52,6 +52,8 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
   const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
   const [empresaEndereco, setEmpresaEndereco] = useState<string | null>(null);
