@@ -132,6 +132,9 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Cliente</Label>
                   <p className="font-medium">{ordem.empresa_cliente}</p>
+                  {empresaCnpj && (
+                    <p className="text-xs text-muted-foreground">CNPJ: {formatCnpj(empresaCnpj)}</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label className="text-muted-foreground text-xs">Contato do Cliente</Label>
