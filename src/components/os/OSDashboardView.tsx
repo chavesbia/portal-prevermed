@@ -246,41 +246,52 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
+                    <th className="pb-3 w-8"></th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Nº OS</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Cliente</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground">Serviço</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Tipo</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground">Status Serviço</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Status OS</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recent.flatMap(ordem =>
-                    (ordem.servicos || []).map((servico, idx) => (
-                      <tr key={`${ordem.id}-${servico.id}`} className={`border-b last:border-0 hover:bg-muted/50 ${idx > 0 ? 'bg-muted/20' : ''}`}>
-                        <td className="py-2 font-medium">{idx === 0 ? ordem.numero_os : ''}</td>
-                        <td className="py-2 max-w-[120px] truncate">{idx === 0 ? ordem.empresa_cliente : ''}</td>
-                        <td className="py-2 font-medium">{servico.tipo}</td>
-                        <td className="py-2 hidden md:table-cell">
-                          <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
-                        </td>
-                        <td className="py-2">
-                          <Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge>
-                        </td>
-                        <td className="py-2 hidden xl:table-cell">
-                          {idx === 0 && <Badge className={`text-xs ${statusOSColors[ordem.status_os] || 'bg-muted'}`}>{ordem.status_os}</Badge>}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                  {recent.every(o => !o.servicos?.length) && recent.map(ordem => (
-                    <tr key={ordem.id} className="border-b hover:bg-muted/50">
-                      <td className="py-2 font-medium">{ordem.numero_os}</td>
-                      <td className="py-2">{ordem.empresa_cliente}</td>
-                      <td className="py-2 text-muted-foreground" colSpan={4}>{ordem.tipo_servico_resumo || '-'}</td>
-                    </tr>
-                  ))}
+                  {recent.map(ordem => {
+                    const svcs = ordem.servicos || [];
+                    const isExpanded = expandedOS.has(ordem.id);
+                    const encerrados = svcs.filter(s => s.status === 'Encerrado').length;
+                    return (
+                      <React.Fragment key={ordem.id}>
+                        <tr className="border-b hover:bg-muted/50 transition-colors">
+                          <td className="py-2">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleExpand(ordem.id)} disabled={svcs.length === 0}>
+                              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </Button>
+                          </td>
+                          <td className="py-2 font-medium">{ordem.numero_os}</td>
+                          <td className="py-2 max-w-[180px] truncate">{ordem.empresa_cliente}</td>
+                          <td className="py-2 hidden md:table-cell text-muted-foreground">
+                            {svcs.length > 0 ? `${encerrados}/${svcs.length} encerrados` : (ordem.tipo_servico_resumo || '—')}
+                          </td>
+                          <td className="py-2">
+                            <Badge className={`text-xs ${statusOSColors[ordem.status_os] || 'bg-muted'}`}>{ordem.status_os}</Badge>
+                          </td>
+                        </tr>
+                        {isExpanded && svcs.map(servico => (
+                          <tr key={servico.id} className="border-b bg-muted/20">
+                            <td></td>
+                            <td className="py-2 font-medium" colSpan={2}>{servico.tipo}</td>
+                            <td className="py-2 hidden md:table-cell">
+                              <Badge variant={servico.tipo_os === 'Novo' ? 'default' : 'secondary'} className="text-xs">{servico.tipo_os}</Badge>
+                            </td>
+                            <td className="py-2">
+                              <Badge className={`text-xs ${statusServicoColors[servico.status] || 'bg-muted'}`}>{servico.status}</Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
+
               </table>
             </div>
           )}
