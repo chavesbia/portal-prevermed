@@ -15,8 +15,10 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
-import { Timer } from 'lucide-react';
+import { Printer, Timer } from 'lucide-react';
 import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
+import { generateOSPdf } from '@/lib/os/pdf';
+
 
 import { OSAnexosTab } from './OSAnexosTab';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
