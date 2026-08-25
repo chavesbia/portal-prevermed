@@ -85,6 +85,7 @@ export default function ContratualRescisoes() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Nº</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Contrato</TableHead>
               <TableHead>Motivo</TableHead>
@@ -97,17 +98,19 @@ export default function ContratualRescisoes() {
           <TableBody>
             {filtered?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   Nenhuma rescisão encontrada.
                 </TableCell>
               </TableRow>
             ) : (
               filtered?.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className="cursor-pointer" onClick={() => setDetailId(r.id)}>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">{r.numero || '—'}</TableCell>
                   <TableCell className="font-medium">
                     <div>{r.companies?.razao_social}</div>
                     <div className="text-[10px] text-muted-foreground">SOC: {r.companies?.soc_code}</div>
                   </TableCell>
+
                   <TableCell>
                     {r.contrato_id ? (
                       <Badge variant="outline">{r.contract_contratos?.numero_contrato || 'Sem número'}</Badge>
