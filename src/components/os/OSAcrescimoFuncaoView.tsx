@@ -350,14 +350,14 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                   </TableRow>
                 </TableHeader>
               <TableBody>
-                {solicitacoes.length === 0 ? (
+                {solicitacoesFiltradas.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={isAdmMaster ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Nenhuma solicitação encontrada
                     </TableCell>
                   </TableRow>
                 ) : (
-                  solicitacoes.map((s) => (
+                  solicitacoesFiltradas.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell className="whitespace-nowrap font-mono text-xs">{s.numero || '—'}</TableCell>
                       <TableCell>
