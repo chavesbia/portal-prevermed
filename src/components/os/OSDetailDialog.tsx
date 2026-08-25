@@ -69,16 +69,19 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
   useEffect(() => {
     const companyId = (ordem as any).company_id as string | undefined;
-    if (!open || !companyId) { setEmpresaCnpj(null); return; }
+    if (!open || !companyId) { setEmpresaCnpj(null); setEmpresaEndereco(null); return; }
     (async () => {
       const { data } = await supabase
         .from('companies')
-        .select('cnpj')
+        .select('cnpj, logradouro, numero, complemento, bairro, cidade, estado, cep')
         .eq('id', companyId)
         .maybeSingle();
-      setEmpresaCnpj((data as any)?.cnpj || null);
+      const c = data as any;
+      setEmpresaCnpj(c?.cnpj || null);
+      setEmpresaEndereco(c ? formatEndereco(c) : null);
     })();
   }, [open, (ordem as any).company_id]);
+
 
 
 
