@@ -127,6 +127,35 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
     }
   };
 
+  const handlePrint = async () => {
+    setPrinting(true);
+    try {
+      const ids = Array.from(new Set(servicos.map(s => s.responsavel_id).filter(Boolean))) as string[];
+      const nomes = new Map<string, string>();
+      if (ids.length) {
+        const { data } = await supabase.from('profissionais').select('id, nome').in('id', ids);
+        (data || []).forEach((p: any) => nomes.set(p.id, p.nome));
+      }
+      await generateOSPdf({
+        numeroOS: ordem.numero_os,
+        empresaNome: ordem.empresa_cliente,
+        empresaCnpj: empresaCnpj ? formatCnpj(empresaCnpj) : null,
+        endereco: empresaEndereco,
+        contatoNome: ordem.contato_cliente,
+        contatoEmail: ordem.contato_email,
+        contatoTelefone: ordem.contato_telefone,
+        dataEmissao: osStart ? format(parseISO(osStart), 'dd/MM/yyyy', { locale: ptBR }) : null,
+        servicos: servicos.map(s => ({
+          tipo: s.tipo,
+          executor: s.responsavel_id ? nomes.get(s.responsavel_id) || null : null,
+          status: s.status,
+        })),
+      });
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -134,8 +163,19 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
           <DialogTitle className="flex items-center gap-3">
             <span>OS #{ordem.numero_os}</span>
             <Badge className={statusOSColors[ordem.status_os]}>{ordem.status_os}</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto mr-6"
+              onClick={handlePrint}
+              disabled={printing}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              {printing ? 'Gerando...' : 'Imprimir OS'}
+            </Button>
           </DialogTitle>
         </DialogHeader>
+
 
         <Tabs defaultValue="detalhes" className="mt-2">
           <TabsList>
