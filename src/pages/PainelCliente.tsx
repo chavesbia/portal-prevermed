@@ -14,6 +14,8 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { statusOSColors } from '@/types/os';
 import { toast } from 'sonner';
+import { ContratualRescisaoDetalhe } from '@/pages/contratual/ContratualRescisaoDetalhe';
+
 
 function formatDate(v: string | null | undefined) {
   if (!v) return '—';
