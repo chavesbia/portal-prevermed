@@ -2486,6 +2486,7 @@ export type Database = {
           id: string
           motivo: Database["public"]["Enums"]["contract_rescisao_motivo"]
           motivo_descricao: string | null
+          numero: string | null
           numero_contrato_manual: string | null
           qtd_vidas_manual: number | null
           solicitante_cargo: string | null
@@ -2514,6 +2515,7 @@ export type Database = {
           id?: string
           motivo: Database["public"]["Enums"]["contract_rescisao_motivo"]
           motivo_descricao?: string | null
+          numero?: string | null
           numero_contrato_manual?: string | null
           qtd_vidas_manual?: number | null
           solicitante_cargo?: string | null
@@ -2542,6 +2544,7 @@ export type Database = {
           id?: string
           motivo?: Database["public"]["Enums"]["contract_rescisao_motivo"]
           motivo_descricao?: string | null
+          numero?: string | null
           numero_contrato_manual?: string | null
           qtd_vidas_manual?: number | null
           solicitante_cargo?: string | null

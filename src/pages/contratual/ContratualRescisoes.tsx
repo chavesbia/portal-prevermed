@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, FileX, Info } from 'lucide-react';
 import { formatDateBR } from '@/lib/contractual/format';
+import { ContratualRescisaoDetalhe } from './ContratualRescisaoDetalhe';
+
 import { 
   Tooltip,
   TooltipContent,
@@ -22,6 +24,8 @@ import {
 
 export default function ContratualRescisoes() {
   const [search, setSearch] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
+
 
   const { data: rescisoes, isLoading } = useQuery({
     queryKey: ['contract-rescisoes-list'],
@@ -51,8 +55,9 @@ export default function ContratualRescisoes() {
     const soc = r.companies?.soc_code?.toLowerCase() || '';
     const num = r.contract_contratos?.numero_contrato?.toLowerCase() || '';
     const manual = r.numero_contrato_manual?.toLowerCase() || '';
-    
-    return razao.includes(term) || soc.includes(term) || num.includes(term) || manual.includes(term);
+    const numero = r.numero?.toLowerCase() || '';
+
+    return razao.includes(term) || soc.includes(term) || num.includes(term) || manual.includes(term) || numero.includes(term);
   });
 
   if (isLoading) {
@@ -81,6 +86,7 @@ export default function ContratualRescisoes() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Nº</TableHead>
               <TableHead>Empresa</TableHead>
               <TableHead>Contrato</TableHead>
               <TableHead>Motivo</TableHead>
@@ -93,17 +99,19 @@ export default function ContratualRescisoes() {
           <TableBody>
             {filtered?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                   Nenhuma rescisão encontrada.
                 </TableCell>
               </TableRow>
             ) : (
               filtered?.map((r) => (
-                <TableRow key={r.id}>
+                <TableRow key={r.id} className="cursor-pointer" onClick={() => setDetailId(r.id)}>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">{r.numero || '—'}</TableCell>
                   <TableCell className="font-medium">
                     <div>{r.companies?.razao_social}</div>
                     <div className="text-[10px] text-muted-foreground">SOC: {r.companies?.soc_code}</div>
                   </TableCell>
+
                   <TableCell>
                     {r.contrato_id ? (
                       <Badge variant="outline">{r.contract_contratos?.numero_contrato || 'Sem número'}</Badge>
@@ -145,6 +153,9 @@ export default function ContratualRescisoes() {
           </TableBody>
         </Table>
       </div>
+
+      <ContratualRescisaoDetalhe rescisaoId={detailId} onClose={() => setDetailId(null)} />
     </div>
+
   );
 }
