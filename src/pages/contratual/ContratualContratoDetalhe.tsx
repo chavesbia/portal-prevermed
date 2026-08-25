@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle, Archive } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -15,6 +15,7 @@ import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/status
 import { AssinanteEditDialog } from './AssinanteEditDialog';
 import { cancelarEReenviarContrato } from '@/lib/contractual/correction';
 import { ContratualRescisaoDialog } from './ContratualRescisaoDialog';
+import { ContratualLegadoEditDialog } from './ContratualLegadoEditDialog';
 
 interface Props {
   contratoId: string | null;
@@ -34,6 +35,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   const [editingAssinante, setEditingAssinante] = useState<any>(null);
   const [correcting, setCorrecting] = useState(false);
   const [rescisaoOpen, setRescisaoOpen] = useState(false);
+  const [editLegadoOpen, setEditLegadoOpen] = useState(false);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -181,17 +183,28 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   };
 
   const st = contrato ? getContractStatusDisplay(contrato) : null;
+  const isLegado = (contrato as any)?.origem === 'legado';
 
   return (
     <Sheet open={!!contratoId} onOpenChange={(o) => { if (!o) onClose(); }}>
       <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {contrato?.numero_contrato || 'Contrato'}
               {st && <Badge variant="secondary" className={st.tone}>{st.label}</Badge>}
+              {isLegado && (
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 gap-1">
+                  <Archive className="h-3 w-3" /> Legado
+                </Badge>
+              )}
             </div>
-            {(contrato?.eventos?.some((e: any) => e.detalhes?.is_revisao || e.detalhes?.numero_anterior) || contrato?.numero_contrato?.match(/[A-Z]$/)) && (
+            {isLegado && (contrato as any)?.numero_original && (
+              <div className="text-xs font-normal text-muted-foreground">
+                Número original: <span className="font-medium text-foreground">{(contrato as any).numero_original}</span>
+              </div>
+            )}
+            {!isLegado && (contrato?.eventos?.some((e: any) => e.detalhes?.is_revisao || e.detalhes?.numero_anterior) || contrato?.numero_contrato?.match(/[A-Z]$/)) && (
               <div className="text-xs font-normal text-amber-600 flex items-center gap-1">
                 <RefreshCw className="h-3 w-3" />
                 Revisão {contrato.eventos?.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior ? `de ${contrato.eventos.find((e: any) => e.detalhes?.numero_anterior)?.detalhes.numero_anterior}` : ''}
@@ -222,19 +235,24 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
               <Button variant="outline" size="sm" onClick={baixarPdf} disabled={!contrato.pdf_url}>
                 <FileDown className="h-4 w-4 mr-1" /> Baixar PDF
               </Button>
-              {canEdit && contrato.status === 'rascunho' && (
+              {isLegado && canEdit && (
+                <Button variant="outline" size="sm" onClick={() => setEditLegadoOpen(true)}>
+                  <Edit2 className="h-4 w-4 mr-1" /> Editar Dados
+                </Button>
+              )}
+              {!isLegado && canEdit && contrato.status === 'rascunho' && (
                 <Button variant="outline" size="sm" onClick={regenerarPdf} disabled={regen}>
                   {regen ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
                   Preparar para Envio
                 </Button>
               )}
-              {canEdit && contrato.status === 'rascunho' && (
+              {!isLegado && canEdit && contrato.status === 'rascunho' && (
                 <Button size="sm" onClick={enviarAutentique} disabled={sending || !contrato.pdf_url}>
                   {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileSignature className="h-4 w-4 mr-1" />}
                   Enviar para Autentique
                 </Button>
               )}
-              {canEdit && ['parcialmente_assinado', 'assinado'].includes(contrato.status) && (
+              {!isLegado && canEdit && ['parcialmente_assinado', 'assinado'].includes(contrato.status) && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline" size="sm" className="text-amber-600 border-amber-200 hover:bg-amber-50" disabled={correcting}>
@@ -277,7 +295,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   Rescindir este Contrato
                 </Button>
               )}
-              {contrato.autentique_document_id && (
+              {!isLegado && contrato.autentique_document_id && (
                 <>
                   <Button 
                     variant="default" 
@@ -323,8 +341,8 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
             <Tabs defaultValue="dados">
               <TabsList>
                 <TabsTrigger value="dados">Dados</TabsTrigger>
-                <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>
-                <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>
+                {!isLegado && <TabsTrigger value="conteudo">Conteúdo</TabsTrigger>}
+                {!isLegado && <TabsTrigger value="assinaturas">Assinaturas</TabsTrigger>}
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
               </TabsList>
 
@@ -335,7 +353,9 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   <Row k="Cidade/UF" v={[contrato.cliente?.cidade, contrato.cliente?.estado].filter(Boolean).join(' / ')} />
                 </Section>
                 <Section title="Contrato">
-                  <Row k="Nº Proposta" v={contrato.numero_proposta} />
+                  <Row k="Nº no sistema" v={contrato.numero_contrato} />
+                  {isLegado && <Row k="Número original" v={(contrato as any).numero_original} />}
+                  {!isLegado && <Row k="Nº Proposta" v={contrato.numero_proposta} />}
                   <Row k="Início" v={formatDateBR(contrato.data_inicio)} />
                   <Row k="Término" v={formatDateBR(contrato.data_fim)} />
                   <Row k="Vigência" v={`${contrato.vigencia_meses} meses`} />
@@ -473,6 +493,14 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
         onSuccess={() => refetch()}
         regenerarPdf={regenerarPdf}
       />
+      {contrato && isLegado && (
+        <ContratualLegadoEditDialog
+          open={editLegadoOpen}
+          onOpenChange={setEditLegadoOpen}
+          contrato={contrato}
+          onSuccess={() => { refetch(); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); }}
+        />
+      )}
       {contrato && (
         <ContratualRescisaoDialog
           open={rescisaoOpen}

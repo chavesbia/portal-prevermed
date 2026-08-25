@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle, FileX } from 'lucide-react';
+import { Building2, MapPin, Hash, CheckCircle2, XCircle, Loader2, FileText, ExternalLink, ClipboardList, FileCheck2, ChevronDown, Search, Copy, Phone, Mail, Contact, DollarSign, Info, Stethoscope, AlertTriangle, FileX, Archive } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { CompanySelector, useDuplicateCnpjCompanies } from '@/components/shared/CompanySelector';
@@ -52,6 +52,7 @@ interface Contrato {
   data_inicio: string | null;
   data_fim: string | null;
   valor_mensal: number | null;
+  origem?: string | null;
 }
 
 function formatCnpj(v: string | null | undefined) {
@@ -309,7 +310,7 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
       if (clienteIds.length === 0) return [] as Contrato[];
       const { data: contratos, error } = await supabase
         .from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, origem')
         .in('cliente_id', clienteIds)
         .order('data_inicio', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
@@ -354,6 +355,11 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
                       {c.status && (
                         <Badge variant="outline" className="text-xs capitalize">
                           {c.status}
+                        </Badge>
+                      )}
+                      {c.origem === 'legado' && (
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 text-xs gap-1">
+                          <Archive className="h-3 w-3" /> Legado
                         </Badge>
                       )}
                       {vencido ? (

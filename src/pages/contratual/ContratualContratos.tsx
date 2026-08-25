@@ -36,7 +36,7 @@ export default function ContratualContratos({ canEdit }: Props) {
     queryKey: ['contract-contratos', search],
     queryFn: async () => {
       let q = supabase.from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, cliente:contract_clientes(razao_social, cnpj)')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, html_final, origem, numero_original, cliente:contract_clientes(razao_social, cnpj)')
         .order('created_at', { ascending: false });
       const { data, error } = await q;
       if (error) throw error;
@@ -151,7 +151,16 @@ export default function ContratualContratos({ canEdit }: Props) {
                       <TableCell className="font-mono text-xs">{c.numero_contrato}</TableCell>
                       <TableCell className="font-medium">{c.cliente?.razao_social}</TableCell>
                       <TableCell className="font-mono text-xs">{formatCNPJ(c.cliente?.cnpj)}</TableCell>
-                      <TableCell><Badge variant="secondary" className={`${st.tone} whitespace-nowrap`}>{st.label}</Badge></TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="secondary" className={`${st.tone} whitespace-nowrap`}>{st.label}</Badge>
+                          {c.origem === 'legado' && (
+                            <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200 whitespace-nowrap gap-1">
+                              <Archive className="h-3 w-3" /> Legado
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs">{formatDateBR(c.data_inicio)} → {formatDateBR(c.data_fim)}</TableCell>
                       <TableCell className="text-right">{formatBRL(c.valor_mensal)}</TableCell>
                       <TableCell className="text-right">
