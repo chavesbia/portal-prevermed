@@ -52,6 +52,7 @@ interface Contrato {
   data_inicio: string | null;
   data_fim: string | null;
   valor_mensal: number | null;
+  origem?: string | null;
 }
 
 function formatCnpj(v: string | null | undefined) {
