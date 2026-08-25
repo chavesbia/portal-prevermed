@@ -2245,6 +2245,7 @@ export type Database = {
           id: string
           indice_reajuste: string | null
           juros: number | null
+          modalidade_id: string | null
           multa: number | null
           numero_contrato: string | null
           numero_original: string | null
@@ -2291,6 +2292,7 @@ export type Database = {
           id?: string
           indice_reajuste?: string | null
           juros?: number | null
+          modalidade_id?: string | null
           multa?: number | null
           numero_contrato?: string | null
           numero_original?: string | null
@@ -2337,6 +2339,7 @@ export type Database = {
           id?: string
           indice_reajuste?: string | null
           juros?: number | null
+          modalidade_id?: string | null
           multa?: number | null
           numero_contrato?: string | null
           numero_original?: string | null
@@ -2374,6 +2377,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "contract_clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_contratos_modalidade_id_fkey"
+            columns: ["modalidade_id"]
+            isOneToOne: false
+            referencedRelation: "contract_modalidades"
             referencedColumns: ["id"]
           },
           {
@@ -2429,6 +2439,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contract_modalidades: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       contract_placeholders: {
         Row: {

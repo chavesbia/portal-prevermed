@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { CompanySelector, type CompanyOption } from '@/components/shared/CompanySelector';
+import { ModalidadeSelector } from '@/components/contratual/ModalidadeSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Upload, FileText, X } from 'lucide-react';
@@ -36,6 +37,7 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
   const [form, setForm] = useState<any>(empty);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyOption | null>(null);
+  const [modalidadeId, setModalidadeId] = useState<string | null>(null);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [pdfName, setPdfName] = useState<string>('');
   const [uploading, setUploading] = useState(false);
@@ -46,6 +48,7 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
       setForm(empty);
       setCompanyId(null);
       setCompany(null);
+      setModalidadeId(null);
       setPdfPath(null);
       setPdfName('');
     }
@@ -119,8 +122,6 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
     if (!companyId || !company) return toast.error('Selecione a empresa');
     if (!form.data_inicio || !form.data_fim) return toast.error('Informe o início e o fim da vigência');
     if (new Date(form.data_fim) < new Date(form.data_inicio)) return toast.error('A data de fim deve ser posterior à de início');
-    if (!form.qtd_vidas) return toast.error('Informe a quantidade de vidas');
-    if (!form.valor_mensal) return toast.error('Informe o valor mensal');
     if (!pdfPath) return toast.error('Anexe o PDF assinado do contrato');
 
     setSaving(true);
@@ -147,8 +148,9 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
           data_inicio: form.data_inicio,
           data_fim: form.data_fim,
           vigencia_meses: meses,
-          qtd_vidas: Number(form.qtd_vidas),
-          valor_mensal: Number(String(form.valor_mensal).replace(',', '.')),
+          qtd_vidas: form.qtd_vidas !== '' && form.qtd_vidas != null ? Number(form.qtd_vidas) : null,
+          valor_mensal: form.valor_mensal !== '' && form.valor_mensal != null ? Number(String(form.valor_mensal).replace(',', '.')) : null,
+          modalidade_id: modalidadeId,
           status: form.status,
           numero_original: form.numero_original?.trim() || null,
           multa: form.multa ? Number(String(form.multa).replace(',', '.')) : null,
@@ -210,12 +212,16 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
               <Input type="date" value={form.data_fim} onChange={e => set('data_fim', e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label>Quantidade de vidas *</Label>
-              <Input type="number" min={0} value={form.qtd_vidas} onChange={e => set('qtd_vidas', e.target.value)} />
+              <Label>Quantidade de vidas</Label>
+              <Input type="number" min={0} value={form.qtd_vidas} onChange={e => set('qtd_vidas', e.target.value)} placeholder="Opcional" />
             </div>
             <div className="space-y-1.5">
-              <Label>Valor mensal (R$) *</Label>
-              <Input type="number" min={0} step="0.01" value={form.valor_mensal} onChange={e => set('valor_mensal', e.target.value)} />
+              <Label>Valor mensal (R$)</Label>
+              <Input type="number" min={0} step="0.01" value={form.valor_mensal} onChange={e => set('valor_mensal', e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Modalidade</Label>
+              <ModalidadeSelector value={modalidadeId} onChange={setModalidadeId} />
             </div>
             <div className="space-y-1.5">
               <Label>Status inicial *</Label>
