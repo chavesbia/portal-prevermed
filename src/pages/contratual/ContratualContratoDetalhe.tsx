@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle, Archive } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -15,6 +15,7 @@ import { STATUS_LABEL, getContractStatusDisplay } from '@/lib/contractual/status
 import { AssinanteEditDialog } from './AssinanteEditDialog';
 import { cancelarEReenviarContrato } from '@/lib/contractual/correction';
 import { ContratualRescisaoDialog } from './ContratualRescisaoDialog';
+import { ContratualLegadoEditDialog } from './ContratualLegadoEditDialog';
 
 interface Props {
   contratoId: string | null;
@@ -34,6 +35,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   const [editingAssinante, setEditingAssinante] = useState<any>(null);
   const [correcting, setCorrecting] = useState(false);
   const [rescisaoOpen, setRescisaoOpen] = useState(false);
+  const [editLegadoOpen, setEditLegadoOpen] = useState(false);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -491,6 +493,14 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
         onSuccess={() => refetch()}
         regenerarPdf={regenerarPdf}
       />
+      {contrato && isLegado && (
+        <ContratualLegadoEditDialog
+          open={editLegadoOpen}
+          onOpenChange={setEditLegadoOpen}
+          contrato={contrato}
+          onSuccess={() => { refetch(); qc.invalidateQueries({ queryKey: ['contract-contratos'] }); }}
+        />
+      )}
       {contrato && (
         <ContratualRescisaoDialog
           open={rescisaoOpen}
