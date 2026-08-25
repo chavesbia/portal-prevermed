@@ -351,7 +351,9 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
                   <Row k="Cidade/UF" v={[contrato.cliente?.cidade, contrato.cliente?.estado].filter(Boolean).join(' / ')} />
                 </Section>
                 <Section title="Contrato">
-                  <Row k="Nº Proposta" v={contrato.numero_proposta} />
+                  <Row k="Nº no sistema" v={contrato.numero_contrato} />
+                  {isLegado && <Row k="Número original" v={(contrato as any).numero_original} />}
+                  {!isLegado && <Row k="Nº Proposta" v={contrato.numero_proposta} />}
                   <Row k="Início" v={formatDateBR(contrato.data_inicio)} />
                   <Row k="Término" v={formatDateBR(contrato.data_fim)} />
                   <Row k="Vigência" v={`${contrato.vigencia_meses} meses`} />
