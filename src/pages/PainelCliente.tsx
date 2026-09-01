@@ -901,10 +901,6 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
                 forceOpen={!!term && sectionGroups('sem_vigencia').length > 0}
               />
             )}
-
-            {semUnidadeSorted.length > 0 && (
-              <SemUnidadeSection laudos={semUnidadeSorted} todayISO={todayISO} />
-            )}
           </div>
         )}
       </CardContent>
@@ -912,29 +908,6 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
   );
 }
 
-function SemUnidadeSection({ laudos, todayISO }: { laudos: LaudoRow[]; todayISO: string }) {
-  const [open, setOpen] = useState(false);
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const visible = laudos.slice(0, limit);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 py-2 text-left">
-        <span className="text-sm font-semibold">Sem unidade vinculada ({laudos.length})</span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-2 pb-2">
-        {visible.map((l) => <LaudoLine key={l.id} l={l} todayISO={todayISO} />)}
-        {laudos.length > visible.length && (
-          <div className="text-center pt-1">
-            <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
-              Ver mais ({laudos.length - visible.length} restantes)
-            </Button>
-          </div>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
 
 
 interface ContatoRow {
