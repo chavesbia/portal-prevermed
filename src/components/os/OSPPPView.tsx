@@ -80,7 +80,7 @@ export function OSPPPView({ canEdit }: { canEdit: boolean }) {
     const headers = ['Nº', 'Empresa', 'Funcionário', 'CPF', 'Períodos', 'Solicitante', 'Data Realização', 'Realizado Por'];
     if (isAdmMaster) headers.push('Valor Calculado');
     const csvRows = rows.map(item => { const row = [item.numero || '', item.company_name || '', item.funcionario_nome, item.funcionario_cpf, (item.periodos || []).map(p => `${p.data_inicio} a ${p.data_fim}`).join(' | '), item.solicitante_nome, format(parseISO(item.realizado_em as string), 'dd/MM/yyyy HH:mm'), item.realizado_por_nome || '']; if (isAdmMaster) row.push(item.valor_calculado?.toString() || ''); return row; });
-    const csv = [headers, ...csvRows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(';')).join('\n');
+    const csv = [headers, ...csvRows].map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(';')).join('\n');
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })); const link = document.createElement('a'); link.href = url; link.download = `relatorio_ppp_${format(reportRange.from, 'ddMMyyyy')}_${format(reportRange.to, 'ddMMyyyy')}.csv`; link.click(); URL.revokeObjectURL(url); setExportOpen(false);
   };
 
