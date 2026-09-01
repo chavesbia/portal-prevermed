@@ -126,6 +126,10 @@ export default function GestaoOS() {
           <OSAcrescimoFuncaoView canEdit={canEdit} />
         </TabsContent>
 
+        <TabsContent value="ppp" className="mt-6">
+          <OSPPPView canEdit={canEdit} />
+        </TabsContent>
+
         <TabsContent value="profissionais" className="mt-6">
           <OSProfissionaisView canEdit={canEdit} />
         </TabsContent>
