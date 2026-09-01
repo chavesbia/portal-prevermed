@@ -10,6 +10,8 @@ export interface OSPrintData {
   contatoEmail?: string | null;
   contatoTelefone?: string | null;
   dataEmissao?: string | null;
+  unidade?: string | null;
+  observacoes?: string | null;
   servicos: Array<{ tipo: string; executor?: string | null; status: string }>;
 }
 
