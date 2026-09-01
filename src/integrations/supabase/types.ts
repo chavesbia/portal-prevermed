@@ -5400,6 +5400,132 @@ export type Database = {
         }
         Relationships: []
       }
+      ppp_anexos: {
+        Row: {
+          arquivo_url: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          nome_arquivo: string
+          solicitacao_id: string
+          tipo_documento: string
+        }
+        Insert: {
+          arquivo_url: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          nome_arquivo: string
+          solicitacao_id: string
+          tipo_documento: string
+        }
+        Update: {
+          arquivo_url?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          nome_arquivo?: string
+          solicitacao_id?: string
+          tipo_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppp_anexos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "ppp_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ppp_periodos: {
+        Row: {
+          data_fim: string
+          data_inicio: string
+          id: string
+          solicitacao_id: string
+        }
+        Insert: {
+          data_fim: string
+          data_inicio: string
+          id?: string
+          solicitacao_id: string
+        }
+        Update: {
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          solicitacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppp_periodos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "ppp_solicitacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ppp_solicitacoes: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          funcionario_cpf: string
+          funcionario_nome: string
+          id: string
+          numero: string | null
+          observacao: string | null
+          realizado: boolean
+          realizado_em: string | null
+          realizado_por_nome: string | null
+          realizado_por_user_id: string | null
+          solicitante_nome: string
+          valor_calculado: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          funcionario_cpf: string
+          funcionario_nome: string
+          id?: string
+          numero?: string | null
+          observacao?: string | null
+          realizado?: boolean
+          realizado_em?: string | null
+          realizado_por_nome?: string | null
+          realizado_por_user_id?: string | null
+          solicitante_nome: string
+          valor_calculado?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          funcionario_cpf?: string
+          funcionario_nome?: string
+          id?: string
+          numero?: string | null
+          observacao?: string | null
+          realizado?: boolean
+          realizado_em?: string | null
+          realizado_por_nome?: string | null
+          realizado_por_user_id?: string | null
+          solicitante_nome?: string
+          valor_calculado?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ppp_solicitacoes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prestadores_bloqueados: {
         Row: {
           bloqueado_por: string | null
