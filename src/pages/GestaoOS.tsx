@@ -70,6 +70,7 @@ export default function GestaoOS() {
           <TabsTrigger value="historico">Histórico</TabsTrigger>
           <TabsTrigger value="vencimentos">Vencimentos</TabsTrigger>
           <TabsTrigger value="acrescimos">Acréscimo de Função</TabsTrigger>
+          <TabsTrigger value="ppp">PPP</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
           {isFinanceiro && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
         </TabsList>
