@@ -285,7 +285,7 @@ export default function ASOListagem() {
           <PopoverContent className="w-[300px] p-3" align="start">
             <div className="space-y-2">
               {/* Sem exames filter */}
-              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-red-600">
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-red-600 whitespace-nowrap">
                 <Checkbox
                   checked={semExamesFilter}
                   onCheckedChange={(checked) => {
@@ -301,7 +301,7 @@ export default function ASOListagem() {
                 Sem exames cadastrados
               </label>
               {/* Sem complementares filter */}
-              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-amber-600">
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-amber-600 whitespace-nowrap">
                 <Checkbox
                   checked={semComplementaresFilter}
                   onCheckedChange={(checked) => {
@@ -316,7 +316,7 @@ export default function ASOListagem() {
                 <Info className="h-3 w-3" />
                 Sem exames complementares
               </label>
-              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-primary">
+              <label className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded font-medium text-primary whitespace-nowrap">
                 <Checkbox
                   checked={comComplementaresFilter}
                   onCheckedChange={(checked) => {
@@ -340,7 +340,7 @@ export default function ASOListagem() {
               />
               <div className="max-h-[200px] overflow-y-auto space-y-1">
                 {filteredExameNames.map(name => (
-                  <label key={name} className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded">
+                  <label key={name} className="flex items-center gap-2 text-xs py-1 cursor-pointer hover:bg-muted/50 px-1 rounded whitespace-nowrap">
                     <Checkbox
                       checked={exameFilter.includes(name)}
                       onCheckedChange={(checked) => {

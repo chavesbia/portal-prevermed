@@ -227,14 +227,14 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                     </TooltipProvider>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${STATUS_BADGE[r.status]}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${STATUS_BADGE[r.status]} whitespace-nowrap`}>
                       {STATUS_LABELS[r.status]}
                     </span>
                   </TableCell>
                   <TableCell className={`text-right whitespace-nowrap ${r.parcelas_em_atraso > 0 ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
                     {r.parcelas_em_atraso}
                     {r.status !== 'encerrado' && risk !== 'ok' && (
-                      <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded border text-[10px] font-medium ${RISK_BADGE[risk]}`}>
+                      <span className={`ml-1.5 inline-flex items-center px-1.5 py-0 rounded border text-[10px] font-medium ${RISK_BADGE[risk]} whitespace-nowrap`}>
                         {RISK_LABEL[risk]}
                       </span>
                     )}
@@ -279,11 +279,11 @@ export default function PassivosList({ canEdit, canDelete }: Props) {
                 </div>
 
                 <div className="mt-5 flex items-center gap-2">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${STATUS_BADGE[r.status]}`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${STATUS_BADGE[r.status]} whitespace-nowrap`}>
                     {STATUS_LABELS[r.status]}
                   </span>
                   {risk !== 'ok' && (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${RISK_BADGE[risk]}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-xs ${RISK_BADGE[risk]} whitespace-nowrap`}>
                       {RISK_LABEL[risk]} · {r.parcelas_em_atraso} em atraso
                     </span>
                   )}

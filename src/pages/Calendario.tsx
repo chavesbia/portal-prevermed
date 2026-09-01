@@ -575,7 +575,7 @@ export default function Calendario() {
                 </div>
               ) : (
                 <div className="mt-1">
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-dashed rounded-md px-3 py-2 transition-colors">
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-dashed rounded-md px-3 py-2 transition-colors whitespace-nowrap">
                     <Upload className="h-3.5 w-3.5" />
                     {uploadingFile ? 'Enviando...' : 'Selecionar arquivo'}
                     <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploadingFile} />

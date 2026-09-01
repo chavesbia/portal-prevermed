@@ -141,7 +141,7 @@ function MultiSelectField({ label, selected, onChange, options }: { label: strin
           <ScrollArea className="h-48">
             <div className="space-y-0.5">
               {filtered.map((option) => (
-                <label key={option} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-xs">
+                <label key={option} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted cursor-pointer text-xs whitespace-nowrap">
                   <Checkbox checked={selected.includes(option)} onCheckedChange={() => toggle(option)} className="h-3.5 w-3.5" />
                   <span className="truncate">{option}</span>
                 </label>
