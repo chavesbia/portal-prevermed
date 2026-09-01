@@ -57,6 +57,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const [emissorNome, setEmissorNome] = useState<string | null>(null);
   const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
   const [empresaEndereco, setEmpresaEndereco] = useState<string | null>(null);
+  const [unidadeNome, setUnidadeNome] = useState<string | null>(null);
 
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
@@ -100,6 +101,15 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
 
 
+
+  useEffect(() => {
+    const unidadeId = (ordem as any).unidade_id as string | undefined;
+    if (!open || !unidadeId) { setUnidadeNome((ordem as any).unidade_nome || null); return; }
+    (async () => {
+      const { data } = await supabase.from('units').select('name').eq('id', unidadeId).maybeSingle();
+      setUnidadeNome((data as any)?.name || (ordem as any).unidade_nome || null);
+    })();
+  }, [open, (ordem as any).unidade_id]);
 
   useEffect(() => {
     if (!open) return;
@@ -147,6 +157,8 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
         contatoEmail: ordem.contato_email,
         contatoTelefone: ordem.contato_telefone,
         dataEmissao: osStart ? format(parseISO(osStart), 'dd/MM/yyyy', { locale: ptBR }) : null,
+        unidade: unidadeNome,
+        observacoes: ordem.observacoes,
         servicos: servicos.map(s => ({
           tipo: s.tipo,
           executor: s.responsavel_id ? nomes.get(s.responsavel_id) || null : null,

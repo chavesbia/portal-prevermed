@@ -10,6 +10,8 @@ export interface OSPrintData {
   contatoEmail?: string | null;
   contatoTelefone?: string | null;
   dataEmissao?: string | null;
+  unidade?: string | null;
+  observacoes?: string | null;
   servicos: Array<{ tipo: string; executor?: string | null; status: string }>;
 }
 
@@ -81,6 +83,7 @@ export async function generateOSPdf(data: OSPrintData): Promise<void> {
           <td style="vertical-align:top;width:50%;padding-right:12px;">
             ${info('Empresa', data.empresaNome)}
             ${info('CNPJ', data.empresaCnpj)}
+            ${data.unidade ? info('Unidade', data.unidade) : ''}
             ${info('Endereço do CNPJ', data.endereco)}
             <div style="font-size:8.5pt;color:#64748b;">Confirme o local real da visita — nem sempre coincide com o endereço do CNPJ.</div>
           </td>
@@ -103,6 +106,13 @@ export async function generateOSPdf(data: OSPrintData): Promise<void> {
         </thead>
         <tbody>${linhas}</tbody>
       </table>
+
+      ${data.observacoes ? `
+      <div style="margin-top:14px;">
+        <div style="font-size:11pt;font-weight:700;color:#1e3a8a;margin-bottom:6px;">Observações</div>
+        <div style="border:1px solid #cbd5e1;padding:8px;font-size:10pt;white-space:pre-wrap;">${esc(data.observacoes)}</div>
+      </div>` : ''}
+
 
       <div style="margin-top:28px;font-size:9pt;color:#64748b;">
         Documento gerado pelo Portal PreverMed para uso do técnico em campo.
