@@ -291,7 +291,7 @@ function AcoesTable({
               <TableCell>{a.prazo ? new Date(a.prazo).toLocaleDateString("pt-BR") : "—"}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1">
-                  <span className={`px-2 py-0.5 rounded text-xs ${st.color}`}>{st.label}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${st.color} whitespace-nowrap`}>{st.label}</span>
                   {a.aguardando_validacao && (
                     <Badge variant="outline" className="text-xs"><Clock className="h-3 w-3 mr-1" />aguard. validação</Badge>
                   )}

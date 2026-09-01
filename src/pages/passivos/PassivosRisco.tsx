@@ -393,7 +393,7 @@ export default function PassivosRisco() {
                     <TableCell className={`text-right ${r.criticos > 0 ? 'text-red-600 font-semibold' : ''}`}>{r.criticos}</TableCell>
                     <TableCell className="text-right">{r.atraso}</TableCell>
                     <TableCell className="text-right">
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[11px] ${RISK_BADGE[risk]}`}>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[11px] ${RISK_BADGE[risk]} whitespace-nowrap`}>
                         {r.maxAtraso} · {RISK_LABEL[risk]}
                       </span>
                     </TableCell>
@@ -442,7 +442,7 @@ export default function PassivosRisco() {
                   <TableCell className="text-right tabular-nums">{brl(r.valor_mensal)}</TableCell>
                   <TableCell className="text-xs">{STATUS_LABELS[r.status]}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[11px] ${RISK_BADGE[risk]}`}>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded border text-[11px] ${RISK_BADGE[risk]} whitespace-nowrap`}>
                       {RISK_LABEL[risk]}
                     </span>
                   </TableCell>

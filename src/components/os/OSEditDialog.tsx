@@ -385,7 +385,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             ) : (
-                              <span className="text-[10px] text-muted-foreground uppercase px-2 py-1 bg-muted rounded">Iniciado</span>
+                              <span className="text-[10px] text-muted-foreground uppercase px-2 py-1 bg-muted rounded whitespace-nowrap">Iniciado</span>
                             )}
                           </td>
                         )}

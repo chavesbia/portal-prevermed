@@ -702,7 +702,7 @@ export function PermissionsMasterDetail() {
                                     <button
                                       type="button"
                                       onClick={() => releaseGroupView(group)}
-                                      className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1"
+                                      className="text-[11px] px-2 py-1 rounded border border-primary/30 text-primary hover:bg-primary/10 font-semibold inline-flex items-center gap-1 whitespace-nowrap"
                                       title={hasChildren ? "Marca 'Visualizar' no módulo raiz e em todas as sub-áreas" : "Marca 'Visualizar' neste módulo"}
                                     >
                                       <CheckCheck className="h-3 w-3" />
@@ -711,7 +711,7 @@ export function PermissionsMasterDetail() {
                                     <button
                                       type="button"
                                       onClick={() => releaseGroupFull(group)}
-                                      className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold"
+                                      className="text-[11px] px-2 py-1 rounded border border-border text-foreground/70 hover:bg-muted font-semibold whitespace-nowrap"
                                       title="Marca TODAS as ações (Visualizar/Criar/Editar/Excluir/Aprovar)"
                                     >
                                       Todas as ações
@@ -719,7 +719,7 @@ export function PermissionsMasterDetail() {
                                     <button
                                       type="button"
                                       onClick={() => clearGroup(group)}
-                                      className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold"
+                                      className="text-[11px] px-2 py-1 rounded text-muted-foreground hover:bg-muted font-semibold whitespace-nowrap"
                                     >
                                       Limpar
                                     </button>
