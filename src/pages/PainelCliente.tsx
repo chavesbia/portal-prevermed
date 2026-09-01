@@ -776,16 +776,34 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
   const order: Record<LaudoStatus, number> = { vencido: 0, a_vencer: 1, valido: 2, sem_vigencia: 3 };
 
   const groups: UnitGroup[] = [];
-  const semUnidade: LaudoRow[] = [];
+  const semUnidadePorStatus = new Map<LaudoStatus, LaudoRow[]>();
   const byUnit = new Map<string, LaudoRow[]>();
   for (const l of rows) {
-    if (!l.unidade_id) semUnidade.push(l);
-    else {
+    if (!l.unidade_id) {
+      const st = classifyLaudo(l, todayISO);
+      const list = semUnidadePorStatus.get(st) ?? [];
+      list.push(l);
+      semUnidadePorStatus.set(st, list);
+    } else {
       const list = byUnit.get(l.unidade_id) ?? [];
       list.push(l);
       byUnit.set(l.unidade_id, list);
     }
   }
+  for (const [status, laudos] of semUnidadePorStatus) {
+    const c = { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>;
+    c[status] = laudos.length;
+    groups.push({
+      key: `sem-unidade-${status}`,
+      label: 'Sem unidade vinculada',
+      code: null,
+      local: null,
+      laudos: [...laudos].sort((a, b) => (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '')),
+      counts: c,
+      priority: status,
+    });
+  }
+
   for (const [unitId, laudos] of byUnit) {
     const u = unitMap.get(unitId);
     const c = { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>;
@@ -815,10 +833,8 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
       .filter((g) => g.priority === status)
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 
-  const semUnidadeSorted = [...semUnidade].sort((a, b) => {
-    const d = order[classifyLaudo(a, todayISO)] - order[classifyLaudo(b, todayISO)];
-    return d !== 0 ? d : (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '');
-  });
+
+
 
   return (
     <Card>
@@ -885,10 +901,6 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
                 forceOpen={!!term && sectionGroups('sem_vigencia').length > 0}
               />
             )}
-
-            {semUnidadeSorted.length > 0 && (
-              <SemUnidadeSection laudos={semUnidadeSorted} todayISO={todayISO} />
-            )}
           </div>
         )}
       </CardContent>
@@ -896,29 +908,6 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
   );
 }
 
-function SemUnidadeSection({ laudos, todayISO }: { laudos: LaudoRow[]; todayISO: string }) {
-  const [open, setOpen] = useState(false);
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const visible = laudos.slice(0, limit);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="w-full flex items-center justify-between gap-2 py-2 text-left">
-        <span className="text-sm font-semibold">Sem unidade vinculada ({laudos.length})</span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-2 pb-2">
-        {visible.map((l) => <LaudoLine key={l.id} l={l} todayISO={todayISO} />)}
-        {laudos.length > visible.length && (
-          <div className="text-center pt-1">
-            <Button variant="link" size="sm" onClick={() => setLimit((n) => n + PAGE_SIZE)}>
-              Ver mais ({laudos.length - visible.length} restantes)
-            </Button>
-          </div>
-        )}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
 
 
 interface ContatoRow {
