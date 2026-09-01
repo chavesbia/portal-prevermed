@@ -157,6 +157,8 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
         contatoEmail: ordem.contato_email,
         contatoTelefone: ordem.contato_telefone,
         dataEmissao: osStart ? format(parseISO(osStart), 'dd/MM/yyyy', { locale: ptBR }) : null,
+        unidade: unidadeNome,
+        observacoes: ordem.observacoes,
         servicos: servicos.map(s => ({
           tipo: s.tipo,
           executor: s.responsavel_id ? nomes.get(s.responsavel_id) || null : null,
