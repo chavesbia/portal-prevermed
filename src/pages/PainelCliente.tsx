@@ -776,16 +776,34 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
   const order: Record<LaudoStatus, number> = { vencido: 0, a_vencer: 1, valido: 2, sem_vigencia: 3 };
 
   const groups: UnitGroup[] = [];
-  const semUnidade: LaudoRow[] = [];
+  const semUnidadePorStatus = new Map<LaudoStatus, LaudoRow[]>();
   const byUnit = new Map<string, LaudoRow[]>();
   for (const l of rows) {
-    if (!l.unidade_id) semUnidade.push(l);
-    else {
+    if (!l.unidade_id) {
+      const st = classifyLaudo(l, todayISO);
+      const list = semUnidadePorStatus.get(st) ?? [];
+      list.push(l);
+      semUnidadePorStatus.set(st, list);
+    } else {
       const list = byUnit.get(l.unidade_id) ?? [];
       list.push(l);
       byUnit.set(l.unidade_id, list);
     }
   }
+  for (const [status, laudos] of semUnidadePorStatus) {
+    const c = { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>;
+    c[status] = laudos.length;
+    groups.push({
+      key: `sem-unidade-${status}`,
+      label: 'Sem unidade vinculada',
+      code: null,
+      local: null,
+      laudos: [...laudos].sort((a, b) => (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '')),
+      counts: c,
+      priority: status,
+    });
+  }
+
   for (const [unitId, laudos] of byUnit) {
     const u = unitMap.get(unitId);
     const c = { vencido: 0, a_vencer: 0, valido: 0, sem_vigencia: 0 } as Record<LaudoStatus, number>;
