@@ -83,6 +83,7 @@ export async function generateOSPdf(data: OSPrintData): Promise<void> {
           <td style="vertical-align:top;width:50%;padding-right:12px;">
             ${info('Empresa', data.empresaNome)}
             ${info('CNPJ', data.empresaCnpj)}
+            ${data.unidade ? info('Unidade', data.unidade) : ''}
             ${info('Endereço do CNPJ', data.endereco)}
             <div style="font-size:8.5pt;color:#64748b;">Confirme o local real da visita — nem sempre coincide com o endereço do CNPJ.</div>
           </td>
