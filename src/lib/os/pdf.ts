@@ -107,6 +107,13 @@ export async function generateOSPdf(data: OSPrintData): Promise<void> {
         <tbody>${linhas}</tbody>
       </table>
 
+      ${data.observacoes ? `
+      <div style="margin-top:14px;">
+        <div style="font-size:11pt;font-weight:700;color:#1e3a8a;margin-bottom:6px;">Observações</div>
+        <div style="border:1px solid #cbd5e1;padding:8px;font-size:10pt;white-space:pre-wrap;">${esc(data.observacoes)}</div>
+      </div>` : ''}
+
+
       <div style="margin-top:28px;font-size:9pt;color:#64748b;">
         Documento gerado pelo Portal PreverMed para uso do técnico em campo.
       </div>
