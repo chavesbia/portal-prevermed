@@ -8,6 +8,13 @@
       "when": 1788265109234,
       "tag": "0000_create_ppp_module",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788265166447,
+      "tag": "0001_secure_ppp_storage",
+      "breakpoints": true
     }
   ]
 }
