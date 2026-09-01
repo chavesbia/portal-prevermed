@@ -103,6 +103,15 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
 
   useEffect(() => {
+    const unidadeId = (ordem as any).unidade_id as string | undefined;
+    if (!open || !unidadeId) { setUnidadeNome((ordem as any).unidade_nome || null); return; }
+    (async () => {
+      const { data } = await supabase.from('units').select('name').eq('id', unidadeId).maybeSingle();
+      setUnidadeNome((data as any)?.name || (ordem as any).unidade_nome || null);
+    })();
+  }, [open, (ordem as any).unidade_id]);
+
+  useEffect(() => {
     if (!open) return;
     if (ordem.servicos && ordem.servicos.length) { setServicos(ordem.servicos); return; }
     (async () => {
