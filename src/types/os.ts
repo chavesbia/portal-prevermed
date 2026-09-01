@@ -255,4 +255,42 @@ export interface AcrescimoFuncaoCargo {
   cargo: string;
 }
 
+export interface PPPSolicitacao {
+  id: string;
+  company_id: string;
+  solicitante_nome: string;
+  funcionario_nome: string;
+  funcionario_cpf: string;
+  numero: string | null;
+  observacao: string | null;
+  created_by: string | null;
+  created_at: string;
+  realizado: boolean;
+  realizado_por_user_id: string | null;
+  realizado_por_nome: string | null;
+  realizado_em: string | null;
+  valor_calculado: number | null;
+  company_name?: string;
+  periodos?: PPPPeriodo[];
+  anexos?: PPPAnexo[];
+}
+
+export interface PPPPeriodo {
+  id?: string;
+  solicitacao_id?: string;
+  data_inicio: string;
+  data_fim: string;
+}
+
+export interface PPPAnexo {
+  id?: string;
+  solicitacao_id?: string;
+  tipo_documento: string;
+  arquivo_url: string;
+  nome_arquivo: string;
+  created_by?: string | null;
+  created_at?: string;
+}
+
+
 

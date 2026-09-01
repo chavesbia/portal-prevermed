@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788265109234,
+      "tag": "0000_create_ppp_module",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788265166447,
+      "tag": "0001_secure_ppp_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788265222222,
+      "tag": "0002_restrict_ppp_edit_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788265239320,
+      "tag": "0003_allow_ppp_completion",
+      "breakpoints": true
+    }
+  ]
+}
