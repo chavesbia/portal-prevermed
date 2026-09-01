@@ -17,6 +17,7 @@ import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
 import { OSAlertasView } from '@/components/os/OSAlertasView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { OSAcrescimoFuncaoView } from '@/components/os/OSAcrescimoFuncaoView';
+import { OSPPPView } from '@/components/os/OSPPPView';
 import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
