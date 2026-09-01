@@ -833,10 +833,8 @@ function LaudosCard({ companyId, navigate }: { companyId: string; navigate: (to:
       .filter((g) => g.priority === status)
       .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
 
-  const semUnidadeSorted = [...semUnidade].sort((a, b) => {
-    const d = order[classifyLaudo(a, todayISO)] - order[classifyLaudo(b, todayISO)];
-    return d !== 0 ? d : (b.data_emissao ?? '').localeCompare(a.data_emissao ?? '');
-  });
+
+
 
   return (
     <Card>
