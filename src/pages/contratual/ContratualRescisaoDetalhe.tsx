@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useSignedUrls } from '@/lib/storage/signedUrls';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Eye } from 'lucide-react';
 import { formatDateBR, formatBRL } from '@/lib/contractual/format';
 import { toast } from 'sonner';
 
@@ -45,6 +46,12 @@ export function ContratualRescisaoDetalhe({ rescisaoId, onClose }: Props) {
       return data as any;
     },
   });
+
+  const previewUrls = useSignedUrls('contract-rescisoes', [r?.anexo_url]);
+  const visualizarAnexo = () => {
+    const url = r?.anexo_url ? previewUrls[r.anexo_url] : undefined;
+    if (url) window.open(url, '_blank');
+  };
 
   const baixarAnexo = async () => {
     if (!r?.anexo_url) return;
@@ -145,9 +152,14 @@ export function ContratualRescisaoDetalhe({ rescisaoId, onClose }: Props) {
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Anexo</h3>
               {r.anexo_url ? (
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={baixarAnexo}>
-                  <Download className="h-4 w-4" /> Baixar carta de solicitação
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={visualizarAnexo} disabled={!previewUrls[r.anexo_url]}>
+                    <Eye className="h-4 w-4" /> Visualizar
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={baixarAnexo}>
+                    <Download className="h-4 w-4" /> Baixar carta de solicitação
+                  </Button>
+                </div>
               ) : (
                 <div className="text-sm text-muted-foreground">Nenhum anexo enviado.</div>
               )}

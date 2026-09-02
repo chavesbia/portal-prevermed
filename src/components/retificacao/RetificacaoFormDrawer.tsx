@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Paperclip, Download, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Paperclip, Download, Eye, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -20,6 +20,7 @@ import {
 } from '@/hooks/useRetificacaoCatalog';
 import type { SolicitacaoRow } from './RetificacaoList';
 import { CompanySelector } from '@/components/shared/CompanySelector';
+import { useSignedUrls } from '@/lib/storage/signedUrls';
 
 interface AnexoRow {
   id: string;
@@ -99,6 +100,7 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
   });
 
   const currentId = solicitacao?.id || savedId;
+  const previewUrls = useSignedUrls('aso-retificacao-anexos', anexos.map((anexo) => anexo.file_path));
 
   const { data: anexos = [], refetch: refetchAnexos } = useQuery({
     queryKey: ['retificacao-anexos', currentId],
@@ -243,6 +245,11 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
     refetchAnexos();
   };
 
+  const visualizarAnexo = (a: AnexoRow) => {
+    const url = previewUrls[a.file_path];
+    if (url) window.open(url, '_blank');
+  };
+
   const downloadAnexo = async (a: AnexoRow) => {
     const { data, error } = await supabase.storage
       .from('aso-retificacao-anexos')
@@ -383,7 +390,10 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
                 <li key={a.id} className="flex items-center justify-between gap-2 p-2 border rounded-md">
                   <span className="text-sm truncate flex-1">{a.file_name}</span>
                   <div className="flex gap-1">
-                    <Button type="button" variant="ghost" size="icon" onClick={() => downloadAnexo(a)}>
+                    <Button type="button" variant="ghost" size="icon" title="Visualizar" aria-label={`Visualizar ${a.file_name}`} onClick={() => visualizarAnexo(a)} disabled={!previewUrls[a.file_path]}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" title="Baixar" aria-label={`Baixar ${a.file_name}`} onClick={() => downloadAnexo(a)}>
                       <Download className="h-4 w-4" />
                     </Button>
                     {!readOnly && (

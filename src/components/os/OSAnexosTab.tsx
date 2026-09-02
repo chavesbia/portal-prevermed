@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useSignedUrls } from '@/lib/storage/signedUrls';
 import { format, parseISO } from 'date-fns';
 import { Download, Trash2, Upload, FileText, AlertTriangle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ const formatSize = (b: number | null) => {
 
 export function OSAnexosTab({ ordem, canEdit }: Props) {
   const { anexos, isLoading, uploadAnexo, deleteAnexo, getSignedUrl } = useOSAnexos(ordem.id);
+  const previewUrls = useSignedUrls('os-anexos', anexos.map((anexo) => anexo.storage_path));
   const fileInput = useRef<HTMLInputElement>(null);
   const [categoria, setCategoria] = useState<OSAnexoCategoria>('art');
   const [descricao, setDescricao] = useState('');
@@ -50,6 +52,11 @@ export function OSAnexosTab({ ordem, canEdit }: Props) {
     setUploading(false);
     setDescricao(''); setDataVenc('');
     if (fileInput.current) fileInput.current.value = '';
+  };
+
+  const handlePreview = (anexo: OSAnexo) => {
+    const url = previewUrls[anexo.storage_path];
+    if (url) window.open(url, '_blank');
   };
 
   const handleDownload = async (anexo: OSAnexo) => {
@@ -125,7 +132,10 @@ export function OSAnexosTab({ ordem, canEdit }: Props) {
                   </p>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" onClick={() => handleDownload(a)}>
+                  <Button size="sm" variant="ghost" title="Visualizar" aria-label="Visualizar anexo" onClick={() => handlePreview(a)} disabled={!previewUrls[a.storage_path]}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" title="Baixar" aria-label="Baixar anexo" onClick={() => handleDownload(a)}>
                     <Download className="h-4 w-4" />
                   </Button>
                   {canEdit && (
