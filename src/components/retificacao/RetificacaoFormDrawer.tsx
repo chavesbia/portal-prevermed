@@ -100,7 +100,6 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
   });
 
   const currentId = solicitacao?.id || savedId;
-  const previewUrls = useSignedUrls('aso-retificacao-anexos', anexos.map((anexo) => anexo.file_path));
 
   const { data: anexos = [], refetch: refetchAnexos } = useQuery({
     queryKey: ['retificacao-anexos', currentId],
@@ -115,6 +114,8 @@ export function RetificacaoFormDrawer({ open, onOpenChange, solicitacao, readOnl
       return (data || []) as AnexoRow[];
     },
   });
+
+  const previewUrls = useSignedUrls('aso-retificacao-anexos', anexos.map((anexo) => anexo.file_path));
 
   useEffect(() => {
     if (!open) return;
