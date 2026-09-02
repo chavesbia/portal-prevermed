@@ -19,10 +19,12 @@ interface Props {
 }
 
 const empty = {
+  numero_proposta: '',
   data_inicio: '',
   data_fim: '',
   qtd_vidas: '',
   valor_mensal: '',
+  valor_excedente: '',
   status: 'ativo',
   numero_original: '',
   multa: '',
