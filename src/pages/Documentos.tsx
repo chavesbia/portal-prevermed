@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useSignedUrls } from '@/lib/storage/signedUrls';
 
 interface DocItem {
   id: string;
@@ -64,6 +65,13 @@ export default function Documentos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const previewUrls = useSignedUrls('documents', documents.map((doc) => extractStoragePath(doc)));
+
+  const handlePreview = (doc: DocItem) => {
+    const path = extractStoragePath(doc);
+    const url = path ? previewUrls[path] : doc.file_url;
+    if (url) window.open(url, '_blank');
+  };
 
   useEffect(() => {
     fetchDocuments();
@@ -226,7 +234,7 @@ export default function Documentos() {
                           variant="ghost"
                           size="icon"
                           title="Visualizar"
-                          onClick={() => openSignedUrl(doc)}
+                          onClick={() => handlePreview(doc)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
