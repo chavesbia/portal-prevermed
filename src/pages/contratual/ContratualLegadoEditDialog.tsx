@@ -24,6 +24,8 @@ export function ContratualLegadoEditDialog({ open, onOpenChange, contrato, onSuc
   useEffect(() => {
     if (open && contrato) {
       setForm({
+        numero_proposta: contrato.numero_proposta || '',
+        valor_excedente: contrato.valor_excedente ?? '',
         data_inicio: contrato.data_inicio || '',
         data_fim: contrato.data_fim || '',
         qtd_vidas: contrato.qtd_vidas ?? '',
@@ -42,6 +44,7 @@ export function ContratualLegadoEditDialog({ open, onOpenChange, contrato, onSuc
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
   const salvar = async () => {
+    if (!form.numero_proposta?.trim()) return toast.error('Informe o número da proposta');
     if (!form.data_inicio || !form.data_fim) return toast.error('Informe o início e o fim da vigência');
     if (new Date(form.data_fim) < new Date(form.data_inicio)) return toast.error('A data de fim deve ser posterior à de início');
     if (!form.qtd_vidas) return toast.error('Informe a quantidade de vidas');
@@ -57,6 +60,8 @@ export function ContratualLegadoEditDialog({ open, onOpenChange, contrato, onSuc
       const { error } = await supabase
         .from('contract_contratos')
         .update({
+          numero_proposta: form.numero_proposta.trim(),
+          valor_excedente: form.valor_excedente !== '' && form.valor_excedente != null ? Number(String(form.valor_excedente).replace(',', '.')) : null,
           data_inicio: form.data_inicio,
           data_fim: form.data_fim,
           vigencia_meses: meses,
@@ -102,6 +107,10 @@ export function ContratualLegadoEditDialog({ open, onOpenChange, contrato, onSuc
 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Número da Proposta *</Label>
+              <Input value={form.numero_proposta || ''} onChange={e => set('numero_proposta', e.target.value)} placeholder="Ex.: PROP-2026-001" />
+            </div>
             <div className="space-y-1.5">
               <Label>Início da vigência *</Label>
               <Input type="date" value={form.data_inicio || ''} onChange={e => set('data_inicio', e.target.value)} />
@@ -117,6 +126,10 @@ export function ContratualLegadoEditDialog({ open, onOpenChange, contrato, onSuc
             <div className="space-y-1.5">
               <Label>Valor mensal (R$) *</Label>
               <Input type="number" min={0} step="0.01" value={form.valor_mensal ?? ''} onChange={e => set('valor_mensal', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vida excedente (R$)</Label>
+              <Input type="number" min={0} step="0.01" value={form.valor_excedente ?? ''} onChange={e => set('valor_excedente', e.target.value)} placeholder="Opcional" />
             </div>
             <div className="space-y-1.5">
               <Label>Status *</Label>

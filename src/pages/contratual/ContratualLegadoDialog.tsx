@@ -122,6 +122,7 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
 
   const salvar = async () => {
     if (!companyId || !company) return toast.error('Selecione a empresa');
+    if (!form.numero_proposta?.trim()) return toast.error('Informe o número da proposta');
     if (!form.data_inicio || !form.data_fim) return toast.error('Informe o início e o fim da vigência');
     if (new Date(form.data_fim) < new Date(form.data_inicio)) return toast.error('A data de fim deve ser posterior à de início');
     if (!pdfPath) return toast.error('Anexe o PDF assinado do contrato');
@@ -152,6 +153,8 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
           vigencia_meses: meses,
           qtd_vidas: form.qtd_vidas !== '' && form.qtd_vidas != null ? Number(form.qtd_vidas) : null,
           valor_mensal: form.valor_mensal !== '' && form.valor_mensal != null ? Number(String(form.valor_mensal).replace(',', '.')) : null,
+          numero_proposta: form.numero_proposta.trim(),
+          valor_excedente: form.valor_excedente !== '' && form.valor_excedente != null ? Number(String(form.valor_excedente).replace(',', '.')) : null,
           modalidade_id: modalidadeId,
           status: form.status,
           numero_original: form.numero_original?.trim() || null,
@@ -205,6 +208,10 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Número da Proposta *</Label>
+              <Input value={form.numero_proposta} onChange={e => set('numero_proposta', e.target.value)} placeholder="Ex.: PROP-2026-001" />
+            </div>
             <div className="space-y-1.5">
               <Label>Início da vigência *</Label>
               <Input type="date" value={form.data_inicio} onChange={e => set('data_inicio', e.target.value)} />
@@ -220,6 +227,10 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
             <div className="space-y-1.5">
               <Label>Valor mensal (R$)</Label>
               <Input type="number" min={0} step="0.01" value={form.valor_mensal} onChange={e => set('valor_mensal', e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Vida excedente (R$)</Label>
+              <Input type="number" min={0} step="0.01" value={form.valor_excedente} onChange={e => set('valor_excedente', e.target.value)} placeholder="Opcional" />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Modalidade</Label>
