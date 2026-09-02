@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle, Archive } from 'lucide-react';
+import { FileDown, History, FileSignature, Loader2, Trash2, RefreshCw, Mail, Edit2, XCircle, Archive, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatCNPJ, formatBRL, formatDateBR, formatCPF } from '@/lib/contractual/format';
 import { getSignedPdfUrl, generateAndUploadPdf } from '@/lib/contractual/pdf';
@@ -36,6 +36,7 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
   const [correcting, setCorrecting] = useState(false);
   const [rescisaoOpen, setRescisaoOpen] = useState(false);
   const [editLegadoOpen, setEditLegadoOpen] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
   const reenviarEmail = async (assinaturaId: string) => {
     setResendingId(assinaturaId);
@@ -146,6 +147,21 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
     enabled: !!contratoId,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const preparePdfPreview = async () => {
+      setPdfPreviewUrl(null);
+      if (!contrato?.pdf_url) return;
+
+      const bucket = (contrato as any).origem === 'legado' ? 'contract-legados' : 'contract-pdfs';
+      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(contrato.pdf_url, 3600);
+      if (!cancelled && !error && data?.signedUrl) setPdfPreviewUrl(data.signedUrl);
+    };
+
+    void preparePdfPreview();
+    return () => { cancelled = true; };
+  }, [contrato?.pdf_url, (contrato as any)?.origem]);
 
   const baixarPdf = async () => {
     if (!contrato?.pdf_url) { toast.error('PDF não disponível'); return; }
@@ -165,6 +181,12 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
     } catch (e: any) {
       toast.error(e.message || 'Não foi possível baixar o PDF. Verifique se há bloqueador de anúncios ativo.');
     }
+  };
+
+  const visualizarPdf = () => {
+    if (!contrato?.pdf_url) { toast.error('PDF não disponível'); return; }
+    if (!pdfPreviewUrl) { toast.error('O PDF ainda está sendo preparado. Tente novamente em instantes.'); return; }
+    window.open(pdfPreviewUrl, '_blank');
   };
 
   const regenerarPdf = async () => {
@@ -232,9 +254,13 @@ export function ContratualContratoDetalhe({ contratoId, onClose, canEdit, onCorr
 
           <div className="mt-4 space-y-4">
             <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" onClick={visualizarPdf} disabled={!contrato.pdf_url}>
+                <Eye className="h-4 w-4 mr-1" /> Visualizar
+              </Button>
               <Button variant="outline" size="sm" onClick={baixarPdf} disabled={!contrato.pdf_url}>
                 <FileDown className="h-4 w-4 mr-1" /> Baixar PDF
               </Button>
+
               {isLegado && canEdit && (
                 <Button variant="outline" size="sm" onClick={() => setEditLegadoOpen(true)}>
                   <Edit2 className="h-4 w-4 mr-1" /> Editar Dados
