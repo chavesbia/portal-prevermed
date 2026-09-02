@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Download, Trash2, Upload, FileText, AlertTriangle } from 'lucide-react';
+import { Download, Trash2, Upload, FileText, AlertTriangle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
