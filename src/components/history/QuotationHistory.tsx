@@ -1344,7 +1344,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
                         onClick={() => handleApprove(selectedQuotation.id)}
                       >
                         <Check className="h-4 w-4 mr-1" />
-                        Aprovar
+                        Liberar
                       </Button>
                       <Button
                         variant="outline"

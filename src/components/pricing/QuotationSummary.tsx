@@ -316,7 +316,7 @@ export function QuotationSummary({
               )}
               <div>
                 <p className="text-xs font-medium">
-                  {canApprove ? "Você pode aprovar" : "Requer aprovação superior"}
+                  {canApprove ? "Você pode liberar" : "Requer liberação superior"}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {requiredLevel
