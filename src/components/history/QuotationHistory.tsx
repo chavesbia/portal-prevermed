@@ -473,7 +473,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
       doc.text(quotation.client_name.length > 15 ? quotation.client_name.substring(0, 12) + "..." : quotation.client_name, col1, y);
       
       // Status badge
-      const statusText = quotation.status === "aprovado" ? "Aprovado" : quotation.status === "rejeitado" ? "Rejeitado" : "Aguardando";
+      const statusText = quotation.status === "aprovado" ? "Liberado" : quotation.status === "rejeitado" ? "Rejeitado" : "Aguardando";
       const statusColor = quotation.status === "aprovado" ? primaryColor : quotation.status === "rejeitado" ? { r: 220, g: 53, b: 69 } : { r: 234, g: 179, b: 8 };
       doc.setFillColor(statusColor.r, statusColor.g, statusColor.b);
       doc.roundedRect(col2, y - 4, doc.getTextWidth(statusText) + 6, 6, 1, 1, 'F');
@@ -490,7 +490,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
         y += 8;
         doc.setFontSize(7);
         doc.setTextColor(grayText.r, grayText.g, grayText.b);
-        doc.text(quotation.status === "rejeitado" ? "Rejeitado por" : "Aprovado por", col1, y);
+        doc.text(quotation.status === "rejeitado" ? "Rejeitado por" : "Liberado por", col1, y);
         doc.text("Data Aprovação", col2 + 20, y);
         
         y += 5;
@@ -756,7 +756,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
         "Status",
         "Criado por",
         "Data Criação",
-        "Aprovado por",
+        "Liberado por",
         "Data Aprovação",
         "Motivo Recusa",
       ];
@@ -802,7 +802,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive"; label: string }> = {
       aguardando_aprovacao: { variant: "secondary", label: "Aguardando" },
-      aprovado: { variant: "default", label: "Aprovado" },
+      aprovado: { variant: "default", label: "Liberado" },
       rejeitado: { variant: "destructive", label: "Rejeitado" },
     };
     const config = variants[status] || variants.aguardando_aprovacao;
@@ -826,7 +826,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="aguardando_aprovacao">Aguardando</SelectItem>
-                  <SelectItem value="aprovado">Aprovados</SelectItem>
+                  <SelectItem value="aprovado">Liberados</SelectItem>
                   <SelectItem value="rejeitado">Rejeitados</SelectItem>
                 </SelectContent>
               </Select>
@@ -974,7 +974,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
                                 size="icon"
                                 className="h-7 w-7 text-success hover:text-success"
                                 onClick={() => handleApprove(q.id)}
-                                title="Aprovar"
+                                title="Liberar"
                               >
                                 <Check className="h-4 w-4" />
                               </Button>
@@ -1064,7 +1064,7 @@ export function QuotationHistory({ onEditQuotation }: QuotationHistoryProps) {
                     <>
                       <div>
                         <p className="text-xs text-muted-foreground">
-                          {selectedQuotation.status === "rejeitado" ? "Rejeitado por" : "Aprovado por"}
+                          {selectedQuotation.status === "rejeitado" ? "Rejeitado por" : "Liberado por"}
                         </p>
                         <p className="font-medium">{selectedQuotation.approver_profile?.full_name || "-"}</p>
                       </div>
