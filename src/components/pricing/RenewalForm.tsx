@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { CompanySelector } from "@/components/shared/CompanySelector";
+// removed: useCommercialClients
 import { useCommercialClients } from "@/hooks/useCommercialClients";
 import { useCatalogServices, CatalogService } from "@/hooks/useCatalogServices";
 import {
@@ -91,7 +93,6 @@ const compareLine = (it: DraftItem): "ACIMA" | "IGUAL" | "ABAIXO" | null => {
 };
 
 export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
-  const { clients } = useCommercialClients();
   const { activeServices: catalog, categories, isLoading: loadingCatalog } =
     useCatalogServices();
   const { saveRenewal } = useRenewalQuotations();
@@ -116,14 +117,6 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     return groups;
   }, [catalog]);
 
-  useEffect(() => {
-    if (!clientId) return;
-    const c = clients.find((x) => x.id === clientId);
-    if (c) {
-      setClientName(c.company_name);
-      setCurrentLives(c.active_lives || 0);
-    }
-  }, [clientId, clients]);
 
   const updateItem = (key: string, patch: Partial<DraftItem>) => {
     setItems((prev) => prev.map((it) => (it._key === key ? { ...it, ...patch } : it)));
@@ -204,7 +197,7 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
     }));
 
     await saveRenewal.mutateAsync({
-      client_id: clientId || null,
+      client_id: null,
       client_name: clientName,
       current_lives: currentLives,
       index_type: indexType,
@@ -243,26 +236,21 @@ export function RenewalForm({ onSaved }: { onSaved?: () => void }) {
             Memória de Cálculo de Renovação
           </CardTitle>
           <CardDescription>
-            Selecione o cliente da Carteira e adicione serviços do catálogo{" "}
+            Selecione o cliente e adicione serviços do catálogo{" "}
             <strong>Laudos e Serviços</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2 lg:col-span-2">
-              <Label>Cliente da Carteira</Label>
-              <Select value={clientId} onValueChange={setClientId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.company_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Cliente</Label>
+              <CompanySelector
+                value={clientId || null}
+                onChange={(id, company) => {
+                  setClientId(id || "");
+                  setClientName(company?.razao_social || "");
+                }}
+              />
             </div>
             <div className="space-y-2">
               <Label>Vidas atuais</Label>
