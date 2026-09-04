@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { CompanySelector } from "@/components/shared/CompanySelector";
-// removed: useCommercialClients
-import { useCommercialClients } from "@/hooks/useCommercialClients";
 import { useCatalogServices, CatalogService } from "@/hooks/useCatalogServices";
 import {
   useRenewalQuotations,
