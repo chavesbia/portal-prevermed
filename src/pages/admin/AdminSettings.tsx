@@ -589,7 +589,7 @@ export default function AdminSettings() {
           Configurações
         </h1>
         <p className="page-subtitle">
-          Gerencie módulos, links úteis e comunicados do sistema.
+          Gerencie módulos, links úteis e unidades do sistema.
         </p>
       </div>
 
@@ -602,10 +602,6 @@ export default function AdminSettings() {
           <TabsTrigger value="links" className="gap-1">
             <LinkIcon className="h-4 w-4" />
             Links Úteis
-          </TabsTrigger>
-          <TabsTrigger value="announcements" className="gap-1">
-            <Megaphone className="h-4 w-4" />
-            Comunicados
           </TabsTrigger>
           <TabsTrigger value="units" className="gap-1">
             <Building2 className="h-4 w-4" />
@@ -779,100 +775,6 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
 
-        {/* Announcements Tab */}
-        <TabsContent value="announcements">
-          <Card className="card-elevated">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="text-lg">Comunicados ({announcements.length})</CardTitle>
-                <CardDescription>Gerencie os comunicados internos da empresa.</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={fetchData}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-                <Button onClick={() => handleOpenAnnouncementDialog()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Novo Comunicado
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Fixado</TableHead>
-                      <TableHead>Visibilidade</TableHead>
-                      <TableHead>Criado em</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {announcements.map((announcement) => (
-                      <TableRow key={announcement.id}>
-                        <TableCell className="font-medium max-w-[250px]">
-                          <div className="flex items-center gap-2">
-                            {announcement.image_url && (
-                              <img 
-                                src={announcement.image_url} 
-                                alt="" 
-                                className="h-8 w-8 rounded object-cover"
-                              />
-                            )}
-                            <div className="truncate">{announcement.title}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={announcement.is_pinned}
-                            onCheckedChange={() => handleTogglePinned(announcement)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {announcement.is_public ? (
-                            <Badge variant="default">Público</Badge>
-                          ) : (
-                            <Badge variant="secondary">
-                              {departments.find(d => d.id === announcement.department_id)?.name || 'Departamento'}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(announcement.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenAnnouncementDialog(announcement)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteAnnouncement(announcement)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Units Tab */}
         <TabsContent value="units">
           <UnitsManagement />
@@ -1024,123 +926,6 @@ export default function AdminSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Announcement Dialog */}
-      <Dialog open={isAnnouncementDialogOpen} onOpenChange={setIsAnnouncementDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editingAnnouncement ? 'Editar Comunicado' : 'Novo Comunicado'}
-            </DialogTitle>
-            <DialogDescription>
-              Configure as informações do comunicado.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Título *</Label>
-              <Input
-                value={announcementForm.title}
-                onChange={(e) => setAnnouncementForm(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Ex: Atualização de Políticas Internas"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Conteúdo *</Label>
-              <Textarea
-                value={announcementForm.content}
-                onChange={(e) => setAnnouncementForm(prev => ({ ...prev, content: e.target.value }))}
-                placeholder="Digite o conteúdo do comunicado..."
-                rows={6}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Imagem (opcional)</Label>
-              <div className="flex items-center gap-4">
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png,image/gif,image/webp"
-                  onChange={handleAnnouncementImageSelect}
-                  className="flex-1"
-                />
-                {announcementImagePreview && (
-                  <img 
-                    src={announcementImagePreview} 
-                    alt="Preview" 
-                    className="h-16 w-16 rounded object-cover border"
-                  />
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Visibilidade</Label>
-                <Select
-                  value={announcementForm.is_public ? 'public' : 'department'}
-                  onValueChange={(value) => setAnnouncementForm(prev => ({ 
-                    ...prev, 
-                    is_public: value === 'public',
-                    department_id: value === 'public' ? '' : prev.department_id
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">Público (todos)</SelectItem>
-                    <SelectItem value="department">Por Departamento</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {!announcementForm.is_public && (
-                <div className="space-y-2">
-                  <Label>Departamento</Label>
-                  <Select
-                    value={announcementForm.department_id}
-                    onValueChange={(value) => setAnnouncementForm(prev => ({ ...prev, department_id: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>Data de expiração (opcional)</Label>
-                <Input
-                  type="date"
-                  value={announcementForm.expires_at}
-                  onChange={(e) => setAnnouncementForm(prev => ({ ...prev, expires_at: e.target.value }))}
-                />
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="announcement-pinned"
-                checked={announcementForm.is_pinned}
-                onCheckedChange={(checked) => 
-                  setAnnouncementForm(prev => ({ ...prev, is_pinned: checked }))
-                }
-              />
-              <label htmlFor="announcement-pinned">Fixar comunicado no topo</label>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsAnnouncementDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveAnnouncement} disabled={isUploadingAnnouncementImage}>
-                {isUploadingAnnouncementImage ? 'Enviando...' : (editingAnnouncement ? 'Salvar' : 'Publicar')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

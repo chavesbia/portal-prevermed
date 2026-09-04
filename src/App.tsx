@@ -23,6 +23,7 @@ const Organograma = lazy(() => import("./pages/Organograma"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Social = lazy(() => import("./pages/Social"));
 const Comunicados = lazy(() => import("./pages/Comunicados"));
+const GestaoComunicados = lazy(() => import("./pages/GestaoComunicados"));
 const Calendario = lazy(() => import("./pages/Calendario"));
 const Documentos = lazy(() => import("./pages/Documentos"));
 const LinksUteis = lazy(() => import("./pages/LinksUteis"));
@@ -79,6 +80,7 @@ const App = () => (
 
                 <Route path="/" element={<Index />} />
                 <Route path="/comunicados" element={<Comunicados />} />
+                <Route path="/gestao-comunicados" element={<ProtectedModuleRoute route="/gestao-comunicados"><GestaoComunicados /></ProtectedModuleRoute>} />
                 <Route path="/calendario" element={<Calendario />} />
                 <Route path="/documentos" element={<Documentos />} />
 
