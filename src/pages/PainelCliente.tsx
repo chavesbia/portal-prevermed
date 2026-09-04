@@ -53,6 +53,7 @@ interface Contrato {
   data_fim: string | null;
   valor_mensal: number | null;
   origem?: string | null;
+  rescindido?: boolean;
 }
 
 function formatCnpj(v: string | null | undefined) {
@@ -312,10 +313,27 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
         .from('contract_contratos')
         .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, origem')
         .in('cliente_id', clienteIds)
+        .neq('status', 'cancelado')
         .order('data_inicio', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (contratos ?? []) as Contrato[];
+      const lista = (contratos ?? []) as Contrato[];
+      if (lista.length === 0) return lista;
+
+      // Contratos encerrados só entram quando existe rescisão vinculada
+      const { data: rescisoes } = await supabase
+        .from('contract_rescisoes')
+        .select('contrato_id')
+        .in('contrato_id', lista.map((c) => c.id));
+      const comRescisao = new Set((rescisoes ?? []).map((r) => r.contrato_id));
+
+      return lista
+        .filter((c) => {
+          const st = c.status || '';
+          if (st === 'encerrado') return comRescisao.has(c.id);
+          return st === 'ativo' || st.startsWith('vencendo') || st === 'vencido';
+        })
+        .map((c) => ({ ...c, rescindido: c.status === 'encerrado' })) as Contrato[];
     },
   });
 
@@ -340,8 +358,9 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
         ) : (
           <div className="space-y-2">
             {data.map((c) => {
-              const vencido = c.data_fim && c.data_fim < today;
-              const vigente = !c.data_fim || c.data_fim >= today;
+              const st = c.status || '';
+              const rescindido = !!c.rescindido;
+              const vencido = st === 'vencido';
               return (
                 <div
                   key={c.id}
@@ -362,17 +381,17 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
                           <Archive className="h-3 w-3" /> Legado
                         </Badge>
                       )}
-                      {vencido ? (
-                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 text-xs">
+                      {rescindido ? (
+                        <Badge className="bg-slate-200 text-slate-800 hover:bg-slate-200 border-slate-300 text-xs whitespace-nowrap">
+                          Rescindido
+                        </Badge>
+                      ) : vencido ? (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 text-xs whitespace-nowrap">
                           Vencido
                         </Badge>
-                      ) : c.data_fim ? (
-                        <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200 text-xs">
-                          Vigente
-                        </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-xs">
-                          Sem data de fim
+                        <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200 text-xs whitespace-nowrap">
+                          Vigente
                         </Badge>
                       )}
                     </div>
