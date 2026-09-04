@@ -293,7 +293,7 @@ export function InLocoTab({
           <AlertDescription className="flex items-center justify-between">
             <span className="text-sm font-medium">
               {editingQuotation?.isApprovedEdit ? (
-                <>Editando MDC aprovado: <strong>{editingQuotation?.clientName}</strong> (nova versão será criada)</>
+                <>Editando MDC liberado: <strong>{editingQuotation?.clientName}</strong> (nova versão será criada)</>
               ) : editingQuotation?.isRejectedEdit ? (
                 <>Editando MDC rejeitado: <strong>{editingQuotation?.clientName}</strong> (voltará para aprovação)</>
               ) : (

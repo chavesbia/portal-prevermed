@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Calculator, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Send, Car, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { CompanySelector } from "@/components/shared/CompanySelector";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { QuotationItem, ServiceItem, APPROVAL_LEVELS, UserRole, DeslocamentoItem } from "@/types/pricing";
@@ -41,6 +43,7 @@ export function QuotationSummary({
   onSubmit,
   isEditing = false,
 }: QuotationSummaryProps) {
+  const [companyId, setCompanyId] = useState<string | null>(null);
   const activeItems = items.filter((item) => item.quantity > 0);
 
   // Calcular deslocamento
@@ -126,13 +129,15 @@ export function QuotationSummary({
       <CardContent className="space-y-3">
         {/* Cliente */}
         <div className="space-y-1">
-          <Label htmlFor="clientName" className="text-xs">Nome do Cliente</Label>
-          <Input
-            id="clientName"
-            placeholder="Digite o nome do cliente"
-            value={clientName}
-            onChange={(e) => onClientNameChange(e.target.value)}
-            className="h-8"
+          <Label className="text-xs">Cliente</Label>
+          <CompanySelector
+            value={companyId}
+            onChange={(id, company) => {
+              setCompanyId(id);
+              onClientNameChange(company?.razao_social || "");
+            }}
+            legacyLabel={clientName || null}
+            placeholder="Buscar cliente por nome ou CNPJ…"
           />
         </div>
 
@@ -316,7 +321,7 @@ export function QuotationSummary({
               )}
               <div>
                 <p className="text-xs font-medium">
-                  {canApprove ? "Você pode aprovar" : "Requer aprovação superior"}
+                  {canApprove ? "Você pode liberar" : "Requer liberação superior"}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {requiredLevel

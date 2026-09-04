@@ -36,7 +36,7 @@ const GestaoOS = lazy(() => import("./pages/GestaoOS"));
 const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
 const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
 const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
-const GestaoPassivos = lazy(() => import("./pages/GestaoPassivos"));
+
 const GestaoFeedback = lazy(() => import("./pages/GestaoFeedback"));
 const GestaoContratual = lazy(() => import("./pages/GestaoContratual"));
 const PainelCliente = lazy(() => import("./pages/PainelCliente"));
@@ -94,7 +94,7 @@ const App = () => (
                 <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
                 <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
                 <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
-                <Route path="/gestao-passivos" element={<GestaoPassivos />} />
+                <Route path="/gestao-passivos" element={<Navigate to="/" replace />} />
                 <Route path="/gestao-feedback" element={<ProtectedModuleRoute route="/gestao-feedback"><GestaoFeedback /></ProtectedModuleRoute>} />
                 <Route path="/social" element={<Social />} />
                 <Route path="/gestao-contratual" element={<GestaoContratual />} />

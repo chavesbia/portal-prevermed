@@ -83,7 +83,7 @@ export function RenewalHistory() {
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; variant: any }> = {
       aguardando_aprovacao: { label: "Aguardando", variant: "secondary" },
-      aprovado: { label: "Aprovado", variant: "default" },
+      aprovado: { label: "Liberado", variant: "default" },
       rejeitado: { label: "Rejeitado", variant: "destructive" },
     };
     const cfg = map[status] || map.aguardando_aprovacao;
@@ -120,7 +120,7 @@ export function RenewalHistory() {
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="aguardando_aprovacao">Aguardando</SelectItem>
-            <SelectItem value="aprovado">Aprovados</SelectItem>
+            <SelectItem value="aprovado">Liberados</SelectItem>
             <SelectItem value="rejeitado">Rejeitados</SelectItem>
           </SelectContent>
         </Select>
