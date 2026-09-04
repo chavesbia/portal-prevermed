@@ -151,6 +151,7 @@ export function OSListView({
                     <th className="pb-3 text-left font-medium text-muted-foreground w-8" />
                     <th className="pb-3 text-left font-medium text-muted-foreground">Nº OS</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Cliente</th>
+                    <th className="pb-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Data de Emissão</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
@@ -183,6 +184,9 @@ export function OSListView({
                             {(ordem as any).urgente && <Badge variant="destructive" className="ml-2 text-[10px]">URGENTE</Badge>}
                           </td>
                           <td className="py-3 max-w-[150px] truncate">{ordem.empresa_cliente}</td>
+                          <td className="py-3 hidden lg:table-cell text-muted-foreground whitespace-nowrap">
+                            {ordem.data_registro ? format(parseISO(ordem.data_registro), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
+                          </td>
                           <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} encerrados</td>
                           <td className="py-3"><Badge className={statusOSColors[ordem.status_os] || 'bg-muted'}>{ordem.status_os}</Badge></td>
                           <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>
