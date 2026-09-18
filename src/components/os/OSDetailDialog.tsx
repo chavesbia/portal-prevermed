@@ -299,15 +299,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
 
               <div className="border-t pt-4 space-y-4">
-                <h4 className="font-semibold">Atualizar Status</h4>
+                <h4 className="font-semibold">Registrar Comentário</h4>
                 <div className="space-y-2">
-                  <Label>Novo Status</Label>
-                  <Select value={newStatus} onValueChange={(v) => setNewStatus(v as StatusOS)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Label>Status da OS</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {ordem.status_os}
+                  </div>
+                  <p className="text-xs text-muted-foreground">O status da OS é calculado automaticamente a partir dos serviços.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Comentário</Label>
