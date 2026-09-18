@@ -298,7 +298,7 @@ export function useOrdens() {
       contato_email?: string | null;
       contato_telefone?: string | null;
       responsavel_atual: string;
-      status_os: StatusOS;
+      status_os?: StatusOS;
       data_registro: string;
       data_emissao?: string | null;
       prazo_acordado?: string | null;
