@@ -62,7 +62,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    // ASCII-only: acentos e caracteres especiais são rejeitados pela Autentique
+    const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     const comEmail = assinaturas.filter((a: any) => a.email != null && String(a.email).trim() !== '');
 
     const invalidos = comEmail.filter((a: any) => !emailRe.test(String(a.email).trim().toLowerCase()));
