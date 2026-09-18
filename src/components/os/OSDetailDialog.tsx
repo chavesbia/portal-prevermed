@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { OrdemServico, ServicoOS, StatusOS, STATUS_OS_OPTIONS, statusOSColors, statusServicoColors } from '@/types/os';
+import { OrdemServico, ServicoOS, StatusOS, statusOSColors, statusServicoColors } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +49,6 @@ function formatEndereco(c: any) {
 
 
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
-  const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -130,13 +129,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const osElapsed = elapsedMs(osStart, osEnd);
 
   const handleUpdate = async () => {
-    if (newStatus !== ordem.status_os || comentario) {
-      setSaving(true);
-      await onUpdateStatus(ordem.id, newStatus, comentario);
-      setSaving(false);
-      setComentario('');
-      onOpenChange(false);
-    }
+    if (!comentario.trim()) return;
+    setSaving(true);
+    // Status da OS nunca é alterado manualmente: mantém o valor calculado pelo trigger.
+    await onUpdateStatus(ordem.id, ordem.status_os as StatusOS, comentario);
+    setSaving(false);
+    setComentario('');
+    onOpenChange(false);
   };
 
   const handlePrint = async () => {
@@ -299,15 +298,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
 
 
               <div className="border-t pt-4 space-y-4">
-                <h4 className="font-semibold">Atualizar Status</h4>
+                <h4 className="font-semibold">Registrar Comentário</h4>
                 <div className="space-y-2">
-                  <Label>Novo Status</Label>
-                  <Select value={newStatus} onValueChange={(v) => setNewStatus(v as StatusOS)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Label>Status da OS</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    {ordem.status_os}
+                  </div>
+                  <p className="text-xs text-muted-foreground">O status da OS é calculado automaticamente a partir dos serviços.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Comentário</Label>

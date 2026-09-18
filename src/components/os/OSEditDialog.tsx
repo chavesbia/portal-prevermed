@@ -13,7 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Save, Plus, Trash2, User } from 'lucide-react';
-import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, ServicoOS, TipoOS } from '@/types/os';
+import { OrdemServico, StatusOS, ServicoOS, TipoOS } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -133,7 +133,6 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
       contato_cliente: contatoCliente || null,
       contato_email: contatoEmail.trim() || null,
       contato_telefone: contatoTelefone.trim() || null,
-      status_os: statusOS,
       data_registro: dataEmissaoStr,
       data_emissao: dataEmissaoStr,
       prazo_acordado: prazoAcordado ? format(prazoAcordado, 'yyyy-MM-dd') : null,
@@ -275,13 +274,10 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
           </div>
           <div className="space-y-2">
             <Label>Status da OS</Label>
-            <Select value={statusOS} onValueChange={(v) => setStatusOS(v as StatusOS)} disabled={!canEdit}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {STATUS_OS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">Normalmente automático conforme os serviços.</p>
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground">
+              {statusOS}
+            </div>
+            <p className="text-xs text-muted-foreground">O status da OS é calculado automaticamente a partir dos serviços.</p>
           </div>
           <div className="space-y-2">
             <Label>Data de Emissão</Label>
