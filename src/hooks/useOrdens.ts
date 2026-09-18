@@ -318,7 +318,6 @@ export function useOrdens() {
       if (ordem.numero_os !== data.numero_os) changes.push(`Número: ${ordem.numero_os} → ${data.numero_os}`);
       if (ordem.empresa_cliente !== data.empresa_cliente) changes.push(`Empresa: ${ordem.empresa_cliente} → ${data.empresa_cliente}`);
       if ((ordem.contato_cliente || '') !== (data.contato_cliente || '')) changes.push(`Contato: ${ordem.contato_cliente || 'N/A'} → ${data.contato_cliente || 'N/A'}`);
-      if (ordem.status_os !== data.status_os) changes.push(`Status OS: ${ordem.status_os} → ${data.status_os}`);
       if (ordem.prazo_acordado !== (data.prazo_acordado || null)) changes.push(`Prazo: ${ordem.prazo_acordado || 'N/A'} → ${data.prazo_acordado || 'N/A'}`);
       if (!!ordem.urgente !== !!data.urgente) changes.push(`Urgente: ${ordem.urgente ? 'Sim' : 'Não'} → ${data.urgente ? 'Sim' : 'Não'}`);
 
@@ -332,7 +331,7 @@ export function useOrdens() {
           ...(data.contato_email !== undefined ? { contato_email: data.contato_email } : {}),
           ...(data.contato_telefone !== undefined ? { contato_telefone: data.contato_telefone } : {}),
           responsavel_atual: data.responsavel_atual,
-          status_os: data.status_os,
+          // status_os NÃO é editável manualmente: calculado pelo trigger propagar_status_os
           // Removed data_registro and data_emissao from update as per requirement
           prazo_acordado: data.prazo_acordado ?? null,
           observacoes: data.observacoes ?? null,
@@ -350,7 +349,7 @@ export function useOrdens() {
         acao: 'Edição',
         comentario: changes.length > 0 ? `Dados da OS atualizados: ${changes.join('; ')}` : 'Dados da OS atualizados.',
         status_anterior: oldStatus || null,
-        status_novo: data.status_os,
+        status_novo: oldStatus || null,
       });
 
       await fetchOrdens();
