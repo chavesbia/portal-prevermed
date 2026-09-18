@@ -62,9 +62,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    const signers = assinaturas
-      .filter((a: any) => a.email)
-      .map((a: any) => ({ email: a.email, action: 'SIGN', name: a.nome }));
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const comEmail = assinaturas.filter((a: any) => a.email != null && String(a.email).trim() !== '');
+
+    const invalidos = comEmail.filter((a: any) => !emailRe.test(String(a.email).trim().toLowerCase()));
+    if (invalidos.length > 0) {
+      const lista = invalidos.map((a: any) => `${a.nome || a.tipo}: "${String(a.email).trim()}"`).join('; ');
+      return json({ error: `E-mail inválido para os signatários — corrija antes de enviar (${lista}).` }, 400);
+    }
+
+    const signers = comEmail.map((a: any) => ({
+      email: String(a.email).trim().toLowerCase(),
+      action: 'SIGN',
+      name: String(a.nome || '').trim(),
+    }));
+
+    const dup = signers.map((s) => s.email).find((e, i, arr) => arr.indexOf(e) !== i);
+    if (dup) {
+      return json({ error: `O e-mail ${dup} está repetido entre signatários — cada assinante precisa de um e-mail próprio.` }, 400);
+    }
+
     if (signers.length === 0) {
       return json({ error: 'Nenhum signatário com e-mail cadastrado. Edite o contrato e informe os e-mails dos signatários.' }, 400);
     }
