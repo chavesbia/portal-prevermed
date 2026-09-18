@@ -13,7 +13,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Save, Plus, Trash2, User } from 'lucide-react';
-import { OrdemServico, StatusOS, STATUS_OS_OPTIONS, ServicoOS, TipoOS } from '@/types/os';
+import { OrdemServico, StatusOS, ServicoOS, TipoOS } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';

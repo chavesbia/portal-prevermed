@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { OrdemServico, ServicoOS, StatusOS, STATUS_OS_OPTIONS, statusOSColors, statusServicoColors } from '@/types/os';
+import { OrdemServico, ServicoOS, StatusOS, statusOSColors, statusServicoColors } from '@/types/os';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -49,7 +49,6 @@ function formatEndereco(c: any) {
 
 
 export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
-  const [newStatus, setNewStatus] = useState<StatusOS>(ordem.status_os as StatusOS);
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
