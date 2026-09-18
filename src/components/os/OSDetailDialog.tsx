@@ -130,13 +130,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
   const osElapsed = elapsedMs(osStart, osEnd);
 
   const handleUpdate = async () => {
-    if (newStatus !== ordem.status_os || comentario) {
-      setSaving(true);
-      await onUpdateStatus(ordem.id, newStatus, comentario);
-      setSaving(false);
-      setComentario('');
-      onOpenChange(false);
-    }
+    if (!comentario.trim()) return;
+    setSaving(true);
+    // Status da OS nunca é alterado manualmente: mantém o valor calculado pelo trigger.
+    await onUpdateStatus(ordem.id, ordem.status_os as StatusOS, comentario);
+    setSaving(false);
+    setComentario('');
+    onOpenChange(false);
   };
 
   const handlePrint = async () => {
