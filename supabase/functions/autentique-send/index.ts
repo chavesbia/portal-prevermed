@@ -78,10 +78,16 @@ Deno.serve(async (req) => {
       name: String(a.nome || '').trim(),
     }));
 
+    const semNome = signers.filter((s) => !s.name);
+    if (semNome.length > 0) {
+      return json({ error: `Signatário sem nome cadastrado (${semNome.map((s) => s.email).join(', ')}). Preencha o nome antes de enviar.` }, 400);
+    }
+
     const dup = signers.map((s) => s.email).find((e, i, arr) => arr.indexOf(e) !== i);
     if (dup) {
       return json({ error: `O e-mail ${dup} está repetido entre signatários — cada assinante precisa de um e-mail próprio.` }, 400);
     }
+
 
     if (signers.length === 0) {
       return json({ error: 'Nenhum signatário com e-mail cadastrado. Edite o contrato e informe os e-mails dos signatários.' }, 400);
@@ -128,7 +134,27 @@ Deno.serve(async (req) => {
           error: 'Créditos insuficientes no Autentique. Por favor, verifique o saldo da conta da empresa.' 
         }, 400);
       }
-      return json({ error: 'Autentique error', details: respJson }, 502);
+
+      // Erros de validação da Autentique (ex.: signers.1.email) viram mensagem legível
+      const validation = respJson.errors?.find((e: any) => e.extensions?.validation)?.extensions?.validation;
+      if (validation) {
+        const msgs = Object.keys(validation).map((key) => {
+          const m = key.match(/^signers\.(\d+)\.(\w+)$/);
+          if (m) {
+            const s = signers[Number(m[1])];
+            const campo = m[2] === 'email' ? 'e-mail' : m[2] === 'name' ? 'nome' : m[2];
+            return `${s?.name || 'Signatário ' + (Number(m[1]) + 1)}: ${campo} inválido ("${m[2] === 'email' ? s?.email ?? '' : s?.name ?? ''}")`;
+          }
+          return `${key}: inválido`;
+        });
+        return json({
+          error: `A Autentique recusou os dados dos signatários — corrija e tente novamente. ${msgs.join('; ')}.`,
+        }, 400);
+      }
+
+      const firstMsg = respJson.errors?.[0]?.message;
+      return json({ error: `Autentique recusou o envio${firstMsg ? `: ${firstMsg}` : ''}.`, details: respJson }, 400);
+
     }
 
     const doc = respJson.data?.createDocument;

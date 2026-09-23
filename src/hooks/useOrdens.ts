@@ -258,13 +258,9 @@ export function useOrdens() {
     }
   };
 
-  const updateOrdemStatus = async (ordemId: string, _newStatus: StatusOS, comentario?: string) => {
+  const addOrdemComentario = async (ordemId: string, comentario?: string) => {
     try {
-      const ordem = ordens.find(o => o.id === ordemId) || allOrdens.find(o => o.id === ordemId);
-      const currentStatus = ordem?.status_os || null;
-
-      // status_os NÃO é editável manualmente: calculado pelo trigger propagar_status_os.
-      // Esta função apenas registra um comentário no histórico da OS.
+      // status_os NUNCA é gravado aqui: é calculado pelo trigger propagar_status_os.
       const { error } = await supabase
         .from('ordens_servico')
         .update({ updated_by: user?.id || null })
@@ -277,9 +273,10 @@ export function useOrdens() {
         user_name: profile?.full_name || 'Sistema',
         acao: 'Comentário',
         comentario: comentario || null,
-        status_anterior: currentStatus,
-        status_novo: currentStatus,
+        status_anterior: null,
+        status_novo: null,
       });
+
 
       await fetchOrdens();
       await fetchAllOrdens();
@@ -417,7 +414,7 @@ export function useOrdens() {
     getFilteredOrdens,
     addOrdem,
     updateOrdem,
-    updateOrdemStatus,
+    addOrdemComentario,
     deleteOrdem,
     getHistorico,
     getResponsaveis,

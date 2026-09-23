@@ -42,7 +42,7 @@ interface OSListViewProps {
   filters: any;
   setFilters: any;
   responsaveis: string[];
-  onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
+  onAddComentario: (id: string, comment?: string) => Promise<boolean>;
   onUpdateOrdem: (id: string, data: any) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
@@ -58,7 +58,7 @@ export function OSListView({
   filters, 
   setFilters, 
   responsaveis, 
-  onUpdateStatus, 
+  onAddComentario, 
   onUpdateOrdem, 
   onDelete, 
   onGetHistorico, 
@@ -345,7 +345,7 @@ export function OSListView({
 
       {selectedOS && (
         <>
-          <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onUpdateStatus={onUpdateStatus} />
+          <OSDetailDialog ordem={selectedOS} open={showDetail} onOpenChange={setShowDetail} onAddComentario={onAddComentario} />
           <OSEditDialog 
             ordem={selectedOS} 
             open={showEdit} 

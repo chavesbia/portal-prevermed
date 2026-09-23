@@ -28,7 +28,7 @@ export default function GestaoOS() {
   const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, isInitialLoading, isLoadingAll, filters, setFilters,
-    getFilteredOrdens, allOrdens, addOrdem, updateOrdem, updateOrdemStatus,
+    getFilteredOrdens, allOrdens, addOrdem, updateOrdem, addOrdemComentario,
     deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
     currentPage, setCurrentPage, totalPages, totalCount
   } = useOrdens();
@@ -94,7 +94,7 @@ export default function GestaoOS() {
             filters={filters}
             setFilters={setFilters}
             responsaveis={responsaveis}
-            onUpdateStatus={updateOrdemStatus}
+            onAddComentario={addOrdemComentario}
             onUpdateOrdem={updateOrdem}
             onDelete={deleteOrdem}
             onGetHistorico={getHistorico}
