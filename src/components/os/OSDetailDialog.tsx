@@ -164,6 +164,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
           status: s.status,
         })),
       });
+      if (!aberto) {
+        toast({
+          title: 'Não foi possível abrir',
+          description: 'Permita janelas pop-up para este site e tente novamente.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setPrinting(false);
     }
