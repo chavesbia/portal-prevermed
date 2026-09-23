@@ -150,14 +150,32 @@ export function usePPP() {
     onError: (err: any) => toast.error(`Erro ao marcar como realizado: ${err.message}`),
   });
 
-  const getSignedUrl = async (anexo: PPPAnexo) => {
-    const { data, error: urlError } = await supabase.storage.from(BUCKET).createSignedUrl(anexo.arquivo_url, 3600);
-    if (urlError) {
+  const getSignedUrl = async (anexo: PPPAnexo, download = false) => {
+    const { data, error: urlError } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(anexo.arquivo_url, 3600, download ? { download: anexo.nome_arquivo || true } : undefined);
+    if (urlError || !data?.signedUrl) {
       toast.error('Não foi possível gerar o link do anexo.');
       return null;
     }
     return data.signedUrl;
   };
 
-  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl };
+  const deleteAnexo = useMutation({
+    mutationFn: async (anexo: PPPAnexo) => {
+      const { data, error: deleteError } = await (supabase as any)
+        .from('ppp_anexos').delete().eq('id', anexo.id).select('id');
+      if (deleteError) throw deleteError;
+      if (!data?.length) throw new Error('Você não tem permissão para remover este anexo.');
+      await supabase.storage.from(BUCKET).remove([anexo.arquivo_url]);
+      return anexo.id;
+    },
+    onSuccess: () => {
+      toast.success('Anexo removido.');
+      qc.invalidateQueries({ queryKey });
+    },
+    onError: (err: any) => toast.error(`Erro ao remover anexo: ${err.message}`),
+  });
+
+  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl, deleteAnexo };
 }
