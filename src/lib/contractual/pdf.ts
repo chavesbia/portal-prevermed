@@ -1,5 +1,22 @@
 // Geração de PDF no client via html2pdf.js + upload para Supabase Storage
 import { supabase } from '@/integrations/supabase/client';
+import logoPreverMed from '@/assets/logo-prevermed.png';
+
+async function toDataUrl(src: string): Promise<string | null> {
+  try {
+    const res = await fetch(src);
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(String(reader.result || ''));
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 
 export async function generateAndUploadPdf(opts: {
   contratoId: string;
