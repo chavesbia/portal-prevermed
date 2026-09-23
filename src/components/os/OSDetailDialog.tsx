@@ -29,7 +29,7 @@ interface OSDetailDialogProps {
   ordem: OrdemServico;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateStatus: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
+  onAddComentario: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
 }
 
 function formatCnpj(v: string | null | undefined) {
@@ -49,7 +49,7 @@ function formatEndereco(c: any) {
 
 
 
-export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OSDetailDialogProps) {
+export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: OSDetailDialogProps) {
   const [comentario, setComentario] = useState('');
   const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
@@ -133,7 +133,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
     if (!comentario.trim()) return;
     setSaving(true);
     // Status da OS nunca é alterado manualmente: mantém o valor calculado pelo trigger.
-    await onUpdateStatus(ordem.id, ordem.status_os as StatusOS, comentario);
+    await onAddComentario(ordem.id, ordem.status_os as StatusOS, comentario);
     setSaving(false);
     setComentario('');
     onOpenChange(false);

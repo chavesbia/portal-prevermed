@@ -414,7 +414,7 @@ export function useOrdens() {
     getFilteredOrdens,
     addOrdem,
     updateOrdem,
-    updateOrdemStatus,
+    addOrdemComentario,
     deleteOrdem,
     getHistorico,
     getResponsaveis,
