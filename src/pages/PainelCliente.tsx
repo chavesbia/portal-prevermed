@@ -331,7 +331,7 @@ function ContratosCard({ companyId, navigate }: { companyId: string; navigate: (
         .filter((c) => {
           const st = c.status || '';
           if (st === 'encerrado') return comRescisao.has(c.id);
-          return st === 'ativo' || st.startsWith('vencendo') || st === 'vencido';
+          return st === 'ativo' || st === 'assinado' || st.startsWith('vencendo') || st === 'vencido';
         })
         .map((c) => ({ ...c, rescindido: c.status === 'encerrado' })) as Contrato[];
     },
