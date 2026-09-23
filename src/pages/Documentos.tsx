@@ -82,23 +82,19 @@ export default function Documentos() {
 
   const handlePreview = async (doc: DocItem) => {
     const path = extractStoragePath(doc);
-    const ready = path ? previewUrls[path] : doc.file_url;
+    const ready = path ? previewUrls[path] : null;
     if (ready) {
       window.open(ready, '_blank');
       return;
     }
-    if (!path) {
-      toast.error('Não foi possível localizar o arquivo deste documento.');
-      return;
-    }
     setBusyDocId(doc.id);
     try {
-      const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 10);
-      if (error || !data?.signedUrl) {
+      const url = await createDocSignedUrl(doc);
+      if (!url) {
         toast.error('Não foi possível abrir o documento. Tente novamente.');
         return;
       }
-      window.open(data.signedUrl, '_blank');
+      window.open(url, '_blank');
     } finally {
       setBusyDocId(null);
     }
