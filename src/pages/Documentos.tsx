@@ -264,15 +264,17 @@ export default function Documentos() {
                           variant="ghost"
                           size="icon"
                           title="Visualizar"
+                          disabled={busyDocId === doc.id}
                           onClick={() => handlePreview(doc)}
                         >
-                          <Eye className="h-4 w-4" />
+                          {busyDocId === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           title="Baixar"
-                          onClick={() => openSignedUrl(doc, true)}
+                          disabled={busyDocId === doc.id}
+                          onClick={() => handleDownload(doc)}
                         >
                           <Download className="h-4 w-4" />
                         </Button>
