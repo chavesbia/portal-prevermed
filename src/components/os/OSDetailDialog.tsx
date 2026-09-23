@@ -17,7 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
 import { Printer, Timer } from 'lucide-react';
 import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
-import { generateOSPdf } from '@/lib/os/pdf';
+import { openOSPrintView } from '@/lib/os/pdf';
 
 
 import { OSAnexosTab } from './OSAnexosTab';
