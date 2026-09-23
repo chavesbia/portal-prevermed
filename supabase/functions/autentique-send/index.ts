@@ -128,7 +128,27 @@ Deno.serve(async (req) => {
           error: 'Créditos insuficientes no Autentique. Por favor, verifique o saldo da conta da empresa.' 
         }, 400);
       }
-      return json({ error: 'Autentique error', details: respJson }, 502);
+
+      // Erros de validação da Autentique (ex.: signers.1.email) viram mensagem legível
+      const validation = respJson.errors?.find((e: any) => e.extensions?.validation)?.extensions?.validation;
+      if (validation) {
+        const msgs = Object.keys(validation).map((key) => {
+          const m = key.match(/^signers\.(\d+)\.(\w+)$/);
+          if (m) {
+            const s = signers[Number(m[1])];
+            const campo = m[2] === 'email' ? 'e-mail' : m[2] === 'name' ? 'nome' : m[2];
+            return `${s?.name || 'Signatário ' + (Number(m[1]) + 1)}: ${campo} inválido ("${m[2] === 'email' ? s?.email ?? '' : s?.name ?? ''}")`;
+          }
+          return `${key}: inválido`;
+        });
+        return json({
+          error: `A Autentique recusou os dados dos signatários — corrija e tente novamente. ${msgs.join('; ')}.`,
+        }, 400);
+      }
+
+      const firstMsg = respJson.errors?.[0]?.message;
+      return json({ error: `Autentique recusou o envio${firstMsg ? `: ${firstMsg}` : ''}.`, details: respJson }, 400);
+
     }
 
     const doc = respJson.data?.createDocument;
