@@ -24,27 +24,37 @@ interface DocItem {
   created_at: string;
 }
 
+function decodePath(path: string) {
+  if (!path.includes('%')) return path;
+  try { return decodeURIComponent(path); } catch { return path; }
+}
+
 function extractStoragePath(doc: { file_path: string | null; file_url: string }) {
-  if (doc.file_path) return doc.file_path;
+  if (doc.file_path) return decodePath(doc.file_path);
   const m = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-async function openSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
-  const path = extractStoragePath(doc);
-  if (!path) {
-    window.open(doc.file_url, '_blank');
-    return;
+async function createDocSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
+  const candidates = [extractStoragePath(doc), doc.file_path].filter(
+    (value, index, arr): value is string => !!value && arr.indexOf(value) === index,
+  );
+  for (const path of candidates) {
+    const { data } = await supabase.storage
+      .from('documents')
+      .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+    if (data?.signedUrl) return data.signedUrl;
   }
-  const { data, error } = await supabase.storage
-    .from('documents')
-    .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
-  if (error || !data?.signedUrl) {
-    console.error('Signed URL error', error);
+  return null;
+}
+
+async function openSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
+  const url = await createDocSignedUrl(doc, download);
+  if (!url) {
     toast.error('Não foi possível baixar o documento. Tente novamente.');
     return;
   }
-  window.open(data.signedUrl, '_blank');
+  window.open(url, '_blank');
 }
 
 const getFileIcon = (fileType: string | null) => {
