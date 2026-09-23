@@ -29,7 +29,7 @@ interface OSDetailDialogProps {
   ordem: OrdemServico;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddComentario: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
+  onAddComentario: (id: string, comment?: string) => Promise<boolean>;
 }
 
 function formatCnpj(v: string | null | undefined) {
@@ -133,7 +133,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
     if (!comentario.trim()) return;
     setSaving(true);
     // Status da OS nunca é alterado manualmente: mantém o valor calculado pelo trigger.
-    await onAddComentario(ordem.id, ordem.status_os as StatusOS, comentario);
+    await onAddComentario(ordem.id, comentario);
     setSaving(false);
     setComentario('');
     onOpenChange(false);

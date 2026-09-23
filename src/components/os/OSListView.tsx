@@ -42,7 +42,7 @@ interface OSListViewProps {
   filters: any;
   setFilters: any;
   responsaveis: string[];
-  onAddComentario: (id: string, status: StatusOS, comment?: string) => Promise<boolean>;
+  onAddComentario: (id: string, comment?: string) => Promise<boolean>;
   onUpdateOrdem: (id: string, data: any) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
   onGetHistorico: (id: string) => Promise<any[]>;
