@@ -191,7 +191,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
               disabled={printing}
             >
               <Printer className="h-4 w-4 mr-2" />
-              {printing ? 'Gerando...' : 'Imprimir OS'}
+              {printing ? 'Abrindo...' : 'Imprimir OS'}
             </Button>
           </DialogTitle>
         </DialogHeader>
