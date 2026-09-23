@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, Search, Download, Eye, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight
+  FileText, Search, Download, Eye, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight, Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { useSignedUrls } from '@/lib/storage/signedUrls';
 
 interface DocItem {
@@ -23,26 +24,37 @@ interface DocItem {
   created_at: string;
 }
 
+function decodePath(path: string) {
+  if (!path.includes('%')) return path;
+  try { return decodeURIComponent(path); } catch { return path; }
+}
+
 function extractStoragePath(doc: { file_path: string | null; file_url: string }) {
-  if (doc.file_path) return doc.file_path;
+  if (doc.file_path) return decodePath(doc.file_path);
   const m = doc.file_url?.match(/\/storage\/v1\/object\/(?:public|sign)\/documents\/([^?]+)/);
   return m ? decodeURIComponent(m[1]) : null;
 }
 
+async function createDocSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
+  const candidates = [extractStoragePath(doc), doc.file_path].filter(
+    (value, index, arr): value is string => !!value && arr.indexOf(value) === index,
+  );
+  for (const path of candidates) {
+    const { data } = await supabase.storage
+      .from('documents')
+      .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
+    if (data?.signedUrl) return data.signedUrl;
+  }
+  return null;
+}
+
 async function openSignedUrl(doc: { file_path: string | null; file_url: string }, download = false) {
-  const path = extractStoragePath(doc);
-  if (!path) {
-    window.open(doc.file_url, '_blank');
+  const url = await createDocSignedUrl(doc, download);
+  if (!url) {
+    toast.error('Não foi possível baixar o documento. Tente novamente.');
     return;
   }
-  const { data, error } = await supabase.storage
-    .from('documents')
-    .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
-  if (error || !data?.signedUrl) {
-    console.error('Signed URL error', error);
-    return;
-  }
-  window.open(data.signedUrl, '_blank');
+  window.open(url, '_blank');
 }
 
 const getFileIcon = (fileType: string | null) => {
@@ -65,12 +77,36 @@ export default function Documentos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [busyDocId, setBusyDocId] = useState<string | null>(null);
   const previewUrls = useSignedUrls('documents', documents.map((doc) => extractStoragePath(doc)));
 
-  const handlePreview = (doc: DocItem) => {
+  const handlePreview = async (doc: DocItem) => {
     const path = extractStoragePath(doc);
-    const url = path ? previewUrls[path] : doc.file_url;
-    if (url) window.open(url, '_blank');
+    const ready = path ? previewUrls[path] : null;
+    if (ready) {
+      window.open(ready, '_blank');
+      return;
+    }
+    setBusyDocId(doc.id);
+    try {
+      const url = await createDocSignedUrl(doc);
+      if (!url) {
+        toast.error('Não foi possível abrir o documento. Tente novamente.');
+        return;
+      }
+      window.open(url, '_blank');
+    } finally {
+      setBusyDocId(null);
+    }
+  };
+
+  const handleDownload = async (doc: DocItem) => {
+    setBusyDocId(doc.id);
+    try {
+      await openSignedUrl(doc, true);
+    } finally {
+      setBusyDocId(null);
+    }
   };
 
   useEffect(() => {
@@ -234,15 +270,17 @@ export default function Documentos() {
                           variant="ghost"
                           size="icon"
                           title="Visualizar"
+                          disabled={busyDocId === doc.id}
                           onClick={() => handlePreview(doc)}
                         >
-                          <Eye className="h-4 w-4" />
+                          {busyDocId === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           title="Baixar"
-                          onClick={() => openSignedUrl(doc, true)}
+                          disabled={busyDocId === doc.id}
+                          onClick={() => handleDownload(doc)}
                         >
                           <Download className="h-4 w-4" />
                         </Button>
