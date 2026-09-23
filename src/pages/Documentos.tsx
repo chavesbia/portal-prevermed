@@ -65,12 +65,40 @@ export default function Documentos() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [busyDocId, setBusyDocId] = useState<string | null>(null);
   const previewUrls = useSignedUrls('documents', documents.map((doc) => extractStoragePath(doc)));
 
-  const handlePreview = (doc: DocItem) => {
+  const handlePreview = async (doc: DocItem) => {
     const path = extractStoragePath(doc);
-    const url = path ? previewUrls[path] : doc.file_url;
-    if (url) window.open(url, '_blank');
+    const ready = path ? previewUrls[path] : doc.file_url;
+    if (ready) {
+      window.open(ready, '_blank');
+      return;
+    }
+    if (!path) {
+      toast.error('Não foi possível localizar o arquivo deste documento.');
+      return;
+    }
+    setBusyDocId(doc.id);
+    try {
+      const { data, error } = await supabase.storage.from('documents').createSignedUrl(path, 60 * 10);
+      if (error || !data?.signedUrl) {
+        toast.error('Não foi possível abrir o documento. Tente novamente.');
+        return;
+      }
+      window.open(data.signedUrl, '_blank');
+    } finally {
+      setBusyDocId(null);
+    }
+  };
+
+  const handleDownload = async (doc: DocItem) => {
+    setBusyDocId(doc.id);
+    try {
+      await openSignedUrl(doc, true);
+    } finally {
+      setBusyDocId(null);
+    }
   };
 
   useEffect(() => {
