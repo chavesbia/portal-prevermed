@@ -18,6 +18,7 @@ import { OSCustosTab } from './OSCustosTab';
 import { Printer, Timer } from 'lucide-react';
 import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
 import { openOSPrintView } from '@/lib/os/pdf';
+import { toast } from '@/hooks/use-toast';
 
 
 import { OSAnexosTab } from './OSAnexosTab';
