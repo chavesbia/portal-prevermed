@@ -24,6 +24,7 @@ export async function generateAndUploadPdf(opts: {
   html: string;
 }): Promise<string> {
   const html2pdf = (await import('html2pdf.js')).default;
+  const logo = await toDataUrl(logoPreverMed);
 
   const container = document.createElement('div');
   container.style.padding = '24px';
