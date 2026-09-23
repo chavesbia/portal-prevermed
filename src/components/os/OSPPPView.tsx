@@ -27,19 +27,49 @@ const emptyForm = () => ({ company_id: '', solicitante_nome: '', funcionario_nom
 const money = (value: number | null) => value === null ? '-' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 export function OSPPPView({ canEdit }: { canEdit: boolean }) {
-  const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl } = usePPP();
+  const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl, deleteAnexo } = usePPP();
   const { isAdmMaster, profile, user } = useAuth();
   const previewUrls = useSignedUrls('ppp-anexos', solicitacoes.flatMap((item) => (item.anexos || []).map((anexo) => anexo.arquivo_url)));
+  const [anexoBusy, setAnexoBusy] = useState<string | null>(null);
 
-  const visualizarAnexo = (path: string) => {
-    const url = previewUrls[path];
-    if (url) window.open(url, '_blank');
+  const visualizarAnexo = async (anexo: NonNullable<PPPSolicitacao['anexos']>[number]) => {
+    const ready = previewUrls[anexo.arquivo_url];
+    if (ready) { window.open(ready, '_blank'); return; }
+    setAnexoBusy(anexo.arquivo_url);
+    try {
+      const url = await getSignedUrl(anexo);
+      if (url) window.open(url, '_blank');
+    } finally { setAnexoBusy(null); }
   };
 
   const baixarAnexo = async (anexo: NonNullable<PPPSolicitacao['anexos']>[number]) => {
-    const url = await getSignedUrl(anexo);
-    if (url) window.open(url, '_blank');
+    setAnexoBusy(anexo.arquivo_url);
+    try {
+      const url = await getSignedUrl(anexo, true);
+      if (url) window.open(url, '_blank');
+    } finally { setAnexoBusy(null); }
   };
+
+  const AnexoRow = ({ anexo, allowRemove }: { anexo: NonNullable<PPPSolicitacao['anexos']>[number]; allowRemove: boolean }) => (
+    <div className="flex items-center gap-2 rounded-md border bg-muted/20 px-2 py-1.5">
+      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium">{anexo.nome_arquivo}</p>
+        <p className="text-[11px] text-muted-foreground">{anexo.tipo_documento}</p>
+      </div>
+      <Button variant="ghost" size="icon" className="h-7 w-7" title="Visualizar" aria-label={`Visualizar ${anexo.nome_arquivo}`} disabled={anexoBusy === anexo.arquivo_url} onClick={() => visualizarAnexo(anexo)}>
+        {anexoBusy === anexo.arquivo_url ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+      </Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7" title="Baixar" aria-label={`Baixar ${anexo.nome_arquivo}`} disabled={anexoBusy === anexo.arquivo_url} onClick={() => baixarAnexo(anexo)}>
+        <FileDown className="h-4 w-4" />
+      </Button>
+      {allowRemove && (
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" title="Remover" aria-label={`Remover ${anexo.nome_arquivo}`} disabled={deleteAnexo.isPending} onClick={() => deleteAnexo.mutate(anexo)}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [realizarOpen, setRealizarOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
