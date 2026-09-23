@@ -36,6 +36,13 @@
       "when": 1788533015655,
       "tag": "0004_comunicados_module_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790156206135,
+      "tag": "0005_fix_contract_recalc_vigencia_responsavel",
+      "breakpoints": true
     }
   ]
 }
