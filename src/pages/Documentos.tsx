@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText, Search, Download, Eye, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight
+  FileText, Search, Download, Eye, Folder, FolderOpen, FileSpreadsheet, FileImage, File, ChevronRight, Loader2
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { useSignedUrls } from '@/lib/storage/signedUrls';
 
 interface DocItem {
