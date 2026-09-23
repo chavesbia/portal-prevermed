@@ -40,6 +40,7 @@ async function openSignedUrl(doc: { file_path: string | null; file_url: string }
     .createSignedUrl(path, 60 * 10, download ? { download: true } : undefined);
   if (error || !data?.signedUrl) {
     console.error('Signed URL error', error);
+    toast.error('Não foi possível baixar o documento. Tente novamente.');
     return;
   }
   window.open(data.signedUrl, '_blank');
