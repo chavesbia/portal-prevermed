@@ -49,9 +49,15 @@ export async function generateAndUploadPdf(opts: {
       }
     </style>
     <div class="pdf-root">
-      <div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
-        <strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>
-        <div style="font-size:10pt;color:#475569;">Contrato ${opts.numero}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
+        <div>
+          ${logo
+            ? `<img src="${logo}" alt="PreverMed" style="height:42px;" />`
+            : `<strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>`}
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#1e3a8a;font-size:12pt;font-weight:700;">Contrato ${opts.numero}</div>
+        </div>
       </div>
       ${opts.html}
     </div>
