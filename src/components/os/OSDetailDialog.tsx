@@ -17,7 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { OSCustosTab } from './OSCustosTab';
 import { Printer, Timer } from 'lucide-react';
 import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
-import { generateOSPdf } from '@/lib/os/pdf';
+import { openOSPrintView } from '@/lib/os/pdf';
+import { toast } from '@/hooks/use-toast';
 
 
 import { OSAnexosTab } from './OSAnexosTab';
@@ -147,7 +148,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
         const { data } = await supabase.from('profissionais').select('id, nome').in('id', ids);
         (data || []).forEach((p: any) => nomes.set(p.id, p.nome));
       }
-      await generateOSPdf({
+      const aberto = await openOSPrintView({
         numeroOS: ordem.numero_os,
         empresaNome: ordem.empresa_cliente,
         empresaCnpj: empresaCnpj ? formatCnpj(empresaCnpj) : null,
@@ -164,6 +165,13 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
           status: s.status,
         })),
       });
+      if (!aberto) {
+        toast({
+          title: 'Não foi possível abrir',
+          description: 'Permita janelas pop-up para este site e tente novamente.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setPrinting(false);
     }
@@ -184,7 +192,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onUpdateStatus }: OS
               disabled={printing}
             >
               <Printer className="h-4 w-4 mr-2" />
-              {printing ? 'Gerando...' : 'Imprimir OS'}
+              {printing ? 'Abrindo...' : 'Imprimir OS'}
             </Button>
           </DialogTitle>
         </DialogHeader>
