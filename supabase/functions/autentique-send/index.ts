@@ -78,10 +78,16 @@ Deno.serve(async (req) => {
       name: String(a.nome || '').trim(),
     }));
 
+    const semNome = signers.filter((s) => !s.name);
+    if (semNome.length > 0) {
+      return json({ error: `Signatário sem nome cadastrado (${semNome.map((s) => s.email).join(', ')}). Preencha o nome antes de enviar.` }, 400);
+    }
+
     const dup = signers.map((s) => s.email).find((e, i, arr) => arr.indexOf(e) !== i);
     if (dup) {
       return json({ error: `O e-mail ${dup} está repetido entre signatários — cada assinante precisa de um e-mail próprio.` }, 400);
     }
+
 
     if (signers.length === 0) {
       return json({ error: 'Nenhum signatário com e-mail cadastrado. Edite o contrato e informe os e-mails dos signatários.' }, 400);
