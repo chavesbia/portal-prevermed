@@ -1,5 +1,22 @@
 // Geração de PDF no client via html2pdf.js + upload para Supabase Storage
 import { supabase } from '@/integrations/supabase/client';
+import logoPreverMed from '@/assets/logo-prevermed.png';
+
+async function toDataUrl(src: string): Promise<string | null> {
+  try {
+    const res = await fetch(src);
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(String(reader.result || ''));
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 
 export async function generateAndUploadPdf(opts: {
   contratoId: string;
@@ -7,6 +24,7 @@ export async function generateAndUploadPdf(opts: {
   html: string;
 }): Promise<string> {
   const html2pdf = (await import('html2pdf.js')).default;
+  const logo = await toDataUrl(logoPreverMed);
 
   const container = document.createElement('div');
   container.style.padding = '24px';
@@ -31,9 +49,15 @@ export async function generateAndUploadPdf(opts: {
       }
     </style>
     <div class="pdf-root">
-      <div style="text-align:center;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
-        <strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>
-        <div style="font-size:10pt;color:#475569;">Contrato ${opts.numero}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:2px solid #1e3a8a;padding-bottom:8px;">
+        <div>
+          ${logo
+            ? `<img src="${logo}" alt="PreverMed" style="height:42px;" />`
+            : `<strong style="color:#1e3a8a;font-size:14pt;">PreverMed</strong>`}
+        </div>
+        <div style="text-align:right;">
+          <div style="color:#1e3a8a;font-size:12pt;font-weight:700;">Contrato ${opts.numero}</div>
+        </div>
       </div>
       ${opts.html}
     </div>
