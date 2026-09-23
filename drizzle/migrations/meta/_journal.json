@@ -43,6 +43,13 @@
       "when": 1790156206135,
       "tag": "0005_fix_contract_recalc_vigencia_responsavel",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790156234230,
+      "tag": "0006_add_contract_vigencia_notification_type",
+      "breakpoints": true
     }
   ]
 }

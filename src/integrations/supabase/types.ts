@@ -6985,6 +6985,7 @@ export type Database = {
         | "comment"
         | "aso_retificacao"
         | "aso_alerta"
+        | "contract_vigencia"
       occurrence_assignee_role: "principal" | "apoio"
       occurrence_comment_type:
         | "comentario_interno"
@@ -7315,6 +7316,7 @@ export const Constants = {
         "comment",
         "aso_retificacao",
         "aso_alerta",
+        "contract_vigencia",
       ],
       occurrence_assignee_role: ["principal", "apoio"],
       occurrence_comment_type: [
