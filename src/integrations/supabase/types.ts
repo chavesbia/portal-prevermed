@@ -4634,6 +4634,47 @@ export type Database = {
           },
         ]
       }
+      os_correcao_retroativa_itens: {
+        Row: {
+          created_at: string
+          faltava_executor: boolean
+          faltava_laudo: boolean
+          id: string
+          ordem_id: string
+          resolvido_em: string | null
+          resolvido_por: string | null
+          servico_id: string
+        }
+        Insert: {
+          created_at?: string
+          faltava_executor: boolean
+          faltava_laudo: boolean
+          id?: string
+          ordem_id: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          servico_id: string
+        }
+        Update: {
+          created_at?: string
+          faltava_executor?: boolean
+          faltava_laudo?: boolean
+          id?: string
+          ordem_id?: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          servico_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_correcao_retroativa_itens_servico_id_fkey"
+            columns: ["servico_id"]
+            isOneToOne: true
+            referencedRelation: "servicos_os"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       os_custos: {
         Row: {
           anexo_url: string | null
@@ -6777,6 +6818,11 @@ export type Database = {
         Returns: Database["public"]["Enums"]["contract_status"]
       }
       contract_recalc_vigencia: { Args: never; Returns: Json }
+      correcao_retroativa_listar: { Args: never; Returns: Json }
+      correcao_retroativa_salvar: {
+        Args: { _item_id: string; _laudo: Json; _responsavel_id: string }
+        Returns: Json
+      }
       dashboard_guias_agregado: {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
