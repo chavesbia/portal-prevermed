@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Wrench } from 'lucide-react';
 import { useOrdens } from '@/hooks/useOrdens';
 import { OSDashboardView } from '@/components/os/OSDashboardView';
 import { OSListView } from '@/components/os/OSListView';
@@ -25,6 +25,7 @@ export default function GestaoOS() {
   const { getModulePermissions, hasPermission } = useModulePermissions();
   const permissions = getModulePermissions('/gestao-os');
   const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
+  const canCorrecao = hasPermission('/gestao-os/correcao-retroativa', 'view');
   const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, isInitialLoading, isLoadingAll, filters, setFilters,
@@ -53,11 +54,20 @@ export default function GestaoOS() {
           <h1 className="text-2xl font-bold tracking-tight">Gestão de O.S</h1>
           <p className="text-muted-foreground">Controle de Ordens de Serviço</p>
         </div>
-        {canCreateOS && (
-          <Button onClick={() => setNovaOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Nova OS
-          </Button>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {canCorrecao && (
+            <Button variant="outline" asChild>
+              <Link to="/gestao-os/correcao-retroativa">
+                <Wrench className="h-4 w-4 mr-2" /> Correção Retroativa
+              </Link>
+            </Button>
+          )}
+          {canCreateOS && (
+            <Button onClick={() => setNovaOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Nova OS
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue={searchParams.get('os') ? 'ordens' : (searchParams.get('tab') || 'dashboard')}>

@@ -178,7 +178,8 @@ export function PortalSidebar({ isOpen, onClose }: PortalSidebarProps) {
     for (const dept of departmentsWithModules) {
       for (const m of dept.modules) {
         if (!m.module_route) continue;
-        if ((m.module_route.match(/\//g) || []).length !== 1) continue;
+        const isStandaloneSub = m.module_route === '/gestao-os/correcao-retroativa';
+        if (!isStandaloneSub && (m.module_route.match(/\//g) || []).length !== 1) continue;
         if (!seen.has(m.module_route)) {
           seen.set(m.module_route, {
             label: m.module_name,
