@@ -153,12 +153,12 @@ export function CompanySelector({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className={cn('w-full justify-between font-normal', !selected && 'text-muted-foreground', className)}
+          className={cn('w-full min-w-0 max-w-full justify-between font-normal', !selected && 'text-muted-foreground', className)}
         >
-          <span className="flex items-center gap-2 truncate">
+          <span className="flex min-w-0 items-center gap-2 truncate">
             <Building2 className="h-4 w-4 shrink-0 opacity-70" />
             {selected ? (
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {selected.razao_social}
                 {selected.cnpj && (
                   <span className="text-muted-foreground"> · {formatCnpj(selected.cnpj)}</span>
