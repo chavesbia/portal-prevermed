@@ -64,6 +64,13 @@
       "when": 1790260300527,
       "tag": "0008_correcao_retroativa_os",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790359320745,
+      "tag": "0009_fix_monitoring_findings_permissions",
+      "breakpoints": true
     }
   ]
 }
