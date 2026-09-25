@@ -94,11 +94,11 @@ export function UnitSelector({
           role="combobox"
           aria-expanded={open}
           disabled={isDisabled}
-          className={cn('w-full justify-between font-normal', !selected && 'text-muted-foreground', className)}
+          className={cn('w-full min-w-0 max-w-full justify-between font-normal', !selected && 'text-muted-foreground', className)}
         >
-          <span className="flex items-center gap-2 truncate">
+          <span className="flex min-w-0 items-center gap-2 truncate">
             <MapPin className="h-4 w-4 shrink-0 opacity-70" />
-            <span className="truncate">
+            <span className="min-w-0 truncate">
               {selected ? unitLabel(selected) : (!companyId ? 'Selecione uma empresa primeiro' : placeholder)}
             </span>
           </span>
