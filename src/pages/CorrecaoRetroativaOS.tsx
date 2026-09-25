@@ -95,15 +95,18 @@ function Row({ item, data, onSaved }: { item: Item; data: Data; onSaved: () => v
 
 export default function CorrecaoRetroativaOS() {
   const [data, setData] = useState<Data | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     const { data: d, error } = await supabase.rpc('correcao_retroativa_listar' as any);
-    if (error) { toast({ title: 'Erro ao carregar', description: error.message, variant: 'destructive' }); return; }
+    if (error) { setLoadError(error.message); toast({ title: 'Erro ao carregar', description: error.message, variant: 'destructive' }); return; }
+    setLoadError(null);
     setData(d as unknown as Data);
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  if (!data && loadError) return <div className="flex justify-center h-64 items-center text-muted-foreground">Não foi possível carregar a lista: {loadError}</div>;
   if (!data) return <div className="flex justify-center h-64 items-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
 
   const q = search.trim().toLowerCase();
