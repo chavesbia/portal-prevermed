@@ -71,6 +71,13 @@
       "when": 1790359320745,
       "tag": "0009_fix_monitoring_findings_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790701928611,
+      "tag": "0010_enforce_executor_servicos_os",
+      "breakpoints": true
     }
   ]
 }

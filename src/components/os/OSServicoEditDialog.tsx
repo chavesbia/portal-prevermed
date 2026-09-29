@@ -57,6 +57,10 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
       onRequestFinalizar();
       return;
     }
+    if (status !== 'Não iniciado' && !responsavelId) {
+      toast({ title: 'Atenção', description: 'Serviço iniciado ou encerrado precisa ter Executor.', variant: 'destructive' });
+      return;
+    }
     if (statusChanged) {
       if (!responsavelId) {
         toast({ title: 'Atenção', description: 'Selecione o Executor para alterar o status.', variant: 'destructive' });
