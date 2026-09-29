@@ -62,6 +62,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
     artFile: null as File | null,
   });
   const [unidadeId, setUnidadeId] = useState<string | null>((ordem as any).unidade_id ?? null);
+  const [executorId, setExecutorId] = useState<string | null>(servico.responsavel_id ?? null);
   const [custos, setCustos] = useState<CustoLinha[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -121,6 +122,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
 
   const handleFinalizar = async () => {
     // Validações
+    if (!executorId) { toast({ title: 'Atenção', description: 'Selecione o executor do serviço.', variant: 'destructive' }); return; }
     if (!form.tipoLaudoId) { toast({ title: 'Atenção', description: 'Selecione o tipo de laudo.', variant: 'destructive' }); return; }
     if (!unidadeId) { toast({ title: 'Atenção', description: 'Selecione a unidade', variant: 'destructive' }); return; }
     if (!form.responsavelTecnicoId) { toast({ title: 'Atenção', description: 'Selecione o responsável técnico.', variant: 'destructive' }); return; }
@@ -155,7 +157,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       // Encerrar serviço
       const { error: svcErr } = await supabase
         .from('servicos_os')
-        .update({ status: 'Encerrado', data_conclusao: new Date().toISOString().split('T')[0] } as any)
+        .update({ status: 'Encerrado', responsavel_id: executorId, data_inicio: servico.data_inicio ?? new Date().toISOString().split('T')[0], data_conclusao: new Date().toISOString().split('T')[0] } as any)
         .eq('id', servico.id);
       if (svcErr) throw svcErr;
 
@@ -289,6 +291,12 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
             <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
               <FileText className="h-4 w-4" /> Laudo Técnico
             </h4>
+
+            <div className="space-y-2">
+              <Label>Executor do serviço *</Label>
+              <ProfissionalSelector value={executorId} onChange={setExecutorId} onlyExecutores placeholder="Selecione quem executou" />
+              <p className="text-xs text-muted-foreground">Obrigatório: todo serviço encerrado precisa ter quem o executou.</p>
+            </div>
 
             <div className="space-y-2">
               <Label>Unidade *</Label>
