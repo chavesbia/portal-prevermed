@@ -64,6 +64,49 @@ export function useVendaItens(vendaId: string | null) {
   });
 }
 
+export interface VendaItem { id: string; venda_id: string; ordem: number; nome: string | null; quantidade: number | null; valor_unitario: number | null; valor_total: number | null; tipo_comissao: string }
+
+async function fetchAll(table: string, cols: string) {
+  const all: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from(table).select(cols).order('id').range(from, from + 999);
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return all;
+}
+
+/** Todos os itens agrupados por venda (para comissão por serviço). */
+export function useTodosItens() {
+  return useQuery({
+    queryKey: ['venda-itens', 'todos'],
+    queryFn: async () => {
+      const rows: VendaItem[] = await fetchAll('venda_itens', 'id,venda_id,ordem,nome,quantidade,valor_unitario,valor_total,tipo_comissao');
+      const m = new Map<string, VendaItem[]>();
+      rows.forEach(r => { const a = m.get(r.venda_id) || []; a.push({ ...r, valor_total: Number(r.valor_total) }); m.set(r.venda_id, a); });
+      m.forEach(a => a.sort((x, y) => x.ordem - y.ordem));
+      return m;
+    },
+  });
+}
+
+export function useFechamentos() {
+  return useQuery({
+    queryKey: ['vendas-fechamentos'],
+    queryFn: async () => {
+      const [fech, itens] = await Promise.all([
+        db.from('vendas_fechamentos').select('*').order('created_at', { ascending: false }),
+        fetchAll('vendas_fechamento_itens', 'id,fechamento_id,venda_id,vendedor'),
+      ]);
+      if (fech.error) throw fech.error;
+      const fechados = new Map<string, string>(); // `${venda_id}|${vendedor}` -> fechamento_id
+      itens.forEach((i: any) => fechados.set(`${i.venda_id}|${i.vendedor}`, i.fechamento_id));
+      return { lista: (fech.data || []) as any[], fechados, vendasFechadas: new Set(itens.map((i: any) => i.venda_id as string)) };
+    },
+  });
+}
+
 export function useVendasImportacoes() {
   return useQuery({
     queryKey: ['vendas-importacoes'],
@@ -81,6 +124,7 @@ export function useInvalidateVendas() {
     qc.invalidateQueries({ queryKey: ['vendas'] });
     qc.invalidateQueries({ queryKey: ['vendas-importacoes'] });
     qc.invalidateQueries({ queryKey: ['venda-itens'] });
+    qc.invalidateQueries({ queryKey: ['vendas-fechamentos'] });
   };
 }
 
@@ -116,9 +160,14 @@ export async function importarVendas(
     if (error) throw error;
     const idPorChave = new Map<string, string>((saved || []).map((s: any) => [`${s.emitente_cnpj}|${s.numero_venda}`, s.id]));
     const ids = Array.from(idPorChave.values());
+    const { data: antigos } = await db.from('venda_itens').select('venda_id,ordem,tipo_comissao').in('venda_id', ids);
+    const tipoAntigo = new Map<string, string>((antigos || []).map((a: any) => [`${a.venda_id}|${a.ordem}`, a.tipo_comissao]));
     const { error: delErr } = await db.from('venda_itens').delete().in('venda_id', ids);
     if (delErr) throw delErr;
-    const itens = chunk.flatMap(v => v.itens.map(it => ({ ...it, venda_id: idPorChave.get(`${v.emitente_cnpj}|${v.numero_venda}`) })));
+    const itens = chunk.flatMap(v => v.itens.map(it => {
+      const vid = idPorChave.get(`${v.emitente_cnpj}|${v.numero_venda}`);
+      return { ...it, venda_id: vid, tipo_comissao: tipoAntigo.get(`${vid}|${it.ordem}`) || 'renovacao' };
+    }));
     for (let j = 0; j < itens.length; j += 1000) {
       const { error: itErr } = await db.from('venda_itens').insert(itens.slice(j, j + 1000));
       if (itErr) throw itErr;

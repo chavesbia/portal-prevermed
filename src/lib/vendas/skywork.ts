@@ -177,10 +177,20 @@ export function isComissionavel(v: { situacao: string | null; vendedor: string |
 }
 
 export type Divisao = { vendedor: string; percentual: number }[];
+export type ItemComissao = { valor_total: number | null; tipo_comissao: string };
+
+/** Taxa efetiva da venda: ponderada pelos serviços (cada serviço pode ser Novo ou Renovação). */
+export function taxaVenda(v: { tipo_comissao: string }, itens?: ItemComissao[]) {
+  const its = (itens || []).filter(i => Number(i.valor_total) > 0);
+  const tot = its.reduce((s, i) => s + Number(i.valor_total), 0);
+  if (!tot) return v.tipo_comissao === 'novo' ? TAXA_NOVO : TAXA_RENOVACAO;
+  const novo = its.filter(i => i.tipo_comissao === 'novo').reduce((s, i) => s + Number(i.valor_total), 0);
+  return (novo / tot) * TAXA_NOVO + (1 - novo / tot) * TAXA_RENOVACAO;
+}
 
 /** Distribui a comissão da venda entre vendedores (padrão: 100% primeiro vendedor). */
-export function comissaoPorVendedor(v: { valor: number; tipo_comissao: string; vendedor: string | null; divisao: any }) {
-  const taxa = v.tipo_comissao === 'novo' ? TAXA_NOVO : TAXA_RENOVACAO;
+export function comissaoPorVendedor(v: { valor: number; tipo_comissao: string; vendedor: string | null; divisao: any }, itens?: ItemComissao[]) {
+  const taxa = taxaVenda(v, itens);
   const div: Divisao = Array.isArray(v.divisao) && v.divisao.length ? v.divisao : (v.vendedor ? [{ vendedor: v.vendedor, percentual: 100 }] : []);
   return div.map(d => ({ vendedor: d.vendedor, percentual: d.percentual, base: Number(v.valor) * d.percentual / 100, comissao: Number(v.valor) * taxa * d.percentual / 100, taxa }));
 }
