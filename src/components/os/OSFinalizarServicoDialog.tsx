@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { UnitSelector } from '@/components/shared/UnitSelector';
+import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 
 interface Props {
   open: boolean;
