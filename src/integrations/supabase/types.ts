@@ -6621,6 +6621,205 @@ export type Database = {
         }
         Relationships: []
       }
+      venda_itens: {
+        Row: {
+          created_at: string
+          desconto: number | null
+          descricao: string | null
+          id: string
+          nome: string | null
+          ordem: number
+          quantidade: number | null
+          sku: string | null
+          valor_total: number | null
+          valor_unitario: number | null
+          venda_id: string
+        }
+        Insert: {
+          created_at?: string
+          desconto?: number | null
+          descricao?: string | null
+          id?: string
+          nome?: string | null
+          ordem?: number
+          quantidade?: number | null
+          sku?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+          venda_id: string
+        }
+        Update: {
+          created_at?: string
+          desconto?: number | null
+          descricao?: string | null
+          id?: string
+          nome?: string | null
+          ordem?: number
+          quantidade?: number | null
+          sku?: string | null
+          valor_total?: number | null
+          valor_unitario?: number | null
+          venda_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venda_itens_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas: {
+        Row: {
+          cidade: string | null
+          cliente_cnpj: string | null
+          cliente_desde: string | null
+          cliente_nome: string | null
+          cliente_telefone: string | null
+          compartilhada: boolean
+          condicao_pagamento: string | null
+          created_at: string
+          data_venda: string | null
+          descricao: string | null
+          divisao: Json | null
+          emitente_cnpj: string
+          emitente_nome: string | null
+          estado: string | null
+          fatura: string | null
+          forma_pagamento: string | null
+          grupo_vendedor: string | null
+          id: string
+          importacao_id: string | null
+          marcado_novo_em: string | null
+          marcado_novo_por: string | null
+          nfse: string | null
+          numero_venda: string
+          qtd_vendas_cliente: number | null
+          situacao: string | null
+          tipo_comissao: string
+          updated_at: string
+          validado: boolean
+          validado_em: string | null
+          validado_por: string | null
+          valor: number
+          vendedor: string | null
+          vendedor_original: string | null
+          vendedores: string[]
+        }
+        Insert: {
+          cidade?: string | null
+          cliente_cnpj?: string | null
+          cliente_desde?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          compartilhada?: boolean
+          condicao_pagamento?: string | null
+          created_at?: string
+          data_venda?: string | null
+          descricao?: string | null
+          divisao?: Json | null
+          emitente_cnpj: string
+          emitente_nome?: string | null
+          estado?: string | null
+          fatura?: string | null
+          forma_pagamento?: string | null
+          grupo_vendedor?: string | null
+          id?: string
+          importacao_id?: string | null
+          marcado_novo_em?: string | null
+          marcado_novo_por?: string | null
+          nfse?: string | null
+          numero_venda: string
+          qtd_vendas_cliente?: number | null
+          situacao?: string | null
+          tipo_comissao?: string
+          updated_at?: string
+          validado?: boolean
+          validado_em?: string | null
+          validado_por?: string | null
+          valor?: number
+          vendedor?: string | null
+          vendedor_original?: string | null
+          vendedores?: string[]
+        }
+        Update: {
+          cidade?: string | null
+          cliente_cnpj?: string | null
+          cliente_desde?: string | null
+          cliente_nome?: string | null
+          cliente_telefone?: string | null
+          compartilhada?: boolean
+          condicao_pagamento?: string | null
+          created_at?: string
+          data_venda?: string | null
+          descricao?: string | null
+          divisao?: Json | null
+          emitente_cnpj?: string
+          emitente_nome?: string | null
+          estado?: string | null
+          fatura?: string | null
+          forma_pagamento?: string | null
+          grupo_vendedor?: string | null
+          id?: string
+          importacao_id?: string | null
+          marcado_novo_em?: string | null
+          marcado_novo_por?: string | null
+          nfse?: string | null
+          numero_venda?: string
+          qtd_vendas_cliente?: number | null
+          situacao?: string | null
+          tipo_comissao?: string
+          updated_at?: string
+          validado?: boolean
+          validado_em?: string | null
+          validado_por?: string | null
+          valor?: number
+          vendedor?: string | null
+          vendedor_original?: string | null
+          vendedores?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "vendas_importacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas_importacoes: {
+        Row: {
+          arquivo_nome: string | null
+          atualizadas: number
+          created_at: string
+          created_by: string | null
+          id: string
+          inseridas: number
+          total_vendas: number
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          atualizadas?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inseridas?: number
+          total_vendas?: number
+        }
+        Update: {
+          arquivo_nome?: string | null
+          atualizadas?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inseridas?: number
+          total_vendas?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       fb_v_status_colaborador: {
