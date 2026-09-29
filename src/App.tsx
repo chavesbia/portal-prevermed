@@ -35,6 +35,7 @@ const GestaoGuias = lazy(() => import("./pages/GestaoGuias"));
 const GuiaDetalhe = lazy(() => import("./pages/guias/GuiaDetalhe"));
 // const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial")); // módulo aposentado
 const GestaoOS = lazy(() => import("./pages/GestaoOS"));
+const GestaoVendas = lazy(() => import("./pages/GestaoVendas"));
 const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
 const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
 const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
@@ -80,6 +81,7 @@ const App = () => (
 
                 <Route path="/" element={<Index />} />
                 <Route path="/comunicados" element={<Comunicados />} />
+                <Route path="/gestao-vendas" element={<ProtectedModuleRoute route="/gestao-vendas"><GestaoVendas /></ProtectedModuleRoute>} />
                 <Route path="/gestao-comunicados" element={<ProtectedModuleRoute route="/gestao-comunicados"><GestaoComunicados /></ProtectedModuleRoute>} />
                 <Route path="/gestao-os/correcao-retroativa" element={<ProtectedModuleRoute route="/gestao-os/correcao-retroativa"><CorrecaoRetroativaOS /></ProtectedModuleRoute>} />
                 <Route path="/calendario" element={<Calendario />} />
