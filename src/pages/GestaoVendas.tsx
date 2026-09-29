@@ -10,6 +10,7 @@ import { VendasDashboard } from '@/components/vendas/VendasDashboard';
 import { VendasList } from '@/components/vendas/VendasList';
 import { VendasComissoes } from '@/components/vendas/VendasComissoes';
 import { VendasImportacao } from '@/components/vendas/VendasImportacao';
+import { VENDEDOR_FATURAMENTO } from '@/lib/vendas/skywork';
 
 export const SEM_VENDEDOR = '__sem__';
 
@@ -25,7 +26,9 @@ export default function GestaoVendas() {
   const { hasPermission } = useModulePermissions();
   const canEdit = hasPermission('/gestao-vendas', 'edit');
   const canApprove = hasPermission('/gestao-vendas', 'approve' as any);
-  const { data: vendas = [], isLoading } = useVendas();
+  const { data: todas = [], isLoading } = useVendas();
+  // Vendedor Faturamento é 100% desconsiderado no módulo
+  const vendas = useMemo(() => todas.filter(v => v.vendedor !== VENDEDOR_FATURAMENTO), [todas]);
 
   const tab = params.get('tab') || 'dashboard';
   const mes = params.get('mes') || mesAtual();

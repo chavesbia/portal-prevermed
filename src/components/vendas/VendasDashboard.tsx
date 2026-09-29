@@ -3,18 +3,19 @@ import { DollarSign, Receipt, UserX, Percent } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OSKPICard } from '@/components/os/OSKPICard';
-import type { Venda } from '@/hooks/useVendas';
+import { type Venda, useTodosItens } from '@/hooks/useVendas';
 import { brl, comissaoPorVendedor, isComissionavel } from '@/lib/vendas/skywork';
 
 export function VendasDashboard({ vendas }: { vendas: Venda[] }) {
+  const { data: itensMap } = useTodosItens();
   const concl = useMemo(() => vendas.filter(v => v.situacao === 'Concluído'), [vendas]);
 
   const stats = useMemo(() => {
     const total = concl.reduce((s, v) => s + v.valor, 0);
     const semVend = concl.filter(v => !v.vendedor).length;
-    const comissao = concl.filter(isComissionavel).flatMap(comissaoPorVendedor).reduce((s, c) => s + c.comissao, 0);
+    const comissao = concl.filter(isComissionavel).flatMap(v => comissaoPorVendedor(v, itensMap?.get(v.id))).reduce((s, c) => s + c.comissao, 0);
     return { total, qtd: concl.length, semVend, comissao };
-  }, [concl]);
+  }, [concl, itensMap]);
 
   const agrupar = (key: (v: Venda) => string) => {
     const m = new Map<string, number>();
