@@ -84,7 +84,7 @@ export function VendasDashboard({ vendas, historico }: { vendas: Venda[]; histor
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <OSKPICard title="Faturado (concluídas)" value={brl(stats.total)} subtitle={`Comercial ${brl(stats.total - stats.direto)} · Direto ${brl(stats.direto)}`} icon={DollarSign} variant="primary" />
+        <OSKPICard title="Faturado (concluídas)" value={brl(stats.total)} subtitle="Equipe comercial" icon={DollarSign} variant="primary" />
         <OSKPICard title="Vendas concluídas" value={stats.qtd} icon={Receipt} variant="success" />
         <OSKPICard title="Ticket médio" value={brl(stats.ticket)} icon={TrendingUp} />
         <OSKPICard title="Comissões previstas" value={brl(stats.comissao)} subtitle="Só equipe comercial" icon={Percent} />
