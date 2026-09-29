@@ -27,8 +27,9 @@ export default function GestaoVendas() {
   const canEdit = hasPermission('/gestao-vendas', 'edit');
   const canApprove = hasPermission('/gestao-vendas', 'approve' as any);
   const { data: todas = [], isLoading } = useVendas();
-  // Vendedor Faturamento e vendas sem vendedor são 100% desconsiderados no módulo
-  const vendas = useMemo(() => todas.filter(v => !!v.vendedor && v.vendedor !== VENDEDOR_FATURAMENTO), [todas]);
+  // Visão gerencial: todas as vendas; sem vendedor é tratado como Faturamento (faturamento direto da casa)
+  const vendas = useMemo(() => todas.map(v => v.vendedor ? v : { ...v, vendedor: VENDEDOR_FATURAMENTO, vendedores: [VENDEDOR_FATURAMENTO] }), [todas]);
+  const isComercial = (v: Venda) => !!v.vendedor && v.vendedor !== VENDEDOR_FATURAMENTO;
 
   const tab = params.get('tab') || 'dashboard';
   const mes = params.get('mes') || mesAtual();
@@ -61,7 +62,7 @@ export default function GestaoVendas() {
     return vendas.filter(v => {
       if (mes !== 'todos' && v.data_venda?.slice(0, 7) !== mes) return false;
       if (emitente !== 'all' && v.emitente_cnpj !== emitente) return false;
-      if (vendedor === SEM_VENDEDOR ? !!v.vendedor : vendedor !== 'all' && !(v.vendedores || []).includes(vendedor)) return false;
+      if (vendedor === SEM_VENDEDOR ? isComercial(v) : vendedor !== 'all' && !(v.vendedores || []).includes(vendedor)) return false;
       if (s && !`${v.numero_venda} ${v.cliente_nome} ${v.cliente_cnpj} ${v.fatura} ${v.nfse}`.toLowerCase().includes(s)) return false;
       return true;
     });
@@ -93,7 +94,7 @@ export default function GestaoVendas() {
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Vendedor" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os vendedores</SelectItem>
-            <SelectItem value={SEM_VENDEDOR}>Sem vendedor</SelectItem>
+            <SelectItem value={SEM_VENDEDOR}>Somente equipe comercial</SelectItem>
             {vendedores.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -116,7 +117,7 @@ export default function GestaoVendas() {
             <TabsContent value="vendas" className="mt-6">
               <VendasList vendas={filtradas} situacao={params.get('situacao') || 'Concluído'} onSituacao={v => setParam('situacao', v)} page={Number(params.get('page') || 1)} onPage={p => setParam('page', String(p))} />
             </TabsContent>
-            <TabsContent value="comissoes" className="mt-6"><VendasComissoes vendas={filtradas} canEdit={canEdit} canApprove={canApprove} /></TabsContent>
+            <TabsContent value="comissoes" className="mt-6"><VendasComissoes vendas={filtradas.filter(isComercial)} canEdit={canEdit} canApprove={canApprove} /></TabsContent>
             {canEdit && <TabsContent value="importacao" className="mt-6"><VendasImportacao /></TabsContent>}
           </>
         )}
