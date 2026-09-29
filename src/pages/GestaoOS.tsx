@@ -30,7 +30,7 @@ export default function GestaoOS() {
   const {
     isLoading, isInitialLoading, isLoadingAll, filters, setFilters,
     getFilteredOrdens, allOrdens, addOrdem, updateOrdem, addOrdemComentario,
-    deleteOrdem, getHistorico, getResponsaveis, fetchOrdens,
+    deleteOrdem, getHistorico, getResponsaveis, fetchOrdens, fetchAllOrdens,
     currentPage, setCurrentPage, totalPages, totalCount
   } = useOrdens();
 
@@ -108,7 +108,7 @@ export default function GestaoOS() {
             onUpdateOrdem={updateOrdem}
             onDelete={deleteOrdem}
             onGetHistorico={getHistorico}
-            onRefresh={fetchOrdens}
+            onRefresh={() => { fetchOrdens(); fetchAllOrdens(); }}
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
