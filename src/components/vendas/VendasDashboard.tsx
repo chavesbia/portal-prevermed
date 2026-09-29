@@ -1,3 +1,4 @@
+import { VENDEDOR_FATURAMENTO } from '@/lib/vendas/skywork';
 import { useMemo, useState } from 'react';
 import { DollarSign, Receipt, Percent, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -21,7 +22,8 @@ export function VendasDashboard({ vendas, historico }: { vendas: Venda[]; histor
   const stats = useMemo(() => {
     const total = concl.reduce((s, v) => s + v.valor, 0);
     const comissao = concl.filter(isComissionavel).flatMap(v => comissaoPorVendedor(v, itensMap?.get(v.id))).reduce((s, c) => s + c.comissao, 0);
-    return { total, qtd: concl.length, comissao, ticket: concl.length ? total / concl.length : 0 };
+    const direto = concl.filter(v => v.vendedor === VENDEDOR_FATURAMENTO).reduce((s, v) => s + v.valor, 0);
+    return { total, direto, qtd: concl.length, comissao, ticket: concl.length ? total / concl.length : 0 };
   }, [concl, itensMap]);
 
   const agrupar = (key: (v: Venda) => string) => {
@@ -82,10 +84,10 @@ export function VendasDashboard({ vendas, historico }: { vendas: Venda[]; histor
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <OSKPICard title="Faturado (concluídas)" value={brl(stats.total)} subtitle="Fatura e NFS-e emitidas" icon={DollarSign} variant="primary" />
+        <OSKPICard title="Faturado (concluídas)" value={brl(stats.total)} subtitle={`Comercial ${brl(stats.total - stats.direto)} · Direto ${brl(stats.direto)}`} icon={DollarSign} variant="primary" />
         <OSKPICard title="Vendas concluídas" value={stats.qtd} icon={Receipt} variant="success" />
         <OSKPICard title="Ticket médio" value={brl(stats.ticket)} icon={TrendingUp} />
-        <OSKPICard title="Comissões previstas" value={brl(stats.comissao)} subtitle="Sem Faturamento" icon={Percent} />
+        <OSKPICard title="Comissões previstas" value={brl(stats.comissao)} subtitle="Só equipe comercial" icon={Percent} />
       </div>
 
       <Card>
