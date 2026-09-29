@@ -78,6 +78,13 @@
       "when": 1790701928611,
       "tag": "0010_enforce_executor_servicos_os",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790702174962,
+      "tag": "0011_gestao_vendas",
+      "breakpoints": true
     }
   ]
 }
