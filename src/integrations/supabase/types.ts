@@ -6631,6 +6631,7 @@ export type Database = {
           ordem: number
           quantidade: number | null
           sku: string | null
+          tipo_comissao: string
           valor_total: number | null
           valor_unitario: number | null
           venda_id: string
@@ -6644,6 +6645,7 @@ export type Database = {
           ordem?: number
           quantidade?: number | null
           sku?: string | null
+          tipo_comissao?: string
           valor_total?: number | null
           valor_unitario?: number | null
           venda_id: string
@@ -6657,6 +6659,7 @@ export type Database = {
           ordem?: number
           quantidade?: number | null
           sku?: string | null
+          tipo_comissao?: string
           valor_total?: number | null
           valor_unitario?: number | null
           venda_id?: string
@@ -6789,6 +6792,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      vendas_fechamento_itens: {
+        Row: {
+          base: number
+          comissao: number
+          fechamento_id: string
+          id: string
+          venda_id: string
+          vendedor: string
+        }
+        Insert: {
+          base?: number
+          comissao?: number
+          fechamento_id: string
+          id?: string
+          venda_id: string
+          vendedor: string
+        }
+        Update: {
+          base?: number
+          comissao?: number
+          fechamento_id?: string
+          id?: string
+          venda_id?: string
+          vendedor?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_fechamento_itens_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "vendas_fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_fechamento_itens_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas_fechamentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          periodo_fim: string
+          periodo_ini: string
+          qtd_vendas: number
+          total_base: number
+          total_comissao: number
+          vendedor: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          periodo_fim: string
+          periodo_ini: string
+          qtd_vendas?: number
+          total_base?: number
+          total_comissao?: number
+          vendedor: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          periodo_fim?: string
+          periodo_ini?: string
+          qtd_vendas?: number
+          total_base?: number
+          total_comissao?: number
+          vendedor?: string
+        }
+        Relationships: []
       }
       vendas_importacoes: {
         Row: {
