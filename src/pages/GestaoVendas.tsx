@@ -27,8 +27,8 @@ export default function GestaoVendas() {
   const canEdit = hasPermission('/gestao-vendas', 'edit');
   const canApprove = hasPermission('/gestao-vendas', 'approve' as any);
   const { data: todas = [], isLoading } = useVendas();
-  // Vendedor Faturamento é 100% desconsiderado no módulo
-  const vendas = useMemo(() => todas.filter(v => v.vendedor !== VENDEDOR_FATURAMENTO), [todas]);
+  // Vendedor Faturamento e vendas sem vendedor são 100% desconsiderados no módulo
+  const vendas = useMemo(() => todas.filter(v => !!v.vendedor && v.vendedor !== VENDEDOR_FATURAMENTO), [todas]);
 
   const tab = params.get('tab') || 'dashboard';
   const mes = params.get('mes') || mesAtual();
@@ -112,7 +112,7 @@ export default function GestaoVendas() {
           <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
         ) : (
           <>
-            <TabsContent value="dashboard" className="mt-6"><VendasDashboard vendas={filtradas} /></TabsContent>
+            <TabsContent value="dashboard" className="mt-6"><VendasDashboard vendas={filtradas} historico={vendas} /></TabsContent>
             <TabsContent value="vendas" className="mt-6">
               <VendasList vendas={filtradas} situacao={params.get('situacao') || 'Concluído'} onSituacao={v => setParam('situacao', v)} page={Number(params.get('page') || 1)} onPage={p => setParam('page', String(p))} />
             </TabsContent>
