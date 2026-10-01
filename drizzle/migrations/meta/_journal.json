@@ -92,6 +92,13 @@
       "when": 1790705176530,
       "tag": "0012_vendas_itens_comissao_fechamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790888715605,
+      "tag": "0013_vendas_comissao_regras",
+      "breakpoints": true
     }
   ]
 }
