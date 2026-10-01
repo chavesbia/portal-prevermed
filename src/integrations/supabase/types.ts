@@ -6793,6 +6793,33 @@ export type Database = {
           },
         ]
       }
+      vendas_comissao_regras: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          taxa_novo: number
+          taxa_renovacao: number
+          vigencia_inicio: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          taxa_novo: number
+          taxa_renovacao: number
+          vigencia_inicio: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          taxa_novo?: number
+          taxa_renovacao?: number
+          vigencia_inicio?: string
+        }
+        Relationships: []
+      }
       vendas_fechamento_itens: {
         Row: {
           base: number
