@@ -46,7 +46,7 @@ export function ComissaoRegrasDialog({ canApprove }: { canApprove: boolean }) {
     if (inicio <= hoje) return toast({ title: 'A vigência deve começar a partir de amanhã', description: 'Assim o passado não é alterado.', variant: 'destructive' });
     const { error } = await db.from('vendas_comissao_regras').insert({ vigencia_inicio: inicio, taxa_novo: n / 100, taxa_renovacao: r / 100, created_by: user?.id });
     if (error) return toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-    await auditVendas?.('comissao_regra_criada', { vigencia_inicio: inicio, taxa_novo: n, taxa_renovacao: r } as any);
+    await auditVendas(user?.id, 'comissao_regra_criada', null, { vigencia_inicio: inicio, taxa_novo: n, taxa_renovacao: r });
     toast({ title: 'Nova regra cadastrada' });
     setInicio('');
     refresh();
