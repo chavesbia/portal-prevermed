@@ -180,16 +180,30 @@ export type Divisao = { vendedor: string; percentual: number }[];
 export type ItemComissao = { valor_total: number | null; tipo_comissao: string };
 
 /** Taxa efetiva da venda: ponderada pelos serviços (cada serviço pode ser Novo ou Renovação). */
-export function taxaVenda(v: { tipo_comissao: string }, itens?: ItemComissao[]) {
+export type RegraComissao = { vigencia_inicio: string; taxa_novo: number; taxa_renovacao: number };
+let REGRAS: RegraComissao[] = [];
+/** Define as regras de vigência (carregadas do banco). */
+export function setRegrasComissao(r: RegraComissao[]) {
+  REGRAS = [...r].sort((a, b) => b.vigencia_inicio.localeCompare(a.vigencia_inicio));
+}
+/** Taxas vigentes na data da venda (regra com maior início <= data). */
+export function taxasNaData(data?: string | null) {
+  const d = (data || '').slice(0, 10);
+  const r = REGRAS.find(x => !d || x.vigencia_inicio <= d);
+  return r ? { novo: Number(r.taxa_novo), renovacao: Number(r.taxa_renovacao) } : { novo: TAXA_NOVO, renovacao: TAXA_RENOVACAO };
+}
+
+export function taxaVenda(v: { tipo_comissao: string; data_venda?: string | null }, itens?: ItemComissao[]) {
+  const { novo: TN, renovacao: TR } = taxasNaData(v.data_venda);
   const its = (itens || []).filter(i => Number(i.valor_total) > 0);
   const tot = its.reduce((s, i) => s + Number(i.valor_total), 0);
-  if (!tot) return v.tipo_comissao === 'novo' ? TAXA_NOVO : TAXA_RENOVACAO;
+  if (!tot) return v.tipo_comissao === 'novo' ? TN : TR;
   const novo = its.filter(i => i.tipo_comissao === 'novo').reduce((s, i) => s + Number(i.valor_total), 0);
-  return (novo / tot) * TAXA_NOVO + (1 - novo / tot) * TAXA_RENOVACAO;
+  return (novo / tot) * TN + (1 - novo / tot) * TR;
 }
 
 /** Distribui a comissão da venda entre vendedores (padrão: 100% primeiro vendedor). */
-export function comissaoPorVendedor(v: { valor: number; tipo_comissao: string; vendedor: string | null; divisao: any }, itens?: ItemComissao[]) {
+export function comissaoPorVendedor(v: { valor: number; tipo_comissao: string; data_venda?: string | null; vendedor: string | null; divisao: any }, itens?: ItemComissao[]) {
   const taxa = taxaVenda(v, itens);
   const div: Divisao = Array.isArray(v.divisao) && v.divisao.length ? v.divisao : (v.vendedor ? [{ vendedor: v.vendedor, percentual: 100 }] : []);
   return div.map(d => ({ vendedor: d.vendedor, percentual: d.percentual, base: Number(v.valor) * d.percentual / 100, comissao: Number(v.valor) * taxa * d.percentual / 100, taxa }));

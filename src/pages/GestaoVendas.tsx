@@ -11,6 +11,7 @@ import { VendasList } from '@/components/vendas/VendasList';
 import { VendasComissoes } from '@/components/vendas/VendasComissoes';
 import { VendasImportacao } from '@/components/vendas/VendasImportacao';
 import { VENDEDOR_FATURAMENTO } from '@/lib/vendas/skywork';
+import { useComissaoRegras, ComissaoRegrasDialog } from '@/components/vendas/ComissaoRegras';
 
 export const SEM_VENDEDOR = '__sem__';
 
@@ -26,7 +27,9 @@ export default function GestaoVendas() {
   const { hasPermission } = useModulePermissions();
   const canEdit = hasPermission('/gestao-vendas', 'edit');
   const canApprove = hasPermission('/gestao-vendas', 'approve' as any);
-  const { data: todas = [], isLoading } = useVendas();
+  const { data: todas = [], isLoading: l1 } = useVendas();
+  const { isLoading: l2 } = useComissaoRegras();
+  const isLoading = l1 || l2;
   const isComercial = (v: Venda) => !!v.vendedor && v.vendedor !== VENDEDOR_FATURAMENTO;
   // Foco exclusivo na equipe comercial: Faturamento e sem vendedor 100% desconsiderados
   const vendas = useMemo(() => todas.filter(isComercial), [todas]);
@@ -107,6 +110,7 @@ export default function GestaoVendas() {
           <TabsTrigger value="comissoes">Comissões</TabsTrigger>
           {canEdit && <TabsTrigger value="importacao">Importação</TabsTrigger>}
         </TabsList>
+        {tab === 'comissoes' && <div className="mt-3"><ComissaoRegrasDialog canApprove={canApprove} /></div>}
 
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
