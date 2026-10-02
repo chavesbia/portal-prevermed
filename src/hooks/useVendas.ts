@@ -34,12 +34,16 @@ const db = supabase as any;
 export function useVendas() {
   return useQuery({
     queryKey: ['vendas'],
+    staleTime: 2 * 60 * 1000,
     queryFn: async (): Promise<Venda[]> => {
       const all: Venda[] = [];
       const size = 1000;
       for (let from = 0; ; from += size) {
         const { data, error } = await db.from('vendas')
           .select('id,emitente_cnpj,emitente_nome,numero_venda,data_venda,cliente_nome,cliente_cnpj,valor,vendedor_original,vendedor,vendedores,compartilhada,situacao,descricao,fatura,nfse,forma_pagamento,cidade,estado,tipo_comissao,divisao,validado,validado_em,marcado_novo_em')
+          // Só equipe comercial: Faturamento e sem vendedor nunca são baixados
+          .not('vendedor', 'is', null)
+          .neq('vendedor', 'Faturamento')
           .order('data_venda', { ascending: false })
           .order('numero_venda', { ascending: false })
           .range(from, from + size - 1);
@@ -81,8 +85,20 @@ async function fetchAll(table: string, cols: string) {
 export function useTodosItens() {
   return useQuery({
     queryKey: ['venda-itens', 'todos'],
+    staleTime: 2 * 60 * 1000,
     queryFn: async () => {
-      const rows: VendaItem[] = await fetchAll('venda_itens', 'id,venda_id,ordem,nome,quantidade,valor_unitario,valor_total,tipo_comissao');
+      // Só itens das vendas da equipe comercial (filtro feito no banco)
+      const rows: VendaItem[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await db.from('venda_itens')
+          .select('id,venda_id,ordem,nome,quantidade,valor_unitario,valor_total,tipo_comissao,vendas!inner(vendedor)')
+          .not('vendas.vendedor', 'is', null)
+          .neq('vendas.vendedor', 'Faturamento')
+          .order('id').range(from, from + 999);
+        if (error) throw error;
+        rows.push(...(data || []).map(({ vendas, ...r }: any) => r));
+        if (!data || data.length < 1000) break;
+      }
       const m = new Map<string, VendaItem[]>();
       rows.forEach(r => { const a = m.get(r.venda_id) || []; a.push({ ...r, valor_total: Number(r.valor_total) }); m.set(r.venda_id, a); });
       m.forEach(a => a.sort((x, y) => x.ordem - y.ordem));
