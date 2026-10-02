@@ -29,6 +29,11 @@ import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { CHECKLIST_CATEGORIAS, ChecklistResumo, useOSChecklists } from '@/components/os/OSOportunidadesView';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
@@ -162,9 +167,16 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (ok) onOpenDialog(false);
   };
 
-  // Realizar visita: pede custo real
+  // Realizar visita: checklist pós-visita
   const [toRealizar, setToRealizar] = useState<OSVisita | null>(null);
-  const [custoRealInput, setCustoRealInput] = useState('');
+  const [ckCategorias, setCkCategorias] = useState<string[]>([]);
+  const [ckOportunidades, setCkOportunidades] = useState('');
+  const [ckObservacao, setCkObservacao] = useState('');
+  const [ckSaving, setCkSaving] = useState(false);
+  const { user, profile } = useAuth();
+  const qc = useQueryClient();
+  const { data: checklists = [] } = useOSChecklists();
+  const abrirRealizar = (v: OSVisita) => { setToRealizar(v); setCkCategorias([]); setCkOportunidades(''); setCkObservacao(''); };
 
 
   return (
@@ -260,7 +272,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                           <span>📅 {format(new Date(v.data_visita + 'T00:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</span>
                           {v.hora_visita && <span>🕐 {v.hora_visita}</span>}
                           <span>👤 {v.responsavel_nome}</span>
-                          {v.custos_deslocamento > 0 && <span>💰 {formatBRL(v.custos_deslocamento)}</span>}
                         </div>
                         {v.endereco && <div className="text-sm text-muted-foreground">📍 {v.endereco}</div>}
                         {eqs.length > 0 && <div className="text-sm text-muted-foreground">🔧 {equipNomes(eqs)}</div>}
@@ -270,7 +281,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         {canEdit && v.status === 'agendada' && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => abrirRealizar(v)}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
                         )}
@@ -435,11 +446,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 </Alert>
               )}
 
-              <FormField control={form.control} name="custos_deslocamento" render={({ field }) => (
-                <FormItem><FormLabel>Custo Aproximado (deslocamento, equipamentos etc.) R$</FormLabel>
-                  <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
-                </FormItem>
-              )} />
 
               <div className="space-y-2 rounded-md border p-3 bg-muted/30">
                 <FormField control={form.control} name="urgente" render={({ field }) => (
@@ -497,10 +503,15 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
                   <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
                 )}
-                <div><span className="text-muted-foreground">Custo aproximado:</span> {formatBRL(selectedView.custos_deslocamento || 0)}</div>
-                {selectedView.status === 'realizada' && (
-                  <div><span className="text-muted-foreground">Custo real:</span> {formatBRL((selectedView as any).custo_real || 0)}</div>
-                )}
+                {(() => {
+                  const ck = checklists.find(c => c.visita_id === selectedView.id);
+                  return ck ? (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-1">
+                      <div className="font-medium">Checklist pós-visita</div>
+                      <ChecklistResumo c={ck} />
+                    </div>
+                  ) : null;
+                })()}
                 {selectedView.urgente && selectedView.motivo_urgencia && (
                   <div className="text-destructive"><span className="text-muted-foreground">Motivo da urgência:</span> {selectedView.motivo_urgencia}</div>
                 )}
