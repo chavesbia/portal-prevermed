@@ -175,7 +175,11 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const { data: checklists = [] } = useOSChecklists();
-  const abrirRealizar = (v: OSVisita) => { setToRealizar(v); setCkCategorias([]); setCkOportunidades(''); setCkObservacao(''); };
+  const [ckArquivos, setCkArquivos] = useState<File[]>([]);
+  const abrirRealizar = async (v: OSVisita) => {
+    if (v.tipo_visita === 'Treinamento') { await updateVisitaStatus(v.id, 'realizada'); return; }
+    setToRealizar(v); setCkCategorias([]); setCkOportunidades(''); setCkObservacao(''); setCkArquivos([]);
+  };
 
 
   return (
@@ -308,13 +312,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <FormField control={form.control} name="ordem_id" render={({ field }) => (
                 <FormItem>
                   <FormLabel>OS vinculada (opcional)</FormLabel>
-                  <Select onValueChange={(v) => { field.onChange(v); form.setValue('servico_id', 'none'); }} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Sem OS vinculada" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">Sem OS vinculada</SelectItem>
-                      {ordens.map(o => <SelectItem key={o.id} value={o.id}>OS #{o.numero_os} — {o.empresa_cliente}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <OSBuscaSelector ordens={ordens} value={field.value || 'none'} onChange={(v) => { field.onChange(v); form.setValue('servico_id', 'none'); }} />
                 </FormItem>
               )} />
 
@@ -580,6 +578,18 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <Label>O que foi observado na visita</Label>
               <Textarea rows={3} value={ckObservacao} onChange={e => setCkObservacao(e.target.value)} />
             </div>
+            <div className="space-y-2">
+              <Label>Fotos / arquivos (opcional)</Label>
+              {toRealizar?.ordem_id ? (
+                <>
+                  <Input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setCkArquivos(Array.from(e.target.files || []))} />
+                  {ckArquivos.length > 0 && <div className="text-xs text-muted-foreground">{ckArquivos.map(f => f.name).join(', ')}</div>}
+                  <div className="text-xs text-muted-foreground">Ficam guardados na aba Anexos da OS, categoria CheckList.</div>
+                </>
+              ) : (
+                <div className="text-xs text-muted-foreground">Visita sem OS vinculada: não é possível anexar arquivos.</div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
@@ -602,6 +612,19 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                   });
                   if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
                 }
+                if (toRealizar.ordem_id && ckArquivos.length > 0) {
+                  for (const file of ckArquivos) {
+                    const ext = file.name.split('.').pop() || 'bin';
+                    const path = `${toRealizar.ordem_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                    const { error: upErr } = await supabase.storage.from('os-anexos').upload(path, file, { contentType: file.type || undefined });
+                    if (upErr) { toast({ title: 'Erro ao enviar arquivo', description: `${file.name}: ${upErr.message}`, variant: 'destructive' }); continue; }
+                    await (supabase as any).from('os_anexos').insert({
+                      ordem_id: toRealizar.ordem_id, categoria: 'checklist', nome: file.name,
+                      descricao: `Checklist pós-visita ${format(new Date(toRealizar.data_visita + 'T00:00:00'), 'dd/MM/yyyy')}`,
+                      storage_path: path, mime_type: file.type || null, tamanho_bytes: file.size, created_by: user?.id || null,
+                    });
+                  }
+                }
                 await updateVisitaStatus(toRealizar.id, 'realizada');
                 qc.invalidateQueries({ queryKey: ['os-visita-checklist'] });
                 setToRealizar(null);
@@ -610,6 +633,45 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function OSBuscaSelector({ ordens, value, onChange }: { ordens: OrdemServico[]; value: string; onChange: (v: string) => void }) {
+  const [busca, setBusca] = useState('');
+  const [aberto, setAberto] = useState(false);
+  const selecionada = ordens.find(o => o.id === value);
+  const resultados = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    if (!q) return [];
+    return ordens.filter(o => String(o.numero_os ?? '').toLowerCase().includes(q) || (o.empresa_cliente || '').toLowerCase().includes(q)).slice(0, 30);
+  }, [ordens, busca]);
+  if (selecionada && !aberto) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+        <span className="flex-1 truncate">OS #{selecionada.numero_os} — {selecionada.empresa_cliente}</span>
+        <Button type="button" variant="ghost" size="sm" onClick={() => { setAberto(true); setBusca(''); }}>Trocar</Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => onChange('none')}>Remover</Button>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-1">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input className="pl-9" placeholder="Digite nº da OS ou nome do cliente" value={busca} onChange={e => setBusca(e.target.value)} />
+      </div>
+      {busca.trim() && (
+        <div className="max-h-56 overflow-y-auto rounded-md border">
+          {resultados.length === 0 ? <div className="p-3 text-sm text-muted-foreground">Nenhuma OS encontrada.</div>
+            : resultados.map(o => (
+              <button type="button" key={o.id} className="block w-full px-3 py-2 text-left text-sm hover:bg-muted" onClick={() => { onChange(o.id); setAberto(false); setBusca(''); }}>
+                OS #{o.numero_os} — {o.empresa_cliente}
+              </button>
+            ))}
+        </div>
+      )}
+      {!busca.trim() && <div className="text-xs text-muted-foreground">Sem OS vinculada. Digite para buscar (mostra até 30 resultados).</div>}
     </div>
   );
 }
