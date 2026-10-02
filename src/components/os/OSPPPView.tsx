@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSignedUrls } from '@/lib/storage/signedUrls';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, CheckCircle, Clock, Edit, Eye, FileDown, FileText, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -83,9 +83,9 @@ export function OSPPPView({ canEdit }: { canEdit: boolean }) {
     if (filters.companyId && item.company_id !== filters.companyId) return false;
     if (filters.status === 'pendente' && item.realizado) return false;
     if (filters.status === 'realizado' && !item.realizado) return false;
-    const dates = item.periodos || [];
-    if (filters.dataInicial && !dates.some(period => period.data_fim >= filters.dataInicial)) return false;
-    if (filters.dataFinal && !dates.some(period => period.data_inicio <= filters.dataFinal)) return false;
+    const pedido = item.created_at ? format(parseISO(item.created_at), 'yyyy-MM-dd') : '';
+    if (filters.dataInicial && (!pedido || pedido < filters.dataInicial)) return false;
+    if (filters.dataFinal && (!pedido || pedido > filters.dataFinal)) return false;
     return true;
   }), [solicitacoes, filters]);
 
@@ -119,7 +119,7 @@ export function OSPPPView({ canEdit }: { canEdit: boolean }) {
   };
   const exportReport = () => {
     if (!reportRange.from || !reportRange.to) { toast.error('Selecione um período válido.'); return; }
-    const rows = solicitacoes.filter(item => item.realizado && item.realizado_em && isWithinInterval(parseISO(item.realizado_em), { start: reportRange.from, end: reportRange.to }));
+    const rows = solicitacoes.filter(item => item.realizado && item.realizado_em && isWithinInterval(parseISO(item.realizado_em), { start: startOfDay(reportRange.from), end: endOfDay(reportRange.to) }));
     if (!rows.length) { toast.info('Nenhuma solicitação realizada no período.'); return; }
     const headers = ['Nº', 'Empresa', 'Funcionário', 'CPF', 'Períodos', 'Solicitante', 'Data Realização', 'Realizado Por'];
     if (isAdmMaster) headers.push('Valor Calculado');

@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CompanySelector } from '@/components/shared/CompanySelector';
 import { UnitSelector } from '@/components/shared/UnitSelector';
 import { Plus, Trash2, CheckCircle, Clock, FileDown, Loader2, Edit, Calendar } from 'lucide-react';
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -189,7 +189,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     const data = solicitacoes.filter(s => 
       s.realizado && 
       s.realizado_em && 
-      isWithinInterval(parseISO(s.realizado_em), { start: reportRange.from, end: reportRange.to })
+      isWithinInterval(parseISO(s.realizado_em), { start: startOfDay(reportRange.from), end: endOfDay(reportRange.to) })
     );
 
     if (data.length === 0) {
