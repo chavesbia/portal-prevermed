@@ -43,7 +43,7 @@ export function OSGestaoVencimentosView() {
       return m;
     },
   });
-  const nomeUnidade = (l: any) => (l.unidade_id && unidadesMap?.get(l.unidade_id)) || '';
+  const nomeUnidade = (l: any) => l.unidade?.name || (l.unidade_id && unidadesMap?.get(l.unidade_id)) || '';
   const { hasPermission } = useModulePermissions();
   const canCreateLaudo = hasPermission('/gestao-os', 'create');
   const canEditLaudo = hasPermission('/gestao-os', 'edit');
@@ -95,7 +95,7 @@ export function OSGestaoVencimentosView() {
 
   const laudosFiltrados = useMemo(() => {
     return laudos.filter(l => {
-      if (filtroEmpresa && !`${l.empresa_cliente} ${nomeUnidade(l)}`.toLowerCase().includes(filtroEmpresa.toLowerCase())) return false;
+      if (filtroEmpresa && !`${l.empresa_cliente} ${nomeUnidade(l)} ${l.numero_os || ''}`.toLowerCase().includes(filtroEmpresa.toLowerCase())) return false;
       if (filtroTipoLaudo !== 'all' && l.tipo_laudo_id !== filtroTipoLaudo) return false;
       if (filtroResponsavel !== 'all' && l.responsavel_tecnico_id !== filtroResponsavel) return false;
       if (filtroStatus !== 'all' && calcularStatusVigencia(l) !== filtroStatus) return false;
@@ -196,7 +196,7 @@ export function OSGestaoVencimentosView() {
                   <div>
                     <span className="font-medium">{a.tipo_laudo_nome}</span>
                     <span className="text-muted-foreground"> — {a.empresa_cliente}{nomeUnidade(a) && ` · ${nomeUnidade(a)}`}</span>
-                    <span className="text-sm text-muted-foreground ml-2">(OS {a.numero_os})</span>
+                    <span className="text-sm text-muted-foreground ml-2">({String(a.numero_os || '').startsWith('LM-') ? a.numero_os : `OS ${a.numero_os || '—'}`})</span>
                   </div>
                   <Badge variant={a.diasParaVencer <= 30 ? 'destructive' : 'secondary'}>{a.diasParaVencer} dias</Badge>
                 </div>
