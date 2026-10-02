@@ -4909,6 +4909,56 @@ export type Database = {
         }
         Relationships: []
       }
+      os_visita_checklist: {
+        Row: {
+          categorias: string[]
+          created_at: string
+          created_by: string | null
+          created_by_nome: string | null
+          empresa_cliente: string
+          id: string
+          numero_os: string | null
+          observacao: string | null
+          oportunidades: string | null
+          ordem_id: string | null
+          visita_id: string
+        }
+        Insert: {
+          categorias?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_by_nome?: string | null
+          empresa_cliente: string
+          id?: string
+          numero_os?: string | null
+          observacao?: string | null
+          oportunidades?: string | null
+          ordem_id?: string | null
+          visita_id: string
+        }
+        Update: {
+          categorias?: string[]
+          created_at?: string
+          created_by?: string | null
+          created_by_nome?: string | null
+          empresa_cliente?: string
+          id?: string
+          numero_os?: string | null
+          observacao?: string | null
+          oportunidades?: string | null
+          ordem_id?: string | null
+          visita_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "os_visita_checklist_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: true
+            referencedRelation: "os_visitas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       os_visita_equipamentos: {
         Row: {
           created_at: string
@@ -7339,6 +7389,7 @@ export type Database = {
         | "aso_retificacao"
         | "aso_alerta"
         | "contract_vigencia"
+        | "os_oportunidade"
       occurrence_assignee_role: "principal" | "apoio"
       occurrence_comment_type:
         | "comentario_interno"
@@ -7670,6 +7721,7 @@ export const Constants = {
         "aso_retificacao",
         "aso_alerta",
         "contract_vigencia",
+        "os_oportunidade",
       ],
       occurrence_assignee_role: ["principal", "apoio"],
       occurrence_comment_type: [
