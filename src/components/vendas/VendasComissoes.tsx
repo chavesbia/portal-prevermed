@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { Download, Split, CheckCircle2, ChevronDown, ChevronRight, Lock } from 'lucide-react';
@@ -78,11 +79,20 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
     invalidate();
   };
 
+  const qc = useQueryClient();
   const setTipoItem = async (v: Venda, it: VendaItem, tipo: string) => {
+    // Atualização imediata na tela; grava no banco em segundo plano
+    const patch = (t: string) => qc.setQueryData(['venda-itens', 'todos'], (old: Map<string, VendaItem[]> | undefined) => {
+      if (!old) return old;
+      const m = new Map(old);
+      m.set(it.venda_id, (m.get(it.venda_id) || []).map(x => x.id === it.id ? { ...x, tipo_comissao: t } : x));
+      return m;
+    });
+    const anterior = it.tipo_comissao;
+    patch(tipo);
     const { error } = await db.from('venda_itens').update({ tipo_comissao: tipo }).eq('id', it.id);
-    if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
-    await auditVendas(user?.id, 'tipo_comissao_servico', v.id, { numero_venda: v.numero_venda, servico: it.nome, tipo });
-    invalidate();
+    if (error) { patch(anterior); toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
+    auditVendas(user?.id, 'tipo_comissao_servico', v.id, { numero_venda: v.numero_venda, servico: it.nome, tipo });
   };
 
   const validarTodas = async () => {
@@ -257,7 +267,7 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
                                     <button key={t} disabled={!canEdit || bloqueado}
                                       onClick={() => it.tipo_comissao !== t && setTipoItem(v, it, t)}
                                       className={`px-2 py-1 text-xs whitespace-nowrap disabled:cursor-not-allowed ${it.tipo_comissao === t ? (t === 'novo' ? 'bg-success text-success-foreground' : 'bg-primary text-primary-foreground') : 'bg-background text-muted-foreground'}`}>
-                                      {t === 'novo' ? 'Novo 3%' : 'Renovação 1%'}
+                                      {t === 'novo' ? 'Novo 3%' : 'Renovação 0,5%'}
                                     </button>
                                   ))}
                                 </div>
