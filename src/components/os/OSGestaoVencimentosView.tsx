@@ -22,12 +22,28 @@ import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { NovoLaudoManualDialog } from '@/components/os/NovoLaudoManualDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export function OSGestaoVencimentosView() {
   const { responsaveis } = useResponsaveisTecnicos();
   const { profissionais } = useProfissionais();
   const { tiposLaudo, add: addTipo, update: updateTipo } = useTiposLaudo();
   const { laudos, refresh: refreshLaudos } = useLaudos();
+  const unidadeIds = useMemo(() => Array.from(new Set(laudos.map((l: any) => l.unidade_id).filter(Boolean))) as string[], [laudos]);
+  const { data: unidadesMap } = useQuery({
+    queryKey: ['laudos-unidades', unidadeIds],
+    enabled: unidadeIds.length > 0,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const m = new Map<string, string>();
+      for (let i = 0; i < unidadeIds.length; i += 200) {
+        const { data } = await supabase.from('company_units').select('id,name').in('id', unidadeIds.slice(i, i + 200));
+        (data || []).forEach((u: any) => m.set(u.id, u.name));
+      }
+      return m;
+    },
+  });
+  const nomeUnidade = (l: any) => (l.unidade_id && unidadesMap?.get(l.unidade_id)) || '';
   const { hasPermission } = useModulePermissions();
   const canCreateLaudo = hasPermission('/gestao-os', 'create');
   const canEditLaudo = hasPermission('/gestao-os', 'edit');
@@ -79,13 +95,13 @@ export function OSGestaoVencimentosView() {
 
   const laudosFiltrados = useMemo(() => {
     return laudos.filter(l => {
-      if (filtroEmpresa && !l.empresa_cliente.toLowerCase().includes(filtroEmpresa.toLowerCase())) return false;
+      if (filtroEmpresa && !`${l.empresa_cliente} ${nomeUnidade(l)}`.toLowerCase().includes(filtroEmpresa.toLowerCase())) return false;
       if (filtroTipoLaudo !== 'all' && l.tipo_laudo_id !== filtroTipoLaudo) return false;
       if (filtroResponsavel !== 'all' && l.responsavel_tecnico_id !== filtroResponsavel) return false;
       if (filtroStatus !== 'all' && calcularStatusVigencia(l) !== filtroStatus) return false;
       return true;
     });
-  }, [laudos, filtroEmpresa, filtroTipoLaudo, filtroResponsavel, filtroStatus, alertaConfig]);
+  }, [laudos, filtroEmpresa, filtroTipoLaudo, filtroResponsavel, filtroStatus, alertaConfig, unidadesMap]);
 
   const stats = useMemo(() => ({
     total: laudos.length,
@@ -179,7 +195,7 @@ export function OSGestaoVencimentosView() {
                 <div key={a.id} className="flex items-center justify-between p-2 bg-background rounded border">
                   <div>
                     <span className="font-medium">{a.tipo_laudo_nome}</span>
-                    <span className="text-muted-foreground"> — {a.empresa_cliente}</span>
+                    <span className="text-muted-foreground"> — {a.empresa_cliente}{nomeUnidade(a) && ` · ${nomeUnidade(a)}`}</span>
                     <span className="text-sm text-muted-foreground ml-2">(OS {a.numero_os})</span>
                   </div>
                   <Badge variant={a.diasParaVencer <= 30 ? 'destructive' : 'secondary'}>{a.diasParaVencer} dias</Badge>
@@ -264,7 +280,7 @@ export function OSGestaoVencimentosView() {
                 ) : laudosFiltrados.map(l => (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.numero_os}</TableCell>
-                    <TableCell>{l.empresa_cliente}</TableCell>
+                    <TableCell><div>{l.empresa_cliente}</div>{nomeUnidade(l) && <div className="text-xs text-muted-foreground">Unidade: {nomeUnidade(l)}</div>}</TableCell>
                     <TableCell><Badge variant="outline">{l.tipo_laudo_nome}</Badge></TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="text-sm"><div>{l.responsavel_tecnico_nome}</div><div className="text-xs text-muted-foreground">{l.responsavel_tecnico_registro}</div></div>
