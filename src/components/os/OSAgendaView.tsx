@@ -29,6 +29,10 @@ import { ProfissionalSelector } from '@/components/os/ProfissionalSelector';
 import { OSVisita, VISITA_TIPO_OPTIONS, VISITA_STATUS_OPTIONS, VisitaTipo, visitaStatusColors, visitaStatusLabel } from '@/types/osVisitas';
 import { OrdemServico } from '@/types/os';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+import { CHECKLIST_CATEGORIAS, ChecklistResumo, useOSChecklists } from '@/components/os/OSOportunidadesView';
 
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
@@ -162,9 +166,16 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
     if (ok) onOpenDialog(false);
   };
 
-  // Realizar visita: pede custo real
+  // Realizar visita: checklist pós-visita
   const [toRealizar, setToRealizar] = useState<OSVisita | null>(null);
-  const [custoRealInput, setCustoRealInput] = useState('');
+  const [ckCategorias, setCkCategorias] = useState<string[]>([]);
+  const [ckOportunidades, setCkOportunidades] = useState('');
+  const [ckObservacao, setCkObservacao] = useState('');
+  const [ckSaving, setCkSaving] = useState(false);
+  const { user, profile } = useAuth();
+  const qc = useQueryClient();
+  const { data: checklists = [] } = useOSChecklists();
+  const abrirRealizar = (v: OSVisita) => { setToRealizar(v); setCkCategorias([]); setCkOportunidades(''); setCkObservacao(''); };
 
 
   return (
@@ -260,7 +271,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                           <span>📅 {format(new Date(v.data_visita + 'T00:00:00'), "dd 'de' MMM yyyy", { locale: ptBR })}</span>
                           {v.hora_visita && <span>🕐 {v.hora_visita}</span>}
                           <span>👤 {v.responsavel_nome}</span>
-                          {v.custos_deslocamento > 0 && <span>💰 {formatBRL(v.custos_deslocamento)}</span>}
                         </div>
                         {v.endereco && <div className="text-sm text-muted-foreground">📍 {v.endereco}</div>}
                         {eqs.length > 0 && <div className="text-sm text-muted-foreground">🔧 {equipNomes(eqs)}</div>}
@@ -270,7 +280,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                         {canEdit && v.status === 'agendada' && (
                           <>
                             <Button variant="outline" size="sm" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => { setToRealizar(v); setCustoRealInput(String(v.custos_deslocamento || '')); }}>Realizada</Button>
+                            <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => abrirRealizar(v)}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
                           </>
                         )}
@@ -435,11 +445,6 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 </Alert>
               )}
 
-              <FormField control={form.control} name="custos_deslocamento" render={({ field }) => (
-                <FormItem><FormLabel>Custo Aproximado (deslocamento, equipamentos etc.) R$</FormLabel>
-                  <FormControl><Input type="number" step="0.01" min="0" placeholder="0,00" {...field} /></FormControl>
-                </FormItem>
-              )} />
 
               <div className="space-y-2 rounded-md border p-3 bg-muted/30">
                 <FormField control={form.control} name="urgente" render={({ field }) => (
@@ -497,10 +502,15 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                 {(visitaEquipamentos[selectedView.id]?.length || 0) > 0 && (
                   <div><span className="text-muted-foreground">Equipamentos:</span> {equipNomes(visitaEquipamentos[selectedView.id] || [])}</div>
                 )}
-                <div><span className="text-muted-foreground">Custo aproximado:</span> {formatBRL(selectedView.custos_deslocamento || 0)}</div>
-                {selectedView.status === 'realizada' && (
-                  <div><span className="text-muted-foreground">Custo real:</span> {formatBRL((selectedView as any).custo_real || 0)}</div>
-                )}
+                {(() => {
+                  const ck = checklists.find(c => c.visita_id === selectedView.id);
+                  return ck ? (
+                    <div className="rounded-md border p-3 bg-muted/30 space-y-1">
+                      <div className="font-medium">Checklist pós-visita</div>
+                      <ChecklistResumo c={ck} />
+                    </div>
+                  ) : null;
+                })()}
                 {selectedView.urgente && selectedView.motivo_urgencia && (
                   <div className="text-destructive"><span className="text-muted-foreground">Motivo da urgência:</span> {selectedView.motivo_urgencia}</div>
                 )}
@@ -545,28 +555,57 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Marcar como realizada — solicita custo real */}
+      {/* Marcar como realizada — checklist pós-visita */}
       <Dialog open={!!toRealizar} onOpenChange={o => !o && setToRealizar(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Marcar visita como realizada</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-sm">
-            {toRealizar && (
-              <div className="text-muted-foreground">
-                Custo aproximado informado no agendamento: <strong>{formatBRL(toRealizar.custos_deslocamento || 0)}</strong>
-              </div>
-            )}
+          <div className="space-y-4 text-sm">
+            <div className="text-muted-foreground">Checklist pós-visita: o que o cliente precisa, além do que já foi vendido. Se marcar algo, o Comercial é avisado.</div>
             <div className="space-y-2">
-              <Label>Custo real (deslocamento + extras) R$</Label>
-              <Input type="number" step="0.01" min="0" value={custoRealInput} onChange={e => setCustoRealInput(e.target.value)} placeholder="0,00" />
+              <Label>Itens que o cliente precisa</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CHECKLIST_CATEGORIAS.map(cat => (
+                  <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox checked={ckCategorias.includes(cat)} onCheckedChange={(v) => setCkCategorias(prev => v ? [...prev, cat] : prev.filter(x => x !== cat))} />
+                    {cat}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Oportunidades para o Comercial</Label>
+              <Textarea rows={3} value={ckOportunidades} onChange={e => setCkOportunidades(e.target.value)} placeholder="Ex.: falta laudo de ruído no galpão; equipe sem treinamento NR-35..." />
+            </div>
+            <div className="space-y-2">
+              <Label>O que foi observado na visita</Label>
+              <Textarea rows={3} value={ckObservacao} onChange={e => setCkObservacao(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
-            <Button onClick={async () => {
+            <Button disabled={ckSaving} onClick={async () => {
               if (!toRealizar) return;
-              const val = parseFloat(custoRealInput || '0') || 0;
-              await updateVisitaStatus(toRealizar.id, 'realizada', undefined, val);
-              setToRealizar(null);
+              setCkSaving(true);
+              try {
+                const temChecklist = ckCategorias.length > 0 || ckOportunidades.trim() || ckObservacao.trim();
+                if (temChecklist) {
+                  const { error } = await supabase.from('os_visita_checklist').insert({
+                    visita_id: toRealizar.id,
+                    ordem_id: toRealizar.ordem_id,
+                    numero_os: toRealizar.numero_os,
+                    empresa_cliente: toRealizar.empresa_cliente,
+                    categorias: ckCategorias,
+                    oportunidades: ckOportunidades.trim() || null,
+                    observacao: ckObservacao.trim() || null,
+                    created_by: user?.id || null,
+                    created_by_nome: profile?.full_name || user?.email || null,
+                  });
+                  if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
+                }
+                await updateVisitaStatus(toRealizar.id, 'realizada');
+                qc.invalidateQueries({ queryKey: ['os-visita-checklist'] });
+                setToRealizar(null);
+              } finally { setCkSaving(false); }
             }}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
