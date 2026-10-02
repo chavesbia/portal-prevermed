@@ -7056,6 +7056,7 @@ export type Database = {
           responsavel_atual: string | null
           severidade: string | null
           tipo: string | null
+          unidade_nome: string | null
         }
         Relationships: []
       }
