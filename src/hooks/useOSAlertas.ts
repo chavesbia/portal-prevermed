@@ -13,6 +13,7 @@ export interface OSAlerta {
   responsavel_atual: string;
   referencia_data: string | null;
   descricao: string;
+  unidade_nome?: string | null;
 }
 
 export function useOSAlertas() {
