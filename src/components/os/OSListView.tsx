@@ -80,6 +80,20 @@ export function OSListView({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [finalizarServico, setFinalizarServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
   const [editServico, setEditServico] = useState<{ ordem: OrdemServico; servico: ServicoOS } | null>(null);
+  const [unidadesMap, setUnidadesMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const ids = Array.from(new Set(ordens.map(o => (o as any).unidade_id).filter(Boolean))) as string[];
+    const faltam = ids.filter(id => !(id in unidadesMap));
+    if (!faltam.length) return;
+    supabase.from('company_units').select('id, name').in('id', faltam).then(({ data }) => {
+      if (!data) return;
+      setUnidadesMap(prev => {
+        const next = { ...prev };
+        data.forEach((u: any) => { next[u.id] = u.name; });
+        return next;
+      });
+    });
+  }, [ordens]);
 
   const { user, isAdmMaster } = useAuth();
   const { getModulePermissions } = useModulePermissions();
@@ -223,6 +237,19 @@ export function OSListView({
                             </DropdownMenu>
                           </td>
                         </tr>
+                        {isExpanded && (
+                          <tr className="bg-muted/30 border-b">
+                            <td className="py-2" />
+                            <td colSpan={8} className="py-2 pl-4 text-sm">
+                              <span className="text-muted-foreground">Unidade: </span>
+                              <span className="font-medium">
+                                {(ordem as any).unidade_id
+                                  ? (unidadesMap[(ordem as any).unidade_id] ?? 'Carregando…')
+                                  : 'Sem unidade específica vinculada'}
+                              </span>
+                            </td>
+                          </tr>
+                        )}
                         {isExpanded && svcs.map(servico => {
                           const prof = profissionais.find(p => p.id === servico.responsavel_id);
                           return (

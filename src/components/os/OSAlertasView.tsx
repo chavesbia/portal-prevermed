@@ -40,7 +40,8 @@ export function OSAlertasView() {
     if (search) {
       const s = search.toLowerCase();
       if (!a.numero_os.includes(s) && !a.empresa_cliente.toLowerCase().includes(s)
-        && !a.responsavel_atual.toLowerCase().includes(s)) return false;
+        && !(a.responsavel_atual ?? '').toLowerCase().includes(s)
+        && !(a.unidade_nome ?? '').toLowerCase().includes(s)) return false;
     }
     return true;
   }), [alertas, search, tipoFilter, sevFilter]);
@@ -120,10 +121,12 @@ export function OSAlertasView() {
                         <span className="font-mono text-sm">OS #{a.numero_os}</span>
                         <span className="text-sm text-muted-foreground">— {a.empresa_cliente}</span>
                       </div>
+                      {a.unidade_nome && (
+                        <p className="text-xs text-muted-foreground mt-1">Unidade: <span className="font-medium text-foreground">{a.unidade_nome}</span></p>
+                      )}
                       <p className="text-sm mt-1">{a.descricao}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Emissor da OS: {a.responsavel_atual}
-                        {a.referencia_data && ` · ${format(parseISO(a.referencia_data), 'dd/MM/yyyy')}`}
+                        {a.tipo === 'laudo_vencendo' ? 'Resp. técnico' : 'Responsável'}: {a.responsavel_atual || '—'}
                       </p>
                     </div>
                   </div>
