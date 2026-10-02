@@ -4,7 +4,7 @@
 export const PREVERMED_CNPJ_PADRAO = '28.309.721/0001-05';
 export const VENDEDOR_FATURAMENTO = 'Faturamento';
 export const TAXA_NOVO = 0.03;
-export const TAXA_RENOVACAO = 0.01;
+export const TAXA_RENOVACAO = 0.005;
 
 export interface SkyworkItem {
   ordem: number;
@@ -198,8 +198,9 @@ export function taxaVenda(v: { tipo_comissao: string; data_venda?: string | null
   const its = (itens || []).filter(i => Number(i.valor_total) > 0);
   const tot = its.reduce((s, i) => s + Number(i.valor_total), 0);
   if (!tot) return v.tipo_comissao === 'novo' ? TN : TR;
-  const novo = its.filter(i => i.tipo_comissao === 'novo').reduce((s, i) => s + Number(i.valor_total), 0);
-  return (novo / tot) * TN + (1 - novo / tot) * TR;
+  const soma = (t: string) => its.filter(i => i.tipo_comissao === t).reduce((s, i) => s + Number(i.valor_total), 0);
+  // Serviços 'pendente' (sem escolha) não geram comissão até alguém selecionar
+  return (soma('novo') / tot) * TN + (soma('renovacao') / tot) * TR;
 }
 
 /** Distribui a comissão da venda entre vendedores (padrão: 100% primeiro vendedor). */

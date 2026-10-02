@@ -78,7 +78,7 @@ export function useLaudos() {
   const fetch = useCallback(async () => {
     const { data: rows, error } = await supabase
       .from('laudos')
-      .select('*')
+      .select('*, unidade:company_units(name)')
       .order('created_at', { ascending: false });
     if (error) {
       console.error('Erro ao carregar laudos:', error);

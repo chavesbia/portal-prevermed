@@ -182,7 +182,7 @@ export async function importarVendas(
     if (delErr) throw delErr;
     const itens = chunk.flatMap(v => v.itens.map(it => {
       const vid = idPorChave.get(`${v.emitente_cnpj}|${v.numero_venda}`);
-      return { ...it, venda_id: vid, tipo_comissao: tipoAntigo.get(`${vid}|${it.ordem}`) || 'renovacao' };
+      return { ...it, venda_id: vid, tipo_comissao: tipoAntigo.get(`${vid}|${it.ordem}`) || 'pendente' };
     }));
     for (let j = 0; j < itens.length; j += 1000) {
       const { error: itErr } = await db.from('venda_itens').insert(itens.slice(j, j + 1000));
