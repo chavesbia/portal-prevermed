@@ -545,28 +545,57 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Marcar como realizada — solicita custo real */}
+      {/* Marcar como realizada — checklist pós-visita */}
       <Dialog open={!!toRealizar} onOpenChange={o => !o && setToRealizar(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>Marcar visita como realizada</DialogTitle></DialogHeader>
-          <div className="space-y-3 text-sm">
-            {toRealizar && (
-              <div className="text-muted-foreground">
-                Custo aproximado informado no agendamento: <strong>{formatBRL(toRealizar.custos_deslocamento || 0)}</strong>
-              </div>
-            )}
+          <div className="space-y-4 text-sm">
+            <div className="text-muted-foreground">Checklist pós-visita: o que o cliente precisa, além do que já foi vendido. Se marcar algo, o Comercial é avisado.</div>
             <div className="space-y-2">
-              <Label>Custo real (deslocamento + extras) R$</Label>
-              <Input type="number" step="0.01" min="0" value={custoRealInput} onChange={e => setCustoRealInput(e.target.value)} placeholder="0,00" />
+              <Label>Itens que o cliente precisa</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {CHECKLIST_CATEGORIAS.map(cat => (
+                  <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox checked={ckCategorias.includes(cat)} onCheckedChange={(v) => setCkCategorias(prev => v ? [...prev, cat] : prev.filter(x => x !== cat))} />
+                    {cat}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Oportunidades para o Comercial</Label>
+              <Textarea rows={3} value={ckOportunidades} onChange={e => setCkOportunidades(e.target.value)} placeholder="Ex.: falta laudo de ruído no galpão; equipe sem treinamento NR-35..." />
+            </div>
+            <div className="space-y-2">
+              <Label>O que foi observado na visita</Label>
+              <Textarea rows={3} value={ckObservacao} onChange={e => setCkObservacao(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
-            <Button onClick={async () => {
+            <Button disabled={ckSaving} onClick={async () => {
               if (!toRealizar) return;
-              const val = parseFloat(custoRealInput || '0') || 0;
-              await updateVisitaStatus(toRealizar.id, 'realizada', undefined, val);
-              setToRealizar(null);
+              setCkSaving(true);
+              try {
+                const temChecklist = ckCategorias.length > 0 || ckOportunidades.trim() || ckObservacao.trim();
+                if (temChecklist) {
+                  const { error } = await supabase.from('os_visita_checklist').insert({
+                    visita_id: toRealizar.id,
+                    ordem_id: toRealizar.ordem_id,
+                    numero_os: toRealizar.numero_os,
+                    empresa_cliente: toRealizar.empresa_cliente,
+                    categorias: ckCategorias,
+                    oportunidades: ckOportunidades.trim() || null,
+                    observacao: ckObservacao.trim() || null,
+                    created_by: user?.id || null,
+                    created_by_nome: profile?.full_name || user?.email || null,
+                  });
+                  if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
+                }
+                await updateVisitaStatus(toRealizar.id, 'realizada');
+                qc.invalidateQueries({ queryKey: ['os-visita-checklist'] });
+                setToRealizar(null);
+              } finally { setCkSaving(false); }
             }}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
