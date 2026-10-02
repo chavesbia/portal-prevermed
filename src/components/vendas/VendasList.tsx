@@ -100,7 +100,9 @@ export function VendasList({ vendas, situacao, onSituacao, page, onPage }: {
 export function TipoTag({ tipo }: { tipo: string }) {
   return tipo === 'novo'
     ? <Badge className="whitespace-nowrap bg-success text-success-foreground hover:bg-success">Novo 3%</Badge>
-    : <Badge variant="secondary" className="whitespace-nowrap">Renovação 1%</Badge>;
+    : tipo === 'pendente'
+      ? <Badge variant="outline" className="whitespace-nowrap">A definir</Badge>
+      : <Badge variant="secondary" className="whitespace-nowrap">Renovação 0,5%</Badge>;
 }
 
 function VendaDetalheInline({ venda, itens }: { venda: Venda; itens: VendaItem[] }) {
