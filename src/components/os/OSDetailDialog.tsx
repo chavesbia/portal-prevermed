@@ -14,7 +14,6 @@ import { OrdemServico, ServicoOS, StatusOS, statusOSColors, statusServicoColors 
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
-import { OSCustosTab } from './OSCustosTab';
 import { Printer, Timer } from 'lucide-react';
 import { elapsedMs, formatDuration } from '@/lib/os/cronometro';
 import { openOSPrintView } from '@/lib/os/pdf';
@@ -201,7 +200,6 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
         <Tabs defaultValue="detalhes" className="mt-2">
           <TabsList>
             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-            <TabsTrigger value="custos">Custos</TabsTrigger>
             <TabsTrigger value="anexos">Anexos</TabsTrigger>
           </TabsList>
 
@@ -324,10 +322,6 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
                 </div>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="custos" className="mt-4">
-            <OSCustosTab ordem={ordem} canEdit={canEdit} />
           </TabsContent>
 
           <TabsContent value="anexos" className="mt-4">

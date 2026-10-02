@@ -13,12 +13,11 @@ import { OSAgendaView } from '@/components/os/OSAgendaView';
 import { OSEquipamentosView } from '@/components/os/OSEquipamentosView';
 import { OSHistoricoGeralView } from '@/components/os/OSHistoricoGeralView';
 import { OSProfissionaisView } from '@/components/os/OSProfissionaisView';
-import { OSFinanceiroView } from '@/components/os/OSFinanceiroView';
+import { OSOportunidadesView } from '@/components/os/OSOportunidadesView';
 import { OSAlertasView } from '@/components/os/OSAlertasView';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { OSAcrescimoFuncaoView } from '@/components/os/OSAcrescimoFuncaoView';
 import { OSPPPView } from '@/components/os/OSPPPView';
-import { useUserDepartments } from '@/hooks/useUserDepartments';
 
 export default function GestaoOS() {
   const [searchParams] = useSearchParams();
@@ -26,7 +25,6 @@ export default function GestaoOS() {
   const permissions = getModulePermissions('/gestao-os');
   const canCreateOS = hasPermission('/gestao-os/nova', 'edit');
   const canCorrecao = hasPermission('/gestao-os/correcao-retroativa', 'view');
-  const { isFinanceiro } = useUserDepartments();
   const {
     isLoading, isInitialLoading, isLoadingAll, filters, setFilters,
     getFilteredOrdens, allOrdens, addOrdem, updateOrdem, addOrdemComentario,
@@ -82,7 +80,7 @@ export default function GestaoOS() {
           <TabsTrigger value="acrescimos">Acréscimo de Função</TabsTrigger>
           <TabsTrigger value="ppp">PPP</TabsTrigger>
           <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
-          {isFinanceiro && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
+          <TabsTrigger value="oportunidades">Oportunidades</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-6">
@@ -144,11 +142,9 @@ export default function GestaoOS() {
           <OSProfissionaisView canEdit={canEdit} />
         </TabsContent>
 
-        {isFinanceiro && (
-          <TabsContent value="financeiro" className="mt-6">
-            <OSFinanceiroView />
-          </TabsContent>
-        )}
+        <TabsContent value="oportunidades" className="mt-6">
+          <OSOportunidadesView />
+        </TabsContent>
       </Tabs>
 
       {canCreateOS && (
