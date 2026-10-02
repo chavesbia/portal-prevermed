@@ -79,6 +79,13 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
 
   const handleTipoChange = (tipoId: string) => {
     const tipo = tiposLaudo.find(t => t.id === tipoId);
+    if (tipo && /\bPPP\b/i.test(tipo.nome)) {
+      setForm(prev => ({
+        ...prev, tipoLaudoId: tipoId, possuiVigencia: false, dataValidade: null,
+        justificativaSemVigencia: 'PPP não possui validade', responsavelTecnicoId: '',
+      }));
+      return;
+    }
     setForm(prev => ({
       ...prev,
       tipoLaudoId: tipoId,
@@ -364,7 +371,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
                   id="vigencia"
                   checked={form.possuiVigencia}
                   onCheckedChange={c => setForm({ ...form, possuiVigencia: c as boolean, dataValidade: c ? form.dataValidade : null, justificativaSemVigencia: c ? '' : form.justificativaSemVigencia })}
-                  disabled={tipoSelecionado?.exige_vigencia}
+                  disabled={tipoSelecionado?.exige_vigencia || /\bPPP\b/i.test(tipoSelecionado?.nome ?? '')}
                 />
                 <Label htmlFor="vigencia" className={cn(tipoSelecionado?.exige_vigencia && 'text-muted-foreground')}>
                   Este laudo possui vigência
