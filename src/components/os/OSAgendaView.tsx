@@ -33,7 +33,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { CHECKLIST_CATEGORIAS, ChecklistResumo, useOSChecklists } from '@/components/os/OSOportunidadesView';
-import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   empresa_cliente: z.string().min(1, 'Cliente é obrigatório'),
