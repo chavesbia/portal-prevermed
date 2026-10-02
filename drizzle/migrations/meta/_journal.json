@@ -99,13 +99,6 @@
       "when": 1790888715605,
       "tag": "0013_vendas_comissao_regras",
       "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1790940491208,
-      "tag": "0014_os_visita_checklist",
-      "breakpoints": true
     }
   ]
 }
