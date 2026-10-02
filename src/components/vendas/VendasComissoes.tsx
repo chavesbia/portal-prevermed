@@ -236,7 +236,7 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
                     <td className="px-3 py-2">{c.vendedor}{c.percentual !== 100 && <span className="text-xs text-muted-foreground"> ({c.percentual}%)</span>}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{brl(v.valor)}</td>
                     <td className="px-3 py-2">
-                      {nNovo === 0 ? <TipoTag tipo="renovacao" /> : nNovo === itens.length ? <TipoTag tipo="novo" />
+                      {itens.some(i => i.tipo_comissao === "pendente") ? <TipoTag tipo="pendente" /> : nNovo === 0 ? <TipoTag tipo="renovacao" /> : nNovo === itens.length ? <TipoTag tipo="novo" />
                         : <Badge className="whitespace-nowrap bg-success/20 text-foreground hover:bg-success/20">Misto {nNovo}/{itens.length} novo</Badge>}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap font-medium">{brl(c.comissao)}</td>
