@@ -55,7 +55,18 @@ const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
 
-const queryClient = new QueryClient();
+// Cache global: evita recarregar tudo a cada troca de aba/janela.
+// Telas que precisam de dados ao vivo usam realtime/invalidateQueries.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const RouteFallback = () => (
   <div className="flex items-center justify-center min-h-[400px]">

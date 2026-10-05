@@ -1,0 +1,1 @@
+- React Query global defaults (staleTime 60s, no refetch on window focus) live in src/App.tsx; live screens must rely on realtime/invalidateQueries — avoids request storms when users switch tabs.
