@@ -6681,6 +6681,7 @@ export type Database = {
           ordem: number
           quantidade: number | null
           sku: string | null
+          taxa_personalizada: number | null
           tipo_comissao: string
           valor_total: number | null
           valor_unitario: number | null
@@ -6695,6 +6696,7 @@ export type Database = {
           ordem?: number
           quantidade?: number | null
           sku?: string | null
+          taxa_personalizada?: number | null
           tipo_comissao?: string
           valor_total?: number | null
           valor_unitario?: number | null
@@ -6709,6 +6711,7 @@ export type Database = {
           ordem?: number
           quantidade?: number | null
           sku?: string | null
+          taxa_personalizada?: number | null
           tipo_comissao?: string
           valor_total?: number | null
           valor_unitario?: number | null
@@ -6914,6 +6917,7 @@ export type Database = {
       }
       vendas_fechamentos: {
         Row: {
+          autorizado_por_nome: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -6925,6 +6929,7 @@ export type Database = {
           vendedor: string
         }
         Insert: {
+          autorizado_por_nome?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -6936,6 +6941,7 @@ export type Database = {
           vendedor: string
         }
         Update: {
+          autorizado_por_nome?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
