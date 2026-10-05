@@ -176,8 +176,8 @@ export async function importarVendas(
     if (error) throw error;
     const idPorChave = new Map<string, string>((saved || []).map((s: any) => [`${s.emitente_cnpj}|${s.numero_venda}`, s.id]));
     const ids = Array.from(idPorChave.values());
-    const { data: antigos } = await db.from('venda_itens').select('venda_id,ordem,tipo_comissao').in('venda_id', ids);
-    const tipoAntigo = new Map<string, string>((antigos || []).map((a: any) => [`${a.venda_id}|${a.ordem}`, a.tipo_comissao]));
+    const { data: antigos } = await db.from('venda_itens').select('venda_id,ordem,tipo_comissao,taxa_personalizada').in('venda_id', ids);
+    const tipoAntigo = new Map<string, { t: string; p: number | null }>((antigos || []).map((a: any) => [`${a.venda_id}|${a.ordem}`, { t: a.tipo_comissao, p: a.taxa_personalizada }]));
     const { error: delErr } = await db.from('venda_itens').delete().in('venda_id', ids);
     if (delErr) throw delErr;
     const itens = chunk.flatMap(v => v.itens.map(it => {
