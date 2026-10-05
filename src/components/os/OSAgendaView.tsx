@@ -585,45 +585,58 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <Textarea rows={3} value={ckObservacao} onChange={e => setCkObservacao(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Fotos / arquivos (opcional)</Label>
-              {toRealizar?.ordem_id ? (
-                <>
-                  <Input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setCkArquivos(Array.from(e.target.files || []))} />
-                  {ckArquivos.length > 0 && <div className="text-xs text-muted-foreground">{ckArquivos.map(f => f.name).join(', ')}</div>}
-                  <div className="text-xs text-muted-foreground">Ficam guardados na aba Anexos da OS, categoria CheckList.</div>
-                </>
-              ) : (
-                <div className="text-xs text-muted-foreground">Visita sem OS vinculada: não é possível anexar arquivos.</div>
+              <Label>Checklist / fotos / arquivos <span className="text-destructive">*</span></Label>
+              <Input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => { const novos = Array.from(e.target.files || []); setCkArquivos(prev => [...prev, ...novos]); e.target.value = ''; }} />
+              {ckArquivos.length > 0 && (
+                <ul className="text-xs space-y-1">
+                  {ckArquivos.map((f, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2">
+                      <span className="truncate">{f.name}</span>
+                      <button type="button" className="text-destructive whitespace-nowrap" onClick={() => setCkArquivos(prev => prev.filter((_, j) => j !== i))}>remover</button>
+                    </li>
+                  ))}
+                </ul>
               )}
+              <div className="text-xs text-muted-foreground">Pode selecionar vários arquivos. {toRealizar?.ordem_id ? 'Também ficam na aba Anexos da OS (categoria CheckList).' : ''}</div>
             </div>
+            {(() => {
+              const faltas = [
+                ckCategorias.length === 0 && 'marcar ao menos um item que o cliente precisa',
+                !ckOportunidades.trim() && 'descrever as oportunidades para o Comercial',
+                ckArquivos.length === 0 && 'anexar o checklist',
+              ].filter(Boolean);
+              return faltas.length > 0 ? <div className="text-xs text-destructive">Para confirmar: {faltas.join('; ')}.</div> : null;
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
-            <Button disabled={ckSaving} onClick={async () => {
+            <Button disabled={ckSaving || ckCategorias.length === 0 || !ckOportunidades.trim() || ckArquivos.length === 0} onClick={async () => {
               if (!toRealizar) return;
+              if (ckCategorias.length === 0 || !ckOportunidades.trim() || ckArquivos.length === 0) return;
               setCkSaving(true);
               try {
-                const temChecklist = ckCategorias.length > 0 || ckOportunidades.trim() || ckObservacao.trim();
-                if (temChecklist) {
-                  const { error } = await supabase.from('os_visita_checklist').insert({
-                    visita_id: toRealizar.id,
-                    ordem_id: toRealizar.ordem_id,
-                    numero_os: toRealizar.numero_os,
-                    empresa_cliente: toRealizar.empresa_cliente,
-                    categorias: ckCategorias,
-                    oportunidades: ckOportunidades.trim() || null,
-                    observacao: ckObservacao.trim() || null,
-                    created_by: user?.id || null,
-                    created_by_nome: profile?.full_name || user?.email || null,
-                  });
-                  if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
+                const enviados: { file: File; path: string }[] = [];
+                for (const file of ckArquivos) {
+                  const ext = file.name.split('.').pop() || 'bin';
+                  const path = `checklist/${toRealizar.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+                  const { error: upErr } = await supabase.storage.from('os-anexos').upload(path, file, { contentType: file.type || undefined });
+                  if (upErr) { toast({ title: 'Erro ao enviar arquivo', description: `${file.name}: ${upErr.message}`, variant: 'destructive' }); return; }
+                  enviados.push({ file, path });
                 }
-                if (toRealizar.ordem_id && ckArquivos.length > 0) {
-                  for (const file of ckArquivos) {
-                    const ext = file.name.split('.').pop() || 'bin';
-                    const path = `${toRealizar.ordem_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-                    const { error: upErr } = await supabase.storage.from('os-anexos').upload(path, file, { contentType: file.type || undefined });
-                    if (upErr) { toast({ title: 'Erro ao enviar arquivo', description: `${file.name}: ${upErr.message}`, variant: 'destructive' }); continue; }
+                const { error } = await supabase.from('os_visita_checklist').insert({
+                  visita_id: toRealizar.id,
+                  ordem_id: toRealizar.ordem_id,
+                  numero_os: toRealizar.numero_os,
+                  empresa_cliente: toRealizar.empresa_cliente,
+                  categorias: ckCategorias,
+                  oportunidades: ckOportunidades.trim(),
+                  observacao: ckObservacao.trim() || null,
+                  created_by: user?.id || null,
+                  created_by_nome: profile?.full_name || user?.email || null,
+                });
+                if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
+                if (toRealizar.ordem_id) {
+                  for (const { file, path } of enviados) {
                     await (supabase as any).from('os_anexos').insert({
                       ordem_id: toRealizar.ordem_id, categoria: 'checklist', nome: file.name,
                       descricao: `Checklist pós-visita ${format(new Date(toRealizar.data_visita + 'T00:00:00'), 'dd/MM/yyyy')}`,
