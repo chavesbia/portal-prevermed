@@ -6,18 +6,25 @@ export function useASODashboardData() {
   return useQuery({
     queryKey: ["aso-dashboard"],
     queryFn: async () => {
-      // Fetch all atendimentos
-      const { data: atendimentos, error } = await supabase
-        .from("aso_atendimentos")
-        .select("*")
-        .order("data_atendimento", { ascending: false })
-        .limit(1000);
-      if (error) throw error;
-
-      // Fetch feriados
-      const { data: feriados } = await supabase
-        .from("feriados")
-        .select("data");
+      // Busca só as colunas usadas, em páginas (sem teto de 1.000), e feriados em paralelo
+      const fetchAtendimentos = async () => {
+        const all: any[] = [];
+        for (let from = 0; ; from += 1000) {
+          const { data, error } = await supabase
+            .from("aso_atendimentos")
+            .select("status, agenda, tipo_prontuario, base_socnet, data_atendimento, setor_responsavel, empresa")
+            .order("data_atendimento", { ascending: false })
+            .range(from, from + 999);
+          if (error) throw error;
+          all.push(...(data || []));
+          if (!data || data.length < 1000) break;
+        }
+        return all;
+      };
+      const [atendimentos, { data: feriados }] = await Promise.all([
+        fetchAtendimentos(),
+        supabase.from("feriados").select("data"),
+      ]);
       const feriadoList = (feriados || []).map((f) => f.data);
 
       const rows = atendimentos || [];

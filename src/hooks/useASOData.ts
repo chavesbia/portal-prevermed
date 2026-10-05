@@ -58,37 +58,43 @@ export function useASOLotes() {
   });
 }
 
+const STATUS_LIST = [
+  "importado", "em_triagem", "aguardando_exames", "pronto_assinatura_medica",
+  "em_escaneamento", "liberado", "liberado_faturamento", "finalizado",
+] as const;
+
+const hasOsasco = "agenda.ilike.%osasco%,unidade.ilike.%osasco%,id_interno.ilike.%osasco%";
+const hasLapa = "agenda.ilike.%lapa%,unidade.ilike.%lapa%,id_interno.ilike.%lapa%";
+
+/**
+ * Contadores dos cards: o banco devolve só os números (sem baixar linhas),
+ * o que também evita o teto de 1.000 registros por consulta.
+ */
 export function useASOStats() {
   return useQuery({
     queryKey: ["aso-stats"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("aso_atendimentos")
-        .select("status, agenda, unidade, id_interno");
-      if (error) throw error;
-
-      const stats = {
-        total: data?.length ?? 0,
-        importado: 0,
-        em_triagem: 0,
-        aguardando_exames: 0,
-        pronto_assinatura_medica: 0,
-        em_escaneamento: 0,
-        liberado: 0,
-        liberado_faturamento: 0,
-        finalizado: 0,
-        lapa: 0,
-        osasco: 0,
+      const count = async (build: (q: any) => any) => {
+        const { count, error } = await build(
+          supabase.from("aso_atendimentos").select("id", { count: "exact", head: true })
+        );
+        if (error) throw error;
+        return count ?? 0;
       };
-
-      for (const row of data || []) {
-        const s = row.status as keyof typeof stats;
-        if (s in stats) (stats as any)[s]++;
-        const hay = `${row.agenda ?? ""} ${row.unidade ?? ""} ${row.id_interno ?? ""}`.toLowerCase();
-        if (hay.includes("osasco")) stats.osasco++;
-        else if (hay.includes("lapa")) stats.lapa++;
-      }
-      return stats;
+      const [total, osasco, lapaAll, lapaOsasco, ...porStatus] = await Promise.all([
+        count((q) => q),
+        count((q) => q.or(hasOsasco)),
+        count((q) => q.or(hasLapa)),
+        count((q) => q.or(hasLapa).or(hasOsasco)),
+        ...STATUS_LIST.map((st) => count((q) => q.eq("status", st))),
+      ]);
+      const stats: Record<string, number> = { total, osasco, lapa: lapaAll - lapaOsasco };
+      STATUS_LIST.forEach((st, i) => (stats[st] = porStatus[i]));
+      return stats as {
+        total: number; importado: number; em_triagem: number; aguardando_exames: number;
+        pronto_assinatura_medica: number; em_escaneamento: number; liberado: number;
+        liberado_faturamento: number; finalizado: number; lapa: number; osasco: number;
+      };
     },
   });
 }
