@@ -2,7 +2,8 @@ import { Fragment, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
-import { Download, Split, CheckCircle2, ChevronDown, ChevronRight, Lock } from 'lucide-react';
+import { Download, Split, CheckCircle2, ChevronDown, ChevronRight, Lock, FileText, FileSpreadsheet } from 'lucide-react';
+import { gerarAutorizacaoPDF, gerarAutorizacaoExcel } from '@/lib/vendas/autorizacao';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,8 @@ const db = supabase as any;
 const fmt = (d: string | null) => (d ? format(parseISO(d), 'dd/MM/yyyy') : '—');
 
 export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda[]; canEdit: boolean; canApprove: boolean }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const [custom, setCustom] = useState<Record<string, string>>({});
   const invalidate = useInvalidateVendas();
   const [params, setParams] = useSearchParams();
   const [dividir, setDividir] = useState<Venda | null>(null);
@@ -80,19 +82,19 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
   };
 
   const qc = useQueryClient();
-  const setTipoItem = async (v: Venda, it: VendaItem, tipo: string) => {
+  const setTipoItem = async (v: Venda, it: VendaItem, tipo: string, taxa: number | null = null) => {
     // Atualização imediata na tela; grava no banco em segundo plano
     const patch = (t: string) => qc.setQueryData(['venda-itens', 'todos'], (old: Map<string, VendaItem[]> | undefined) => {
       if (!old) return old;
       const m = new Map(old);
-      m.set(it.venda_id, (m.get(it.venda_id) || []).map(x => x.id === it.id ? { ...x, tipo_comissao: t } : x));
+      m.set(it.venda_id, (m.get(it.venda_id) || []).map(x => x.id === it.id ? { ...x, tipo_comissao: t, taxa_personalizada: t === tipo ? taxa : it.taxa_personalizada } : x));
       return m;
     });
     const anterior = it.tipo_comissao;
     patch(tipo);
-    const { error } = await db.from('venda_itens').update({ tipo_comissao: tipo }).eq('id', it.id);
+    const { error } = await db.from('venda_itens').update({ tipo_comissao: tipo, taxa_personalizada: taxa }).eq('id', it.id);
     if (error) { patch(anterior); toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
-    auditVendas(user?.id, 'tipo_comissao_servico', v.id, { numero_venda: v.numero_venda, servico: it.nome, tipo });
+    auditVendas(user?.id, 'tipo_comissao_servico', v.id, { numero_venda: v.numero_venda, servico: it.nome, tipo, taxa_personalizada: taxa });
   };
 
   const validarTodas = async () => {
@@ -116,7 +118,7 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
       const base = abertasFechamento.reduce((s, l) => s + l.c.base, 0);
       const com = abertasFechamento.reduce((s, l) => s + l.c.comissao, 0);
       const { data: f, error } = await db.from('vendas_fechamentos').insert({
-        vendedor: vend, periodo_ini: de, periodo_fim: ate, total_base: base, total_comissao: com, qtd_vendas: abertasFechamento.length, created_by: user?.id,
+        vendedor: vend, periodo_ini: de, periodo_fim: ate, total_base: base, total_comissao: com, qtd_vendas: abertasFechamento.length, created_by: user?.id, autorizado_por_nome: profile?.full_name || user?.email || null,
       }).select().single();
       if (error) throw error;
       const { error: e2 } = await db.from('vendas_fechamento_itens').insert(abertasFechamento.map(l => ({
@@ -127,9 +129,15 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
       toast({ title: 'Comissão fechada', description: `${vend}: ${brl(com)}` });
       setConfirmar(false);
       invalidate();
+      baixar(f.id, 'pdf');
     } catch (e: any) {
       toast({ title: 'Erro no fechamento', description: e.message, variant: 'destructive' });
     } finally { setSalvando(false); }
+  };
+
+  const baixar = async (id: string, tipo: 'pdf' | 'xlsx') => {
+    try { await (tipo === 'pdf' ? gerarAutorizacaoPDF(id) : gerarAutorizacaoExcel(id)); }
+    catch (e: any) { toast({ title: 'Erro ao gerar documento', description: e.message, variant: 'destructive' }); }
   };
 
   const exportar = () => {
@@ -236,7 +244,9 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
                     <td className="px-3 py-2">{c.vendedor}{c.percentual !== 100 && <span className="text-xs text-muted-foreground"> ({c.percentual}%)</span>}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{brl(v.valor)}</td>
                     <td className="px-3 py-2">
-                      {itens.some(i => i.tipo_comissao === "pendente") ? <TipoTag tipo="pendente" /> : nNovo === 0 ? <TipoTag tipo="renovacao" /> : nNovo === itens.length ? <TipoTag tipo="novo" />
+                      {itens.some(i => i.tipo_comissao === "pendente") ? <TipoTag tipo="pendente" />
+                        : new Set(itens.map(i => i.tipo_comissao + (i.taxa_personalizada ?? ''))).size === 1 && itens.length ? <TipoTag tipo={itens[0].tipo_comissao} taxa={itens[0].taxa_personalizada} />
+                        : itens.length === 0 ? <TipoTag tipo="renovacao" />
                         : <Badge className="whitespace-nowrap bg-success/20 text-foreground hover:bg-success/20">Misto {nNovo}/{itens.length} novo</Badge>}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap font-medium">{brl(c.comissao)}</td>
@@ -262,14 +272,33 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
                               <td className="px-2 py-1">{it.nome}</td>
                               <td className="px-2 py-1 text-right whitespace-nowrap">{brl(Number(it.valor_total || 0))}</td>
                               <td className="px-2 py-1">
+                                <div className="flex flex-wrap items-center gap-2">
                                 <div className="inline-flex rounded-md border overflow-hidden">
-                                  {(['renovacao', 'novo'] as const).map(t => (
+                                  {(['sem_comissao', 'renovacao', 'novo'] as const).map(t => (
                                     <button key={t} disabled={!canEdit || bloqueado}
                                       onClick={() => it.tipo_comissao !== t && setTipoItem(v, it, t)}
-                                      className={`px-2 py-1 text-xs whitespace-nowrap disabled:cursor-not-allowed ${it.tipo_comissao === t ? (t === 'novo' ? 'bg-success text-success-foreground' : 'bg-primary text-primary-foreground') : 'bg-background text-muted-foreground'}`}>
-                                      {t === 'novo' ? 'Novo 3%' : 'Renovação 0,5%'}
+                                      className={`px-2 py-1 text-xs whitespace-nowrap disabled:cursor-not-allowed ${it.tipo_comissao === t ? (t === 'novo' ? 'bg-success text-success-foreground' : t === 'sem_comissao' ? 'bg-muted-foreground text-background' : 'bg-primary text-primary-foreground') : 'bg-background text-muted-foreground'}`}>
+                                      {t === 'novo' ? 'Novo 3%' : t === 'renovacao' ? 'Renovação 0,5%' : 'Sem comissão 0%'}
                                     </button>
                                   ))}
+                                </div>
+                                <div className={`inline-flex items-center gap-1 rounded-md border px-1 ${it.tipo_comissao === 'personalizado' ? 'border-primary bg-accent' : ''}`}>
+                                  <span className="text-xs whitespace-nowrap text-muted-foreground">Outro</span>
+                                  <Input type="number" min={0} max={100} step="0.01" disabled={!canEdit || bloqueado}
+                                    className="h-7 w-20 text-xs"
+                                    value={custom[it.id] ?? (it.tipo_comissao === 'personalizado' ? String(it.taxa_personalizada ?? '') : '')}
+                                    onChange={e => setCustom({ ...custom, [it.id]: e.target.value })}
+                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                    onBlur={() => {
+                                      const raw = custom[it.id]; if (raw === undefined) return;
+                                      const n = Number(raw.replace(',', '.'));
+                                      setCustom(c => { const x = { ...c }; delete x[it.id]; return x; });
+                                      if (raw === '' || isNaN(n) || n < 0 || n > 100) { if (raw !== '') toast({ title: 'Percentual inválido', description: 'Use um valor entre 0 e 100.', variant: 'destructive' }); return; }
+                                      if (it.tipo_comissao === 'personalizado' && Number(it.taxa_personalizada) === n) return;
+                                      setTipoItem(v, it, 'personalizado', n);
+                                    }} />
+                                  <span className="text-xs">%</span>
+                                </div>
                                 </div>
                               </td>
                             </tr>
@@ -292,11 +321,15 @@ export function VendasComissoes({ vendas, canEdit, canApprove }: { vendas: Venda
           <CardHeader className="pb-3"><CardTitle className="text-base">Fechamentos realizados</CardTitle></CardHeader>
           <CardContent>
             <table className="w-full text-sm">
-              <thead><tr className="text-left text-muted-foreground"><th className="py-1">Vendedor</th><th>Período</th><th>Vendas</th><th>Base</th><th>Comissão</th><th>Fechado em</th></tr></thead>
+              <thead><tr className="text-left text-muted-foreground"><th className="py-1">Vendedor</th><th>Período</th><th>Vendas</th><th>Base</th><th>Comissão</th><th>Autorizado por</th><th>Fechado em</th><th>Autorização</th></tr></thead>
               <tbody>{fech!.lista.map(f => (
                 <tr key={f.id} className="border-t">
                   <td className="py-1">{f.vendedor}</td><td>{fmt(f.periodo_ini)} a {fmt(f.periodo_fim)}</td><td>{f.qtd_vendas}</td>
-                  <td>{brl(Number(f.total_base))}</td><td className="font-medium">{brl(Number(f.total_comissao))}</td><td>{format(new Date(f.created_at), 'dd/MM/yyyy HH:mm')}</td>
+                  <td>{brl(Number(f.total_base))}</td><td className="font-medium">{brl(Number(f.total_comissao))}</td><td>{f.autorizado_por_nome || '—'}</td><td>{format(new Date(f.created_at), 'dd/MM/yyyy HH:mm')}</td>
+                  <td className="whitespace-nowrap">
+                    <Button variant="ghost" size="sm" onClick={() => baixar(f.id, 'pdf')}><FileText className="h-4 w-4 mr-1" />PDF</Button>
+                    <Button variant="ghost" size="sm" onClick={() => baixar(f.id, 'xlsx')}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+                  </td>
                 </tr>))}</tbody>
             </table>
           </CardContent>
