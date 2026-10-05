@@ -97,7 +97,9 @@ export function VendasList({ vendas, situacao, onSituacao, page, onPage }: {
   );
 }
 
-export function TipoTag({ tipo }: { tipo: string }) {
+export function TipoTag({ tipo, taxa }: { tipo: string; taxa?: number | null }) {
+  if (tipo === 'sem_comissao') return <Badge variant="outline" className="whitespace-nowrap text-muted-foreground">Sem comissão 0%</Badge>;
+  if (tipo === 'personalizado') return <Badge className="whitespace-nowrap bg-accent text-accent-foreground hover:bg-accent">Personalizado {Number(taxa || 0).toLocaleString('pt-BR')}%</Badge>;
   return tipo === 'novo'
     ? <Badge className="whitespace-nowrap bg-success text-success-foreground hover:bg-success">Novo 3%</Badge>
     : tipo === 'pendente'
@@ -124,7 +126,7 @@ function VendaDetalheInline({ venda, itens }: { venda: Venda; itens: VendaItem[]
               <td className="px-2 py-1 text-right">{Number(it.quantidade || 0).toLocaleString('pt-BR')}</td>
               <td className="px-2 py-1 text-right whitespace-nowrap">{brl(Number(it.valor_unitario || 0))}</td>
               <td className="px-2 py-1 text-right whitespace-nowrap">{brl(Number(it.valor_total || 0))}</td>
-              <td className="px-2 py-1"><TipoTag tipo={it.tipo_comissao} /></td>
+              <td className="px-2 py-1"><TipoTag tipo={it.tipo_comissao} taxa={it.taxa_personalizada} /></td>
             </tr>
           ))}
           {itens.length === 0 && <tr><td colSpan={5} className="p-2 text-muted-foreground">Sem serviços.</td></tr>}

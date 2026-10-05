@@ -68,7 +68,7 @@ export function useVendaItens(vendaId: string | null) {
   });
 }
 
-export interface VendaItem { id: string; venda_id: string; ordem: number; nome: string | null; quantidade: number | null; valor_unitario: number | null; valor_total: number | null; tipo_comissao: string }
+export interface VendaItem { id: string; venda_id: string; ordem: number; nome: string | null; quantidade: number | null; valor_unitario: number | null; valor_total: number | null; tipo_comissao: string; taxa_personalizada?: number | null }
 
 async function fetchAll(table: string, cols: string) {
   const all: any[] = [];
@@ -91,7 +91,7 @@ export function useTodosItens() {
       const rows: VendaItem[] = [];
       for (let from = 0; ; from += 1000) {
         const { data, error } = await db.from('venda_itens')
-          .select('id,venda_id,ordem,nome,quantidade,valor_unitario,valor_total,tipo_comissao,vendas!inner(vendedor)')
+          .select('id,venda_id,ordem,nome,quantidade,valor_unitario,valor_total,tipo_comissao,taxa_personalizada,vendas!inner(vendedor)')
           .not('vendas.vendedor', 'is', null)
           .neq('vendas.vendedor', 'Faturamento')
           .order('id').range(from, from + 999);
@@ -176,13 +176,13 @@ export async function importarVendas(
     if (error) throw error;
     const idPorChave = new Map<string, string>((saved || []).map((s: any) => [`${s.emitente_cnpj}|${s.numero_venda}`, s.id]));
     const ids = Array.from(idPorChave.values());
-    const { data: antigos } = await db.from('venda_itens').select('venda_id,ordem,tipo_comissao').in('venda_id', ids);
-    const tipoAntigo = new Map<string, string>((antigos || []).map((a: any) => [`${a.venda_id}|${a.ordem}`, a.tipo_comissao]));
+    const { data: antigos } = await db.from('venda_itens').select('venda_id,ordem,tipo_comissao,taxa_personalizada').in('venda_id', ids);
+    const tipoAntigo = new Map<string, { t: string; p: number | null }>((antigos || []).map((a: any) => [`${a.venda_id}|${a.ordem}`, { t: a.tipo_comissao, p: a.taxa_personalizada }]));
     const { error: delErr } = await db.from('venda_itens').delete().in('venda_id', ids);
     if (delErr) throw delErr;
     const itens = chunk.flatMap(v => v.itens.map(it => {
       const vid = idPorChave.get(`${v.emitente_cnpj}|${v.numero_venda}`);
-      return { ...it, venda_id: vid, tipo_comissao: tipoAntigo.get(`${vid}|${it.ordem}`) || 'pendente' };
+      return { ...it, venda_id: vid, tipo_comissao: tipoAntigo.get(`${vid}|${it.ordem}`)?.t || 'pendente', taxa_personalizada: tipoAntigo.get(`${vid}|${it.ordem}`)?.p ?? null };
     }));
     for (let j = 0; j < itens.length; j += 1000) {
       const { error: itErr } = await db.from('venda_itens').insert(itens.slice(j, j + 1000));

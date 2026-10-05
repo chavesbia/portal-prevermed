@@ -113,6 +113,13 @@
       "when": 1790947854790,
       "tag": "0015_perf_indexes_guias_vendas",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791211565862,
+      "tag": "0016_vendas_comissao_personalizada",
+      "breakpoints": true
     }
   ]
 }

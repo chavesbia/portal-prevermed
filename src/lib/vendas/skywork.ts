@@ -177,7 +177,8 @@ export function isComissionavel(v: { situacao: string | null; vendedor: string |
 }
 
 export type Divisao = { vendedor: string; percentual: number }[];
-export type ItemComissao = { valor_total: number | null; tipo_comissao: string };
+/** taxa_personalizada é guardada em percentual (ex.: 1.5 = 1,5%). */
+export type ItemComissao = { valor_total: number | null; tipo_comissao: string; taxa_personalizada?: number | null };
 
 /** Taxa efetiva da venda: ponderada pelos serviços (cada serviço pode ser Novo ou Renovação). */
 export type RegraComissao = { vigencia_inicio: string; taxa_novo: number; taxa_renovacao: number };
@@ -193,14 +194,26 @@ export function taxasNaData(data?: string | null) {
   return r ? { novo: Number(r.taxa_novo), renovacao: Number(r.taxa_renovacao) } : { novo: TAXA_NOVO, renovacao: TAXA_RENOVACAO };
 }
 
+/** Taxa (fração) de um serviço. 'pendente' e 'sem_comissao' = 0. */
+export function taxaItem(it: ItemComissao, data?: string | null) {
+  const { novo, renovacao } = taxasNaData(data);
+  if (it.tipo_comissao === 'novo') return novo;
+  if (it.tipo_comissao === 'renovacao') return renovacao;
+  if (it.tipo_comissao === 'personalizado') return Number(it.taxa_personalizada || 0) / 100;
+  return 0;
+}
+
 export function taxaVenda(v: { tipo_comissao: string; data_venda?: string | null }, itens?: ItemComissao[]) {
   const { novo: TN, renovacao: TR } = taxasNaData(v.data_venda);
   const its = (itens || []).filter(i => Number(i.valor_total) > 0);
   const tot = its.reduce((s, i) => s + Number(i.valor_total), 0);
   if (!tot) return v.tipo_comissao === 'novo' ? TN : TR;
-  const soma = (t: string) => its.filter(i => i.tipo_comissao === t).reduce((s, i) => s + Number(i.valor_total), 0);
-  // Serviços 'pendente' (sem escolha) não geram comissão até alguém selecionar
-  return (soma('novo') / tot) * TN + (soma('renovacao') / tot) * TR;
+  return its.reduce((s, i) => s + (Number(i.valor_total) / tot) * taxaItem(i, v.data_venda), 0);
+}
+
+/** Soma dos serviços marcados como sem comissão (0%). */
+export function valorSemComissao(itens?: ItemComissao[]) {
+  return (itens || []).filter(i => i.tipo_comissao === 'sem_comissao').reduce((s, i) => s + Number(i.valor_total || 0), 0);
 }
 
 /** Distribui a comissão da venda entre vendedores (padrão: 100% primeiro vendedor). */
