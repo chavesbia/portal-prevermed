@@ -53,9 +53,35 @@ export function ChecklistResumo({ c }: { c: OSChecklist }) {
       )}
       {c.oportunidades && <div><span className="text-muted-foreground">Oportunidades: </span>{c.oportunidades}</div>}
       {c.observacao && <div><span className="text-muted-foreground">Observado na visita: </span>{c.observacao}</div>}
+      <ChecklistAnexos visitaId={c.visita_id} />
       <div className="text-xs text-muted-foreground">
         {c.created_by_nome || '—'} · {format(parseISO(c.created_at), 'dd/MM/yyyy HH:mm')}
       </div>
+    </div>
+  );
+}
+
+function ChecklistAnexos({ visitaId }: { visitaId: string }) {
+  const { data = [] } = useQuery({
+    queryKey: ['checklist-anexos', visitaId],
+    queryFn: async () => {
+      const { data } = await supabase.storage.from('os-anexos').list(`checklist/${visitaId}`);
+      return data || [];
+    },
+  });
+  if (data.length === 0) return null;
+  const abrir = async (nome: string) => {
+    const { data: s } = await supabase.storage.from('os-anexos').createSignedUrl(`checklist/${visitaId}/${nome}`, 300);
+    if (s?.signedUrl) window.open(s.signedUrl, '_blank');
+  };
+  return (
+    <div className="flex flex-wrap gap-2 items-center">
+      <span className="text-muted-foreground">Anexos:</span>
+      {data.map((f, i) => (
+        <button key={f.name} type="button" onClick={() => abrir(f.name)} className="text-primary underline whitespace-nowrap text-xs">
+          Arquivo {i + 1}
+        </button>
+      ))}
     </div>
   );
 }
