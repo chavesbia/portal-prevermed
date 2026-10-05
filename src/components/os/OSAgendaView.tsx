@@ -172,7 +172,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
   const [ckOportunidades, setCkOportunidades] = useState('');
   const [ckObservacao, setCkObservacao] = useState('');
   const [ckSaving, setCkSaving] = useState(false);
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmMaster } = useAuth();
   const qc = useQueryClient();
   const { data: checklists = [] } = useOSChecklists();
   const [ckArquivos, setCkArquivos] = useState<File[]>([]);
@@ -286,6 +286,12 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                             <Button variant="outline" size="sm" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
                             <Button variant="outline" size="sm" className="text-emerald-600 border-emerald-600" onClick={() => abrirRealizar(v)}>Realizada</Button>
                             <Button variant="outline" size="sm" className="text-destructive" onClick={() => { setToCancel(v); setCancelReason(''); }}>Cancelar</Button>
+                          </>
+                        )}
+                        {isAdmMaster && v.status !== 'agendada' && (
+                          <>
+                            <Button variant="outline" size="sm" title="Editar" onClick={() => openEdit(v)}><Pencil className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="sm" title="Voltar para Agendada" onClick={() => updateVisitaStatus(v.id, 'agendada')}>Reabrir</Button>
                           </>
                         )}
                         {canEdit && (
