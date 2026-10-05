@@ -17,15 +17,21 @@ const defaultFilters: OSFilters = {
 };
 
 const ITEMS_PER_PAGE = 25;
+const CACHE_TTL = 60_000;
+
+// Cache compartilhado entre visitas à tela: ao voltar para a Gestão de OS
+// os dados aparecem na hora e só são rebuscados se tiverem mais de 1 minuto.
+let allCache: { data: OrdemServico[]; at: number } | null = null;
+const pageCache = new Map<string, { data: OrdemServico[]; count: number; at: number }>();
 
 export function useOrdens() {
   const { user, profile } = useAuth();
   const { profissionais } = useProfissionais();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [allOrdens, setAllOrdens] = useState<OrdemServico[]>([]);
+  const [allOrdens, setAllOrdens] = useState<OrdemServico[]>(allCache?.data ?? []);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isLoadingAll, setIsLoadingAll] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(!allCache);
+  const [isLoadingAll, setIsLoadingAll] = useState(!allCache);
   const [filters, setFilters] = useState<OSFilters>(defaultFilters);
   const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,27 +45,28 @@ export function useOrdens() {
     return () => clearTimeout(handler);
   }, [filters.search]);
 
-  const fetchAllOrdens = useCallback(async () => {
-    setIsLoadingAll(true);
+  const fetchAllOrdens = useCallback(async (force = true) => {
+    if (!force && allCache && Date.now() - allCache.at < CACHE_TTL) {
+      setAllOrdens(allCache.data);
+      setIsLoadingAll(false);
+      return;
+    }
+    if (!allCache) setIsLoadingAll(true);
     try {
-      console.log('fetchAllOrdens: Inicianco busca de todas as OS...');
-      const { data, error } = await supabase
-        .from('ordens_servico')
-        .select(`
-          *,
-          servicos:servicos_os (
-            *
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('fetchAllOrdens error:', error);
-        throw error;
+      const PAGE = 1000;
+      const result: OrdemServico[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from('ordens_servico')
+          .select('*, servicos:servicos_os (*)')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        result.push(...((data || []) as OrdemServico[]));
+        if (!data || data.length < PAGE) break;
       }
-      
-      console.log('fetchAllOrdens result:', data?.length || 0, 'items');
-      setAllOrdens((data || []) as OrdemServico[]);
+      allCache = { data: result, at: Date.now() };
+      setAllOrdens(result);
     } catch (error: any) {
       console.error('Erro ao carregar todas OS:', error);
       toast({
@@ -72,7 +79,15 @@ export function useOrdens() {
     }
   }, []);
 
-  const fetchOrdens = useCallback(async () => {
+  const fetchOrdens = useCallback(async (force = true) => {
+    const cacheKey = JSON.stringify([debouncedSearch, filters.status_os, filters.status_servico, filters.responsavel, filters.periodo_inicio, filters.periodo_fim, currentPage]);
+    const cached = pageCache.get(cacheKey);
+    if (cached) {
+      setOrdens(cached.data);
+      setTotalCount(cached.count);
+      setIsInitialLoading(false);
+      if (!force && Date.now() - cached.at < CACHE_TTL) { setIsLoading(false); return; }
+    }
     setIsLoading(true);
     try {
       let query = supabase
@@ -132,24 +147,28 @@ export function useOrdens() {
 
       setTotalCount(count || 0);
 
-      // Fetch servicos for the current page ordens
+      // Busca os serviços da página atual
       const ordemIds = (data || []).map(o => o.id);
-      let servicos: ServicoOS[] = [];
+      const porOrdem = new Map<string, ServicoOS[]>();
       if (ordemIds.length > 0) {
         const { data: svcData, error: svcError } = await supabase
           .from('servicos_os')
           .select('*')
           .in('ordem_id', ordemIds);
-        
         if (svcError) throw svcError;
-        servicos = (svcData || []) as ServicoOS[];
+        ((svcData || []) as ServicoOS[]).forEach(s => {
+          const arr = porOrdem.get(s.ordem_id) || [];
+          arr.push(s);
+          porOrdem.set(s.ordem_id, arr);
+        });
       }
 
       const ordensWithServicos = (data || []).map(o => ({
         ...o,
-        servicos: servicos.filter(s => s.ordem_id === o.id),
+        servicos: porOrdem.get(o.id) || [],
       })) as OrdemServico[];
-      
+
+      pageCache.set(cacheKey, { data: ordensWithServicos, count: count || 0, at: Date.now() });
       setOrdens(ordensWithServicos);
     } catch (error: any) {
       console.error('Erro ao carregar OS:', error);
@@ -161,12 +180,18 @@ export function useOrdens() {
   }, [debouncedSearch, filters.status_os, filters.status_servico, filters.responsavel, filters.periodo_inicio, filters.periodo_fim, currentPage, profissionais]);
 
   useEffect(() => {
-    fetchOrdens();
+    fetchOrdens(false);
   }, [fetchOrdens]);
 
   useEffect(() => {
-    fetchAllOrdens();
+    fetchAllOrdens(false);
   }, [fetchAllOrdens]);
+
+  // Após alterações: limpa o cache e recarrega lista e visão geral em paralelo
+  const refreshAll = useCallback(async () => {
+    pageCache.clear();
+    await Promise.all([fetchOrdens(true), fetchAllOrdens(true)]);
+  }, [fetchOrdens, fetchAllOrdens]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -247,8 +272,7 @@ export function useOrdens() {
         status_novo: data.status_os,
       });
 
-      await fetchOrdens();
-      await fetchAllOrdens();
+      await refreshAll();
       toast({ title: 'Sucesso', description: 'OS criada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -278,8 +302,7 @@ export function useOrdens() {
       });
 
 
-      await fetchOrdens();
-      await fetchAllOrdens();
+      await refreshAll();
       return true;
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Erro ao atualizar status.', variant: 'destructive' });
@@ -351,8 +374,7 @@ export function useOrdens() {
         status_novo: oldStatus || null,
       });
 
-      await fetchOrdens();
-      await fetchAllOrdens();
+      await refreshAll();
       toast({ title: 'Sucesso', description: 'OS atualizada com sucesso!' });
       return true;
     } catch (error: any) {
@@ -369,8 +391,7 @@ export function useOrdens() {
         .delete()
         .eq('id', ordemId);
       if (error) throw error;
-      await fetchOrdens();
-      await fetchAllOrdens();
+      await refreshAll();
       toast({ title: 'Sucesso', description: 'OS excluída.' });
       return true;
     } catch (error: any) {
@@ -394,10 +415,11 @@ export function useOrdens() {
 
   const getResponsaveis = useCallback(() => {
     const set = new Set<string>();
+    const nomes = new Map(profissionais.map(p => [p.id, p.nome]));
     allOrdens.forEach(o => {
       (o.servicos || []).forEach(s => {
-        const p = profissionais.find(pr => pr.id === s.responsavel_id);
-        if (p?.nome) set.add(p.nome);
+        const nome = s.responsavel_id ? nomes.get(s.responsavel_id) : undefined;
+        if (nome) set.add(nome);
       });
     });
     return Array.from(set).sort();
@@ -420,6 +442,7 @@ export function useOrdens() {
     getResponsaveis,
     fetchOrdens,
     fetchAllOrdens,
+    refreshAll,
     currentPage,
     setCurrentPage,
     totalCount,
