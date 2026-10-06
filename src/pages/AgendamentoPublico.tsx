@@ -40,7 +40,6 @@ export default function AgendamentoPublico() {
   const [erro, setErro] = useState("");
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
-  const [outroExame, setOutroExame] = useState("");
   const [guia, setGuia] = useState<File | null>(null);
 
   useEffect(() => {
