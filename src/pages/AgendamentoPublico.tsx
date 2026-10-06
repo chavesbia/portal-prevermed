@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
@@ -100,10 +100,16 @@ export default function AgendamentoPublico() {
       setBuscandoPcmso(false);
     });
   }, [func]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [novoSetor, setNovoSetor] = useState("");
+  const [novoCargo, setNovoCargo] = useState("");
+  const pcmsoTipo = useMemo(
+    () => (pcmso && f.tipoExame ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
+    [pcmso, f.tipoExame],
+  );
   useEffect(() => {
     if (!pcmso || !f.tipoExame) return;
-    setExames(pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome));
-  }, [pcmso, f.tipoExame]);
+    setExames(pcmsoTipo);
+  }, [pcmsoTipo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
@@ -118,6 +124,8 @@ export default function AgendamentoPublico() {
     setCarregando(true); setErro("");
     const fu = func?.funcionario;
     const extra = [
+      f.tipoExame === "Mudança de Risco" && (novoSetor.trim() || novoCargo.trim())
+        ? `MUDANÇA DE RISCO — novo setor: ${novoSetor.trim().toUpperCase() || "não informado"}; novo cargo: ${novoCargo.trim().toUpperCase() || "não informado"}` : "",
       fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
       f.observacoes,
     ].filter(Boolean).join("\n");
@@ -218,19 +226,60 @@ export default function AgendamentoPublico() {
                     <Button key={t} type="button" variant={f.tipoExame === t ? "default" : "outline"} onClick={() => setF({ ...f, tipoExame: t })}>{t}</Button>
                   ))}
                 </div>
-                <div className="space-y-2">
-                  <Label>Exames (o Exame Clínico já está incluído)</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {[...EXAMES, ...exames.filter((e) => !EXAMES.includes(e))].map((e) => (
-                      <Button key={e} type="button" size="sm" className="whitespace-nowrap" variant={exames.includes(e) ? "default" : "outline"}
-                        onClick={() => setExames((p) => p.includes(e) ? p.filter((x) => x !== e) : [...p, e])}>{e}</Button>
-                    ))}
+                {f.tipoExame === "Admissional" && func?.encontrado && (
+                  <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                    <p><strong>Atenção:</strong> colaborador já possui cadastro ativo nesta empresa
+                      {func.funcionario?.cargo && <> como <strong>{func.funcionario.cargo}</strong></>}
+                      {func.funcionario?.matricula && <> (Matrícula: {func.funcionario.matricula})</>}.
+                      {" "}Verifique se o exame correto não seria <strong>Periódico</strong> ou <strong>Mudança de Risco</strong>.</p>
                   </div>
+                )}
+                {f.tipoExame === "Mudança de Risco" && (
+                  <div className="space-y-2 rounded-md border bg-muted/40 p-3">
+                    <p className="text-sm font-medium">Informe a nova função pretendida.</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div><Label>Novo setor</Label><Input value={novoSetor} onChange={(e) => setNovoSetor(e.target.value)} maxLength={80} /></div>
+                      <div><Label>Novo cargo</Label><Input value={novoCargo} onChange={(e) => setNovoCargo(e.target.value)} maxLength={80} /></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Os exames do cargo atual aparecem só como referência; a lotação no SOC só muda após o ASO Apto.</p>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>Exames (o Exame Clínico já está incluído)</Label>
+                    {pcmsoTipo.length > 0 && pcmsoTipo.some((e) => !exames.includes(e)) && (
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs whitespace-nowrap"
+                        onClick={() => setExames((p) => [...new Set([...p, ...pcmsoTipo])])}>
+                        <RotateCcw className="h-3 w-3 mr-1" /> Restaurar PCMSO
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[...pcmsoTipo, ...EXAMES.filter((e) => !pcmsoTipo.includes(e)), ...exames.filter((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e))].map((e) => {
+                      const on = exames.includes(e); const doPcmso = pcmsoTipo.includes(e);
+                      return (
+                        <button key={e} type="button"
+                          onClick={() => setExames((p) => p.includes(e) ? p.filter((x) => x !== e) : [...p, e])}
+                          className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : doPcmso ? "border-dashed border-primary/60 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                          {on && <Check className="h-3 w-3" />}
+                          {e}
+                          {doPcmso && <span className={`rounded px-1 text-[9px] font-semibold whitespace-nowrap ${on ? "bg-primary-foreground/20" : "bg-primary/10 text-primary"}`}>PCMSO</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {pcmsoTipo.some((e) => !exames.includes(e)) && (
+                    <p className="text-xs text-destructive">Há exame previsto no PCMSO desmarcado (borda tracejada).</p>
+                  )}
                   <div className="flex gap-2">
-                    <Input value={outroExame} onChange={(e) => setOutroExame(e.target.value)} placeholder="Outro exame" maxLength={80} />
-                    <Button type="button" variant="outline" disabled={outroExame.trim().length < 2}
+                    <Input value={outroExame} onChange={(e) => setOutroExame(e.target.value)} placeholder="Outro exame" maxLength={80} className="h-8" />
+                    <Button type="button" variant="outline" size="sm" disabled={outroExame.trim().length < 2}
                       onClick={() => { const v = outroExame.trim().toUpperCase(); if (!exames.includes(v)) setExames([...exames, v]); setOutroExame(""); }}>Adicionar</Button>
                   </div>
+                  {exames.some((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e)) && (
+                    <p className="text-xs text-muted-foreground">Exames digitados fora da lista passam por conferência na recepção.</p>
+                  )}
                   {buscandoPcmso && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Buscando exames do PCMSO…</p>}
                   <p className="text-xs text-muted-foreground">
                     {pcmso && pcmso.length > 0
