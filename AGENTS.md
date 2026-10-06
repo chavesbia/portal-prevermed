@@ -1,2 +1,3 @@
 - React Query global defaults (staleTime 60s, no refetch on window focus) live in src/App.tsx; live screens must rely on realtime/invalidateQueries — avoids request storms when users switch tabs.
 - Valores financeiros sensíveis são bloqueados na origem (REVOKE de coluna + RPC SECURITY DEFINER com checagem de permissão), nunca só escondidos na tela — o que chega ao navegador é visível no F12.
+- SOC Agenda: permissão de criar unidade/setor/cargo no pré-cadastro é decidida no servidor pelo subgrupo da empresa (soc-agenda-lookup), nunca só na tela — evita cadastros órfãos em empresas com laudos.
