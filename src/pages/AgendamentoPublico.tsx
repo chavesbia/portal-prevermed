@@ -9,6 +9,7 @@ import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw }
 import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
+import { isValidCPF, maskCPF } from "@/lib/contractual/cpf";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
@@ -67,7 +68,8 @@ export default function AgendamentoPublico() {
 
   const cpf = dig(f.colaboradorCpf);
   const cpfValido = isValidCPF(cpf);
-REPLACE_MID
+  useEffect(() => {
+    setFunc(null);
     if (!cpfValido || !socCode) return;
     setBuscandoFunc(true);
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(({ data }) => {
