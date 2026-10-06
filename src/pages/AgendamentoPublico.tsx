@@ -180,7 +180,7 @@ export default function AgendamentoPublico() {
 
   const valido = [
     !!socCode && cnpj.length === 14,
-    !!func && (func.encontrado || func.indisponivel) && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
+    !!func && (func.encontrado || func.indisponivel) && cpfValido && f.colaboradorNome.trim().length >= 3,
     !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
