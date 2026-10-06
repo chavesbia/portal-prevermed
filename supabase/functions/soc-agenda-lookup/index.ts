@@ -41,12 +41,16 @@ Deno.serve(async (req) => {
     const chave = Deno.env.get('SOC_CHAVE_EXPORTA_FUNCIONARIO');
     if (!empresa || !codigo || !chave) return json({ encontrado: false, indisponivel: true });
 
-    const parametro = JSON.stringify({ empresa, codigo, chave, tipoSaida: 'json', empresaTrabalho: b.socCode, cpf: b.cpf });
+    const parametro = JSON.stringify({
+      empresa, codigo, chave, tipoSaida: 'json', empresaTrabalho: b.socCode, cpf: b.cpf,
+      ativo: 'Sim', inativo: 'Nao', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim',
+    });
     const resp = await fetch(`${SOC_URL}?parametro=${encodeURIComponent(parametro)}`, { method: 'POST' });
     const text = new TextDecoder('iso-8859-1').decode(await resp.arrayBuffer());
-    if (!resp.ok) return json({ encontrado: false, indisponivel: true });
+    if (!resp.ok) { console.error('SOC HTTP', resp.status, text.slice(0, 300)); return json({ encontrado: false, indisponivel: true }); }
     let rows: Record<string, unknown>[] = [];
-    try { const p = JSON.parse(text); rows = Array.isArray(p) ? p : (p?.data ?? []); } catch { return json({ encontrado: false, indisponivel: true }); }
+    try { const p = JSON.parse(text); rows = Array.isArray(p) ? p : (p?.data ?? []); } catch { console.error('SOC resposta', text.slice(0, 300)); return json({ encontrado: false, indisponivel: true }); }
+    if (rows[0]) console.log('SOC campos', Object.keys(rows[0]).join(','), 'linhas', rows.length);
 
     const doCpf = rows.filter((r) => (pick(r, ['CPF', 'CPFFUNCIONARIO']) ?? '').replace(/\D/g, '').padStart(11, '0') === b.cpf);
     const ativo = doCpf.find((r) => !/inativ|demit/i.test(pick(r, ['SITUACAO', 'SITUACAOFUNCIONARIO']) ?? '')) ?? doCpf[0];
