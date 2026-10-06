@@ -13,7 +13,7 @@ import { EXAMES_SOC } from "@/data/examesSoc";
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null };
 type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any };
-const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco"] as const;
+const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
 const toIso = (b: string) => b.split("/").reverse().join("-");
@@ -110,7 +110,7 @@ export default function AgendamentoPublico() {
   const mudanca = f.tipoExame === "Mudança de Risco";
   // Na Mudança de Risco os exames do cargo atual não valem: a grade é a da nova função
   const pcmsoTipo = useMemo(
-    () => (pcmso && f.tipoExame && !mudanca ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
+    () => (pcmso && f.tipoExame && !mudanca ? pcmso.filter((e) => e.tipos[f.tipoExame]).map((e) => e.nome) : []),
     [pcmso, f.tipoExame, mudanca],
   );
   useEffect(() => {
@@ -142,7 +142,7 @@ export default function AgendamentoPublico() {
     const fu = func?.funcionario;
     const extra = [
       mudanca
-        ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME GRADE DO PCMSO DA NOVA FUNÇÃO" : ""}` : "",
+        ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME PCMSO" : ""}` : "",
       fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
       f.observacoes,
     ].filter(Boolean).join("\n");
@@ -156,7 +156,7 @@ export default function AgendamentoPublico() {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
-        exames: usaGradePcmso ? [CLINICO, "CONFORME PCMSO DA NOVA FUNÇÃO"] : [CLINICO, ...exames], guia: guiaPayload,
+        exames: [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
       },
     });
     setCarregando(false);
@@ -249,7 +249,7 @@ export default function AgendamentoPublico() {
                     <p><strong>Atenção:</strong> colaborador já possui cadastro ativo nesta empresa
                       {func.funcionario?.cargo && <> como <strong>{func.funcionario.cargo}</strong></>}
                       {func.funcionario?.matricula && <> (Matrícula: {func.funcionario.matricula})</>}.
-                      {" "}Verifique se o Tipo de Exames está correto antes de prosseguir.</p>
+                      {" "}Verifique se o <strong>tipo de exame</strong> está correto antes de prosseguir.</p>
                   </div>
                 )}
                 {mudanca && (
@@ -264,8 +264,8 @@ export default function AgendamentoPublico() {
                       <span>Realizar exames conforme grade do PCMSO da nova função</span>
                     </label>
                     <p className="text-xs text-muted-foreground">
-                      A lotação do colaborador será atualizada no SOC para o novo setor/cargo antes do atendimento, para aplicar os riscos e exames corretos.
-                      {conformePcmso && " Nossa equipe aplicará os exames previstos no PCMSO da nova função."}
+                      A lotação do colaborador será atualizada no SOC considerando o novo setor e/ou cargo antes do atendimento, para aplicar os riscos e exames corretos.
+                      {conformePcmso && " Nossa equipe aplicará os exames previstos no PCMSO conforme a mudança de risco ocupacional."}
                     </p>
                   </div>
                 )}
@@ -280,12 +280,14 @@ export default function AgendamentoPublico() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground">
-                      <Check className="h-3 w-3" />{CLINICO}
-                    </span>
+                    {!temPcmso && (
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground">
+                        <Check className="h-3 w-3" />{CLINICO}
+                      </span>
+                    )}
                     {usaGradePcmso && (
                       <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground">
-                        <Check className="h-3 w-3" />CONFORME PCMSO DA NOVA FUNÇÃO
+                        <Check className="h-3 w-3" />CONFORME PCMSO
                       </span>
                     )}
                     {mostrarGrade && [...pcmsoTipo, ...(pcmsoTipo.length > 0 ? [] : EXAMES.filter((e) => !pcmsoTipo.includes(e))), ...exames.filter((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e))]
@@ -328,7 +330,7 @@ export default function AgendamentoPublico() {
                   {mostrarGrade && !mudanca && (
                     <p className="text-xs text-muted-foreground">
                       {temPcmso
-                        ? "Exames marcados automaticamente conforme o PCMSO do cargo. Você pode ajustar."
+                        ? "Todos os exames sugeridos (PCMSO) para o tipo de exame selecionado."
                         : "Selecione os exames ou busque no catálogo."}
                     </p>
                   )}
