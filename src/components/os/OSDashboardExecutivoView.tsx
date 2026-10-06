@@ -11,10 +11,10 @@ export function OSDashboardExecutivoView() {
   const stats = useMemo(() => {
     const totalOS = rows.reduce((s, r) => s + Number(r.total_os || 0), 0);
     const encerradas = rows.reduce((s, r) => s + Number(r.os_encerradas || 0), 0);
-    const atrasadas = rows.reduce((s, r) => s + Number(r.os_atrasadas || 0), 0);
+    const emAndamento = rows.reduce((s, r) => s + Number(r.os_em_andamento || 0), 0);
     const tempos = rows.map(r => r.tempo_medio_dias).filter((v): v is number => v != null);
     const tempoMedio = tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : 0;
-    return { totalOS, encerradas, atrasadas, tempoMedio };
+    return { totalOS, encerradas, emAndamento, tempoMedio };
   }, [rows]);
 
   const cargaData = rows.slice(0, 12).map(r => ({
@@ -22,7 +22,6 @@ export function OSDashboardExecutivoView() {
     fullName: r.responsavel,
     Encerradas: Number(r.os_encerradas),
     'Em andamento': Number(r.os_em_andamento),
-    Atrasadas: Number(r.os_atrasadas),
   }));
 
   return (
@@ -35,7 +34,7 @@ export function OSDashboardExecutivoView() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <OSKPICard title="Total de OS (90d)" value={stats.totalOS} icon={TrendingUp} variant="primary" />
         <OSKPICard title="Encerradas" value={stats.encerradas} icon={Users} variant="success" />
-        <OSKPICard title="Atrasadas" value={stats.atrasadas} icon={AlertTriangle} variant="destructive" />
+        <OSKPICard title="Em andamento" value={stats.emAndamento} icon={AlertTriangle} variant="warning" />
         <OSKPICard title="Tempo médio" value={`${stats.tempoMedio.toFixed(1)}d`} icon={Timer} />
       </div>
 
@@ -55,8 +54,7 @@ export function OSDashboardExecutivoView() {
                   <YAxis tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="Encerradas" stackId="a" fill="hsl(142, 76%, 36%)" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="Em andamento" stackId="a" fill="hsl(45, 93%, 47%)" />
-                  <Bar dataKey="Atrasadas" stackId="a" fill="hsl(0, 84%, 60%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Em andamento" stackId="a" fill="hsl(45, 93%, 47%)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -80,7 +78,6 @@ export function OSDashboardExecutivoView() {
                     <th className="pb-3 text-right font-medium text-muted-foreground">Total OS</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Encerradas</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Em andamento</th>
-                    <th className="pb-3 text-right font-medium text-muted-foreground">Atrasadas</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Serviços</th>
                     <th className="pb-3 text-right font-medium text-muted-foreground">Tempo médio</th>
                   </tr>
@@ -92,7 +89,6 @@ export function OSDashboardExecutivoView() {
                       <td className="py-2 text-right">{r.total_os}</td>
                       <td className="py-2 text-right text-emerald-700">{r.os_encerradas}</td>
                       <td className="py-2 text-right text-blue-700">{r.os_em_andamento}</td>
-                      <td className="py-2 text-right text-red-700">{r.os_atrasadas}</td>
                       <td className="py-2 text-right">{r.servicos_encerrados}/{r.total_servicos}</td>
                       <td className="py-2 text-right">{r.tempo_medio_dias != null ? `${Number(r.tempo_medio_dias).toFixed(1)}d` : '—'}</td>
                     </tr>
