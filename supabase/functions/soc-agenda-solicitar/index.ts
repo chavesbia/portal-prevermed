@@ -10,6 +10,7 @@ const Body = z.object({
   unidadeId: z.string().uuid(),
   empresaNome: z.string().trim().min(2).max(200),
   empresaCnpj: z.string().regex(/^\d{14}$/),
+  codigoEmpresaSoc: z.string().regex(/^\d{1,12}$/),
   colaboradorNome: z.string().trim().min(3).max(200),
   colaboradorCpf: z.string().regex(/^\d{11}$/),
   tipoExame: z.enum(['Admissional', 'Periódico', 'Demissional', 'Retorno ao Trabalho', 'Mudança de Risco']),
