@@ -107,21 +107,34 @@ export default function AgendamentoPublico() {
   }, [func]); // eslint-disable-line react-hooks/exhaustive-deps
   const [novoSetor, setNovoSetor] = useState("");
   const [novoCargo, setNovoCargo] = useState("");
+  const [conformePcmso, setConformePcmso] = useState(true);
+  const mudanca = f.tipoExame === "Mudança de Risco";
+  // Na Mudança de Risco os exames do cargo atual não valem: a grade é a da nova função
   const pcmsoTipo = useMemo(
-    () => (pcmso && f.tipoExame ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
-    [pcmso, f.tipoExame],
+    () => (pcmso && f.tipoExame && !mudanca ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
+    [pcmso, f.tipoExame, mudanca],
   );
   useEffect(() => {
-    if (!pcmso || !f.tipoExame) return;
+    if (!f.tipoExame) return;
     setExames(pcmsoTipo);
   }, [pcmsoTipo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const temPcmso = !!pcmso && pcmso.length > 0;
+  const usaGradePcmso = mudanca && conformePcmso;
+  const mostrarGrade = !usaGradePcmso;
+
+  const [busca, setBusca] = useState("");
+  const sugestoes = useMemo(() => {
+    const q = semAcento(busca.trim());
+    if (q.length < 2) return [];
+    return EXAMES_SOC.filter((e) => e.nome !== CLINICO && !exames.includes(e.nome) && semAcento(e.nome).includes(q)).slice(0, 8);
+  }, [busca, exames]);
 
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
   const valido = [
     !!socCode && cnpj.length === 14,
     !!func && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
-    !!f.tipoExame,
+    !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -129,8 +142,8 @@ export default function AgendamentoPublico() {
     setCarregando(true); setErro("");
     const fu = func?.funcionario;
     const extra = [
-      f.tipoExame === "Mudança de Risco" && (novoSetor.trim() || novoCargo.trim())
-        ? `MUDANÇA DE RISCO — novo setor: ${novoSetor.trim().toUpperCase() || "não informado"}; novo cargo: ${novoCargo.trim().toUpperCase() || "não informado"}` : "",
+      mudanca
+        ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME GRADE DO PCMSO DA NOVA FUNÇÃO" : ""}` : "",
       fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
       f.observacoes,
     ].filter(Boolean).join("\n");
@@ -144,7 +157,7 @@ export default function AgendamentoPublico() {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
-        exames: ["EXAME CLÍNICO", ...exames], guia: guiaPayload,
+        exames: usaGradePcmso ? [CLINICO, "CONFORME PCMSO DA NOVA FUNÇÃO"] : [CLINICO, ...exames], guia: guiaPayload,
       },
     });
     setCarregando(false);
