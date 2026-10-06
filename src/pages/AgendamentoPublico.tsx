@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EXAMES_SOC } from "@/data/examesSoc";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null };
@@ -16,7 +18,10 @@ const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
 const toIso = (b: string) => b.split("/").reverse().join("-");
 const PASSOS = ["Empresa", "Colaborador", "Exame", "Data e hora"];
-const EXAMES = ["AUDIOMETRIA", "ACUIDADE VISUAL", "ECG", "EEG", "ESPIROMETRIA", "RX TÓRAX OIT", "GLICEMIA", "HEMOGRAMA", "TOXICOLÓGICO"];
+// Mais utilizados (nomes oficiais do catálogo SOC) — exibidos só quando não há PCMSO
+const EXAMES = ["AUDIOMETRIA", "ACUIDADE VISUAL", "ELETROCARDIOGRAMA-ECG", "ELETROENCEFALOGRAMA-EEG", "ESPIROMETRIA", "GLICEMIA DE JEJUM (GLICOSE)", "HEMOGRAMA COMPLETO", "EXAME TOXICOLÓGICO (QUERATINA)"];
+const CLINICO = "EXAME CLÍNICO";
+const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
 export default function AgendamentoPublico() {
   const [passo, setPasso] = useState(0);
