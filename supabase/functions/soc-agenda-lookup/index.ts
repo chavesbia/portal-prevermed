@@ -79,7 +79,9 @@ async function exporta(params: Record<string, string>): Promise<Row[] | null> {
   const resp = await fetch(`${SOC_URL}?parametro=${encodeURIComponent(JSON.stringify({ ...params, tipoSaida: 'json' }))}`, { method: 'POST' });
   const text = new TextDecoder('iso-8859-1').decode(await resp.arrayBuffer());
   if (!resp.ok) { console.error('SOC HTTP', resp.status, text.slice(0, 300)); return null; }
-  try { const p = JSON.parse(text); return Array.isArray(p) ? p : (p?.data ?? []); }
+  const t = text.trim();
+  if (!t || /^"?sem resultado"?$/i.test(t)) return [];
+  try { const p = JSON.parse(t); return Array.isArray(p) ? p : (p?.data ?? []); }
   catch { console.error('SOC resposta', text.slice(0, 300)); return null; }
 }
 

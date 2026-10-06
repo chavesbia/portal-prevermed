@@ -9,6 +9,7 @@ import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw }
 import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
+import { isValidCPF, maskCPF } from "@/lib/contractual/cpf";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
@@ -66,9 +67,10 @@ export default function AgendamentoPublico() {
   const setSoc = (e: Empresa) => { setSocCode(e.soc_code); setF((p) => ({ ...p, empresaNome: e.razao_social })); setFunc(null); };
 
   const cpf = dig(f.colaboradorCpf);
+  const cpfValido = isValidCPF(cpf);
   useEffect(() => {
     setFunc(null);
-    if (cpf.length !== 11 || !socCode) return;
+    if (!cpfValido || !socCode) return;
     setBuscandoFunc(true);
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(({ data }) => {
       const r: Func = data?.encontrado !== undefined ? data : { encontrado: false, indisponivel: true };
@@ -178,7 +180,7 @@ export default function AgendamentoPublico() {
 
   const valido = [
     !!socCode && cnpj.length === 14,
-    !!func && (func.encontrado || func.indisponivel) && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
+    !!func && (func.encontrado || func.indisponivel) && cpfValido && f.colaboradorNome.trim().length >= 3,
     !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
@@ -265,7 +267,8 @@ export default function AgendamentoPublico() {
                 ))}
               </>)}
               {passo === 1 && (<>
-                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" maxLength={14} value={maskCPF(f.colaboradorCpf)} onChange={(e) => setF((p) => ({ ...p, colaboradorCpf: dig(e.target.value).slice(0, 11) }))} placeholder="000.000.000-00" />
+                  {cpf.length === 11 && !cpfValido && <p className="mt-1 text-xs text-destructive">CPF inválido. Confira os números digitados.</p>}</div>
                 {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
                 {func?.encontrado && (
                   <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
