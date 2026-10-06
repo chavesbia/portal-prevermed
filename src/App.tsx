@@ -14,6 +14,7 @@ import { RequireAuth } from "@/components/layout/RequireAuth";
 
 // Auth (eager - small e necessário pra redirect)
 import Auth from "./pages/Auth";
+import AgendamentoPublico from "./pages/AgendamentoPublico";
 import ChangePassword from "./pages/ChangePassword";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -87,6 +88,7 @@ const App = () => (
               {/* Auth routes - no layout */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/alterar-senha" element={<ChangePassword />} />
+              <Route path="/agendamento" element={<AgendamentoPublico />} />
 
               {/* Portal routes with layout - all require authentication */}
               <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
