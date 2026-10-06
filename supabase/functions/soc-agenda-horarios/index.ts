@@ -1,4 +1,5 @@
 // Consulta horários livres de uma agenda do SOC (Exporta Dados — Horários Livres)
+import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 
@@ -11,15 +12,20 @@ const Body = z.object({
   codigoAgenda: z.string().regex(/^\d{1,12}$/),
   dataInicio: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/),
   dataFim: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/),
-  debug: z.boolean().optional(),
 });
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const parsed = Body.safeParse(await req.json().catch(() => ({})));
+    const raw = await req.json().catch(() => ({}));
+    if (raw?.listarUnidades) {
+      const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const { data } = await admin.from('soc_agenda_unidades').select('id, nome, codigo_agenda').eq('ativo', true).order('nome');
+      return json({ unidades: data ?? [] });
+    }
+    const parsed = Body.safeParse(raw);
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
-    const { codigoAgenda, dataInicio, dataFim, debug } = parsed.data;
+    const { codigoAgenda, dataInicio, dataFim } = parsed.data;
 
     const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
     const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_AGENDA');
@@ -42,7 +48,6 @@ Deno.serve(async (req) => {
     } catch {
       return json({ error: 'Resposta SOC inválida', preview: text.slice(0, 800) }, 502);
     }
-    if (debug) return json({ total: rows.length, amostra: rows.slice(0, 5) });
     const alvo = String(Number(codigoAgenda));
     const porData: Record<string, string[]> = {};
     for (const r of rows) {
