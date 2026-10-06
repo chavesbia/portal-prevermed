@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarCheck, Loader2 } from "lucide-react";
+import { CalendarCheck, CheckCircle2, Loader2 } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
+type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null };
+type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any };
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
@@ -18,7 +20,12 @@ const PASSOS = ["Empresa", "Colaborador", "Exame", "Data e hora"];
 export default function AgendamentoPublico() {
   const [passo, setPasso] = useState(0);
   const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [f, setF] = useState({ empresaNome: "", empresaCnpj: "", colaboradorNome: "", colaboradorCpf: "", tipoExame: "", observacoes: "" });
+  const [f, setF] = useState({ empresaNome: "", empresaCnpj: "", colaboradorNome: "", colaboradorCpf: "", cargo: "", tipoExame: "", observacoes: "" });
+  const [empresas, setEmpresas] = useState<Empresa[] | null>(null);
+  const [socCode, setSocCode] = useState("");
+  const [buscandoEmp, setBuscandoEmp] = useState(false);
+  const [func, setFunc] = useState<Func | null>(null);
+  const [buscandoFunc, setBuscandoFunc] = useState(false);
   const [unidadeId, setUnidadeId] = useState("");
   const [porData, setPorData] = useState<Record<string, string[]>>({});
   const [dia, setDia] = useState("");
@@ -32,6 +39,35 @@ export default function AgendamentoPublico() {
     supabase.functions.invoke("soc-agenda-horarios", { body: { listarUnidades: true } })
       .then(({ data }) => setUnidades(data?.unidades ?? []));
   }, []);
+
+  const cnpj = dig(f.empresaCnpj);
+  useEffect(() => {
+    setEmpresas(null); setSocCode(""); setFunc(null);
+    if (cnpj.length !== 14) return;
+    setBuscandoEmp(true);
+    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "empresa", cnpj } }).then(({ data }) => {
+      const lista: Empresa[] = data?.empresas ?? [];
+      setEmpresas(lista);
+      if (lista.length === 1) setSoc(lista[0]);
+      setBuscandoEmp(false);
+    });
+  }, [cnpj]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setSoc = (e: Empresa) => { setSocCode(e.soc_code); setF((p) => ({ ...p, empresaNome: e.razao_social })); setFunc(null); };
+
+  const cpf = dig(f.colaboradorCpf);
+  useEffect(() => {
+    setFunc(null);
+    if (cpf.length !== 11 || !socCode) return;
+    setBuscandoFunc(true);
+    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(({ data }) => {
+      const r: Func = data?.encontrado !== undefined ? data : { encontrado: false, indisponivel: true };
+      setFunc(r);
+      if (r.encontrado) setF((p) => ({ ...p, colaboradorNome: r.funcionario.nome ?? "", cargo: r.funcionario.cargo ?? "" }));
+      else setF((p) => ({ ...p, colaboradorNome: "", cargo: "" }));
+      setBuscandoFunc(false);
+    });
+  }, [cpf, socCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unidade = unidades.find((u) => u.id === unidadeId);
   useEffect(() => {
@@ -51,19 +87,24 @@ export default function AgendamentoPublico() {
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
   const valido = [
-    f.empresaNome.trim().length >= 2 && dig(f.empresaCnpj).length === 14,
-    f.colaboradorNome.trim().length >= 3 && dig(f.colaboradorCpf).length === 11,
+    !!socCode && cnpj.length === 14,
+    !!func && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
     !!f.tipoExame,
     !!unidadeId && !!dia && !!hora,
   ];
 
   const enviar = async () => {
     setCarregando(true); setErro("");
+    const fu = func?.funcionario;
+    const extra = [
+      fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
+      f.observacoes,
+    ].filter(Boolean).join("\n");
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
-        unidadeId, empresaNome: f.empresaNome, empresaCnpj: dig(f.empresaCnpj),
-        colaboradorNome: f.colaboradorNome, colaboradorCpf: dig(f.colaboradorCpf),
-        tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes || undefined,
+        unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
+        colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
+        tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
       },
     });
     setCarregando(false);
@@ -110,12 +151,39 @@ export default function AgendamentoPublico() {
             </CardHeader>
             <CardContent className="space-y-4">
               {passo === 0 && (<>
-                <div><Label>Razão social</Label><Input value={f.empresaNome} onChange={set("empresaNome")} /></div>
-                <div><Label>CNPJ</Label><Input inputMode="numeric" value={f.empresaCnpj} onChange={set("empresaCnpj")} placeholder="Somente números" /></div>
+                <div><Label>CNPJ da empresa</Label><Input inputMode="numeric" value={f.empresaCnpj} onChange={set("empresaCnpj")} placeholder="Somente números" /></div>
+                {buscandoEmp && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {empresas && empresas.length === 0 && (
+                  <p className="text-sm text-destructive">CNPJ não encontrado entre os clientes ativos. Fale com a PreverMed.</p>
+                )}
+                {empresas && empresas.length > 1 && <p className="text-sm text-muted-foreground">Encontramos {empresas.length} operações para este CNPJ. Selecione a correta:</p>}
+                {empresas?.map((e) => (
+                  <button key={e.soc_code} type="button" onClick={() => setSoc(e)}
+                    className={`flex w-full items-center gap-2 rounded-md border p-3 text-left text-sm ${socCode === e.soc_code ? "border-primary bg-primary/5" : ""}`}>
+                    <CheckCircle2 className={`h-4 w-4 shrink-0 ${socCode === e.soc_code ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="flex-1">{e.razao_social}{e.cidade ? ` — ${e.cidade}/${e.estado ?? ""}` : ""}</span>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground">SOC {e.soc_code}</span>
+                  </button>
+                ))}
               </>)}
               {passo === 1 && (<>
-                <div><Label>Nome completo do colaborador</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} /></div>
-                <div><Label>CPF</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {func?.encontrado && (
+                  <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                    <p className="font-semibold">{func.funcionario.nome}</p>
+                    {func.funcionario.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
+                    {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
+                    {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
+                  </div>
+                )}
+                {func && !func.encontrado && (<>
+                  <p className="text-sm text-muted-foreground">
+                    {func.indisponivel ? "Não foi possível consultar o cadastro agora. Preencha os dados abaixo." : "Colaborador ainda não cadastrado nesta empresa (provável Admissional). Preencha os dados abaixo."}
+                  </p>
+                  <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} /></div>
+                  <div><Label>Cargo pretendido</Label><Input value={f.cargo} onChange={set("cargo")} /></div>
+                </>)}
               </>)}
               {passo === 2 && (<>
                 <div className="grid grid-cols-2 gap-2">
