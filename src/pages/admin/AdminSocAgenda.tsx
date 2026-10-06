@@ -126,7 +126,12 @@ export default function AdminSocAgenda() {
                     <TableCell>{a.guia_path ? (
                       <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => abrirGuia(a.guia_path!)}><FileText className="mr-1 h-4 w-4" />Ver guia</Button>
                     ) : "-"}</TableCell>
-                    <TableCell><Badge variant="secondary" className="whitespace-nowrap">{a.status}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant={a.status === "agendado_soc" ? "default" : "secondary"} className="whitespace-nowrap">
+                        {a.status === "agendado_soc" ? `No SOC${(a.soc_retorno as any)?.codigoAgendamento ? ` #${(a.soc_retorno as any).codigoAgendamento}` : ""}` : a.status}
+                      </Badge>
+                      {a.soc_erro && <p className="mt-1 max-w-[220px] text-xs text-destructive">{a.soc_erro}</p>}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
