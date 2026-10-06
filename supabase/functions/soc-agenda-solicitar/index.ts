@@ -2,6 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
+import { incluirAgendamentoSoc } from './socAgendamento.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -69,9 +70,26 @@ Deno.serve(async (req) => {
       data_agendada: b.data,
       hora_agendada: b.hora,
       observacoes: b.observacoes ?? null,
-    }).select('protocolo').single();
+    }).select('id, protocolo').single();
     if (error) return json({ error: 'Não foi possível registrar' }, 500);
-    return json({ protocolo: data.protocolo });
+
+    // Grava direto na agenda oficial do SOC; se falhar, fica para a recepção conferir
+    const { data: un } = await admin.from('soc_agenda_unidades').select('codigo_agenda').eq('id', b.unidadeId).single();
+    const soc = await incluirAgendamentoSoc({
+      codigoEmpresa: b.codigoEmpresaSoc,
+      cpf: b.colaboradorCpf,
+      codigoAgenda: un!.codigo_agenda,
+      data: b.data,
+      hora: b.hora,
+      tipoExame: b.tipoExame,
+      detalhes: `Portal ${data.protocolo} | Exames: ${exames.join(', ') || '-'}${guiaPath ? ' | Guia anexada no Portal' : ''}${b.observacoes ? ` | Obs: ${b.observacoes}` : ''}`,
+    });
+    await admin.from('soc_agendamentos').update({
+      status: soc.ok ? 'agendado_soc' : 'solicitado',
+      soc_retorno: { codigoAgendamento: soc.codigoAgendamento ?? null, resposta: soc.resposta },
+      soc_erro: soc.ok ? null : soc.erro,
+    }).eq('id', data.id);
+    return json({ protocolo: data.protocolo, agendadoSoc: soc.ok });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
