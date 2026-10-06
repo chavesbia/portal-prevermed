@@ -6385,6 +6385,113 @@ export type Database = {
           },
         ]
       }
+      soc_agenda_unidades: {
+        Row: {
+          ativo: boolean
+          codigo_agenda: string
+          created_at: string
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo_agenda: string
+          created_at?: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo_agenda?: string
+          created_at?: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      soc_agendamentos: {
+        Row: {
+          codigo_empresa_soc: string | null
+          colaborador_cpf: string
+          colaborador_nome: string
+          created_at: string
+          data_agendada: string
+          empresa_cnpj: string | null
+          empresa_nome: string | null
+          exames: Json
+          guia_path: string | null
+          hora_agendada: string
+          id: string
+          observacoes: string | null
+          protocolo: string
+          soc_erro: string | null
+          soc_retorno: Json | null
+          status: string
+          tipo_exame: string
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          codigo_empresa_soc?: string | null
+          colaborador_cpf: string
+          colaborador_nome: string
+          created_at?: string
+          data_agendada: string
+          empresa_cnpj?: string | null
+          empresa_nome?: string | null
+          exames?: Json
+          guia_path?: string | null
+          hora_agendada: string
+          id?: string
+          observacoes?: string | null
+          protocolo?: string
+          soc_erro?: string | null
+          soc_retorno?: Json | null
+          status?: string
+          tipo_exame: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          codigo_empresa_soc?: string | null
+          colaborador_cpf?: string
+          colaborador_nome?: string
+          created_at?: string
+          data_agendada?: string
+          empresa_cnpj?: string | null
+          empresa_nome?: string | null
+          exames?: Json
+          guia_path?: string | null
+          hora_agendada?: string
+          id?: string
+          observacoes?: string | null
+          protocolo?: string
+          soc_erro?: string | null
+          soc_retorno?: Json | null
+          status?: string
+          tipo_exame?: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soc_agendamentos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agenda_unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tipos_laudo: {
         Row: {
           ativo: boolean
