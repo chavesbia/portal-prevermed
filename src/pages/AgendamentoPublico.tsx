@@ -110,12 +110,39 @@ export default function AgendamentoPublico() {
             </CardHeader>
             <CardContent className="space-y-4">
               {passo === 0 && (<>
-                <div><Label>Razão social</Label><Input value={f.empresaNome} onChange={set("empresaNome")} /></div>
-                <div><Label>CNPJ</Label><Input inputMode="numeric" value={f.empresaCnpj} onChange={set("empresaCnpj")} placeholder="Somente números" /></div>
+                <div><Label>CNPJ da empresa</Label><Input inputMode="numeric" value={f.empresaCnpj} onChange={set("empresaCnpj")} placeholder="Somente números" /></div>
+                {buscandoEmp && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {empresas && empresas.length === 0 && (
+                  <p className="text-sm text-destructive">CNPJ não encontrado entre os clientes ativos. Fale com a PreverMed.</p>
+                )}
+                {empresas && empresas.length > 1 && <p className="text-sm text-muted-foreground">Encontramos {empresas.length} operações para este CNPJ. Selecione a correta:</p>}
+                {empresas?.map((e) => (
+                  <button key={e.soc_code} type="button" onClick={() => setSoc(e)}
+                    className={`flex w-full items-center gap-2 rounded-md border p-3 text-left text-sm ${socCode === e.soc_code ? "border-primary bg-primary/5" : ""}`}>
+                    <CheckCircle2 className={`h-4 w-4 shrink-0 ${socCode === e.soc_code ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="flex-1">{e.razao_social}{e.cidade ? ` — ${e.cidade}/${e.estado ?? ""}` : ""}</span>
+                    <span className="whitespace-nowrap text-xs text-muted-foreground">SOC {e.soc_code}</span>
+                  </button>
+                ))}
               </>)}
               {passo === 1 && (<>
-                <div><Label>Nome completo do colaborador</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} /></div>
-                <div><Label>CPF</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {func?.encontrado && (
+                  <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                    <p className="font-semibold">{func.funcionario.nome}</p>
+                    {func.funcionario.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
+                    {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
+                    {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
+                  </div>
+                )}
+                {func && !func.encontrado && (<>
+                  <p className="text-sm text-muted-foreground">
+                    {func.indisponivel ? "Não foi possível consultar o cadastro agora. Preencha os dados abaixo." : "Colaborador ainda não cadastrado nesta empresa (provável Admissional). Preencha os dados abaixo."}
+                  </p>
+                  <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} /></div>
+                  <div><Label>Cargo pretendido</Label><Input value={f.cargo} onChange={set("cargo")} /></div>
+                </>)}
               </>)}
               {passo === 2 && (<>
                 <div className="grid grid-cols-2 gap-2">
