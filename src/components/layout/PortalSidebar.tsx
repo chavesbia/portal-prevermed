@@ -156,6 +156,7 @@ const adminSection: MenuSection = {
   items: [
     { label: 'Usuários e Permissões', icon: Shield, path: '/admin/permissoes', adminOnly: true },
     { label: 'Base de Dados', icon: Database, path: '/admin/empresas', adminOnly: true },
+    { label: 'SOC Agenda', icon: CalendarDays, path: '/admin/soc-agenda', adminOnly: true },
     { label: 'Departamentos', icon: Building2, path: '/admin/departamentos', adminOnly: true },
     { label: 'Documentos', icon: FolderOpen, path: '/admin/documentos', adminOnly: true },
     { label: 'Laudos e Serviços', icon: NotebookPen, path: '/admin/laudos-servicos', adminOnly: true },
