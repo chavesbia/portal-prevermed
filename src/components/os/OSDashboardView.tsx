@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer, ChevronDown, ChevronRight } from 'lucide-react';
+import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer, ChevronDown, ChevronRight, Layers, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip,
@@ -55,6 +55,8 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
     emAndamento: ordens.filter(o => o.status_os === 'Em andamento').length,
     encerradas: encerradas.length,
     pendentes: ordens.filter(o => o.status_os === 'Não iniciado').length,
+    totalServicos: ordens.reduce((acc, o) => acc + (o.servicos?.length || 0), 0),
+    agendados: ordens.reduce((acc, o) => acc + (o.servicos?.filter(s => s.status === 'Agendado').length || 0), 0),
     novos: novosCount,
     slaMedio: slaMedio.toFixed(1),
   };
@@ -136,11 +138,13 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
         <TabsContent value="geral" className="mt-6 space-y-6">
 
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <OSKPICard title="Total de OS" value={stats.total} subtitle="Ordens registradas" icon={FileText} variant="primary" />
+        <OSKPICard title="Total de Serviços" value={stats.totalServicos} subtitle="Serviços nas OS" icon={Layers} variant="primary" />
+        <OSKPICard title="Não Iniciadas" value={stats.pendentes} subtitle="Aguardando ação" icon={AlertCircle} variant="destructive" />
+        <OSKPICard title="Agendados" value={stats.agendados} subtitle="Serviços agendados" icon={CalendarClock} />
         <OSKPICard title="Em Andamento" value={stats.emAndamento} subtitle="Em execução" icon={Clock} variant="warning" />
         <OSKPICard title="Finalizadas" value={stats.encerradas} subtitle="Concluídas" icon={CheckCircle} variant="success" />
-        <OSKPICard title="Pendentes" value={stats.pendentes} subtitle="Aguardando ação" icon={AlertCircle} variant="destructive" />
         <OSKPICard title="Novos" value={stats.novos} subtitle="Serviços novos" icon={TrendingUp} />
         <OSKPICard title="SLA Médio" value={`${stats.slaMedio}d`} subtitle="Tempo de conclusão" icon={Timer} />
       </div>
