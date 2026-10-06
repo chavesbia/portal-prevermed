@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     const { data: dup } = await admin.from('soc_agendamentos').select('id')
       .eq('unidade_id', b.unidadeId).eq('data_agendada', b.data).eq('hora_agendada', b.hora)
-      .neq('status', 'cancelado').limit(1);
+      .eq('status', 'agendado_soc').limit(1);
     if (dup?.length) return json({ error: 'Esse horário acabou de ser reservado. Escolha outro.' }, 409);
 
     let guiaPath: string | null = null;
