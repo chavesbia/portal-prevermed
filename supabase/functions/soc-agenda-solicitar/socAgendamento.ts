@@ -28,7 +28,7 @@ async function wssHeader(user: string, senha: string) {
 <wsu:Timestamp wsu:Id="TS-1"><wsu:Created>${created}</wsu:Created><wsu:Expires>${expires}</wsu:Expires></wsu:Timestamp>
 <wsse:UsernameToken wsu:Id="UT-1"><wsse:Username>${esc(user)}</wsse:Username>
 <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">${b64(digest)}</wsse:Password>
-<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-soap-message-security-1.0#Base64Binary">${b64(nonce)}</wsse:Nonce>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary">${b64(nonce)}</wsse:Nonce>
 <wsu:Created>${created}</wsu:Created></wsse:UsernameToken></wsse:Security>`;
 }
 
@@ -43,6 +43,9 @@ export async function incluirAgendamentoSoc(p: {
   const resp = Deno.env.get('SOC_WS_CODIGO_RESPONSAVEL');
   const principal = Deno.env.get('SOC_CODIGO_EMPRESA');
   if (!user || !senha || !resp || !principal) return { ok: false, erro: 'Credenciais do Web Service SOC ausentes', resposta: '' };
+  // Cabeçalho WSS exige prefixo "U"; payload usa o código numérico puro
+  const codUser = user.replace(/^U/i, '');
+  const wsUser = `U${codUser}`;
 
   const [y, m, d] = p.data.split('-');
   const [hh, mm] = p.hora.split(':').map(Number);
@@ -50,9 +53,9 @@ export async function incluirAgendamentoSoc(p: {
   const horaFinal = `${String(fim.getHours()).padStart(2, '0')}:${String(fim.getMinutes()).padStart(2, '0')}`;
 
   const body = `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.soc.age.com/">
-<soap:Header>${await wssHeader(user, senha)}</soap:Header>
+<soap:Header>${await wssHeader(wsUser, senha)}</soap:Header>
 <soap:Body><ser:incluirAgendamento><IncluirAgendamentoWsVo>
-<identificacaoWsVo><codigoEmpresaPrincipal>${esc(principal)}</codigoEmpresaPrincipal><codigoResponsavel>${esc(resp)}</codigoResponsavel><codigoUsuario>${esc(user)}</codigoUsuario></identificacaoWsVo>
+<identificacaoWsVo><codigoEmpresaPrincipal>${esc(principal)}</codigoEmpresaPrincipal><codigoResponsavel>${esc(resp)}</codigoResponsavel><codigoUsuario>${esc(codUser)}</codigoUsuario></identificacaoWsVo>
 <dadosAgendamentoWsVo>
 <tipoBuscaEmpresa>CODIGO_SOC</tipoBuscaEmpresa><codigoEmpresa>${esc(p.codigoEmpresa)}</codigoEmpresa>
 <reservarCompromissoParaEmpresa>false</reservarCompromissoParaEmpresa>
