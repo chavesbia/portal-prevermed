@@ -45,7 +45,20 @@ Deno.serve(async (req) => {
       .neq('status', 'cancelado').limit(1);
     if (dup?.length) return json({ error: 'Esse horário acabou de ser reservado. Escolha outro.' }, 409);
 
+    let guiaPath: string | null = null;
+    if (b.guia) {
+      const bytes = Uint8Array.from(atob(b.guia.base64), (c) => c.charCodeAt(0));
+      if (bytes.length > 5 * 1024 * 1024) return json({ error: 'Guia maior que 5 MB' }, 400);
+      const ext = b.guia.tipo === 'application/pdf' ? 'pdf' : b.guia.tipo === 'image/png' ? 'png' : 'jpg';
+      guiaPath = `soc-agenda/${b.data}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await admin.storage.from('os-anexos').upload(guiaPath, bytes, { contentType: b.guia.tipo });
+      if (upErr) return json({ error: 'Não foi possível enviar a guia' }, 500);
+    }
+    const exames = [...new Set(b.exames.map((e) => e.toUpperCase()))];
+
     const { data, error } = await admin.from('soc_agendamentos').insert({
+      exames,
+      guia_path: guiaPath,
       unidade_id: b.unidadeId,
       empresa_nome: emp.razao_social,
       empresa_cnpj: b.empresaCnpj,
