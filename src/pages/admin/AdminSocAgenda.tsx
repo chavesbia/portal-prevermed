@@ -5,7 +5,8 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const fmtData = (d: string) => d.split("-").reverse().join("/");
@@ -38,6 +39,12 @@ export default function AdminSocAgenda() {
     if (error) return toast.error("Não foi possível salvar");
     toast.success("Salvo");
     qc.invalidateQueries({ queryKey: ["soc-agenda-unidades"] });
+  };
+
+  const abrirGuia = async (path: string) => {
+    const { data, error } = await supabase.storage.from("os-anexos").createSignedUrl(path, 300);
+    if (error || !data) return toast.error("Não foi possível abrir a guia");
+    window.open(data.signedUrl, "_blank", "noopener");
   };
 
   return (
@@ -101,6 +108,8 @@ export default function AdminSocAgenda() {
                   <TableHead>Empresa</TableHead>
                   <TableHead>Colaborador</TableHead>
                   <TableHead>Exame</TableHead>
+                  <TableHead>Exames</TableHead>
+                  <TableHead>Guia</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -113,6 +122,10 @@ export default function AdminSocAgenda() {
                     <TableCell>{a.empresa_nome}</TableCell>
                     <TableCell>{a.colaborador_nome}</TableCell>
                     <TableCell>{a.tipo_exame}</TableCell>
+                    <TableCell className="max-w-xs text-xs">{Array.isArray(a.exames) && a.exames.length ? (a.exames as string[]).join(", ") : "-"}</TableCell>
+                    <TableCell>{a.guia_path ? (
+                      <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => abrirGuia(a.guia_path!)}><FileText className="mr-1 h-4 w-4" />Ver guia</Button>
+                    ) : "-"}</TableCell>
                     <TableCell><Badge variant="secondary" className="whitespace-nowrap">{a.status}</Badge></TableCell>
                   </TableRow>
                 ))}
