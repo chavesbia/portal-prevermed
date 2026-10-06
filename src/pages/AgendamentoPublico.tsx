@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EXAMES_SOC } from "@/data/examesSoc";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null };
@@ -16,7 +18,10 @@ const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
 const toIso = (b: string) => b.split("/").reverse().join("-");
 const PASSOS = ["Empresa", "Colaborador", "Exame", "Data e hora"];
-const EXAMES = ["AUDIOMETRIA", "ACUIDADE VISUAL", "ECG", "EEG", "ESPIROMETRIA", "RX TÓRAX OIT", "GLICEMIA", "HEMOGRAMA", "TOXICOLÓGICO"];
+// Mais utilizados (nomes oficiais do catálogo SOC) — exibidos só quando não há PCMSO
+const EXAMES = ["AUDIOMETRIA", "ACUIDADE VISUAL", "ELETROCARDIOGRAMA-ECG", "ELETROENCEFALOGRAMA-EEG", "ESPIROMETRIA", "GLICEMIA DE JEJUM (GLICOSE)", "HEMOGRAMA COMPLETO", "EXAME TOXICOLÓGICO (QUERATINA)"];
+const CLINICO = "EXAME CLÍNICO";
+const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
 export default function AgendamentoPublico() {
   const [passo, setPasso] = useState(0);
@@ -35,7 +40,6 @@ export default function AgendamentoPublico() {
   const [erro, setErro] = useState("");
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
-  const [outroExame, setOutroExame] = useState("");
   const [guia, setGuia] = useState<File | null>(null);
 
   useEffect(() => {
@@ -102,21 +106,34 @@ export default function AgendamentoPublico() {
   }, [func]); // eslint-disable-line react-hooks/exhaustive-deps
   const [novoSetor, setNovoSetor] = useState("");
   const [novoCargo, setNovoCargo] = useState("");
+  const [conformePcmso, setConformePcmso] = useState(true);
+  const mudanca = f.tipoExame === "Mudança de Risco";
+  // Na Mudança de Risco os exames do cargo atual não valem: a grade é a da nova função
   const pcmsoTipo = useMemo(
-    () => (pcmso && f.tipoExame ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
-    [pcmso, f.tipoExame],
+    () => (pcmso && f.tipoExame && !mudanca ? pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome) : []),
+    [pcmso, f.tipoExame, mudanca],
   );
   useEffect(() => {
-    if (!pcmso || !f.tipoExame) return;
+    if (!f.tipoExame) return;
     setExames(pcmsoTipo);
   }, [pcmsoTipo]); // eslint-disable-line react-hooks/exhaustive-deps
+  const temPcmso = !!pcmso && pcmso.length > 0;
+  const usaGradePcmso = mudanca && conformePcmso;
+  const mostrarGrade = !usaGradePcmso;
+
+  const [busca, setBusca] = useState("");
+  const sugestoes = useMemo(() => {
+    const q = semAcento(busca.trim());
+    if (q.length < 2) return [];
+    return EXAMES_SOC.filter((e) => e.nome !== CLINICO && !exames.includes(e.nome) && semAcento(e.nome).includes(q)).slice(0, 8);
+  }, [busca, exames]);
 
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
   const valido = [
     !!socCode && cnpj.length === 14,
     !!func && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
-    !!f.tipoExame,
+    !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -124,8 +141,8 @@ export default function AgendamentoPublico() {
     setCarregando(true); setErro("");
     const fu = func?.funcionario;
     const extra = [
-      f.tipoExame === "Mudança de Risco" && (novoSetor.trim() || novoCargo.trim())
-        ? `MUDANÇA DE RISCO — novo setor: ${novoSetor.trim().toUpperCase() || "não informado"}; novo cargo: ${novoCargo.trim().toUpperCase() || "não informado"}` : "",
+      mudanca
+        ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME GRADE DO PCMSO DA NOVA FUNÇÃO" : ""}` : "",
       fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
       f.observacoes,
     ].filter(Boolean).join("\n");
@@ -139,7 +156,7 @@ export default function AgendamentoPublico() {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
-        exames: ["EXAME CLÍNICO", ...exames], guia: guiaPayload,
+        exames: usaGradePcmso ? [CLINICO, "CONFORME PCMSO DA NOVA FUNÇÃO"] : [CLINICO, ...exames], guia: guiaPayload,
       },
     });
     setCarregando(false);
@@ -232,23 +249,30 @@ export default function AgendamentoPublico() {
                     <p><strong>Atenção:</strong> colaborador já possui cadastro ativo nesta empresa
                       {func.funcionario?.cargo && <> como <strong>{func.funcionario.cargo}</strong></>}
                       {func.funcionario?.matricula && <> (Matrícula: {func.funcionario.matricula})</>}.
-                      {" "}Verifique se o exame correto não seria <strong>Periódico</strong> ou <strong>Mudança de Risco</strong>.</p>
+                      {" "}Verifique se o Tipo de Exames está correto antes de prosseguir.</p>
                   </div>
                 )}
-                {f.tipoExame === "Mudança de Risco" && (
+                {mudanca && (
                   <div className="space-y-2 rounded-md border bg-muted/40 p-3">
                     <p className="text-sm font-medium">Informe a nova função pretendida.</p>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      <div><Label>Novo setor</Label><Input value={novoSetor} onChange={(e) => setNovoSetor(e.target.value)} maxLength={80} /></div>
-                      <div><Label>Novo cargo</Label><Input value={novoCargo} onChange={(e) => setNovoCargo(e.target.value)} maxLength={80} /></div>
+                      <div><Label>Novo setor *</Label><Input value={novoSetor} onChange={(e) => setNovoSetor(e.target.value)} maxLength={80} /></div>
+                      <div><Label>Novo cargo *</Label><Input value={novoCargo} onChange={(e) => setNovoCargo(e.target.value)} maxLength={80} /></div>
                     </div>
-                    <p className="text-xs text-muted-foreground">Os exames do cargo atual aparecem só como referência; a lotação no SOC só muda após o ASO Apto.</p>
+                    <label className="flex items-start gap-2 text-sm cursor-pointer">
+                      <Checkbox checked={conformePcmso} onCheckedChange={(v) => setConformePcmso(v === true)} className="mt-0.5" />
+                      <span>Realizar exames conforme grade do PCMSO da nova função</span>
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      A lotação do colaborador será atualizada no SOC para o novo setor/cargo antes do atendimento, para aplicar os riscos e exames corretos.
+                      {conformePcmso && " Nossa equipe aplicará os exames previstos no PCMSO da nova função."}
+                    </p>
                   </div>
                 )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <Label>Exames (o Exame Clínico já está incluído)</Label>
-                    {pcmsoTipo.length > 0 && pcmsoTipo.some((e) => !exames.includes(e)) && (
+                    <Label>Exames</Label>
+                    {mostrarGrade && pcmsoTipo.length > 0 && pcmsoTipo.some((e) => !exames.includes(e)) && (
                       <Button type="button" variant="ghost" size="sm" className="h-7 text-xs whitespace-nowrap"
                         onClick={() => setExames((p) => [...new Set([...p, ...pcmsoTipo])])}>
                         <RotateCcw className="h-3 w-3 mr-1" /> Restaurar PCMSO
@@ -256,7 +280,17 @@ export default function AgendamentoPublico() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {[...pcmsoTipo, ...EXAMES.filter((e) => !pcmsoTipo.includes(e)), ...exames.filter((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e))].map((e) => {
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground">
+                      <Check className="h-3 w-3" />{CLINICO}
+                    </span>
+                    {usaGradePcmso && (
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground">
+                        <Check className="h-3 w-3" />CONFORME PCMSO DA NOVA FUNÇÃO
+                      </span>
+                    )}
+                    {mostrarGrade && [...pcmsoTipo, ...(pcmsoTipo.length > 0 ? [] : EXAMES.filter((e) => !pcmsoTipo.includes(e))), ...exames.filter((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e))]
+                      .filter((e, i, a) => a.indexOf(e) === i)
+                      .map((e) => {
                       const on = exames.includes(e); const doPcmso = pcmsoTipo.includes(e);
                       return (
                         <button key={e} type="button"
@@ -269,23 +303,35 @@ export default function AgendamentoPublico() {
                       );
                     })}
                   </div>
-                  {pcmsoTipo.some((e) => !exames.includes(e)) && (
+                  {mostrarGrade && pcmsoTipo.some((e) => !exames.includes(e)) && (
                     <p className="text-xs text-destructive">Há exame previsto no PCMSO desmarcado (borda tracejada).</p>
                   )}
-                  <div className="flex gap-2">
-                    <Input value={outroExame} onChange={(e) => setOutroExame(e.target.value)} placeholder="Outro exame" maxLength={80} className="h-8" />
-                    <Button type="button" variant="outline" size="sm" disabled={outroExame.trim().length < 2}
-                      onClick={() => { const v = outroExame.trim().toUpperCase(); if (!exames.includes(v)) setExames([...exames, v]); setOutroExame(""); }}>Adicionar</Button>
-                  </div>
-                  {exames.some((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e)) && (
-                    <p className="text-xs text-muted-foreground">Exames digitados fora da lista passam por conferência na recepção.</p>
+                  {mostrarGrade && (
+                    <div className="relative">
+                      <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Adicionar exame (digite para buscar)" className="h-8" />
+                      {sugestoes.length > 0 && (
+                        <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow-md max-h-56 overflow-y-auto">
+                          {sugestoes.map((s) => (
+                            <button key={s.codigo + s.nome} type="button" className="block w-full px-3 py-1.5 text-left text-xs hover:bg-muted"
+                              onClick={() => { setExames((p) => [...p, s.nome]); setBusca(""); }}>
+                              {s.nome}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {busca.trim().length >= 2 && sugestoes.length === 0 && (
+                        <p className="mt-1 text-xs text-muted-foreground">Nenhum exame encontrado no catálogo.</p>
+                      )}
+                    </div>
                   )}
                   {buscandoPcmso && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Buscando exames do PCMSO…</p>}
-                  <p className="text-xs text-muted-foreground">
-                    {pcmso && pcmso.length > 0
-                      ? "Exames marcados automaticamente conforme o PCMSO do cargo. Você pode ajustar."
-                      : "Se a empresa tem PCMSO, a recepção confere os exames conforme o cargo."}
-                  </p>
+                  {mostrarGrade && !mudanca && (
+                    <p className="text-xs text-muted-foreground">
+                      {temPcmso
+                        ? "Exames marcados automaticamente conforme o PCMSO do cargo. Você pode ajustar."
+                        : "Selecione os exames ou busque no catálogo."}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label>Guia de encaminhamento (opcional — PDF ou imagem, até 5 MB)</Label>
