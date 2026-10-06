@@ -190,5 +190,5 @@ export function usePPP() {
     onError: (err: any) => toast.error(`Erro ao remover anexo: ${err.message}`),
   });
 
-  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl, deleteAnexo };
+  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, canViewValores, getSignedUrl, deleteAnexo };
 }

@@ -207,7 +207,7 @@ export function useAcrescimoFuncao() {
     onError: (e: any) => toast.error("Erro ao atualizar solicitação: " + e.message),
   });
 
-  return { 
+  return { canViewValores, 
     solicitacoes, 
     isLoading, 
     error, 
