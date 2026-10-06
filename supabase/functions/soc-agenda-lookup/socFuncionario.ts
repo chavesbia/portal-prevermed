@@ -52,7 +52,7 @@ ${vo('cargoWsVo', p.cargo)}
 <codigoEmpresa>${esc(p.codigoEmpresa)}</codigoEmpresa><tipoBuscaEmpresa>CODIGO_SOC</tipoBuscaEmpresa>
 <cpf>${esc(p.cpf)}</cpf><nomeFuncionario>${esc(p.nome.toUpperCase())}</nomeFuncionario>
 <dataNascimento>${br(p.dataNascimento)}</dataNascimento><dataAdmissao>${br(p.dataAdmissao)}</dataAdmissao>
-<regimeTrabalho>NORMAL</regimeTrabalho>
+<regimeTrabalho>NORMAL</regimeTrabalho><estadoCivil>OUTROS</estadoCivil>
 <sexo>${p.sexo}</sexo><situacao>PENDENTE</situacao><tipoContratacao>CLT</tipoContratacao>
 <naoPossuiMatricula>true</naoPossuiMatricula>
 </funcionarioWsVo>
