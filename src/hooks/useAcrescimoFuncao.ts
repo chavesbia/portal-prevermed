@@ -6,13 +6,23 @@ import { AcrescimoFuncaoSolicitacao, AcrescimoFuncaoCargo } from "@/types/os";
 export function useAcrescimoFuncao() {
   const qc = useQueryClient();
 
+  const { data: canViewValores = false } = useQuery({
+    queryKey: ["can-view-valores-os"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).rpc("can_view_valores_os");
+      return !!data;
+    },
+  });
+
   const { data: solicitacoes = [], isLoading, error } = useQuery({
     queryKey: ["acrescimos-funcao-solicitacoes"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("acrescimos_funcao_solicitacoes")
         .select(`
-          *,
+          id, company_id, unidade_id, solicitante_nome, data_solicitacao_cliente, observacao,
+          created_by, created_at, realizado, realizado_por, realizado_em, numero,
+          realizado_por_user_id, realizado_por_nome,
           companies (razao_social),
           company_units (name),
           profissionais (nome),
@@ -25,8 +35,13 @@ export function useAcrescimoFuncao() {
         throw error;
       }
 
+      // Valores só chegam do servidor para ADM Master / Comercial / Faturamento
+      const { data: valores } = await (supabase as any).rpc("get_valores_acrescimo");
+      const vmap = new Map<string, number | null>((valores || []).map((v: any) => [v.id, v.valor]));
+
       return (data || []).map((s: any) => ({
         ...s,
+        valor_total_calculado: vmap.get(s.id) ?? null,
         company_name: s.companies?.razao_social,
         unidade_nome: s.company_units?.name,
         realizado_por_nome: s.realizado_por_nome || s.profissionais?.nome,
@@ -43,7 +58,7 @@ export function useAcrescimoFuncao() {
       const { data: solicitacaoData, error: solicitacaoError } = await supabase
         .from("acrescimos_funcao_solicitacoes")
         .insert(payload.solicitacao)
-        .select()
+        .select("id")
         .single();
 
       if (solicitacaoError) throw solicitacaoError;
@@ -192,7 +207,7 @@ export function useAcrescimoFuncao() {
     onError: (e: any) => toast.error("Erro ao atualizar solicitação: " + e.message),
   });
 
-  return { 
+  return { canViewValores, 
     solicitacoes, 
     isLoading, 
     error, 

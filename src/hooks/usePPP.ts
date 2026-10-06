@@ -16,16 +16,29 @@ export function usePPP() {
   const { user } = useAuth();
   const queryKey = ['ppp-solicitacoes'];
 
+  const { data: canViewValores = false } = useQuery({
+    queryKey: ['can-view-valores-os', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await (supabase as any).rpc('can_view_valores_os');
+      return !!data;
+    },
+  });
+
   const { data: solicitacoes = [], isLoading, error } = useQuery({
     queryKey,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('ppp_solicitacoes')
-        .select('*, companies(razao_social), ppp_periodos(*), ppp_anexos(*)')
+        .select('id,company_id,solicitante_nome,funcionario_nome,funcionario_cpf,numero,observacao,created_by,created_at,realizado,realizado_por_user_id,realizado_por_nome,realizado_em, companies(razao_social), ppp_periodos(*), ppp_anexos(*)')
         .order('created_at', { ascending: false });
       if (error) throw error;
+      // Valores só chegam do servidor para ADM Master / Comercial / Faturamento
+      const { data: valores } = await (supabase as any).rpc('get_valores_ppp');
+      const vmap = new Map<string, number | null>((valores || []).map((v: any) => [v.id, v.valor]));
       return (data || []).map((item: any) => ({
         ...item,
+        valor_calculado: vmap.get(item.id) ?? null,
         company_name: item.companies?.razao_social,
         periodos: item.ppp_periodos || [],
         anexos: item.ppp_anexos || [],
@@ -62,7 +75,7 @@ export function usePPP() {
       const { data, error: insertError } = await (supabase as any)
         .from('ppp_solicitacoes')
         .insert({ ...payload.solicitacao, created_by: user?.id || null })
-        .select()
+        .select('id')
         .single();
       if (insertError) throw insertError;
       const periodRows = payload.periodos.map(periodo => ({ ...periodo, solicitacao_id: data.id }));
@@ -177,5 +190,5 @@ export function usePPP() {
     onError: (err: any) => toast.error(`Erro ao remover anexo: ${err.message}`),
   });
 
-  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, getSignedUrl, deleteAnexo };
+  return { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, canViewValores, getSignedUrl, deleteAnexo };
 }

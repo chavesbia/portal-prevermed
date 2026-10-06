@@ -120,6 +120,13 @@
       "when": 1791211565862,
       "tag": "0016_vendas_comissao_personalizada",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791291153049,
+      "tag": "0017_blindagem_valores_ppp_acrescimo",
+      "breakpoints": true
     }
   ]
 }

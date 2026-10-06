@@ -24,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 
 export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
-  const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado } = useAcrescimoFuncao();
+  const { solicitacoes, isLoading, error, createSolicitacao, updateSolicitacao, deleteSolicitacao, markAsRealizado, canViewValores } = useAcrescimoFuncao();
   const { isAdmMaster, profile, user } = useAuth();
   
   const [formOpen, setFormOpen] = useState(false);
@@ -198,7 +198,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     }
 
     const headers = ['Nº', 'Empresa', 'Unidade', 'Solicitante', 'Setor', 'Cargo', 'Data Realização', 'Realizado Por'];
-    if (isAdmMaster) headers.push('Valor Calculado');
+    if (canViewValores) headers.push('Valor Calculado');
 
     const rows = data.flatMap(s => 
       (s.cargos || []).map(c => {
@@ -212,7 +212,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
           s.realizado_em ? format(parseISO(s.realizado_em), 'dd/MM/yyyy HH:mm') : '',
           s.realizado_por_nome || ''
         ];
-        if (isAdmMaster) row.push(s.valor_total_calculado?.toString() || '');
+        if (canViewValores) row.push(s.valor_total_calculado?.toString() || '');
         return row;
       })
     );
@@ -255,10 +255,12 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-6 w-full max-w-full overflow-hidden px-1">
       <div className="flex justify-between items-center gap-4 flex-wrap w-full">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-            <FileDown className="h-4 w-4 mr-2" />
-            Gerar Relatório do Período
-          </Button>
+          {canViewValores && (
+            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+              <FileDown className="h-4 w-4 mr-2" />
+              Gerar Relatório do Período
+            </Button>
+          )}
         </div>
         {canEdit && (
           <Button onClick={handleOpenNew}>
@@ -345,14 +347,14 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                     <TableHead className="whitespace-nowrap">Data Pedido</TableHead>
                     <TableHead className="whitespace-nowrap">Cargos</TableHead>
                     <TableHead className="whitespace-nowrap">Status</TableHead>
-                    {isAdmMaster && <TableHead className="whitespace-nowrap">Valor</TableHead>}
+                    {canViewValores && <TableHead className="whitespace-nowrap">Valor</TableHead>}
                     <TableHead className="text-right whitespace-nowrap min-w-[120px]">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
               <TableBody>
                 {solicitacoesFiltradas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={isAdmMaster ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={canViewValores ? 8 : 7} className="text-center py-8 text-muted-foreground">
                       Nenhuma solicitação encontrada
                     </TableCell>
                   </TableRow>
@@ -402,7 +404,7 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
                           </Badge>
                         )}
                       </TableCell>
-                      {isAdmMaster && (
+                      {canViewValores && (
                         <TableCell className="whitespace-nowrap">
                           {s.valor_total_calculado ? (
                             new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.valor_total_calculado)
