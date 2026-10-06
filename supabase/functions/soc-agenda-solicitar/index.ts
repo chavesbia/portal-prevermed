@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
     const { data: unid } = await admin.from('soc_agenda_unidades').select('id, ativo').eq('id', b.unidadeId).maybeSingle();
     if (!unid?.ativo) return json({ error: 'Unidade indisponível' }, 400);
 
+    const { data: emp } = await admin.from('companies').select('razao_social')
+      .eq('cnpj', b.empresaCnpj).eq('soc_code', b.codigoEmpresaSoc).eq('is_active', true).maybeSingle();
+    if (!emp) return json({ error: 'Empresa não encontrada entre os clientes ativos' }, 400);
+
     const { data: dup } = await admin.from('soc_agendamentos').select('id')
       .eq('unidade_id', b.unidadeId).eq('data_agendada', b.data).eq('hora_agendada', b.hora)
       .neq('status', 'cancelado').limit(1);
@@ -37,8 +41,9 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin.from('soc_agendamentos').insert({
       unidade_id: b.unidadeId,
-      empresa_nome: b.empresaNome.toUpperCase(),
+      empresa_nome: emp.razao_social,
       empresa_cnpj: b.empresaCnpj,
+      codigo_empresa_soc: b.codigoEmpresaSoc,
       colaborador_nome: b.colaboradorNome.toUpperCase(),
       colaborador_cpf: b.colaboradorCpf,
       tipo_exame: b.tipoExame,
