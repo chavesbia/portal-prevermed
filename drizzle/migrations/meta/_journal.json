@@ -127,6 +127,13 @@
       "when": 1791291153049,
       "tag": "0017_blindagem_valores_ppp_acrescimo",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791299992556,
+      "tag": "0018_soc_agenda_base",
+      "breakpoints": true
     }
   ]
 }
