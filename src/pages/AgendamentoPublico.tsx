@@ -11,8 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
-type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null };
-type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any };
+type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
+type Item = { codigo: string; nome: string };
+type Hier = { unidades: (Item & { setores: (Item & { cargos: Item[] })[] })[]; setores?: Item[]; cargos?: Item[]; podeCriar: boolean; indisponivel?: boolean };
+type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any; recemCadastrado?: boolean };
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
@@ -130,9 +132,53 @@ export default function AgendamentoPublico() {
 
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
+  // Pré-cadastro de colaborador não localizado no SOC
+  const [cadAberto, setCadAberto] = useState(false);
+  const [hier, setHier] = useState<Hier | null>(null);
+  const [cad, setCad] = useState({ nascimento: "", sexo: "", admissao: new Date().toISOString().slice(0, 10), unidade: "", setor: "", cargo: "" });
+  const [cadastrando, setCadastrando] = useState(false);
+  const [cadErro, setCadErro] = useState("");
+  useEffect(() => { setCadAberto(false); setHier(null); setCadErro(""); }, [cpf, socCode]);
+  const abrirCadastro = () => {
+    setCadAberto(true);
+    if (hier) return;
+    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "hierarquia", cnpj, socCode } })
+      .then(({ data }) => setHier(data ?? { unidades: [], podeCriar: false, indisponivel: true }));
+  };
+  const livre = !!hier?.podeCriar;
+  const uSel = hier?.unidades.find((u) => u.codigo === cad.unidade);
+  const sSel = uSel?.setores.find((x) => x.codigo === cad.setor);
+  // Livre: aceita nome digitado; se bater com um existente, envia o código
+  const ref = (txt: string, lista: Item[] = []) => { const t = txt.trim().toUpperCase(); const m = lista.find((i) => i.nome.toUpperCase() === t || i.codigo === txt); return m ? { codigo: m.codigo } : { nome: t }; };
+  const cadOk = f.colaboradorNome.trim().length >= 3 && !!cad.nascimento && !!cad.sexo && !!cad.admissao && !!cad.unidade.trim() && !!cad.setor.trim() && !!cad.cargo.trim();
+  const cadastrar = async () => {
+    setCadastrando(true); setCadErro("");
+    const body = {
+      acao: "cadastrar", cnpj, socCode, cpf, nome: f.colaboradorNome.trim(), dataNascimento: cad.nascimento, dataAdmissao: cad.admissao, sexo: cad.sexo,
+      unidade: livre ? ref(cad.unidade, hier?.unidades) : { codigo: cad.unidade },
+      setor: livre ? ref(cad.setor, hier?.setores) : { codigo: cad.setor },
+      cargo: livre ? ref(cad.cargo, hier?.cargos) : { codigo: cad.cargo },
+    };
+    const { data, error } = await supabase.functions.invoke("soc-agenda-lookup", { body });
+    setCadastrando(false);
+    if (error || !data?.ok) {
+      let msg = data?.error;
+      try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+      return setCadErro(msg ?? "Não foi possível cadastrar agora. Tente novamente.");
+    }
+    const nomeDe = (v: string, l: Item[] = []) => l.find((i) => i.codigo === v)?.nome ?? v.toUpperCase();
+    const cargoNome = livre ? cad.cargo.toUpperCase() : nomeDe(cad.cargo, sSel?.cargos);
+    setFunc({ encontrado: true, recemCadastrado: true, funcionario: {
+      nome: f.colaboradorNome.trim().toUpperCase(), cargo: cargoNome,
+      setor: livre ? cad.setor.toUpperCase() : nomeDe(cad.setor, uSel?.setores),
+      unidade: livre ? cad.unidade.toUpperCase() : nomeDe(cad.unidade, hier?.unidades), situacao: "PENDENTE" } });
+    setF((p) => ({ ...p, cargo: cargoNome, tipoExame: "Admissional" }));
+    setCadAberto(false);
+  };
+
   const valido = [
     !!socCode && cnpj.length === 14,
-    !!func && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
+    !!func && (func.encontrado || func.indisponivel) && cpf.length === 11 && f.colaboradorNome.trim().length >= 3,
     !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
@@ -227,15 +273,71 @@ export default function AgendamentoPublico() {
                     {func.funcionario.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
                     {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
                     {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
+                    {func.recemCadastrado && <p className="text-xs text-primary">Cadastrado agora no SOC (situação Pendente).</p>}
                   </div>
                 )}
-                {func && !func.encontrado && (<>
-                  <p className="text-sm text-muted-foreground">
-                    {func.indisponivel ? "Não foi possível consultar o cadastro agora. Preencha os dados abaixo." : "Colaborador ainda não cadastrado nesta empresa (provável Admissional). Preencha os dados abaixo."}
-                  </p>
+                {func?.indisponivel && !func.encontrado && (<>
+                  <p className="text-sm text-muted-foreground">Não foi possível consultar o cadastro agora. Preencha os dados abaixo.</p>
                   <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} /></div>
                   <div><Label>Cargo pretendido</Label><Input value={f.cargo} onChange={set("cargo")} /></div>
                 </>)}
+                {func && !func.encontrado && !func.indisponivel && !cadAberto && (
+                  <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+                    <p>Colaborador não localizado no cadastro desta empresa (ativo, pendente, afastado ou férias).</p>
+                    <p className="font-medium">Deseja cadastrá-lo para seguir com o agendamento?</p>
+                    <Button type="button" size="sm" onClick={abrirCadastro}>Sim, cadastrar colaborador</Button>
+                  </div>
+                )}
+                {func && !func.encontrado && !func.indisponivel && cadAberto && (
+                  <div className="space-y-3 rounded-md border p-3">
+                    <p className="text-sm font-medium">Cadastro do colaborador</p>
+                    <div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div><Label>Nascimento *</Label><Input type="date" value={cad.nascimento} onChange={(e) => setCad({ ...cad, nascimento: e.target.value })} /></div>
+                      <div><Label>Sexo *</Label>
+                        <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={cad.sexo} onChange={(e) => setCad({ ...cad, sexo: e.target.value })}>
+                          <option value="">Selecione</option><option value="MASCULINO">Masculino</option><option value="FEMININO">Feminino</option>
+                        </select></div>
+                      <div><Label>Admissão *</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>
+                    </div>
+                    {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
+                    {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
+                    {hier && !hier.indisponivel && !livre && (<>
+                      <p className="text-xs text-muted-foreground">Selecione a unidade, o setor e o cargo já existentes da empresa (conforme os laudos).</p>
+                      {[
+                        { k: "unidade", label: "Unidade *", lista: hier.unidades, reset: { setor: "", cargo: "" } },
+                        { k: "setor", label: "Setor *", lista: uSel?.setores ?? [], reset: { cargo: "" } },
+                        { k: "cargo", label: "Cargo *", lista: sSel?.cargos ?? [], reset: {} },
+                      ].map(({ k, label, lista, reset }) => (
+                        <div key={k}><Label>{label}</Label>
+                          <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50" disabled={lista.length === 0}
+                            value={cad[k as "unidade"]} onChange={(e) => setCad({ ...cad, ...reset, [k]: e.target.value })}>
+                            <option value="">{lista.length ? "Selecione" : "—"}</option>
+                            {lista.map((i) => <option key={i.codigo} value={i.codigo}>{i.nome}</option>)}
+                          </select></div>
+                      ))}
+                    </>)}
+                    {hier && !hier.indisponivel && livre && (<>
+                      <p className="text-xs text-muted-foreground">Escolha uma opção existente ou digite uma nova.</p>
+                      {[
+                        { k: "unidade", label: "Unidade *", lista: hier.unidades },
+                        { k: "setor", label: "Setor *", lista: hier.setores ?? [] },
+                        { k: "cargo", label: "Cargo *", lista: hier.cargos ?? [] },
+                      ].map(({ k, label, lista }) => (
+                        <div key={k}><Label>{label}</Label>
+                          <Input list={`lista-${k}`} value={cad[k as "unidade"]} maxLength={120} onChange={(e) => setCad({ ...cad, [k]: e.target.value })} />
+                          <datalist id={`lista-${k}`}>{lista.map((i) => <option key={i.codigo} value={i.nome} />)}</datalist></div>
+                      ))}
+                    </>)}
+                    {cadErro && <p className="text-sm text-destructive">{cadErro}</p>}
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setCadAberto(false)}>Cancelar</Button>
+                      <Button type="button" size="sm" disabled={!cadOk || cadastrando} onClick={cadastrar}>
+                        {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}Cadastrar no SOC
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>)}
               {passo === 2 && (<>
                 <div className="grid grid-cols-2 gap-2">
@@ -243,7 +345,7 @@ export default function AgendamentoPublico() {
                     <Button key={t} type="button" variant={f.tipoExame === t ? "default" : "outline"} onClick={() => setF({ ...f, tipoExame: t })}>{t}</Button>
                   ))}
                 </div>
-                {f.tipoExame === "Admissional" && func?.encontrado && (
+                {f.tipoExame === "Admissional" && func?.encontrado && !func.recemCadastrado && (
                   <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
                     <p><strong>Atenção:</strong> colaborador já possui cadastro ativo nesta empresa
