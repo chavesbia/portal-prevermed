@@ -88,6 +88,23 @@ export default function AgendamentoPublico() {
     });
   }, [unidadeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Exames do PCMSO do colaborador (SOC), filtrados pelo tipo de exame escolhido
+  const [pcmso, setPcmso] = useState<{ nome: string; tipos: Record<string, boolean> }[] | null>(null);
+  const [buscandoPcmso, setBuscandoPcmso] = useState(false);
+  useEffect(() => {
+    setPcmso(null);
+    if (!func?.encontrado) return;
+    setBuscandoPcmso(true);
+    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "exames", cnpj, socCode, cpf } }).then(({ data }) => {
+      setPcmso(data?.indisponivel ? null : data?.exames ?? []);
+      setBuscandoPcmso(false);
+    });
+  }, [func]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!pcmso || !f.tipoExame) return;
+    setExames(pcmso.filter((e) => e.tipos[f.tipoExame] && !/CL[IÍ]NICO/.test(e.nome)).map((e) => e.nome));
+  }, [pcmso, f.tipoExame]);
+
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
   const valido = [
@@ -214,7 +231,12 @@ export default function AgendamentoPublico() {
                     <Button type="button" variant="outline" disabled={outroExame.trim().length < 2}
                       onClick={() => { const v = outroExame.trim().toUpperCase(); if (!exames.includes(v)) setExames([...exames, v]); setOutroExame(""); }}>Adicionar</Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Se a empresa tem PCMSO, a recepção confere os exames conforme o cargo.</p>
+                  {buscandoPcmso && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Buscando exames do PCMSO…</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {pcmso && pcmso.length > 0
+                      ? "Exames marcados automaticamente conforme o PCMSO do cargo. Você pode ajustar."
+                      : "Se a empresa tem PCMSO, a recepção confere os exames conforme o cargo."}
+                  </p>
                 </div>
                 <div>
                   <Label>Guia de encaminhamento (opcional — PDF ou imagem, até 5 MB)</Label>
