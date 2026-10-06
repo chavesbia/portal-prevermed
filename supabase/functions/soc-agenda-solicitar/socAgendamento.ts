@@ -7,6 +7,9 @@ const TIPO: Record<string, string> = {
   'Demissional': 'DEMISSIONAL',
   'Retorno ao Trabalho': 'RETORNO_TRABALHO',
   'Mudança de Risco': 'MUDANCA_FUNCAO',
+  'Monitoração Pontual': 'MONITORACAO_PONTUAL',
+  'Consulta': 'CONSULTA',
+  'Consulta Assistencial': 'CONSULTA_ASSISTENCIAL',
 };
 
 const esc = (s: string) =>

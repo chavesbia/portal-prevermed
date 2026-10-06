@@ -14,7 +14,7 @@ const Body = z.object({
   codigoEmpresaSoc: z.string().regex(/^\d{1,12}$/),
   colaboradorNome: z.string().trim().min(3).max(200),
   colaboradorCpf: z.string().regex(/^\d{11}$/),
-  tipoExame: z.enum(['Admissional', 'Periódico', 'Demissional', 'Retorno ao Trabalho', 'Mudança de Risco']),
+  tipoExame: z.enum(['Admissional', 'Periódico', 'Demissional', 'Retorno ao Trabalho', 'Mudança de Risco', 'Monitoração Pontual', 'Consulta', 'Consulta Assistencial']),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hora: z.string().regex(/^\d{2}:\d{2}$/),
   observacoes: z.string().max(1000).optional(),
