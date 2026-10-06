@@ -17,6 +17,12 @@ const Body = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hora: z.string().regex(/^\d{2}:\d{2}$/),
   observacoes: z.string().max(1000).optional(),
+  exames: z.array(z.string().trim().min(2).max(80)).max(40).default([]),
+  guia: z.object({
+    nome: z.string().max(120),
+    tipo: z.enum(['application/pdf', 'image/png', 'image/jpeg']),
+    base64: z.string().max(7_000_000),
+  }).optional(),
 });
 
 Deno.serve(async (req) => {

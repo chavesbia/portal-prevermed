@@ -16,6 +16,7 @@ const dig = (v: string) => v.replace(/\D/g, "");
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
 const toIso = (b: string) => b.split("/").reverse().join("-");
 const PASSOS = ["Empresa", "Colaborador", "Exame", "Data e hora"];
+const EXAMES = ["AUDIOMETRIA", "ACUIDADE VISUAL", "ECG", "EEG", "ESPIROMETRIA", "RX TÓRAX OIT", "GLICEMIA", "HEMOGRAMA", "TOXICOLÓGICO"];
 
 export default function AgendamentoPublico() {
   const [passo, setPasso] = useState(0);
@@ -33,6 +34,9 @@ export default function AgendamentoPublico() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
   const [protocolo, setProtocolo] = useState("");
+  const [exames, setExames] = useState<string[]>([]);
+  const [outroExame, setOutroExame] = useState("");
+  const [guia, setGuia] = useState<File | null>(null);
 
   useEffect(() => {
     document.title = "Agendamento de Exames | PreverMed";
@@ -100,11 +104,17 @@ export default function AgendamentoPublico() {
       fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
       f.observacoes,
     ].filter(Boolean).join("\n");
+    let guiaPayload: { nome: string; tipo: string; base64: string } | undefined;
+    if (guia) {
+      const b64 = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(guia); });
+      guiaPayload = { nome: guia.name.slice(0, 120), tipo: guia.type, base64: b64 };
+    }
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
+        exames: ["EXAME CLÍNICO", ...exames], guia: guiaPayload,
       },
     });
     setCarregando(false);
@@ -190,6 +200,26 @@ export default function AgendamentoPublico() {
                   {TIPOS.map((t) => (
                     <Button key={t} type="button" variant={f.tipoExame === t ? "default" : "outline"} onClick={() => setF({ ...f, tipoExame: t })}>{t}</Button>
                   ))}
+                </div>
+                <div className="space-y-2">
+                  <Label>Exames (o Exame Clínico já está incluído)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[...EXAMES, ...exames.filter((e) => !EXAMES.includes(e))].map((e) => (
+                      <Button key={e} type="button" size="sm" className="whitespace-nowrap" variant={exames.includes(e) ? "default" : "outline"}
+                        onClick={() => setExames((p) => p.includes(e) ? p.filter((x) => x !== e) : [...p, e])}>{e}</Button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input value={outroExame} onChange={(e) => setOutroExame(e.target.value)} placeholder="Outro exame" maxLength={80} />
+                    <Button type="button" variant="outline" disabled={outroExame.trim().length < 2}
+                      onClick={() => { const v = outroExame.trim().toUpperCase(); if (!exames.includes(v)) setExames([...exames, v]); setOutroExame(""); }}>Adicionar</Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Se a empresa tem PCMSO, a recepção confere os exames conforme o cargo.</p>
+                </div>
+                <div>
+                  <Label>Guia de encaminhamento (opcional — PDF ou imagem, até 5 MB)</Label>
+                  <Input type="file" accept="application/pdf,image/png,image/jpeg"
+                    onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return setGuia(null); } setErro(""); setGuia(file); }} />
                 </div>
                 <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
               </>)}
