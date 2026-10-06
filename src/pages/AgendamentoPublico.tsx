@@ -66,9 +66,9 @@ export default function AgendamentoPublico() {
   const setSoc = (e: Empresa) => { setSocCode(e.soc_code); setF((p) => ({ ...p, empresaNome: e.razao_social })); setFunc(null); };
 
   const cpf = dig(f.colaboradorCpf);
-  useEffect(() => {
-    setFunc(null);
-    if (cpf.length !== 11 || !socCode) return;
+  const cpfValido = isValidCPF(cpf);
+REPLACE_MID
+    if (!cpfValido || !socCode) return;
     setBuscandoFunc(true);
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(({ data }) => {
       const r: Func = data?.encontrado !== undefined ? data : { encontrado: false, indisponivel: true };
@@ -265,7 +265,8 @@ export default function AgendamentoPublico() {
                 ))}
               </>)}
               {passo === 1 && (<>
-                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" value={f.colaboradorCpf} onChange={set("colaboradorCpf")} placeholder="Somente números" /></div>
+                <div><Label>CPF do colaborador</Label><Input inputMode="numeric" maxLength={14} value={maskCPF(f.colaboradorCpf)} onChange={(e) => setF((p) => ({ ...p, colaboradorCpf: dig(e.target.value).slice(0, 11) }))} placeholder="000.000.000-00" />
+                  {cpf.length === 11 && !cpfValido && <p className="mt-1 text-xs text-destructive">CPF inválido. Confira os números digitados.</p>}</div>
                 {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
                 {func?.encontrado && (
                   <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
