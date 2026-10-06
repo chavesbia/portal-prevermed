@@ -7173,6 +7173,7 @@ export type Database = {
         Args: { _ticket_id: string; _user_id: string }
         Returns: boolean
       }
+      can_view_valores_os: { Args: never; Returns: boolean }
       contract_calc_status: {
         Args: {
           _data_inicio: string
@@ -7215,6 +7216,20 @@ export type Database = {
           module_id: string
           module_name: string
           module_route: string
+        }[]
+      }
+      get_valores_acrescimo: {
+        Args: never
+        Returns: {
+          id: string
+          valor: number
+        }[]
+      }
+      get_valores_ppp: {
+        Args: never
+        Returns: {
+          id: string
+          valor: number
         }[]
       }
       guias_business_days: {
