@@ -43,7 +43,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Resposta SOC inválida', preview: text.slice(0, 800) }, 502);
     }
     if (debug) return json({ total: rows.length, amostra: rows.slice(0, 5) });
-    return json({ horarios: rows });
+    const alvo = String(Number(codigoAgenda));
+    const porData: Record<string, string[]> = {};
+    for (const r of rows) {
+      if (String(Number(r.codigoAgenda)) !== alvo) continue;
+      if (r.statusAgenda && String(r.statusAgenda).toLowerCase() !== 'ativo') continue;
+      (porData[r.data] ??= []).push(String(r.horario));
+    }
+    for (const d in porData) porData[d] = [...new Set(porData[d])].sort();
+    return json({ porData });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
