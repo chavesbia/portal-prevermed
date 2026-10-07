@@ -614,7 +614,7 @@ interface LaudoRow {
 
 type LaudoStatus = 'em_renovacao' | 'vencido' | 'a_vencer' | 'valido' | 'historico';
 
-interface OSAberta { numero_os: string | null; tipos: string[] }
+interface OSAberta { numero_os: string | null; unidade_id: string | null; tipos: string[] }
 
 interface UnitInfo {
   id: string;
@@ -741,13 +741,14 @@ function LaudosCard({ companyId }: { companyId: string; navigate: (to: string) =
     queryFn: async () => {
       const { data: rows, error } = await supabase
         .from('ordens_servico')
-        .select('numero_os, status_os, servicos_os(tipo, status)')
+        .select('numero_os, unidade_id, status_os, servicos_os(tipo, status)')
         .eq('company_id', companyId)
         .neq('status_os', 'Encerrado')
         .neq('status_os', 'Cancelado');
       if (error) throw error;
       return ((rows ?? []) as any[]).map((o) => ({
         numero_os: o.numero_os != null ? String(o.numero_os) : null,
+        unidade_id: o.unidade_id ?? null,
         tipos: ((o.servicos_os ?? []) as { tipo: string; status: string }[])
           .filter((s) => !/conclu|cancel/i.test(s.status ?? ''))
           .map((s) => norm(s.tipo)),
@@ -785,7 +786,7 @@ function LaudosCard({ companyId }: { companyId: string; navigate: (to: string) =
   // Laudo mais recente por unidade + tipo (os demais viram "versão anterior")
   const latestKey = new Map<string, LaudoRow>();
   for (const l of rows) {
-    const k = `${l.unidade_id ?? '-'}|${norm(l.tipo_laudo_nome)}`;
+    const k = `${l.unidade_id ?? `sem-unidade:${l.id}`}|${norm(l.tipo_laudo_nome)}`;
     const cur = latestKey.get(k);
     if (!cur || (l.data_emissao ?? '') > (cur.data_emissao ?? '')) latestKey.set(k, l);
   }
@@ -795,14 +796,14 @@ function LaudosCard({ companyId }: { companyId: string; navigate: (to: string) =
     const unidadeLabel = l.unidade_id
       ? (u?.name || u?.razao_social || u?.soc_unit_code || 'Unidade não identificada')
       : 'Sem unidade vinculada';
-    const k = `${l.unidade_id ?? '-'}|${norm(l.tipo_laudo_nome)}`;
+    const k = `${l.unidade_id ?? `sem-unidade:${l.id}`}|${norm(l.tipo_laudo_nome)}`;
     const isPPP = /\bPPP\b/i.test(l.tipo_laudo_nome ?? '');
     const substituido = !isPPP && latestKey.get(k)?.id !== l.id;
     let status: LaudoStatus = substituido ? 'historico' : baseStatus(l, todayISO);
     let osRenovacao: string | null = null;
     if (status === 'vencido' || status === 'a_vencer') {
       const tipo = norm(l.tipo_laudo_nome);
-      const os = (osAbertas ?? []).find((o) => tipo && o.tipos.includes(tipo));
+      const os = (osAbertas ?? []).find((o) => tipo && o.tipos.includes(tipo) && (o.unidade_id ?? null) === (l.unidade_id ?? null));
       if (os) { status = 'em_renovacao'; osRenovacao = os.numero_os; }
     }
     return { ...l, status, unidadeLabel, osRenovacao, substituido };
