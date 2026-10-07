@@ -241,8 +241,10 @@ export default function AgendamentoPublico() {
               <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 rounded-md border p-4 text-sm">
                 <dt className="text-muted-foreground">Empresa</dt><dd className="font-medium">{empresas?.find((e) => e.soc_code === socCode)?.razao_social ?? f.empresaNome}</dd>
                 <dt className="text-muted-foreground">Colaborador</dt><dd className="font-medium">{f.colaboradorNome}</dd>
+                {func?.funcionario?.unidade && (<><dt className="text-muted-foreground">Unidade do colaborador</dt><dd className="font-medium">{func.funcionario.unidade}</dd></>)}
                 <dt className="text-muted-foreground">Tipo de exame</dt><dd className="font-medium">{f.tipoExame}</dd>
-                <dt className="text-muted-foreground">Unidade</dt>
+                <dt className="text-muted-foreground">Exames</dt><dd className="font-medium">{usaGradePcmso ? "CONFORME PCMSO" : [...(temPcmso ? [] : [CLINICO]), ...exames].join(", ") || "-"}</dd>
+                <dt className="text-muted-foreground">Local de atendimento</dt>
                 <dd><span className="font-medium">{unidade?.nome}</span>
                   {ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""] && <span className="block text-xs text-muted-foreground">{ENDERECOS[unidade!.codigo_agenda.replace(/^0+/, "")]}</span>}
                 </dd>
@@ -415,7 +417,7 @@ export default function AgendamentoPublico() {
                         <Check className="h-3 w-3" />CONFORME PCMSO
                       </span>
                     )}
-                    {mostrarGrade && [...pcmsoTipo, ...(pcmsoTipo.length > 0 ? [] : EXAMES.filter((e) => !pcmsoTipo.includes(e))), ...exames.filter((e) => !EXAMES.includes(e) && !pcmsoTipo.includes(e))]
+                    {mostrarGrade && [...pcmsoTipo, ...(pcmsoTipo.length > 0 ? [] : EXAMES.filter((e) => !pcmsoTipo.includes(e))), ...exames.filter((e) => !pcmsoTipo.includes(e))]
                       .filter((e, i, a) => a.indexOf(e) === i)
                       .map((e) => {
                       const on = exames.includes(e); const doPcmso = pcmsoTipo.includes(e);
