@@ -333,20 +333,12 @@ export const EXAMES_SOC: { codigo: string; nome: string }[] = [
 "nome": "GLICEMIA DE JEJUM (GLICOSE)"
 },
 {
-"codigo": "35",
-"nome": "GLICOSE"
-},
-{
 "codigo": "1141",
 "nome": "GRUPO SANGUÍNEO ABO (FATOR RH - TIPAGEM SANGUÍNEA)"
 },
 {
 "codigo": "999.3",
 "nome": "HEMOGLOBINA GLICOSILADA (GLICADA)"
-},
-{
-"codigo": "00",
-"nome": "HEMOGRAMA COMPLETO"
 },
 {
 "codigo": "28.04.048-1",
@@ -395,10 +387,6 @@ export const EXAMES_SOC: { codigo: string; nome: string }[] = [
 {
 "codigo": "9999-1",
 "nome": "IMUNOGLOBULINAS (IGE)"
-},
-{
-"codigo": "51",
-"nome": "INATIVO - NÃO UTILIZAR!!!"
 },
 {
 "codigo": "99",
@@ -795,10 +783,6 @@ export const EXAMES_SOC: { codigo: string; nome: string }[] = [
 {
 "codigo": "300421",
 "nome": "VACINA TRÍPLICE VIRAL (SARAMPO, CAXUMBA, RUBÉOLA)"
-},
-{
-"codigo": "10807",
-"nome": "VAZIO"
 },
 {
 "codigo": "03.02.202-3",
