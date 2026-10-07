@@ -18,6 +18,7 @@ const Body = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hora: z.string().regex(/^\d{2}:\d{2}$/),
   observacoes: z.string().max(1000).optional(),
+  mudancaRisco: z.string().max(400).optional(),
   exames: z.array(z.string().trim().min(2).max(80)).max(40).default([]),
   guia: z.object({
     nome: z.string().max(120),
@@ -69,7 +70,7 @@ Deno.serve(async (req) => {
       tipo_exame: b.tipoExame,
       data_agendada: b.data,
       hora_agendada: b.hora,
-      observacoes: b.observacoes ?? null,
+      observacoes: [b.mudancaRisco, b.observacoes].filter(Boolean).join('\n') || null,
     }).select('id, protocolo').single();
     if (error) return json({ error: 'Não foi possível registrar' }, 500);
 
@@ -82,7 +83,13 @@ Deno.serve(async (req) => {
       data: b.data,
       hora: b.hora,
       tipoExame: b.tipoExame,
-      detalhes: `Portal ${data.protocolo} | Exames: ${exames.join(', ') || '-'}${guiaPath ? ' | Guia anexada no Portal' : ''}${b.observacoes ? ` | Obs: ${b.observacoes}` : ''}`,
+      detalhes: [
+        `Portal: ${data.protocolo}`,
+        `Exames: ${exames.join(', ') || '-'}`,
+        b.mudancaRisco ? `ATENÇÃO: ${b.mudancaRisco}` : '',
+        guiaPath ? 'Guia: anexada no Portal' : '',
+        b.observacoes?.trim() ? `Obs: ${b.observacoes.trim()}` : '',
+      ].filter(Boolean).join('\n'),
     });
     await admin.from('soc_agendamentos').update({
       status: soc.ok ? 'agendado_soc' : 'solicitado',
