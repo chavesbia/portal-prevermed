@@ -188,12 +188,10 @@ export default function AgendamentoPublico() {
   const enviar = async () => {
     setCarregando(true); setErro("");
     const fu = func?.funcionario;
-    const extra = [
-      mudanca
-        ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME PCMSO" : ""}` : "",
-      fu ? `Cadastro SOC: ${[fu.matricula && `matrícula ${fu.matricula}`, fu.cargo && `cargo ${fu.cargo}`, fu.setor && `setor ${fu.setor}`, fu.unidade && `unidade ${fu.unidade}`].filter(Boolean).join(", ")}` : `Não cadastrado no SOC${f.cargo ? ` — cargo pretendido: ${f.cargo}` : ""}`,
-      f.observacoes,
-    ].filter(Boolean).join("\n");
+    void fu;
+    const mudancaRisco = mudanca
+      ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME PCMSO" : ""}`
+      : undefined;
     let guiaPayload: { nome: string; tipo: string; base64: string } | undefined;
     if (guia) {
       const b64 = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(guia); });
@@ -203,7 +201,7 @@ export default function AgendamentoPublico() {
       body: {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
-        tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: extra.slice(0, 1000) || undefined,
+        tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
         exames: [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
       },
     });
