@@ -61,7 +61,7 @@ export async function incluirAgendamentoSoc(p: {
 <reservarCompromissoParaEmpresa>false</reservarCompromissoParaEmpresa>
 <tipoBuscaFuncionario>CPF_ATIVO</tipoBuscaFuncionario><codigoFuncionario>${esc(p.cpf)}</codigoFuncionario>
 <codigoUsuarioAgenda>${esc(String(p.codigoAgenda).replace(/^0+(?=\d)/, ''))}</codigoUsuarioAgenda>
-...
+<data>${d}/${m}/${y}</data><horaInicial>${esc(p.hora)}</horaInicial><horaFinal>${horaFinal}</horaFinal>
 <codigoCompromisso>1</codigoCompromisso><usaOutroCompromisso>false</usaOutroCompromisso>
 <tipoCompromisso>${TIPO[p.tipoExame] ?? 'CONSULTA'}</tipoCompromisso>
 <detalhes>${esc(p.detalhes.slice(0, 1900))}</detalhes>
