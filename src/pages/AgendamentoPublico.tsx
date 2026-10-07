@@ -18,6 +18,11 @@ type Hier = { unidades: (Item & { setores: (Item & { cargos: Item[] })[] })[]; s
 type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any; recemCadastrado?: boolean };
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
+// Endereço exibido no comprovante, por código da agenda SOC
+const ENDERECOS: Record<string, string> = {
+  "820293": "Rua Avelino Lopes, 248 - Centro - Osasco - SP",
+  "830071": "Rua Afonso Sardinha, 155 - Lapa - São Paulo - SP",
+};
 const br = (d: Date) => d.toLocaleDateString("pt-BR");
 const toIso = (b: string) => b.split("/").reverse().join("-");
 const PASSOS = ["Empresa", "Colaborador", "Exame", "Data e hora"];
@@ -226,15 +231,32 @@ export default function AgendamentoPublico() {
 
         {protocolo ? (
           <Card>
-            <CardContent className="space-y-3 py-8 text-center">
-              <CalendarCheck className="mx-auto h-12 w-12 text-primary" />
-              <p className="text-lg font-semibold">Solicitação registrada!</p>
-              <p className="font-mono text-2xl">{protocolo}</p>
-              <p className="text-sm text-muted-foreground">
-                {f.colaboradorNome} — {unidade?.nome} — {dia} às {hora}
-              </p>
-              <p className="text-sm text-muted-foreground">Guarde o protocolo. Nossa recepção confirmará o agendamento.</p>
-              <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
+            <CardContent className="space-y-5 py-8">
+              <div className="space-y-2 text-center">
+                <CalendarCheck className="mx-auto h-12 w-12 text-primary" />
+                <p className="text-lg font-semibold">Pré-agendamento realizado!</p>
+                <p className="font-mono text-2xl">{protocolo}</p>
+                <p className="text-xs text-muted-foreground">Guarde este número de protocolo.</p>
+              </div>
+              <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 rounded-md border p-4 text-sm">
+                <dt className="text-muted-foreground">Empresa</dt><dd className="font-medium">{empresas?.find((e) => e.soc_code === socCode)?.razao_social ?? f.empresaNome}</dd>
+                <dt className="text-muted-foreground">Colaborador</dt><dd className="font-medium">{f.colaboradorNome}</dd>
+                <dt className="text-muted-foreground">Tipo de exame</dt><dd className="font-medium">{f.tipoExame}</dd>
+                <dt className="text-muted-foreground">Unidade</dt>
+                <dd><span className="font-medium">{unidade?.nome}</span>
+                  {ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""] && <span className="block text-xs text-muted-foreground">{ENDERECOS[unidade!.codigo_agenda.replace(/^0+/, "")]}</span>}
+                </dd>
+                <dt className="text-muted-foreground">Data</dt><dd className="font-medium">{dia}</dd>
+                <dt className="text-muted-foreground">Horário</dt><dd className="font-medium">{hora}h</dd>
+              </dl>
+              <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
+                <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
+                <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2 print:hidden">
+                <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
+                <Button onClick={() => window.location.assign(window.location.pathname)}>Novo agendamento</Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
