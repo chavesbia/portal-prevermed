@@ -216,6 +216,9 @@ export default function AgendamentoPublico() {
       try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
       return setErro(msg ?? "Não foi possível concluir. Tente novamente.");
     }
+    if (!data?.agendadoSoc) {
+      return setErro(`Não conseguimos reservar este horário na agenda (protocolo ${data?.protocolo ?? "-"}). Escolha outro horário ou fale com a PreverMed antes de comparecer.`);
+    }
     setProtocolo(data.protocolo);
   };
 

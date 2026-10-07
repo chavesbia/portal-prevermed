@@ -623,7 +623,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                   if (upErr) { toast({ title: 'Erro ao enviar arquivo', description: `${file.name}: ${upErr.message}`, variant: 'destructive' }); return; }
                   enviados.push({ file, path });
                 }
-                const { error } = await supabase.from('os_visita_checklist').insert({
+                const { error } = await supabase.from('os_visita_checklist').upsert({
                   visita_id: toRealizar.id,
                   ordem_id: toRealizar.ordem_id,
                   numero_os: toRealizar.numero_os,
@@ -633,8 +633,11 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                   observacao: ckObservacao.trim() || null,
                   created_by: user?.id || null,
                   created_by_nome: profile?.full_name || user?.email || null,
-                });
-                if (error) { toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return; }
+                }, { onConflict: 'visita_id' });
+                if (error) {
+                  await supabase.storage.from('os-anexos').remove(enviados.map(e => e.path));
+                  toast({ title: 'Erro ao salvar checklist', description: error.message, variant: 'destructive' }); return;
+                }
                 if (toRealizar.ordem_id) {
                   for (const { file, path } of enviados) {
                     await (supabase as any).from('os_anexos').insert({
@@ -644,7 +647,9 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
                     });
                   }
                 }
-                await updateVisitaStatus(toRealizar.id, 'realizada');
+                const okStatus = await updateVisitaStatus(toRealizar.id, 'realizada');
+                qc.invalidateQueries({ queryKey: ['os-visita-checklist'] });
+                if (okStatus === false) { toast({ title: 'Checklist salvo, mas a visita não foi marcada como Realizada', description: 'Tente confirmar novamente.', variant: 'destructive' }); return; }
                 qc.invalidateQueries({ queryKey: ['os-visita-checklist'] });
                 setToRealizar(null);
               } finally { setCkSaving(false); }

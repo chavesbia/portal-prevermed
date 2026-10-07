@@ -255,12 +255,10 @@ export function OSAcrescimoFuncaoView({ canEdit }: { canEdit: boolean }) {
     <div className="space-y-6 w-full max-w-full overflow-hidden px-1">
       <div className="flex justify-between items-center gap-4 flex-wrap w-full">
         <div className="flex items-center gap-2">
-          {canViewValores && (
-            <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-              <FileDown className="h-4 w-4 mr-2" />
-              Gerar Relatório do Período
-            </Button>
-          )}
+          <Button variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+            <FileDown className="h-4 w-4 mr-2" />
+            Gerar Relatório do Período
+          </Button>
         </div>
         {canEdit && (
           <Button onClick={handleOpenNew}>
