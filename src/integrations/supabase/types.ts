@@ -119,6 +119,188 @@ export type Database = {
           },
         ]
       }
+      agenda_bloqueios: {
+        Row: {
+          created_at: string
+          data: string
+          hora_fim_antecipada: string | null
+          id: string
+          motivo: string
+          unidade_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          hora_fim_antecipada?: string | null
+          id?: string
+          motivo: string
+          unidade_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          hora_fim_antecipada?: string | null
+          id?: string
+          motivo?: string
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_bloqueios_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agenda_unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_calendario: {
+        Row: {
+          ativo: boolean
+          dia_semana: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          unidade_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          dia_semana: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          unidade_id: string
+        }
+        Update: {
+          ativo?: boolean
+          dia_semana?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_calendario_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agenda_unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_documentos_exigidos: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          obrigatorio: boolean
+          ordem: number
+          tipo_exame: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          obrigatorio?: boolean
+          ordem?: number
+          tipo_exame: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          obrigatorio?: boolean
+          ordem?: number
+          tipo_exame?: string
+        }
+        Relationships: []
+      }
+      agenda_exames_regras: {
+        Row: {
+          antecedencia_dias: number
+          ativo: boolean
+          created_at: string
+          dias_semana: number[]
+          exame_nome: string
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          observacao: string | null
+          parceiro: boolean
+          unidade_id: string | null
+        }
+        Insert: {
+          antecedencia_dias?: number
+          ativo?: boolean
+          created_at?: string
+          dias_semana?: number[]
+          exame_nome: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          observacao?: string | null
+          parceiro?: boolean
+          unidade_id?: string | null
+        }
+        Update: {
+          antecedencia_dias?: number
+          ativo?: boolean
+          created_at?: string
+          dias_semana?: number[]
+          exame_nome?: string
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          observacao?: string | null
+          parceiro?: boolean
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_exames_regras_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agenda_unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agenda_limites: {
+        Row: {
+          created_at: string
+          dia_semana: number | null
+          id: string
+          maximo: number
+          tipo_exame: string
+          unidade_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dia_semana?: number | null
+          id?: string
+          maximo: number
+          tipo_exame: string
+          unidade_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dia_semana?: number | null
+          id?: string
+          maximo?: number
+          tipo_exame?: string
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agenda_limites_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agenda_unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           content: string
@@ -6418,19 +6600,59 @@ export type Database = {
         }
         Relationships: []
       }
+      soc_agendamento_anexos: {
+        Row: {
+          agendamento_id: string
+          enviado_em: string
+          id: string
+          nome_arquivo: string | null
+          path: string
+          tipo_documento: string
+        }
+        Insert: {
+          agendamento_id: string
+          enviado_em?: string
+          id?: string
+          nome_arquivo?: string | null
+          path: string
+          tipo_documento: string
+        }
+        Update: {
+          agendamento_id?: string
+          enviado_em?: string
+          id?: string
+          nome_arquivo?: string | null
+          path?: string
+          tipo_documento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soc_agendamento_anexos_agendamento_id_fkey"
+            columns: ["agendamento_id"]
+            isOneToOne: false
+            referencedRelation: "soc_agendamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       soc_agendamentos: {
         Row: {
+          aprovacao_status: string | null
+          aprovado_em: string | null
+          aprovado_por: string | null
           codigo_empresa_soc: string | null
           colaborador_cpf: string
           colaborador_nome: string
           created_at: string
           data_agendada: string
+          devolucao_motivo: string | null
           empresa_cnpj: string | null
           empresa_nome: string | null
           exames: Json
           guia_path: string | null
           hora_agendada: string
           id: string
+          motivo_retorno: string | null
           observacoes: string | null
           protocolo: string
           soc_erro: string | null
@@ -6441,17 +6663,22 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aprovacao_status?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           codigo_empresa_soc?: string | null
           colaborador_cpf: string
           colaborador_nome: string
           created_at?: string
           data_agendada: string
+          devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
           exames?: Json
           guia_path?: string | null
           hora_agendada: string
           id?: string
+          motivo_retorno?: string | null
           observacoes?: string | null
           protocolo?: string
           soc_erro?: string | null
@@ -6462,17 +6689,22 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aprovacao_status?: string | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           codigo_empresa_soc?: string | null
           colaborador_cpf?: string
           colaborador_nome?: string
           created_at?: string
           data_agendada?: string
+          devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
           exames?: Json
           guia_path?: string | null
           hora_agendada?: string
           id?: string
+          motivo_retorno?: string | null
           observacoes?: string | null
           protocolo?: string
           soc_erro?: string | null

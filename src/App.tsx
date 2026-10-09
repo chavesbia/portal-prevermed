@@ -15,6 +15,7 @@ import { RequireAuth } from "@/components/layout/RequireAuth";
 // Auth (eager - small e necessário pra redirect)
 import Auth from "./pages/Auth";
 import AgendamentoPublico from "./pages/AgendamentoPublico";
+import AgendamentoCompletar from "./pages/AgendamentoCompletar";
 import ChangePassword from "./pages/ChangePassword";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -55,7 +56,8 @@ const AdminDocuments = lazy(() => import("./pages/admin/AdminDocuments"));
 const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos"));
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
-const AdminSocAgenda = lazy(() => import("./pages/admin/AdminSocAgenda"));
+const AdminAgenda = lazy(() => import("./pages/admin/AdminAgenda"));
+const Agendamentos = lazy(() => import("./pages/Agendamentos"));
 
 // Cache global: evita recarregar tudo a cada troca de aba/janela.
 // Telas que precisam de dados ao vivo usam realtime/invalidateQueries.
@@ -89,6 +91,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/alterar-senha" element={<ChangePassword />} />
               <Route path="/agendamento" element={<AgendamentoPublico />} />
+              <Route path="/agendamento/completar" element={<AgendamentoCompletar />} />
 
               {/* Portal routes with layout - all require authentication */}
               <Route element={<RequireAuth><PortalLayout /></RequireAuth>}>
@@ -120,6 +123,7 @@ const App = () => (
                 <Route path="/painel-cliente" element={<ProtectedModuleRoute route="/painel-cliente"><PainelCliente /></ProtectedModuleRoute>} />
                 <Route path="/painel-cliente/:companyId" element={<ProtectedModuleRoute route="/painel-cliente"><PainelCliente /></ProtectedModuleRoute>} />
 
+                <Route path="/agendamentos" element={<ProtectedModuleRoute route="/agendamentos"><Agendamentos /></ProtectedModuleRoute>} />
                 <Route path="/notificacoes" element={<Notificacoes />} />
                 <Route path="/departamentos/*" element={<Index />} />
 
@@ -135,7 +139,8 @@ const App = () => (
                 <Route path="/admin/revisao-vinculos" element={<Navigate to="/admin/permissoes?tab=revisao-vinculos" replace />} />
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
                 <Route path="/admin/empresas" element={<AdminMasterRoute><AdminEmpresas /></AdminMasterRoute>} />
-                <Route path="/admin/soc-agenda" element={<AdminMasterRoute><AdminSocAgenda /></AdminMasterRoute>} />
+                <Route path="/admin/agenda" element={<AdminMasterRoute><AdminAgenda /></AdminMasterRoute>} />
+                <Route path="/admin/soc-agenda" element={<Navigate to="/admin/agenda?tab=soc" replace />} />
 
 
                 <Route path="/perfil" element={<Profile />} />

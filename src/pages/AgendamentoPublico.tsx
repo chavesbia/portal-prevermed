@@ -41,7 +41,13 @@ export default function AgendamentoPublico() {
   const [func, setFunc] = useState<Func | null>(null);
   const [buscandoFunc, setBuscandoFunc] = useState(false);
   const [unidadeId, setUnidadeId] = useState("");
-  const [porData, setPorData] = useState<Record<string, string[]>>({});
+  const [porData, setPorData] = useState<Record<string, { hora: string; vagas: number }[]>>({});
+  const [indisp, setIndisp] = useState<{ data: string; motivo: string }[]>([]);
+  const [regrasEx, setRegrasEx] = useState<{ exame: string; texto: string }[]>([]);
+  const [docsExig, setDocsExig] = useState<{ tipo_exame: string; nome: string; obrigatorio: boolean }[]>([]);
+  const [docs, setDocs] = useState<Record<string, File | null>>({});
+  const [motivoRetorno, setMotivoRetorno] = useState("");
+  const [aguardandoAprov, setAguardandoAprov] = useState(false);
   const [dia, setDia] = useState("");
   const [hora, setHora] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -54,6 +60,8 @@ export default function AgendamentoPublico() {
     document.title = "Agendamento de Exames | PreverMed";
     supabase.functions.invoke("soc-agenda-horarios", { body: { listarUnidades: true } })
       .then(({ data }) => setUnidades(data?.unidades ?? []));
+    supabase.functions.invoke("soc-agenda-horarios", { body: { documentosExigidos: true } })
+      .then(({ data }) => setDocsExig(data?.documentos ?? []));
   }, []);
 
   const cnpj = dig(f.empresaCnpj);
@@ -93,13 +101,13 @@ export default function AgendamentoPublico() {
     const ini = new Date(); ini.setDate(ini.getDate() + 1);
     const fim = new Date(); fim.setDate(fim.getDate() + 14);
     supabase.functions.invoke("soc-agenda-horarios", {
-      body: { codigoAgenda: unidade.codigo_agenda, dataInicio: br(ini), dataFim: br(fim) },
+      body: { unidadeId: unidade.id, dataInicio: br(ini), dataFim: br(fim), tipoExame: f.tipoExame || undefined, exames: usaGradePcmso ? pcmsoTipo : exames },
     }).then(({ data, error }) => {
       if (error || data?.error) setErro("Não foi possível consultar os horários agora. Tente novamente.");
-      else setPorData(data.porData ?? {});
+      else { setPorData(data.porData ?? {}); setIndisp(data.indisponiveis ?? []); setRegrasEx(data.regrasExames ?? []); }
       setCarregando(false);
     });
-  }, [unidadeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [unidadeId, passo === 3]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Exames do PCMSO do colaborador (SOC), filtrados pelo tipo de exame escolhido
   const [pcmso, setPcmso] = useState<{ nome: string; tipos: Record<string, boolean> }[] | null>(null);
@@ -190,10 +198,12 @@ export default function AgendamentoPublico() {
     setCadAberto(false);
   };
 
+  const retorno = f.tipoExame === "Retorno ao Trabalho";
+  const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   const valido = [
     !!socCode && cnpj.length === 14,
     !!func && (func.encontrado || func.indisponivel) && !inativoLivre && cpfValido && f.colaboradorNome.trim().length >= 3,
-    !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -209,12 +219,15 @@ export default function AgendamentoPublico() {
       const b64 = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(guia); });
       guiaPayload = { nome: guia.name.slice(0, 120), tipo: guia.type, base64: b64 };
     }
+    const toB64 = (file: File) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(file); });
+    const documentos = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v!.name.slice(0, 120), tipo: v!.type, base64: await toB64(v!) }))) : [];
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
         exames: [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
+        documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
       },
     });
     setCarregando(false);
@@ -223,6 +236,7 @@ export default function AgendamentoPublico() {
       try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
       return setErro(msg ?? "Não foi possível concluir. Tente novamente.");
     }
+    if (data?.aguardandoAprovacao) { setAguardandoAprov(true); return setProtocolo(data.protocolo); }
     if (!data?.agendadoSoc) {
       return setErro(`Não conseguimos reservar este horário na agenda (protocolo ${data?.protocolo ?? "-"}). Escolha outro horário ou fale com a PreverMed antes de comparecer.`);
     }
@@ -244,7 +258,7 @@ export default function AgendamentoPublico() {
             <CardContent className="space-y-5 py-8">
               <div className="space-y-2 text-center">
                 <CalendarCheck className="mx-auto h-12 w-12 text-primary" />
-                <p className="text-lg font-semibold">Pré-agendamento realizado!</p>
+                <p className="text-lg font-semibold">{aguardandoAprov ? "Solicitação recebida — aguardando aprovação" : "Pré-agendamento realizado!"}</p>
                 <p className="font-mono text-2xl">{protocolo}</p>
                 <p className="text-xs text-muted-foreground">Guarde este número de protocolo.</p>
               </div>
@@ -261,6 +275,16 @@ export default function AgendamentoPublico() {
                 <dt className="text-muted-foreground">Data</dt><dd className="font-medium">{dia}</dd>
                 <dt className="text-muted-foreground">Horário</dt><dd className="font-medium">{hora}h</dd>
               </dl>
+              {aguardandoAprov && (
+                <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-sm">
+                  Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação.
+                  Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
+                </div>
+              )}
+              <div className="rounded-md border p-4 text-sm">
+                <p className="font-medium">Kit de atendimento (guia, ficha clínica, ASO)</p>
+                <p className="text-muted-foreground">Se ainda não tem o kit em mãos, envie depois em <a className="text-primary underline" href={`/agendamento/completar?protocolo=${protocolo}`}>Completar pré-agendamento</a>, usando o protocolo e o CPF do colaborador.</p>
+              </div>
               <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
@@ -508,6 +532,20 @@ export default function AgendamentoPublico() {
                   <Input type="file" accept="application/pdf,image/png,image/jpeg"
                     onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return setGuia(null); } setErro(""); setGuia(file); }} />
                 </div>
+                {retorno && (
+                  <div className="space-y-3 rounded-md border p-3">
+                    <p className="text-sm font-medium">Documentação do retorno ao trabalho</p>
+                    <p className="text-xs text-muted-foreground">O agendamento só é confirmado após a nossa equipe de saúde conferir os documentos (completos e legíveis), para o colaborador não perder tempo na clínica.</p>
+                    <div><Label>Motivo do retorno *</Label>
+                      <Textarea value={motivoRetorno} onChange={(e) => setMotivoRetorno(e.target.value)} maxLength={1000} placeholder="Ex.: afastamento por cirurgia no joelho de 01/08 a 30/09, alta do INSS em 01/10." />
+                      {motivoRetorno.trim().length > 0 && motivoRetorno.trim().length < 10 && <p className="mt-1 text-xs text-destructive">Descreva um pouco mais (mínimo 10 caracteres).</p>}</div>
+                    {docsRetorno.map((d) => (
+                      <div key={d.nome}><Label>{d.nome}{d.obrigatorio ? " *" : " (se houver)"}</Label>
+                        <Input type="file" accept="application/pdf,image/png,image/jpeg"
+                          onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return; } setErro(""); setDocs((p) => ({ ...p, [d.nome]: file })); }} /></div>
+                    ))}
+                  </div>
+                )}
                 <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
               </>)}
               {passo === 3 && (<>
@@ -519,8 +557,21 @@ export default function AgendamentoPublico() {
                   ))}
                 </div>
                 {carregando && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
+                {unidade && !carregando && regrasEx.length > 0 && (
+                  <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+                    <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <div className="space-y-1">
+                      <p>Alguns exames escolhidos têm dias e horários próprios. Mostramos só os horários em que todos podem ser feitos:</p>
+                      {regrasEx.map((r) => <p key={r.exame}><strong>{r.exame}:</strong> {r.texto}</p>)}
+                    </div>
+                  </div>
+                )}
                 {unidade && !carregando && dias.length === 0 && !erro && (
-                  <p className="text-sm text-muted-foreground">Sem horários livres nos próximos 14 dias.</p>
+                  <div className="space-y-1 rounded-md border bg-muted/40 p-3 text-sm">
+                    <p className="font-medium">Sem horários disponíveis nos próximos 14 dias nesta unidade.</p>
+                    {indisp.slice(0, 4).map((i) => <p key={i.data} className="text-muted-foreground">{i.data.slice(0, 5)}: {i.motivo}</p>)}
+                    <p className="text-muted-foreground">O que fazer: tente a outra unidade{regrasEx.length ? ", volte e agende os exames especiais em separado" : ""} ou fale com a PreverMed.</p>
+                  </div>
                 )}
                 {dias.length > 0 && (
                   <div className="flex gap-2 overflow-x-auto pb-2">
@@ -533,8 +584,10 @@ export default function AgendamentoPublico() {
                 )}
                 {dia && (
                   <div className="grid grid-cols-4 gap-2">
-                    {porData[dia].map((h) => (
-                      <Button key={h} size="sm" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>{h}</Button>
+                    {porData[dia].map(({ hora: h, vagas }) => (
+                      <Button key={h} size="sm" className="h-auto flex-col py-1" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>
+                        <span>{h}</span>{vagas > 1 && <span className="text-[10px] opacity-80 whitespace-nowrap">{vagas} vagas</span>}
+                      </Button>
                     ))}
                   </div>
                 )}
