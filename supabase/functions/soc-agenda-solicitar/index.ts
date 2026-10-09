@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { incluirAgendamentoSoc, situacaoSoc } from '../_shared/socAgendamento.ts';
+import { salvarArquivo } from '../_shared/arquivos.ts';
 import { bloqueioExames, bloqueioUnidade, carregarRegras, contarDia, hojeSP, limiteDia } from '../_shared/agendaRegras.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -30,16 +31,6 @@ const Body = z.object({
   guia: Arquivo.optional(),
   documentos: z.array(Arquivo.extend({ tipoDocumento: z.string().trim().min(2).max(80) })).max(10).default([]),
 });
-
-export const salvarArquivo = async (admin: any, data: string, a: { tipo: string; base64: string }) => {
-  const bytes = Uint8Array.from(atob(a.base64), (c) => c.charCodeAt(0));
-  if (bytes.length > 5 * 1024 * 1024) throw new Error('Arquivo maior que 5 MB');
-  const ext = a.tipo === 'application/pdf' ? 'pdf' : a.tipo === 'image/png' ? 'png' : 'jpg';
-  const path = `soc-agenda/${data}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await admin.storage.from('os-anexos').upload(path, bytes, { contentType: a.tipo });
-  if (error) throw new Error('Não foi possível enviar o arquivo');
-  return path;
-};
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
