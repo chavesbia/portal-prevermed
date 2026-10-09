@@ -87,3 +87,23 @@ ${p.codigoFuncionarioSoc ? `<tipoBuscaFuncionario>CODIGO_SOC</tipoBuscaFuncionar
     return { ok: false, erro: String(e), resposta: '' };
   }
 }
+
+// Situação do colaborador no SOC: vínculo ativo ou só histórico inativo (código do mais recente)
+export async function situacaoSoc(socCode: string, cpf: string): Promise<{ inativo: boolean; codigo: string | null } | null> {
+  const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+  const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_FUNCIONARIO');
+  const chave = Deno.env.get('SOC_CHAVE_EXPORTA_FUNCIONARIO');
+  if (!empresa || !codigo || !chave) return null;
+  const param = { empresa, codigo, chave, empresaTrabalho: socCode, cpf, ativo: 'Sim', inativo: 'Sim', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim', tipoSaida: 'json' };
+  try {
+    const r = await fetch(`https://ws1.soc.com.br/WebSoc/exportadados?parametro=${encodeURIComponent(JSON.stringify(param))}`, { method: 'POST' });
+    const rows = JSON.parse(new TextDecoder('iso-8859-1').decode(await r.arrayBuffer()).trim() || '[]');
+    if (!Array.isArray(rows)) return null;
+    const doCpf = rows.filter((x: any) => String(x.CPFFUNCIONARIO ?? '').replace(/\D/g, '').padStart(11, '0') === cpf);
+    if (!doCpf.length) return null;
+    if (doCpf.some((x: any) => !/inativ|demit/i.test(String(x.SITUACAO ?? '')))) return { inativo: false, codigo: null };
+    const ult = doCpf.sort((a: any, b: any) => Number(b.CODIGO) - Number(a.CODIGO))[0];
+    return { inativo: true, codigo: String(ult.CODIGO ?? '') || null };
+  } catch { return null; }
+}
+

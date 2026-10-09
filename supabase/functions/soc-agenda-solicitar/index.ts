@@ -2,7 +2,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { incluirAgendamentoSoc } from './socAgendamento.ts';
+import { incluirAgendamentoSoc, situacaoSoc } from '../_shared/socAgendamento.ts';
+import { bloqueioExames, bloqueioUnidade, carregarRegras, contarDia, limiteDia } from '../_shared/agendaRegras.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -26,25 +27,6 @@ const Body = z.object({
     base64: z.string().max(7_000_000),
   }).optional(),
 });
-
-// Situação do colaborador no SOC: vínculo ativo ou só histórico inativo (código do mais recente)
-async function situacaoSoc(socCode: string, cpf: string): Promise<{ inativo: boolean; codigo: string | null } | null> {
-  const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
-  const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_FUNCIONARIO');
-  const chave = Deno.env.get('SOC_CHAVE_EXPORTA_FUNCIONARIO');
-  if (!empresa || !codigo || !chave) return null;
-  const param = { empresa, codigo, chave, empresaTrabalho: socCode, cpf, ativo: 'Sim', inativo: 'Sim', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim', tipoSaida: 'json' };
-  try {
-    const r = await fetch(`https://ws1.soc.com.br/WebSoc/exportadados?parametro=${encodeURIComponent(JSON.stringify(param))}`, { method: 'POST' });
-    const rows = JSON.parse(new TextDecoder('iso-8859-1').decode(await r.arrayBuffer()).trim() || '[]');
-    if (!Array.isArray(rows)) return null;
-    const doCpf = rows.filter((x: any) => String(x.CPFFUNCIONARIO ?? '').replace(/\D/g, '').padStart(11, '0') === cpf);
-    if (!doCpf.length) return null;
-    if (doCpf.some((x: any) => !/inativ|demit/i.test(String(x.SITUACAO ?? '')))) return { inativo: false, codigo: null };
-    const ult = doCpf.sort((a: any, b: any) => Number(b.CODIGO) - Number(a.CODIGO))[0];
-    return { inativo: true, codigo: String(ult.CODIGO ?? '') || null };
-  } catch { return null; }
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
