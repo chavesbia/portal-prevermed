@@ -134,6 +134,13 @@
       "when": 1791299992556,
       "tag": "0018_soc_agenda_base",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791569060158,
+      "tag": "0019_agenda_modulo",
+      "breakpoints": true
     }
   ]
 }
