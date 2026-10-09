@@ -85,18 +85,25 @@ async function exporta(params: Record<string, string>): Promise<Row[] | null> {
   catch { console.error('SOC resposta', text.slice(0, 300)); return null; }
 }
 
-async function buscarFuncionario(socCode: string, cpf: string) {
+const inativoRow = (r: Row) => /inativ|demit/i.test(pick(r, ['SITUACAO', 'SITUACAOFUNCIONARIO']) ?? '');
+
+// Retorna o vínculo ativo; se só houver histórico inativo, retorna o mais recente marcado como inativo
+async function buscarFuncionario(socCode: string, cpf: string): Promise<{ row: Row; inativo: boolean } | false | null> {
   const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
   const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_FUNCIONARIO');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_FUNCIONARIO');
   if (!empresa || !codigo || !chave) return null;
   const rows = await exporta({
     empresa, codigo, chave, empresaTrabalho: socCode, cpf,
-    ativo: 'Sim', inativo: 'Nao', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim',
+    ativo: 'Sim', inativo: 'Sim', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim',
   });
   if (!rows) return null;
   const doCpf = rows.filter((r) => (pick(r, ['CPF', 'CPFFUNCIONARIO']) ?? '').replace(/\D/g, '').padStart(11, '0') === cpf);
-  return doCpf.find((r) => !/inativ|demit/i.test(pick(r, ['SITUACAO', 'SITUACAOFUNCIONARIO']) ?? '')) ?? doCpf[0] ?? false;
+  const ativo = doCpf.find((r) => !inativoRow(r));
+  if (ativo) return { row: ativo, inativo: false };
+  if (!doCpf.length) return false;
+  const ultimo = [...doCpf].sort((a, b) => Number(pick(b, ['CODIGO']) ?? 0) - Number(pick(a, ['CODIGO']) ?? 0))[0];
+  return { row: ultimo, inativo: true };
 }
 
 Deno.serve(async (req) => {
