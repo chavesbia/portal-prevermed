@@ -106,7 +106,7 @@ export default function Agendamentos() {
   };
 
   const dash = useMemo(() => {
-    const conta = (f: (a: any) => string) => Object.entries(lista.reduce((m: Record<string, number>, a: any) => ((m[f(a)] = (m[f(a)] ?? 0) + 1), m), {})).sort((a, b) => b[1] - a[1]);
+    const conta = (f: (a: any) => string): [string, number][] => (Object.entries(lista.reduce((m: Record<string, number>, a: any) => ((m[f(a)] = (m[f(a)] ?? 0) + 1), m), {} as Record<string, number>)) as [string, number][]).sort((a, b) => b[1] - a[1]);
     return {
       total: lista.length,
       colaboradores: new Set(lista.map((a: any) => a.colaborador_cpf)).size,
