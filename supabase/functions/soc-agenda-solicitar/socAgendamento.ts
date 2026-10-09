@@ -36,7 +36,7 @@ const tag = (xml: string, n: string) => xml.match(new RegExp(`<(?:\\w+:)?${n}>([
 
 export async function incluirAgendamentoSoc(p: {
   codigoEmpresa: string; cpf: string; codigoAgenda: string;
-  data: string; hora: string; tipoExame: string; detalhes: string;
+  data: string; hora: string; tipoExame: string; detalhes: string; codigoFuncionarioSoc?: string;
 }): Promise<{ ok: boolean; codigoAgendamento?: string | null; erro?: string; resposta: string }> {
   const user = Deno.env.get('SOC_WS_USUARIO');
   const senha = Deno.env.get('SOC_WS_CHAVE');
@@ -59,7 +59,7 @@ export async function incluirAgendamentoSoc(p: {
 <dadosAgendamentoWsVo>
 <tipoBuscaEmpresa>CODIGO_SOC</tipoBuscaEmpresa><codigoEmpresa>${esc(p.codigoEmpresa)}</codigoEmpresa>
 <reservarCompromissoParaEmpresa>false</reservarCompromissoParaEmpresa>
-<tipoBuscaFuncionario>CPF_ATIVO</tipoBuscaFuncionario><codigoFuncionario>${esc(p.cpf)}</codigoFuncionario>
+${p.codigoFuncionarioSoc ? `<tipoBuscaFuncionario>CODIGO_SOC</tipoBuscaFuncionario><codigoFuncionario>${esc(p.codigoFuncionarioSoc)}</codigoFuncionario>` : `<tipoBuscaFuncionario>CPF_ATIVO</tipoBuscaFuncionario><codigoFuncionario>${esc(p.cpf)}</codigoFuncionario>`}
 <codigoUsuarioAgenda>${esc(String(p.codigoAgenda).replace(/^0+(?=\d)/, ''))}</codigoUsuarioAgenda>
 <data>${d}/${m}/${y}</data><horaInicial>${esc(p.hora)}</horaInicial><horaFinal>${horaFinal}</horaFinal>
 <codigoCompromisso>1</codigoCompromisso><usaOutroCompromisso>false</usaOutroCompromisso>
