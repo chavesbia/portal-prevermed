@@ -132,7 +132,8 @@ Deno.serve(async (req) => {
 
     if (b.acao === 'cadastrar') {
       const existente = await buscarFuncionario(b.socCode, b.cpf);
-      if (existente) return json({ error: 'Este CPF já possui cadastro nesta empresa.' }, 409);
+      // Histórico só inativo não bloqueia: Admissional gera novo vínculo (nova admissão/matrícula)
+      if (existente && !existente.inativo) return json({ error: 'Este CPF já possui cadastro ativo nesta empresa.' }, 409);
       if (!livre) {
         // Empresas com laudos: só aceita unidade/setor/cargo existentes e amarrados na hierarquia
         const h = await hierarquia(b.socCode, false);
@@ -145,10 +146,11 @@ Deno.serve(async (req) => {
       return json({ ok: true, codigoFuncionario: r.codigoFuncionario });
     }
 
-    const ativo = await buscarFuncionario(b.socCode, b.cpf);
-    if (ativo === null) return json(b.acao === 'exames' ? { exames: [], indisponivel: true } : { encontrado: false, indisponivel: true });
-    if (ativo === false) return json(b.acao === 'exames' ? { exames: [] } : { encontrado: false });
+    const achado = await buscarFuncionario(b.socCode, b.cpf);
+    if (achado === null) return json(b.acao === 'exames' ? { exames: [], indisponivel: true } : { encontrado: false, indisponivel: true });
+    if (achado === false) return json(b.acao === 'exames' ? { exames: [] } : { encontrado: false });
 
+    const ativo = achado.row;
     if (b.acao === 'exames') {
       const codFunc = pick(ativo, ['CODIGO', 'CODIGOFUNCIONARIO', 'CODFUNCIONARIO']);
       const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
@@ -174,6 +176,7 @@ Deno.serve(async (req) => {
 
     return json({
       encontrado: true,
+      inativo: achado.inativo,
       funcionario: {
         nome: pick(ativo, ['NOME', 'NOMEFUNCIONARIO']),
         matricula: pick(ativo, ['MATRICULAFUNCIONARIO', 'MATRICULA']),
