@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Info, Loader2, RotateCcw } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
