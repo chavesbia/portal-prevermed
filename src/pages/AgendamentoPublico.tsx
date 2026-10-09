@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Info, Loader2, RotateCcw } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
@@ -15,7 +15,7 @@ type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
 type Item = { codigo: string; nome: string };
 type Hier = { unidades: (Item & { setores: (Item & { cargos: Item[] })[] })[]; setores?: Item[]; cargos?: Item[]; podeCriar: boolean; indisponivel?: boolean };
-type Func = { encontrado: boolean; indisponivel?: boolean; funcionario?: any; recemCadastrado?: boolean };
+type Func = { encontrado: boolean; inativo?: boolean; indisponivel?: boolean; funcionario?: any; recemCadastrado?: boolean };
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
 // Endereço exibido no comprovante, por código da agenda SOC
@@ -153,6 +153,13 @@ export default function AgendamentoPublico() {
       .then(({ data }) => setHier(data ?? { unidades: [], podeCriar: false, indisponivel: true }));
   };
   const livre = !!hier?.podeCriar;
+  const empSel = empresas?.find((e) => e.soc_code === socCode);
+  const inativo = !!func?.encontrado && !!func.inativo;
+  // Pontuais/parceiros: histórico inativo vai direto para o novo cadastro
+  const inativoLivre = inativo && !!empSel?.podeCriar;
+  useEffect(() => { if (inativoLivre && !cadAberto) abrirCadastro(); }, [inativoLivre]); // eslint-disable-line react-hooks/exhaustive-deps
+  const precisaCadastro = !!func && ((!func.encontrado && !func.indisponivel) || inativo);
+  const tipoPermitidoInativo = f.tipoExame === "Demissional";
   const uSel = hier?.unidades.find((u) => u.codigo === cad.unidade);
   const sSel = uSel?.setores.find((x) => x.codigo === cad.setor);
   // Livre: aceita nome digitado; se bater com um existente, envia o código
@@ -185,8 +192,8 @@ export default function AgendamentoPublico() {
 
   const valido = [
     !!socCode && cnpj.length === 14,
-    !!func && (func.encontrado || func.indisponivel) && cpfValido && f.colaboradorNome.trim().length >= 3,
-    !!f.tipoExame && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    !!func && (func.encontrado || func.indisponivel) && !inativoLivre && cpfValido && f.colaboradorNome.trim().length >= 3,
+    !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -295,12 +302,19 @@ export default function AgendamentoPublico() {
                 <div><Label>CPF do colaborador</Label><Input inputMode="numeric" maxLength={14} value={maskCPF(f.colaboradorCpf)} onChange={(e) => setF((p) => ({ ...p, colaboradorCpf: dig(e.target.value).slice(0, 11) }))} placeholder="000.000.000-00" />
                   {cpf.length === 11 && !cpfValido && <p className="mt-1 text-xs text-destructive">CPF inválido. Confira os números digitados.</p>}</div>
                 {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                {func?.encontrado && (
+                {inativoLivre && (
+                  <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+                    <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <p>Identificamos um cadastro anterior inativo. Para este atendimento, preencha os dados abaixo para prosseguir com o agendamento.</p>
+                  </div>
+                )}
+                {func?.encontrado && !inativoLivre && (
                   <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
                     <p className="font-semibold">{func.funcionario.nome}</p>
                     {func.funcionario.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
                     {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
                     {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
+                    {inativo && <p className="text-xs font-semibold text-destructive whitespace-nowrap">Cadastro INATIVO nesta empresa</p>}
                     {func.recemCadastrado && <p className="text-xs text-primary">Cadastrado agora no SOC (situação Pendente).</p>}
                   </div>
                 )}
@@ -316,7 +330,7 @@ export default function AgendamentoPublico() {
                     <Button type="button" size="sm" onClick={abrirCadastro}>Sim, cadastrar colaborador</Button>
                   </div>
                 )}
-                {func && !func.encontrado && !func.indisponivel && cadAberto && (
+                {precisaCadastro && cadAberto && (
                   <div className="space-y-3 rounded-md border p-3">
                     <p className="text-sm font-medium">Cadastro do colaborador</p>
                     <div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
@@ -359,7 +373,7 @@ export default function AgendamentoPublico() {
                     </>)}
                     {cadErro && <p className="text-sm text-destructive">{cadErro}</p>}
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setCadAberto(false)}>Cancelar</Button>
+                      {!inativoLivre && <Button type="button" variant="ghost" size="sm" onClick={() => setCadAberto(false)}>Cancelar</Button>}
                       <Button type="button" size="sm" disabled={!cadOk || cadastrando} onClick={cadastrar}>
                         {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}Cadastrar no SOC
                       </Button>
@@ -368,12 +382,36 @@ export default function AgendamentoPublico() {
                 )}
               </>)}
               {passo === 2 && (<>
+                {inativo && (
+                  <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                    <p><strong>Atenção:</strong> este colaborador consta como INATIVO nesta empresa no sistema.</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   {TIPOS.map((t) => (
                     <Button key={t} type="button" variant={f.tipoExame === t ? "default" : "outline"} onClick={() => setF({ ...f, tipoExame: t })}>{t}</Button>
                   ))}
                 </div>
-                {f.tipoExame === "Admissional" && func?.encontrado && !func.recemCadastrado && (
+                {inativo && f.tipoExame === "Admissional" && (
+                  <div className="space-y-2 rounded-md border bg-muted/40 p-3 text-sm">
+                    <p>Colaborador inativo identificado. Ao prosseguir com Admissional, você preencherá a nova data de admissão e a lotação para registrar o novo vínculo.</p>
+                    <Button type="button" size="sm" onClick={() => { setPasso(1); abrirCadastro(); }}>Avançar para dados de admissão</Button>
+                  </div>
+                )}
+                {inativo && f.tipoExame === "Demissional" && (
+                  <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <p>Agendamento de Demissional autorizado no vínculo existente para conclusão do desligamento.</p>
+                  </div>
+                )}
+                {inativo && f.tipoExame && f.tipoExame !== "Admissional" && f.tipoExame !== "Demissional" && (
+                  <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
+                    <p>Não é possível agendar este tipo de exame para um colaborador inativo. Para realizar este atendimento, o cadastro precisa estar ativo no SOC, ou selecione Admissional/Demissional.</p>
+                  </div>
+                )}
+                {f.tipoExame === "Admissional" && func?.encontrado && !func.recemCadastrado && !inativo && (
                   <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
                     <p><strong>Atenção:</strong> colaborador já possui cadastro ativo nesta empresa

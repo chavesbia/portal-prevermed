@@ -27,6 +27,25 @@ const Body = z.object({
   }).optional(),
 });
 
+// Situação do colaborador no SOC: vínculo ativo ou só histórico inativo (código do mais recente)
+async function situacaoSoc(socCode: string, cpf: string): Promise<{ inativo: boolean; codigo: string | null } | null> {
+  const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+  const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_FUNCIONARIO');
+  const chave = Deno.env.get('SOC_CHAVE_EXPORTA_FUNCIONARIO');
+  if (!empresa || !codigo || !chave) return null;
+  const param = { empresa, codigo, chave, empresaTrabalho: socCode, cpf, ativo: 'Sim', inativo: 'Sim', afastado: 'Sim', pendente: 'Sim', ferias: 'Sim', tipoSaida: 'json' };
+  try {
+    const r = await fetch(`https://ws1.soc.com.br/WebSoc/exportadados?parametro=${encodeURIComponent(JSON.stringify(param))}`, { method: 'POST' });
+    const rows = JSON.parse(new TextDecoder('iso-8859-1').decode(await r.arrayBuffer()).trim() || '[]');
+    if (!Array.isArray(rows)) return null;
+    const doCpf = rows.filter((x: any) => String(x.CPFFUNCIONARIO ?? '').replace(/\D/g, '').padStart(11, '0') === cpf);
+    if (!doCpf.length) return null;
+    if (doCpf.some((x: any) => !/inativ|demit/i.test(String(x.SITUACAO ?? '')))) return { inativo: false, codigo: null };
+    const ult = doCpf.sort((a: any, b: any) => Number(b.CODIGO) - Number(a.CODIGO))[0];
+    return { inativo: true, codigo: String(ult.CODIGO ?? '') || null };
+  } catch { return null; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -41,6 +60,14 @@ Deno.serve(async (req) => {
     const { data: emp } = await admin.from('companies').select('razao_social')
       .eq('cnpj', b.empresaCnpj).eq('soc_code', b.codigoEmpresaSoc).eq('is_active', true).maybeSingle();
     if (!emp) return json({ error: 'Empresa não encontrada entre os clientes ativos' }, 400);
+
+    // Cadastro inativo: só Demissional no vínculo existente; Admissional exige novo cadastro antes
+    const sit = await situacaoSoc(b.codigoEmpresaSoc, b.colaboradorCpf);
+    if (sit?.inativo && b.tipoExame !== 'Demissional') {
+      return json({ error: b.tipoExame === 'Admissional'
+        ? 'Colaborador com cadastro inativo: registre a nova admissão antes de agendar.'
+        : 'Não é possível agendar este tipo de exame para colaborador com cadastro inativo.' }, 400);
+    }
 
     const { data: dup } = await admin.from('soc_agendamentos').select('id')
       .eq('unidade_id', b.unidadeId).eq('data_agendada', b.data).eq('hora_agendada', b.hora)
@@ -83,6 +110,7 @@ Deno.serve(async (req) => {
       data: b.data,
       hora: b.hora,
       tipoExame: b.tipoExame,
+      codigoFuncionarioSoc: sit?.inativo ? sit.codigo ?? undefined : undefined,
       detalhes: [
         `Portal: ${data.protocolo}`,
         `Exames: ${exames.join(', ') || '-'}`,
