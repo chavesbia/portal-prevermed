@@ -52,8 +52,8 @@ async function chamar(fn: string, body: unknown) {
 }
 
 const boasVindas = (nome?: string): Res => ({
-  etapa: 'TERMO', dados: {},
-  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed Medicina Ocupacional*.\n\n📜 *Termo de Responsabilidade e Privacidade (LGPD)*\n\nOs dados informados nesta conversa (empresa, colaborador e documentos) serão usados exclusivamente para o agendamento e a realização dos exames ocupacionais, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).\n\nAo continuar, você declara que as informações fornecidas são verdadeiras e que está autorizado(a) a solicitá-las em nome da empresa.\n\n⚠️ Informações incorretas podem gerar *retificação do ASO* e/ou a *realização de exames extras*, ambos com *custos adicionais*.\n\n*1* - Li e concordo\n*0* - Cancelar`,
+  etapa: 'AGUARDANDO_CNPJ', dados: {},
+  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed Medicina Ocupacional*.\n\n🔒 Os dados informados serão utilizados exclusivamente para o agendamento ocupacional, nos termos da LGPD (Lei nº 13.709/2018).\n\nPara iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):${RODAPE}`,
 });
 
 const pedirCnpj = (d: Dados): Res => ({ etapa: 'AGUARDANDO_CNPJ', dados: d, resposta: `Para iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):${RODAPE}` });
@@ -150,11 +150,13 @@ function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: s
 
 const fmtCnpj = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+const ENDERECOS: Record<string, string> = { LAPA: 'Rua Afonso Sardinha, 155 - 1° andar', OSASCO: 'Rua Avelino Lopes, 248' };
+const endereco = (u: any) => { const n = semAcento(String(u?.nome ?? '')); const k = Object.keys(ENDERECOS).find((k) => n.includes(k)); return k ? ENDERECOS[k] : ''; };
 const blocoAgendamento = (d: Dados) =>
-  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames:\n${listaExames(d.exames ?? [])}\n📍 Local: *${titulo(d.unidade.nome)}*\n📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`;
+  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames:\n${listaExames(d.exames ?? [])}\n📍 Local: *${titulo(d.unidade.nome)}*\n${endereco(d.unidade) ? `🏢 Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`;
 
 function resumo(d: Dados): Res {
-  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n*1* - Confirmar\n*2* - Escolher outra data${RODAPE}` };
+  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* confira com atenção todas as informações acima. A divergência de dados pode acarretar *custos adicionais* decorrentes de eventual *retificação do ASO* e/ou da *realização de exames complementares* durante o atendimento.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data\n_(ou V para voltar e corrigir qualquer item)_${RODAPE}` };
 }
 
 // ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
@@ -486,6 +488,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para escolher outra data.${RODAPE}` };
       if (i === 1) return pedirDatas(d);
+      d.termoAceito = new Date().toISOString();
       const { ok, data } = await chamar('soc-agenda-solicitar', {
         unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode,
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
