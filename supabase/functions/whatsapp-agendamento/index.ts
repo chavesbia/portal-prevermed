@@ -141,13 +141,28 @@ function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
     d.cad[nivel === 'cargo' ? 'setor' : 'unidade'] = undefined;
     return { ...pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade'), resposta: `Não há ${nivel === 'cargo' ? 'cargos ativos neste setor' : 'setores ativos nesta unidade'}. Escolha outra opção.\n\n` + pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade').resposta };
   }
-  const mostra = lista.slice(0, 30);
-  const mais = lista.length > 30 ? `\n\n_Mostrando 30 de ${lista.length}. Digite parte do nome para procurar._` : '';
+  const mostra = lista.slice(0, MAX_OP);
+  const mais = lista.length > MAX_OP ? `\n\n_Mostrando ${MAX_OP} de ${lista.length}. Digite parte do nome para buscar._` : '';
   const instr = d.cad.livre
-    ? (lista.length ? `Digite o *número* de uma opção existente ou escreva o *nome* do(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
-    : `Digite o *número* da opção (ou parte do nome):`;
+    ? (lista.length ? `Digite o *número* de uma opção, parte do *nome* para buscar, ou o nome de um(a) novo(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
+    : `Digite o *número* da opção ou parte do *nome* para buscar:`;
   return { etapa, dados: d, resposta: `${rot} do colaborador\n\n${mostra.length ? menu(mostra.map((x) => titulo(x.nome))) + mais + '\n\n' : ''}${instr}${RODAPE}` };
 }
+const MAX_OP = 10;
+const ROT = { unidade: '🏢 Unidade', setor: '📂 Setor', cargo: '💼 Cargo' } as const;
+const pedirAdmissao = (d: Dados): Res => ({ etapa: 'CAD_ADMISSAO', dados: d, resposta: `📆 Digite a *data de admissão* do colaborador (real ou pretendida) no formato DD/MM/AAAA:${RODAPE}` });
+function aplicarNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo', ref: { codigo?: string; nome?: string }): Res {
+  d.cad[nivel] = ref;
+  if (nivel === 'unidade') { d.cad.setor = undefined; d.cad.cargo = undefined; return pedirNivel(d, 'setor'); }
+  if (nivel === 'setor') { d.cad.cargo = undefined; return pedirNivel(d, 'cargo'); }
+  return confirmarCad(d);
+}
+function confirmarCad(d: Dados): Res {
+  const c = d.cad; c.corrigindo = false;
+  const sexo = c.sexo === 'FEMININO' ? '♀️ Sexo: Feminino' : '♂️ Sexo: Masculino';
+  return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(c.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(c.nascimento)}\n${sexo}\n📆 Admissão: ${brIso(c.admissao)}\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
+}
+const menuCorrigir = (d: Dados): Res => ({ etapa: 'CAD_CORRIGIR', dados: d, resposta: `✏️ *O que você deseja corrigir?*\n\n*1* - Nome\n*2* - Data de nascimento\n*3* - Sexo\n*4* - Data de admissão\n*5* - Unidade / Setor / Cargo\n*6* - Voltar à confirmação${RODAPE}` });
 
 async function processar(etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
