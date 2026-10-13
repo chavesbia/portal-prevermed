@@ -18,6 +18,7 @@ const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"];
 const fmtData = (d: string) => d.split("-").reverse().join("/");
 const sel = "flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
+const TIPO_WHATS: Record<string, string> = { agendamento: "Agendamento", analise_pcmso: "Análise PCMSO", atendimento_humano: "Atendente humano" };
 const db = supabase as any;
 
 function useTabela<T = any>(tabela: string, order = "created_at") {
@@ -41,6 +42,15 @@ export default function AdminAgenda() {
   const { data: regras = [] } = useTabela<any>("agenda_exames_regras");
   const { data: limites = [] } = useTabela<any>("agenda_limites");
   const { data: docs = [] } = useTabela<any>("agenda_documentos_exigidos", "ordem");
+  const { data: whats = [] } = useQuery<any[]>({
+    queryKey: ["agenda-admin", "whatsapp_registros"],
+    enabled: aba === "whatsapp",
+    queryFn: async () => {
+      const { data, error } = await db.from("whatsapp_registros").select("*").order("created_at", { ascending: false }).limit(300);
+      if (error) throw error;
+      return data;
+    },
+  });
   const nomeUn = (id: string | null) => (id ? unidades.find((u: any) => u.id === id)?.nome?.replace("PreverMed - ", "") : "Todas") ?? "-";
 
   const run = async (p: PromiseLike<{ error: unknown }>, tabela: string, ok = "Salvo") => {
@@ -72,6 +82,7 @@ export default function AdminAgenda() {
           <TabsTrigger value="limites">Limites diários</TabsTrigger>
           <TabsTrigger value="documentos">Documentos exigidos</TabsTrigger>
           <TabsTrigger value="soc">Integração SOC</TabsTrigger>
+          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendario" className="space-y-4">
@@ -245,6 +256,32 @@ export default function AdminAgenda() {
                 </TableBody>
               </Table>
               <p className="mt-3 text-sm text-muted-foreground">Horários de atendimento ficam em "Calendário das unidades". As credenciais do Web Service ficam protegidas no servidor.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="whatsapp">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Solicitações recebidas pelo WhatsApp</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>Data/hora</TableHead><TableHead>Tipo</TableHead><TableHead>Protocolo</TableHead><TableHead>Número solicitante</TableHead><TableHead>Nome no WhatsApp</TableHead><TableHead>Empresa</TableHead><TableHead>Colaborador</TableHead><TableHead>Cargo</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {whats.map((w: any) => (
+                    <TableRow key={w.id}>
+                      <TableCell className="whitespace-nowrap">{new Date(w.created_at).toLocaleString("pt-BR")}</TableCell>
+                      <TableCell><Badge variant={w.tipo === "agendamento" ? "secondary" : "destructive"} className="whitespace-nowrap">{TIPO_WHATS[w.tipo] ?? w.tipo}</Badge></TableCell>
+                      <TableCell className="font-mono whitespace-nowrap">{w.protocolo}</TableCell>
+                      <TableCell className="whitespace-nowrap">{w.telefone}</TableCell>
+                      <TableCell>{w.nome_whatsapp ?? "-"}</TableCell>
+                      <TableCell>{w.empresa_nome ?? "-"}{w.empresa_cnpj ? <div className="text-xs text-muted-foreground">{w.empresa_cnpj}</div> : null}</TableCell>
+                      <TableCell>{w.colaborador_nome ?? "-"}</TableCell>
+                      <TableCell>{w.cargo ?? "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                  {!whats.length && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Nenhuma solicitação pelo WhatsApp ainda.</TableCell></TableRow>}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
