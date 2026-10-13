@@ -7323,6 +7323,36 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_sessoes: {
+        Row: {
+          created_at: string
+          dados_sessao: Json
+          etapa: string
+          id: string
+          nome: string | null
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dados_sessao?: Json
+          etapa?: string
+          id?: string
+          nome?: string | null
+          telefone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dados_sessao?: Json
+          etapa?: string
+          id?: string
+          nome?: string | null
+          telefone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       fb_v_status_colaborador: {
