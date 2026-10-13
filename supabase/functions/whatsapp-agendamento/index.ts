@@ -108,6 +108,47 @@ function resumo(d: Dados): Res {
     `Confira os dados do agendamento:\n\n🏢 Empresa: *${titulo(d.empresaNome)}*\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames: ${ex}\n📍 Local: *${titulo(d.unidade.nome)}*\n📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? 'sim' : 'não'}\n\n*1* - Confirmar\n*2* - Escolher outra data${RODAPE}` };
 }
 
+// ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
+const TIPOS_CADASTRO = ['Admissional', 'Periódico', 'Demissional', 'Mudança de Risco', 'Monitoração Pontual', 'Consulta Ocupacional', 'Retorno ao Trabalho'];
+type Item = { codigo: string; nome: string };
+const semAcento = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+const brIso = (iso: string) => iso.split('-').reverse().join('/');
+function dataBr(t: string) {
+  const m = t.trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if (!m) return null;
+  const iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const dt = new Date(iso + 'T12:00:00Z');
+  return isNaN(dt.getTime()) || dt.toISOString().slice(0, 10) !== iso ? null : iso;
+}
+function iniciarCadastro(d: Dados): Res {
+  d.cad = {}; delete d.hier; delete d.filtro;
+  return { etapa: 'CAD_NOME', dados: d, resposta: `📝 *Pré-cadastro do colaborador*\n\nDigite o *nome completo* do colaborador:${RODAPE}` };
+}
+function opcoesNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Item[] {
+  const h = d.hier ?? {};
+  if (nivel === 'unidade') return h.unidades ?? [];
+  if (d.cad.livre) return (nivel === 'setor' ? h.setores : h.cargos) ?? [];
+  const u = (h.unidades ?? []).find((x: any) => x.codigo === d.cad.unidade?.codigo);
+  if (nivel === 'setor') return u?.setores ?? [];
+  return u?.setores?.find((x: any) => x.codigo === d.cad.setor?.codigo)?.cargos ?? [];
+}
+function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
+  const lista = opcoesNivel(d, nivel).map((x) => ({ codigo: x.codigo, nome: x.nome }));
+  const etapa = nivel === 'unidade' ? 'CAD_UNIDADE' : nivel === 'setor' ? 'CAD_SETOR' : 'CAD_CARGO';
+  const rot = { unidade: '🏢 Unidade', setor: '📂 Setor', cargo: '💼 Cargo' }[nivel];
+  delete d.filtro;
+  if (!d.cad.livre && !lista.length) {
+    d.cad[nivel === 'cargo' ? 'setor' : 'unidade'] = undefined;
+    return { ...pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade'), resposta: `Não há ${nivel === 'cargo' ? 'cargos ativos neste setor' : 'setores ativos nesta unidade'}. Escolha outra opção.\n\n` + pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade').resposta };
+  }
+  const mostra = lista.slice(0, 30);
+  const mais = lista.length > 30 ? `\n\n_Mostrando 30 de ${lista.length}. Digite parte do nome para procurar._` : '';
+  const instr = d.cad.livre
+    ? (lista.length ? `Digite o *número* de uma opção existente ou escreva o *nome* do(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
+    : `Digite o *número* da opção (ou parte do nome):`;
+  return { etapa, dados: d, resposta: `${rot} do colaborador\n\n${mostra.length ? menu(mostra.map((x) => titulo(x.nome))) + mais + '\n\n' : ''}${instr}${RODAPE}` };
+}
+
 async function processar(etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
   switch (etapa) {
@@ -135,19 +176,96 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'funcionario', cnpj: d.cnpj, socCode: d.socCode, cpf });
       if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar o cadastro agora. Digite o CPF novamente em instantes.${RODAPE}` };
       d.cpf = cpf;
-      if (!data?.encontrado) return portal('Não encontramos esse colaborador cadastrado nesta empresa (por exemplo, nova admissão).');
+      if (!data?.encontrado) {
+        return { etapa: 'CAD_OFERTA', dados: d, resposta: `ℹ️ Não localizamos cadastro para este CPF nesta empresa.\n\nDeseja realizar o pré-cadastro agora para prosseguir com o agendamento?\n\n*1* - Sim, realizar pré-cadastro\n*2* - Digitar outro CPF${RODAPE}` };
+      }
       d.colaboradorNome = data.funcionario?.nome ?? '';
       d.lotUnidade = data.funcionario?.unidade ?? ''; d.lotSetor = data.funcionario?.setor ?? ''; d.lotCargo = data.funcionario?.cargo ?? '';
       d.inativo = !!data.inativo;
-      d.tipos = d.inativo ? ['Demissional', 'Admissional (nova admissão)'] : TIPOS_ATIVO;
+      d.tipos = d.inativo ? ['Demissional', 'Novo vínculo (pré-cadastro)'] : TIPOS_ATIVO;
       const aviso = d.inativo ? '\n\n⚠️ O cadastro deste colaborador está *inativo*.' : '';
       return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}${aviso}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+    }
+    case 'CAD_OFERTA': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para realizar o pré-cadastro ou *2* para digitar outro CPF.${RODAPE}` };
+      if (i === 1) return { etapa: 'AGUARDANDO_CPF', dados: d, resposta: `Digite o *CPF* do colaborador:${RODAPE}` };
+      return iniciarCadastro(d);
+    }
+    case 'CAD_NOME': {
+      const n = t.replace(/\s+/g, ' ');
+      if (n.length < 5 || !n.includes(' ') || /\d/.test(n) || n.length > 120) return { etapa, dados: d, resposta: `Digite o *nome completo* do colaborador (nome e sobrenome, sem números):${RODAPE}` };
+      d.cad.nome = n.toUpperCase();
+      return { etapa: 'CAD_NASC', dados: d, resposta: `🎂 Digite a *data de nascimento* (DD/MM/AAAA):${RODAPE}` };
+    }
+    case 'CAD_NASC': {
+      const iso = dataBr(t);
+      const idade = iso ? (Date.now() - new Date(iso).getTime()) / (365.25 * 864e5) : 0;
+      if (!iso || idade < 14 || idade > 100) return { etapa, dados: d, resposta: `Data inválida. Digite a *data de nascimento* no formato DD/MM/AAAA:${RODAPE}` };
+      d.cad.nascimento = iso;
+      return { etapa: 'CAD_SEXO', dados: d, resposta: `Sexo do colaborador:\n\n*1* - Masculino\n*2* - Feminino${RODAPE}` };
+    }
+    case 'CAD_SEXO': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para Masculino ou *2* para Feminino.${RODAPE}` };
+      d.cad.sexo = i === 0 ? 'MASCULINO' : 'FEMININO';
+      return { etapa: 'CAD_ADMISSAO', dados: d, resposta: `📆 Digite a *data de admissão* do colaborador na empresa (DD/MM/AAAA):${RODAPE}` };
+    }
+    case 'CAD_ADMISSAO': {
+      const iso = dataBr(t);
+      if (!iso || iso < d.cad.nascimento || new Date(iso).getTime() > Date.now() + 180 * 864e5) return { etapa, dados: d, resposta: `Data inválida. Digite a *data de admissão* no formato DD/MM/AAAA:${RODAPE}` };
+      d.cad.admissao = iso;
+      const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
+      if (!ok || data?.indisponivel) return portal('Não consegui consultar a estrutura (unidades, setores e cargos) da empresa agora.');
+      d.cad.livre = !!data.podeCriar;
+      d.hier = data;
+      if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa ainda não possui unidades, setores e cargos ativos para o pré-cadastro.');
+      return pedirNivel(d, 'unidade');
+    }
+    case 'CAD_UNIDADE': case 'CAD_SETOR': case 'CAD_CARGO': {
+      const nivel = etapa === 'CAD_UNIDADE' ? 'unidade' : etapa === 'CAD_SETOR' ? 'setor' : 'cargo';
+      const lista = opcoesNivel(d, nivel);
+      const vis: Item[] = d.filtro ?? lista;
+      const i = escolha(t, vis.length);
+      let ref: { codigo?: string; nome?: string } | null = null;
+      if (i >= 0 && so(t) === t) ref = { codigo: vis[i].codigo, nome: vis[i].nome };
+      else {
+        const q = semAcento(t);
+        const exato = lista.find((x) => semAcento(x.nome) === q);
+        const achados = lista.filter((x) => semAcento(x.nome).includes(q));
+        if (exato) ref = exato;
+        else if (q.length >= 2 && achados.length === 1) ref = achados[0];
+        else if (q.length >= 2 && achados.length > 1) { d.filtro = achados.slice(0, 30); return { etapa, dados: d, resposta: `Encontrei estas opções:\n\n${menu(d.filtro.map((x: Item) => titulo(x.nome)))}\n\nDigite o *número* da opção.${RODAPE}` }; }
+        else if (d.cad.livre && q.length >= 2 && t.length <= 130) ref = { nome: t.toUpperCase() };
+      }
+      if (!ref) return { etapa, dados: d, resposta: `Não encontrei essa opção. Digite o *número* ou parte do *nome*.${RODAPE}` };
+      delete d.filtro;
+      d.cad[nivel] = ref;
+      if (nivel === 'unidade') return pedirNivel(d, 'setor');
+      if (nivel === 'setor') return pedirNivel(d, 'cargo');
+      return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(d.cad.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(d.cad.nascimento)}\n⚧ Sexo: ${titulo(d.cad.sexo)}\n📆 Admissão: ${brIso(d.cad.admissao)}\n🏢 Unidade: *${titulo(d.cad.unidade.nome)}*\n📂 Setor: *${titulo(d.cad.setor.nome)}*\n💼 Cargo: *${titulo(d.cad.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
+    }
+    case 'CAD_CONFIRMAR': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para corrigir.${RODAPE}` };
+      if (i === 1) return iniciarCadastro(d);
+      const c = d.cad;
+      const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
+      const { ok, data } = await chamar('soc-agenda-lookup', {
+        acao: 'cadastrar', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, nome: c.nome, dataNascimento: c.nascimento, dataAdmissao: c.admissao, sexo: c.sexo,
+        unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo),
+      });
+      if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível concluir o pré-cadastro: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Corrigir dados${RODAPE}` };
+      d.colaboradorNome = c.nome; d.lotUnidade = c.unidade.nome; d.lotSetor = c.setor.nome; d.lotCargo = c.cargo.nome;
+      d.inativo = false; delete d.hier; delete d.cad;
+      d.tipos = TIPOS_CADASTRO;
+      return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `✅ Pré-cadastro realizado!\n\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
     }
     case 'ESCOLHENDO_TIPO': {
       const i = escolha(t, d.tipos.length);
       if (i < 0) return { etapa, dados: d, resposta: `Digite apenas o *número* da opção.${RODAPE}` };
       const tipo = d.tipos[i];
-      if (tipo.startsWith('Admissional')) return portal('Para colaborador com cadastro inativo, a nova admissão precisa ser registrada antes do agendamento.');
+      if (tipo.startsWith('Novo vínculo')) return iniciarCadastro(d);
       if (tipo === 'Retorno ao Trabalho') return portal('O Retorno ao Trabalho exige motivo, documentos e aprovação da nossa equipe de saúde.');
       d.tipoExame = TIPO_SISTEMA[tipo] ?? tipo; d.tipoLabel = tipo; delete d.tipos;
       const ex = await chamar('soc-agenda-lookup', { acao: 'exames', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf });
