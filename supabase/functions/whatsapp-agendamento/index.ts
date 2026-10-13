@@ -21,9 +21,13 @@ const PORTAL = 'https://portal.prevermed.com.br/agendamento';
 const TIPOS_ATIVO = ['Periódico', 'Demissional', 'Mudança de Risco', 'Monitoração Pontual', 'Consulta Ocupacional', 'Retorno ao Trabalho'];
 // Rótulo do WhatsApp → tipo gravado na Agenda
 const TIPO_SISTEMA: Record<string, string> = { 'Consulta Ocupacional': 'Consulta' };
-const EXTRAS = ['AUDIOMETRIA', 'ACUIDADE VISUAL', 'ELETROCARDIOGRAMA-ECG', 'ELETROENCEFALOGRAMA-EEG', 'ESPIROMETRIA', 'GLICEMIA DE JEJUM (GLICOSE)', 'HEMOGRAMA COMPLETO', 'EXAME TOXICOLÓGICO (QUERATINA)'];
+const EXTRAS = ['AUDIOMETRIA', 'ACUIDADE VISUAL', 'ELETROCARDIOGRAMA-ECG', 'ELETROENCEFALOGRAMA-EEG', 'ESPIROMETRIA', 'GLICEMIA DE JEJUM (GLICOSE)', 'HEMOGRAMA COMPLETO', 'EXAME TOXICOLÓGICO (QUERATINA)', 'RAIO X TÓRAX PA (OIT)'];
+// Grafia exibida no WhatsApp (o nome do catálogo continua sendo o gravado)
+const ROTULO: Record<string, string> = { 'ELETROCARDIOGRAMA-ECG': 'Eletrocardiograma - ECG', 'ELETROENCEFALOGRAMA-EEG': 'Eletroencefalograma - EEG', 'GLICEMIA DE JEJUM (GLICOSE)': 'Glicemia de Jejum (Glicose)', 'EXAME TOXICOLÓGICO (QUERATINA)': 'Exame Toxicológico', 'RAIO X TÓRAX PA (OIT)': 'Raio X Tórax PA (OIT)' };
+// Exames laboratoriais (jejum) → preferir manhã; sem eles → preferir após 10:30
+const LAB = /GLICEMIA|GLICOSE|HEMOGRAMA|COLESTEROL|TRIGLICER|LIPID|CREATININA|UREIA|TGO|TGP|GAMA|URINA|FEZES|PARASITOL|SANGUE|SORO|VDRL|HEPATITE|PLAQUETA|COLINESTERASE|CHUMBO|ACIDO|ÁCIDO|DOSAGEM/;
 const MIMES: Record<string, string> = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg' };
-const RODAPE = '\n\n_Digite *V* para voltar ou *0* para recomeçar._';
+const RODAPE = '\n\n_Digite *0* para voltar ou *Sair* para encerrar._';
 
 type Dados = Record<string, any>;
 // semVolta: etapa irreversível (gravou no SOC/Agenda) — limpa o histórico do "V"
@@ -87,7 +91,7 @@ const portal = (motivo: string): Res => ({
 });
 
 async function pedirCpf(d: Dados): Promise<Res> {
-  return { etapa: 'AGUARDANDO_CPF', dados: d, resposta: `✅ Empresa: *${titulo(d.empresaNome)}*\n\nAgora digite o *CPF* do colaborador:${RODAPE}` };
+  return { etapa: 'AGUARDANDO_CPF', dados: d, resposta: `🏢 Empresa: *${titulo(d.empresaNome)}*\n\nAgora digite o *CPF* do colaborador:${RODAPE}` };
 }
 
 async function pedirUnidade(d: Dados): Promise<Res> {
@@ -106,14 +110,14 @@ async function pedirDatas(d: Dados): Promise<Res> {
   });
   if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não consegui consultar a agenda agora. Tente escolher a unidade novamente em instantes.\n\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
   const porData = (data?.porData ?? {}) as Record<string, { hora: string }[]>;
-  const datas = Object.keys(porData).sort((a, b) => isoDe(a).localeCompare(isoDe(b))).slice(0, 8);
+  const datas = Object.keys(porData).sort((a, b) => isoDe(a).localeCompare(isoDe(b))).slice(0, 5);
   if (!datas.length) {
     const motivo = data?.indisponiveis?.[0]?.motivo;
     return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não há horários livres nessa unidade nos próximos dias${motivo ? ` (${motivo})` : ''}.\n\nEscolha outra unidade:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
   }
   d.horarios = Object.fromEntries(datas.map((k) => [k, porData[k].map((h) => h.hora)]));
   d.datas = datas;
-  const aviso = data?.regrasExames ? `\n\nℹ️ ${typeof data.regrasExames === 'string' ? data.regrasExames : ''}`.trimEnd() : '';
+  const aviso = typeof data?.regrasExames === 'string' && data.regrasExames.trim() ? `\n\n_${data.regrasExames.trim()}_` : '';
   return { etapa: 'ESCOLHENDO_DATA', dados: d, resposta: `📅 Datas disponíveis em *${titulo(d.unidade.nome)}*:\n\n${menu(datas)}${aviso}${RODAPE}` };
 }
 
@@ -122,7 +126,7 @@ function lotacao(d: Dados) {
 }
 
 const ehClinico = (e: string) => semAcento(e).includes('CLINIC');
-const nomeExame = (e: string) => (ehClinico(e) ? 'Exame Clínico' : titulo(e));
+const nomeExame = (e: string) => (ehClinico(e) ? 'Exame Clínico' : ROTULO[e] ?? titulo(e));
 const chaveExame = (e: string) => (ehClinico(e) ? 'CLINICO' : semAcento(e));
 // Na Monitoração Pontual o Exame Clínico é opcional: sai da base e vira opção da lista de extras
 const extrasDe = (d: Dados) => (d.tipoLabel === 'Monitoração Pontual' && !(d.exames ?? []).some(ehClinico) ? ['EXAME CLÍNICO', ...EXTRAS] : EXTRAS);
@@ -158,13 +162,13 @@ const menuAlterar = (d: Dados): Res => ({ etapa: 'ALTERAR_EXAMES', dados: d, res
 
 function pedirExtras(d: Dados): Res {
   const lista = d.exames?.length ? listaExames(d.exames) : '_Nenhum exame previsto no PCMSO para este atendimento._';
-  return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames previstos no PCMSO para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
+  return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames *previstos no PCMSO* para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
 }
-const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os exames complementares desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` });
+const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os *exames complementares* desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` });
 const confExames = (d: Dados, prefixo = ''): Res => ({ etapa: 'CONF_EXAMES', dados: d, resposta: `${prefixo}📋 *Confira os exames selecionados para este atendimento:*\n\n${listaExames(d.exames ?? [])}\n\n*1* - Confirmar exames\n*2* - Alterar lista de exames${RODAPE}` });
 const bloqueioPcmso = (d: Dados): Res => ({ etapa: 'PCMSO_BLOQUEIO', dados: d, resposta: `⚠️ *Atenção:* Não localizamos os exames do PCMSO ativos para o cargo *${titulo(d.lotCargo || 'informado')}* nesta unidade.\n\nPara a conformidade do ASO, este atendimento precisa de validação técnica prévia da nossa equipe.\n\n*1* - Solicitar análise da equipe técnica PreverMed\n*2* - Falar com um atendente humano\n*3* - Voltar e conferir o cargo/setor informado${RODAPE}` });
 
-const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 *OBSERVAÇÃO PARA A EQUIPE DO BALCÃO DE ATENDIMENTO:*\n\n(ex: PCD, atendimento preferencial, restrição de mobilidade, contato do gestor ou urgência)\n\nDigite sua observação, ou digite *1* para pular.${RODAPE}` });
+const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 *OBSERVAÇÃO* para a equipe do *BALCÃO DE ATENDIMENTO*\n\n_(ex: PCD, atendimento preferencial, restrição de mobilidade, contato do gestor ou outras informações)_\n\nCaso não possua nenhuma observação para atendimento, digite *1* para avançar.${RODAPE}` });
 const pedirAnexo = (d: Dados): Res => ({ etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar a foto ou PDF da guia/pedido de exame ou de outro documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` });
 
 function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
@@ -182,12 +186,17 @@ const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2
 const ENDERECOS: Record<string, string> = { LAPA: 'Rua Afonso Sardinha, 155 - 1° andar', OSASCO: 'Rua Avelino Lopes, 248' };
 const endereco = (u: any) => { const n = semAcento(String(u?.nome ?? '')); const k = Object.keys(ENDERECOS).find((k) => n.includes(k)); return k ? ENDERECOS[k] : ''; };
 // final=true → comprovante: com endereço completo, sem observação/anexo
+const examesResumo = (d: Dados) => {
+  const ad = adicionais(d).map(nomeExame);
+  if ((d.examesBase ?? []).length) return `🧪 Exames *Previstos no PCMSO:* ${d.examesBase.map(nomeExame).join(' • ')}\n➕ Exames *Adicionais:* ${ad.length ? ad.join(' • ') : 'nenhum'}`;
+  return `🧪 Exames: ${textoExames(d)}`;
+};
 const blocoAgendamento = (d: Dados, final = false) =>
-  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames: ${textoExames(d)}\n📍 Local: *PreverMed - ${titulo(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
+  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n${final ? `🧪 Exames: ${textoExames(d)}` : examesResumo(d)}\n📍 Local: *PreverMed - ${titulo(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
   (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`);
 
 function resumo(d: Dados): Res {
-  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* confira com atenção todas as informações acima. A divergência de dados pode acarretar *custos adicionais* decorrentes de eventual *retificação do ASO* e/ou da *realização de exames complementares* durante o atendimento.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data\n_(ou V para voltar e corrigir qualquer item)_${RODAPE}` };
+  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* Confira todos os dados antes de confirmar. Informações incorretas podem gerar *custos adicionais* com a correção do ASO e/ou a realização de exames complementares extras.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data${RODAPE}` };
 }
 
 // ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
@@ -251,6 +260,13 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
   switch (etapa) {
     case 'TERMO': {
       if (t !== '1') return { etapa, dados: d, resposta: `Para continuar, digite *1* (Li e concordo) ou *0* para cancelar.` };
+      const { data: dup } = await ctx.admin.from('soc_agendamentos').select('protocolo, data_agendada, hora_agendada, unidade_id')
+        .eq('colaborador_cpf', d.cpf).gte('data_agendada', new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10))
+        .in('status', ['agendado_soc', 'aguardando_aprovacao', 'solicitado']).order('data_agendada').limit(1);
+      if (dup?.length) {
+        const a = dup[0]; const loc = (d.unidades ?? []).find((u: any) => u.id === a.unidade_id)?.nome;
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `🚫 *Não foi possível concluir o agendamento*\n\nEste colaborador já possui um agendamento:\n\n🔖 Protocolo: *${a.protocolo}*\n📅 Data: *${brIso(a.data_agendada)}* às *${String(a.hora_agendada).slice(0, 5)}*${loc ? `\n📍 Local: *PreverMed - ${titulo(loc)}*` : ''}\n\nPara trocar data, horário, unidade ou cancelar, fale com nossa equipe ou acesse o Portal PreverMed:\n${PORTAL}\n\nSe precisar de outro agendamento, digite *1*.` };
+      }
       d.termoAceito = new Date().toISOString();
       return pedirCnpj(d);
     }
@@ -510,7 +526,10 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const i = escolha(t, d.datas.length);
       if (i < 0) return { etapa, dados: d, resposta: `Digite apenas o *número* da data.${RODAPE}` };
       d.data = d.datas[i];
-      const horas = (d.horarios[d.data] as string[]).slice(0, 20);
+      const todas = d.horarios[d.data] as string[];
+      const lab = (d.exames ?? []).some((e: string) => LAB.test(semAcento(e)));
+      const pref = todas.filter((h) => (lab ? h <= '10:00' : h >= '10:30'));
+      const horas = [...pref, ...todas.filter((h) => !pref.includes(h))].slice(0, 20);
       d.horas = horas;
       return { etapa: 'ESCOLHENDO_HORARIO', dados: d, resposta: `🕐 Horários em *${d.data}*:\n\n${menu(horas)}${RODAPE}` };
     }
@@ -532,6 +551,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
     case 'ANEXO': {
       if (arquivo) return receberAnexo(etapa, d, arquivo);
       if (t === '1') return resumo(d);
+      if (t === '[midia]') return { etapa, dados: d, resposta: `Recebi o arquivo, mas não consegui abri-lo 😕 Tente enviar novamente como *foto* ou *PDF* (até 5 MB), ou digite *1* para continuar sem anexo.${RODAPE}` };
       return { etapa, dados: d, resposta: `Envie a foto ou o PDF agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
     }
     case 'ANEXO_OK': {
@@ -556,7 +576,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}\n\nEscolha a unidade para ver outros horários:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
       await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
       return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
-        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}\n\n🪪 Leve um *documento oficial com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *Oi*.` };
+        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *1*.` };
     }
     default:
       return boasVindas(nome);
@@ -576,8 +596,8 @@ Deno.serve(async (req) => {
     const { data: sessao } = await admin.from('whatsapp_sessoes').select('etapa, dados_sessao, updated_at').eq('telefone', telefone).maybeSingle();
     const expirada = !sessao || Date.now() - new Date(sessao.updated_at).getTime() > EXPIRA_MS;
     const cmd = texto.trim().toLowerCase();
-    const reiniciar = !arquivo && ['0', 'menu', 'sair', 'encerrar', 'recomeçar', 'recomecar'].includes(cmd);
-    const voltar = !arquivo && ['v', 'voltar'].includes(cmd);
+    const reiniciar = !arquivo && ['menu', 'sair', 'encerrar', 'recomeçar', 'recomecar'].includes(cmd);
+    const voltar = !arquivo && ['0', 'v', 'voltar'].includes(cmd);
     const etapa = expirada || reiniciar || sessao!.etapa === 'FINALIZADO' ? 'INICIO' : sessao!.etapa;
     const dIn: Dados = etapa === 'INICIO' ? {} : { ...((sessao!.dados_sessao as Dados) ?? {}) };
     const hist: { e: string; r: string; d: Dados }[] = Array.isArray(dIn.hist) ? dIn.hist : [];
