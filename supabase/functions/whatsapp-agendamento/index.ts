@@ -141,13 +141,28 @@ function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
     d.cad[nivel === 'cargo' ? 'setor' : 'unidade'] = undefined;
     return { ...pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade'), resposta: `Não há ${nivel === 'cargo' ? 'cargos ativos neste setor' : 'setores ativos nesta unidade'}. Escolha outra opção.\n\n` + pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade').resposta };
   }
-  const mostra = lista.slice(0, 30);
-  const mais = lista.length > 30 ? `\n\n_Mostrando 30 de ${lista.length}. Digite parte do nome para procurar._` : '';
+  const mostra = lista.slice(0, MAX_OP);
+  const mais = lista.length > MAX_OP ? `\n\n_Mostrando ${MAX_OP} de ${lista.length}. Digite parte do nome para buscar._` : '';
   const instr = d.cad.livre
-    ? (lista.length ? `Digite o *número* de uma opção existente ou escreva o *nome* do(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
-    : `Digite o *número* da opção (ou parte do nome):`;
+    ? (lista.length ? `Digite o *número* de uma opção, parte do *nome* para buscar, ou o nome de um(a) novo(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
+    : `Digite o *número* da opção ou parte do *nome* para buscar:`;
   return { etapa, dados: d, resposta: `${rot} do colaborador\n\n${mostra.length ? menu(mostra.map((x) => titulo(x.nome))) + mais + '\n\n' : ''}${instr}${RODAPE}` };
 }
+const MAX_OP = 10;
+const ROT = { unidade: '🏢 Unidade', setor: '📂 Setor', cargo: '💼 Cargo' } as const;
+const pedirAdmissao = (d: Dados): Res => ({ etapa: 'CAD_ADMISSAO', dados: d, resposta: `📆 Digite a *data de admissão* do colaborador (real ou pretendida) no formato DD/MM/AAAA:${RODAPE}` });
+function aplicarNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo', ref: { codigo?: string; nome?: string }): Res {
+  d.cad[nivel] = ref;
+  if (nivel === 'unidade') { d.cad.setor = undefined; d.cad.cargo = undefined; return pedirNivel(d, 'setor'); }
+  if (nivel === 'setor') { d.cad.cargo = undefined; return pedirNivel(d, 'cargo'); }
+  return confirmarCad(d);
+}
+function confirmarCad(d: Dados): Res {
+  const c = d.cad; c.corrigindo = false;
+  const sexo = c.sexo === 'FEMININO' ? '♀️ Sexo: Feminino' : '♂️ Sexo: Masculino';
+  return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(c.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(c.nascimento)}\n${sexo}\n📆 Admissão: ${brIso(c.admissao)}\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
+}
+const menuCorrigir = (d: Dados): Res => ({ etapa: 'CAD_CORRIGIR', dados: d, resposta: `✏️ *O que você deseja corrigir?*\n\n*1* - Nome\n*2* - Data de nascimento\n*3* - Sexo\n*4* - Data de admissão\n*5* - Unidade / Setor / Cargo\n*6* - Voltar à confirmação${RODAPE}` });
 
 async function processar(etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
@@ -196,6 +211,7 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       const n = t.replace(/\s+/g, ' ');
       if (n.length < 5 || !n.includes(' ') || /\d/.test(n) || n.length > 120) return { etapa, dados: d, resposta: `Digite o *nome completo* do colaborador (nome e sobrenome, sem números):${RODAPE}` };
       d.cad.nome = n.toUpperCase();
+      if (d.cad.corrigindo) return confirmarCad(d);
       return { etapa: 'CAD_NASC', dados: d, resposta: `🎂 Digite a *data de nascimento* (DD/MM/AAAA):${RODAPE}` };
     }
     case 'CAD_NASC': {
@@ -203,18 +219,21 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       const idade = iso ? (Date.now() - new Date(iso).getTime()) / (365.25 * 864e5) : 0;
       if (!iso || idade < 14 || idade > 100) return { etapa, dados: d, resposta: `Data inválida. Digite a *data de nascimento* no formato DD/MM/AAAA:${RODAPE}` };
       d.cad.nascimento = iso;
-      return { etapa: 'CAD_SEXO', dados: d, resposta: `Sexo do colaborador:\n\n*1* - Masculino\n*2* - Feminino${RODAPE}` };
+      if (d.cad.corrigindo) return confirmarCad(d);
+      return { etapa: 'CAD_SEXO', dados: d, resposta: `Sexo do colaborador:\n\n*1* - ♂️ Masculino\n*2* - ♀️ Feminino${RODAPE}` };
     }
     case 'CAD_SEXO': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para Masculino ou *2* para Feminino.${RODAPE}` };
       d.cad.sexo = i === 0 ? 'MASCULINO' : 'FEMININO';
-      return { etapa: 'CAD_ADMISSAO', dados: d, resposta: `📆 Digite a *data de admissão* do colaborador na empresa (DD/MM/AAAA):${RODAPE}` };
+      if (d.cad.corrigindo) return confirmarCad(d);
+      return pedirAdmissao(d);
     }
     case 'CAD_ADMISSAO': {
       const iso = dataBr(t);
-      if (!iso || iso < d.cad.nascimento || new Date(iso).getTime() > Date.now() + 180 * 864e5) return { etapa, dados: d, resposta: `Data inválida. Digite a *data de admissão* no formato DD/MM/AAAA:${RODAPE}` };
+      if (!iso || iso < d.cad.nascimento || new Date(iso).getTime() > Date.now() + 180 * 864e5) return { etapa, dados: d, resposta: `Data inválida. Digite a *data de admissão* (real ou pretendida) no formato DD/MM/AAAA:${RODAPE}` };
       d.cad.admissao = iso;
+      if (d.cad.corrigindo && d.hier) return confirmarCad(d);
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
       if (!ok || data?.indisponivel) return portal('Não consegui consultar a estrutura (unidades, setores e cargos) da empresa agora.');
       d.cad.livre = !!data.podeCriar;
@@ -225,30 +244,58 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
     case 'CAD_UNIDADE': case 'CAD_SETOR': case 'CAD_CARGO': {
       const nivel = etapa === 'CAD_UNIDADE' ? 'unidade' : etapa === 'CAD_SETOR' ? 'setor' : 'cargo';
       const lista = opcoesNivel(d, nivel);
-      const vis: Item[] = d.filtro ?? lista;
-      const i = escolha(t, vis.length);
-      let ref: { codigo?: string; nome?: string } | null = null;
-      if (i >= 0 && so(t) === t) ref = { codigo: vis[i].codigo, nome: vis[i].nome };
-      else {
-        const q = semAcento(t);
-        const exato = lista.find((x) => semAcento(x.nome) === q);
-        const achados = lista.filter((x) => semAcento(x.nome).includes(q));
-        if (exato) ref = exato;
-        else if (q.length >= 2 && achados.length === 1) ref = achados[0];
-        else if (q.length >= 2 && achados.length > 1) { d.filtro = achados.slice(0, 30); return { etapa, dados: d, resposta: `Encontrei estas opções:\n\n${menu(d.filtro.map((x: Item) => titulo(x.nome)))}\n\nDigite o *número* da opção.${RODAPE}` }; }
-        else if (d.cad.livre && q.length >= 2 && t.length <= 130) ref = { nome: t.toUpperCase() };
+      const vis: Item[] = d.filtro ?? lista.slice(0, MAX_OP);
+      const nomeNivel = { unidade: 'unidade', setor: 'setor', cargo: 'cargo' }[nivel];
+      if (/^\d+$/.test(t)) {
+        const i = escolha(t, vis.length);
+        if (i < 0) return { etapa, dados: d, resposta: `Esse número não está na lista. Digite o *número* de uma opção ou parte do *nome* para buscar.${RODAPE}` };
+        delete d.filtro;
+        return aplicarNivel(d, nivel, { codigo: vis[i].codigo, nome: vis[i].nome });
       }
-      if (!ref) return { etapa, dados: d, resposta: `Não encontrei essa opção. Digite o *número* ou parte do *nome*.${RODAPE}` };
-      delete d.filtro;
-      d.cad[nivel] = ref;
-      if (nivel === 'unidade') return pedirNivel(d, 'setor');
-      if (nivel === 'setor') return pedirNivel(d, 'cargo');
-      return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(d.cad.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(d.cad.nascimento)}\n⚧ Sexo: ${titulo(d.cad.sexo)}\n📆 Admissão: ${brIso(d.cad.admissao)}\n🏢 Unidade: *${titulo(d.cad.unidade.nome)}*\n📂 Setor: *${titulo(d.cad.setor.nome)}*\n💼 Cargo: *${titulo(d.cad.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
+      const q = semAcento(t);
+      if (q.length < 2) return { etapa, dados: d, resposta: `Digite pelo menos *2 letras* do nome para buscar.${RODAPE}` };
+      const exato = lista.filter((x) => semAcento(x.nome) === q);
+      const achados = exato.length ? exato : lista.filter((x) => semAcento(x.nome).includes(q));
+      if (achados.length === 1) {
+        d.pend = { nivel, ref: { codigo: achados[0].codigo, nome: achados[0].nome } };
+        return { etapa: 'CAD_CONF_NIVEL', dados: d, resposta: `Encontramos ${nivel === 'unidade' ? 'a' : 'o'} ${nomeNivel}:\n\n${ROT[nivel]}: *${titulo(achados[0].nome)}*\n\n*1* - Sim, confirmar\n*2* - Buscar novamente${RODAPE}` };
+      }
+      if (achados.length > 1) {
+        d.filtro = achados.slice(0, MAX_OP);
+        const mais = achados.length > MAX_OP ? `\n\n_Encontrei ${achados.length} opções; mostrando ${MAX_OP}. Digite mais letras do nome para refinar._` : '';
+        return { etapa, dados: d, resposta: `Encontrei estas opções:\n\n${menu(d.filtro.map((x: Item) => titulo(x.nome)))}${mais}\n\nDigite o *número* da opção correta.${RODAPE}` };
+      }
+      if (d.cad.livre && t.length <= 130) {
+        d.pend = { nivel, ref: { nome: t.toUpperCase() } };
+        return { etapa: 'CAD_CONF_NIVEL', dados: d, resposta: `Não há ${nomeNivel} com esse nome. Deseja cadastrar ${nivel === 'unidade' ? 'a nova' : 'o novo'} ${nomeNivel}:\n\n${ROT[nivel]}: *${titulo(t)}*\n\n*1* - Sim, confirmar\n*2* - Buscar novamente${RODAPE}` };
+      }
+      return { etapa, dados: d, resposta: `❌ Não encontramos ${nivel === 'unidade' ? 'essa unidade' : nivel === 'setor' ? 'esse setor vinculado à unidade selecionada' : 'esse cargo vinculado ao setor selecionado'}. Digite o *número* da lista ou outra parte do *nome*.${RODAPE}` };
+    }
+    case 'CAD_CONF_NIVEL': {
+      const i = escolha(t, 2);
+      const p = d.pend;
+      if (!p) return pedirNivel(d, 'unidade');
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para buscar novamente.${RODAPE}` };
+      delete d.pend; delete d.filtro;
+      if (i === 1) return pedirNivel(d, p.nivel);
+      return aplicarNivel(d, p.nivel, p.ref);
+    }
+    case 'CAD_CORRIGIR': {
+      const i = t === '0' ? -2 : escolha(t, 5);
+      if (i === -2) return confirmarCad(d);
+      if (i < 0) return menuCorrigir(d);
+      d.cad.corrigindo = true;
+      if (i === 0) return { etapa: 'CAD_NOME', dados: d, resposta: `Digite o *nome completo* correto:${RODAPE}` };
+      if (i === 1) return { etapa: 'CAD_NASC', dados: d, resposta: `🎂 Digite a *data de nascimento* correta (DD/MM/AAAA):${RODAPE}` };
+      if (i === 2) return { etapa: 'CAD_SEXO', dados: d, resposta: `Sexo do colaborador:\n\n*1* - ♂️ Masculino\n*2* - ♀️ Feminino${RODAPE}` };
+      if (i === 3) return pedirAdmissao(d);
+      d.cad.unidade = undefined; d.cad.setor = undefined; d.cad.cargo = undefined;
+      return pedirNivel(d, 'unidade');
     }
     case 'CAD_CONFIRMAR': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para corrigir.${RODAPE}` };
-      if (i === 1) return iniciarCadastro(d);
+      if (i === 1) return menuCorrigir(d);
       const c = d.cad;
       const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
       const { ok, data } = await chamar('soc-agenda-lookup', {
