@@ -7323,6 +7323,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_registros: {
+        Row: {
+          cargo: string | null
+          colaborador_nome: string | null
+          created_at: string
+          detalhes: Json
+          empresa_cnpj: string | null
+          empresa_nome: string | null
+          id: string
+          nome_whatsapp: string | null
+          protocolo: string
+          telefone: string
+          tipo: string
+        }
+        Insert: {
+          cargo?: string | null
+          colaborador_nome?: string | null
+          created_at?: string
+          detalhes?: Json
+          empresa_cnpj?: string | null
+          empresa_nome?: string | null
+          id?: string
+          nome_whatsapp?: string | null
+          protocolo: string
+          telefone: string
+          tipo: string
+        }
+        Update: {
+          cargo?: string | null
+          colaborador_nome?: string | null
+          created_at?: string
+          detalhes?: Json
+          empresa_cnpj?: string | null
+          empresa_nome?: string | null
+          id?: string
+          nome_whatsapp?: string | null
+          protocolo?: string
+          telefone?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       whatsapp_sessoes: {
         Row: {
           created_at: string
