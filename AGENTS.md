@@ -3,3 +3,4 @@
 - SOC Agenda: permissão de criar unidade/setor/cargo no pré-cadastro é decidida no servidor pelo subgrupo da empresa (soc-agenda-lookup), nunca só na tela — evita cadastros órfãos em empresas com laudos.
 - Agenda: regras de agendamento (calendário, bloqueios, limites, exames especiais) vivem em `supabase/functions/_shared/agendaRegras.ts` e são aplicadas tanto em `soc-agenda-horarios` (tela) quanto em `soc-agenda-solicitar` (gravação) — a página pública não é confiável sozinha.
 - Agenda: anexos de agendamento ficam em `os-anexos/soc-agenda/*`, legíveis só por adm_master ou quem tem o módulo `/agendamentos`; Retorno ao Trabalho só vai ao SOC via `agenda-aprovacao` (checa permissão approve no servidor).
+- WhatsApp: o robô (n8n) só repassa mensagens; etapas e regras ficam em `whatsapp-agendamento`, que chama as mesmas funções da página pública e é protegida pelo header `x-bot-token` — a regra de negócio fica num lugar só.
