@@ -22,10 +22,12 @@ const TIPOS_ATIVO = ['Periódico', 'Demissional', 'Mudança de Risco', 'Monitora
 const TIPO_SISTEMA: Record<string, string> = { 'Consulta Ocupacional': 'Consulta' };
 const EXTRAS = ['AUDIOMETRIA', 'ACUIDADE VISUAL', 'ELETROCARDIOGRAMA-ECG', 'ELETROENCEFALOGRAMA-EEG', 'ESPIROMETRIA', 'GLICEMIA DE JEJUM (GLICOSE)', 'HEMOGRAMA COMPLETO', 'EXAME TOXICOLÓGICO (QUERATINA)'];
 const MIMES: Record<string, string> = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/jpg': 'jpg' };
-const RODAPE = '\n\n_Digite *0* a qualquer momento para recomeçar._';
+const RODAPE = '\n\n_Digite *V* para voltar ou *0* para recomeçar._';
 
 type Dados = Record<string, any>;
-type Res = { resposta: string; etapa: string; dados: Dados };
+// semVolta: etapa irreversível (gravou no SOC/Agenda) — limpa o histórico do "V"
+type Res = { resposta: string; etapa: string; dados: Dados; semVolta?: boolean };
+type Ctx = { admin: any; telefone: string; nome?: string };
 
 const so = (s: string) => s.replace(/\D/g, '');
 const titulo = (s: string) => s.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
@@ -50,9 +52,33 @@ async function chamar(fn: string, body: unknown) {
 }
 
 const boasVindas = (nome?: string): Res => ({
-  etapa: 'AGUARDANDO_CNPJ', dados: {},
-  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed Medicina Ocupacional*.\n\nPara iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):`,
+  etapa: 'TERMO', dados: {},
+  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed Medicina Ocupacional*.\n\n📜 *Termo de Responsabilidade e Privacidade (LGPD)*\n\nOs dados informados nesta conversa (empresa, colaborador e documentos) serão usados exclusivamente para o agendamento e a realização dos exames ocupacionais, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).\n\nAo continuar, você declara que as informações fornecidas são verdadeiras e que está autorizado(a) a solicitá-las em nome da empresa.\n\n⚠️ Informações incorretas podem gerar *retificação do ASO* e/ou a *realização de exames extras*, ambos com *custos adicionais*.\n\n*1* - Li e concordo\n*0* - Cancelar`,
 });
+
+const pedirCnpj = (d: Dados): Res => ({ etapa: 'AGUARDANDO_CNPJ', dados: d, resposta: `Para iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):${RODAPE}` });
+
+// Registro de rastreabilidade (visível só para ADM Master) + alerta ao Depto. Saúde quando precisa de gente
+async function registrar(ctx: Ctx, tipo: 'agendamento' | 'analise_pcmso' | 'atendimento_humano', d: Dados, protocolo?: string, detalhes: Dados = {}) {
+  const ymd = new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10).replace(/-/g, '');
+  const prot = protocolo ?? `${tipo === 'analise_pcmso' ? 'AN' : 'AT'}-${ymd}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+  try {
+    const { data: reg } = await ctx.admin.from('whatsapp_registros').insert({
+      tipo, protocolo: prot, telefone: ctx.telefone, nome_whatsapp: ctx.nome ?? null, empresa_cnpj: d.cnpj ?? null, empresa_nome: d.empresaNome ?? null,
+      colaborador_nome: d.colaboradorNome ?? null, cargo: d.lotCargo ?? null,
+      detalhes: { cpf: d.cpf, unidade: d.lotUnidade, setor: d.lotSetor, tipoExame: d.tipoLabel, ...detalhes },
+    }).select('id').single();
+    if (tipo !== 'agendamento') {
+      const { data: dep } = await ctx.admin.from('departments').select('id').eq('name', 'Saúde').maybeSingle();
+      const { data: us } = dep ? await ctx.admin.from('user_departments').select('user_id').eq('department_id', dep.id) : { data: [] };
+      const ids = [...new Set((us ?? []).map((u: any) => u.user_id))];
+      const titulo_ = tipo === 'analise_pcmso' ? `WhatsApp: análise de PCMSO (${prot})` : `WhatsApp: pedido de atendente (${prot})`;
+      const conteudo = `Empresa: ${d.empresaNome ?? '-'} (CNPJ ${d.cnpj ?? '-'}) · Colaborador: ${d.colaboradorNome ?? '-'} · Cargo: ${d.lotCargo ?? '-'} · Tipo: ${d.tipoLabel ?? '-'} · Telefone: ${ctx.telefone}`;
+      if (ids.length) await ctx.admin.from('notifications').insert(ids.map((user_id) => ({ user_id, notification_type: 'aso_alerta', title: titulo_, content: conteudo, related_id: reg?.id ?? null, related_type: 'whatsapp_registro' })));
+    }
+  } catch (e) { console.error('registrar whatsapp', e); }
+  return prot;
+}
 
 const portal = (motivo: string): Res => ({
   etapa: 'FINALIZADO', dados: {},
@@ -94,18 +120,41 @@ function lotacao(d: Dados) {
   return [d.lotUnidade && `🏢 Unidade: *${titulo(d.lotUnidade)}*`, d.lotSetor && `📂 Setor: *${titulo(d.lotSetor)}*`, d.lotCargo && `💼 Cargo: *${titulo(d.lotCargo)}*`].filter(Boolean).join('\n');
 }
 
+const ehClinico = (e: string) => semAcento(e).includes('CLINIC');
+const nomeExame = (e: string) => (ehClinico(e) ? 'Exame Clínico' : titulo(e));
+const chaveExame = (e: string) => (ehClinico(e) ? 'CLINICO' : semAcento(e));
+// Na Monitoração Pontual o Exame Clínico é opcional: sai da base e vira opção da lista de extras
+const extrasDe = (d: Dados) => (d.tipoLabel === 'Monitoração Pontual' && !(d.exames ?? []).some(ehClinico) ? ['EXAME CLÍNICO', ...EXTRAS] : EXTRAS);
+const listaExames = (ex: string[]) => (ex.length ? ex.map((e) => `• ${nomeExame(e)}`).join('\n') : '• _(nenhum exame selecionado)_');
+
 function pedirExtras(d: Dados): Res {
-  const lista = d.exames?.length ? d.exames.map((e: string) => `• ${titulo(e)}`).join('\n') : '_Não encontramos exames do PCMSO para este atendimento._';
+  const lista = d.exames?.length ? listaExames(d.exames) : '_Nenhum exame previsto no PCMSO para este atendimento._';
   return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames previstos no PCMSO para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
 }
+const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os exames complementares desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou escreva o nome do exame (ex: _Raio-X de Tórax OIT_).${RODAPE}` });
+const confExames = (d: Dados, prefixo = ''): Res => ({ etapa: 'CONF_EXAMES', dados: d, resposta: `${prefixo}📋 *Confira os exames selecionados para este atendimento:*\n\n${listaExames(d.exames ?? [])}\n\n*1* - Confirmar exames\n*2* - Alterar lista de exames${RODAPE}` });
+const bloqueioPcmso = (d: Dados): Res => ({ etapa: 'PCMSO_BLOQUEIO', dados: d, resposta: `⚠️ *Atenção:* Não localizamos os exames do PCMSO ativos para o cargo *${titulo(d.lotCargo || 'informado')}* nesta unidade.\n\nPara a conformidade do ASO, este atendimento precisa de validação técnica prévia da nossa equipe.\n\n*1* - Solicitar análise da equipe técnica PreverMed\n*2* - Falar com um atendente humano\n*3* - Voltar e conferir o cargo/setor informado${RODAPE}` });
 
-const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 Deseja incluir alguma observação para a equipe de atendimento?\n(ex: restrição de horário, contato do gestor ou detalhes do colaborador)\n\nDigite sua observação, ou digite *1* para pular.${RODAPE}` });
+const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 *OBSERVAÇÃO PARA A EQUIPE DO BALCÃO DE ATENDIMENTO:*\n\n(ex: PCD, atendimento preferencial, restrição de mobilidade, contato do gestor ou urgência)\n\nDigite sua observação, ou digite *1* para pular.${RODAPE}` });
 const pedirAnexo = (d: Dados): Res => ({ etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar a foto ou PDF da guia/pedido de exame ou de outro documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` });
 
+function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
+  const tipo = arquivo.tipo.split(';')[0].trim().toLowerCase();
+  const ext = MIMES[tipo];
+  if (!ext) return { etapa, dados: d, resposta: `Esse tipo de arquivo não é aceito. Envie *foto* (JPG/PNG) ou *PDF*, ou digite *1* para continuar.${RODAPE}` };
+  if (arquivo.base64.length > 6_800_000) return { etapa, dados: d, resposta: `Arquivo muito grande (máx. 5 MB). Envie outro, ou digite *1* para continuar.${RODAPE}` };
+  const nomeArq = (arquivo.nome?.replace(/[^\w.\- ]/g, '').slice(0, 100) || `whatsapp`).replace(/\.[^.]*$/, '') + `.${ext}`;
+  d.anexo = { nome: nomeArq, tipo: tipo === 'image/jpg' ? 'image/jpeg' : tipo, base64: arquivo.base64.replace(/^data:[^,]+,/, '') };
+  return { etapa: 'ANEXO_OK', dados: d, resposta: `✅ *Documento recebido com sucesso!*\n📄 Arquivo: ${nomeArq}\n\n*1* - Continuar\n*2* - Enviar outro documento (substitui o atual)${RODAPE}` };
+}
+
+const fmtCnpj = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+const blocoAgendamento = (d: Dados) =>
+  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames:\n${listaExames(d.exames ?? [])}\n📍 Local: *${titulo(d.unidade.nome)}*\n📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`;
+
 function resumo(d: Dados): Res {
-  const ex = d.exames?.length ? d.exames.map((e: string) => titulo(e)).join(', ') : '-';
-  return { etapa: 'CONFIRMANDO', dados: d, resposta:
-    `Confira os dados do agendamento:\n\n🏢 Empresa: *${titulo(d.empresaNome)}*\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames: ${ex}\n📍 Local: *${titulo(d.unidade.nome)}*\n📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? 'sim' : 'não'}\n\n*1* - Confirmar\n*2* - Escolher outra data${RODAPE}` };
+  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n*1* - Confirmar\n*2* - Escolher outra data${RODAPE}` };
 }
 
 // ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
@@ -164,25 +213,30 @@ function confirmarCad(d: Dados): Res {
 }
 const menuCorrigir = (d: Dados): Res => ({ etapa: 'CAD_CORRIGIR', dados: d, resposta: `✏️ *O que você deseja corrigir?*\n\n*1* - Nome\n*2* - Data de nascimento\n*3* - Sexo\n*4* - Data de admissão\n*5* - Unidade / Setor / Cargo\n*6* - Voltar à confirmação${RODAPE}` });
 
-async function processar(etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
+async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
   switch (etapa) {
+    case 'TERMO': {
+      if (t !== '1') return { etapa, dados: d, resposta: `Para continuar, digite *1* (Li e concordo) ou *0* para cancelar.` };
+      d.termoAceito = new Date().toISOString();
+      return pedirCnpj(d);
+    }
     case 'AGUARDANDO_CNPJ': {
       const cnpj = so(t);
       if (cnpj.length !== 14) return { etapa, dados: d, resposta: `Não reconheci um CNPJ. Digite os *14 números* do CNPJ da empresa:${RODAPE}` };
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'empresa', cnpj });
       if (!ok) return { etapa, dados: d, resposta: `Não consegui consultar agora. Tente digitar o CNPJ novamente em instantes.${RODAPE}` };
-      const empresas = (data?.empresas ?? []) as { soc_code: string; razao_social: string; cidade?: string }[];
+      const empresas = (data?.empresas ?? []) as { soc_code: string; razao_social: string; cidade?: string; podeCriar?: boolean }[];
       if (!empresas.length) return { etapa, dados: d, resposta: `Não encontramos esse CNPJ entre os clientes ativos da PreverMed. Confira o número e digite novamente, ou fale com nosso atendimento.${RODAPE}` };
       d.cnpj = cnpj;
-      if (empresas.length === 1) { d.socCode = empresas[0].soc_code; d.empresaNome = empresas[0].razao_social; return pedirCpf(d); }
-      d.empresas = empresas.map((e) => ({ socCode: e.soc_code, nome: e.razao_social, cidade: e.cidade }));
+      if (empresas.length === 1) { d.socCode = empresas[0].soc_code; d.empresaNome = empresas[0].razao_social; d.livre = !!empresas[0].podeCriar; return pedirCpf(d); }
+      d.empresas = empresas.map((e) => ({ socCode: e.soc_code, nome: e.razao_social, cidade: e.cidade, livre: !!e.podeCriar }));
       return { etapa: 'ESCOLHENDO_EMPRESA', dados: d, resposta: `Encontramos mais de uma empresa com esse CNPJ. Qual delas?\n\n${menu(d.empresas.map((e: any) => `${titulo(e.nome)}${e.cidade ? ` (${titulo(e.cidade)})` : ''}`))}${RODAPE}` };
     }
     case 'ESCOLHENDO_EMPRESA': {
       const i = escolha(t, d.empresas.length);
       if (i < 0) return { etapa, dados: d, resposta: `Digite apenas o *número* da opção.${RODAPE}` };
-      d.socCode = d.empresas[i].socCode; d.empresaNome = d.empresas[i].nome; delete d.empresas;
+      d.socCode = d.empresas[i].socCode; d.empresaNome = d.empresas[i].nome; d.livre = !!d.empresas[i].livre; delete d.empresas;
       return pedirCpf(d);
     }
     case 'AGUARDANDO_CPF': {
@@ -306,7 +360,7 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       d.colaboradorNome = c.nome; d.lotUnidade = c.unidade.nome; d.lotSetor = c.setor.nome; d.lotCargo = c.cargo.nome;
       d.inativo = false; delete d.hier; delete d.cad;
       d.tipos = TIPOS_CADASTRO;
-      return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `✅ Pré-cadastro realizado!\n\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+      return { semVolta: true, etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `✅ Pré-cadastro realizado!\n\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
     }
     case 'ESCOLHENDO_TIPO': {
       const i = escolha(t, d.tipos.length);
@@ -314,16 +368,35 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       const tipo = d.tipos[i];
       if (tipo.startsWith('Novo vínculo')) return iniciarCadastro(d);
       if (tipo === 'Retorno ao Trabalho') return portal('O Retorno ao Trabalho exige motivo, documentos e aprovação da nossa equipe de saúde.');
-      d.tipoExame = TIPO_SISTEMA[tipo] ?? tipo; d.tipoLabel = tipo; delete d.tipos;
       const ex = await chamar('soc-agenda-lookup', { acao: 'exames', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf });
+      if (!ex.ok || ex.data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar os exames do PCMSO agora. Digite o número do tipo de exame novamente em instantes.${RODAPE}` };
+      d.tipoExame = TIPO_SISTEMA[tipo] ?? tipo; d.tipoLabel = tipo; d.tiposAnt = d.tipos; delete d.tipos;
       const todos = (ex.data?.exames ?? []) as any[];
       // Pontual/Consulta não têm coluna própria no PCMSO: mostra o que se aplica ao periódico
       const chave = d.tipoExame in (todos[0]?.tipos ?? {}) ? d.tipoExame : 'Periódico';
       d.exames = [...new Set(todos.filter((e) => e.tipos?.[chave]).map((e) => e.nome as string))].slice(0, 40);
+      if (tipo === 'Monitoração Pontual') d.exames = d.exames.filter((e: string) => !ehClinico(e));
+      d.examesBase = [...d.exames];
+      // Empresas de Gestão/Uso precisam ter PCMSO; sem exames = risco de ASO errado → validação técnica
+      if (!d.livre && !d.examesBase.length && !['Monitoração Pontual', 'Consulta Ocupacional'].includes(tipo)) return bloqueioPcmso(d);
       if (tipo === 'Mudança de Risco') {
         return { etapa: 'CONFIRMANDO_LOTACAO', dados: d, resposta: `⚠️ Para *Mudança de Risco*, a nova lotação (setor/cargo) precisa estar atualizada no SOC *antes* do atendimento.\n\nA lotação já foi atualizada?\n\n*1* - Sim\n*2* - Não${RODAPE}` };
       }
       return pedirExtras(d);
+    }
+    case 'PCMSO_BLOQUEIO': {
+      const i = escolha(t, 3);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1*, *2* ou *3*.${RODAPE}` };
+      if (i === 0) {
+        const prot = await registrar(ctx, 'analise_pcmso', d);
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `✅ *Solicitação de análise registrada!*\n\n🔖 Protocolo: *${prot}*\n\nNossa equipe técnica já foi avisada e retornará por este número após validar o PCMSO do cargo *${titulo(d.lotCargo || '-')}*.\n\nSe precisar de outro atendimento, digite *Oi*.` };
+      }
+      if (i === 1) {
+        const prot = await registrar(ctx, 'atendimento_humano', d, undefined, { motivo: 'PCMSO sem exames para o cargo' });
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `👩‍💼 Pedido de atendimento registrado (protocolo *${prot}*).\n\nUm atendente da PreverMed vai continuar o atendimento por este número em breve.` };
+      }
+      d.tipos = d.tiposAnt;
+      return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `Confira a lotação cadastrada do colaborador:\n\n👤 *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nSe o cargo/setor estiver incorreto, a lotação precisa ser atualizada no SOC antes do agendamento.\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
     }
     case 'CONFIRMANDO_LOTACAO': {
       const i = escolha(t, 2);
@@ -335,24 +408,38 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
     case 'PERGUNTANDO_EXTRAS': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para Não ou *2* para Sim.${RODAPE}` };
-      if (i === 0) return pedirUnidade(d);
-      return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os exames complementares desejados:\n\n${menu(EXTRAS.map(titulo))}\n\nDigite os números desejados (ex: *1, 2*) ou escreva o nome do exame (ex: _Raio-X de Tórax OIT_).${RODAPE}` };
+      if (i === 0) return confExames(d);
+      return menuExtras(d);
     }
     case 'ADICIONANDO_EXAMES': {
-      const nums = t.split(/[\s,;e]+/).filter(Boolean);
-      const porNumero = nums.every((n) => /^\d+$/.test(n));
-      let novos: string[];
-      if (porNumero) {
-        const idx = nums.map((n) => Number(n) - 1);
-        if (idx.some((x) => x < 0 || x >= EXTRAS.length)) return { etapa, dados: d, resposta: `Algum número não está na lista. Digite os números de 1 a ${EXTRAS.length} (ex: *1, 2*) ou o nome do exame.${RODAPE}` };
-        novos = idx.map((x) => EXTRAS[x]);
-      } else {
-        if (t.length < 3 || t.length > 80) return { etapa, dados: d, resposta: `Escreva o nome do exame (entre 3 e 80 letras).${RODAPE}` };
-        novos = [t.toUpperCase()];
+      const ops = extrasDe(d);
+      const partes = t.split(/[,;\n]+|\s+e\s+/i).map((s) => s.trim()).filter(Boolean);
+      const novos: string[] = [];
+      for (const p of partes) {
+        if (/^[\d\s]+$/.test(p)) {
+          for (const n of p.split(/\s+/)) {
+            const x = Number(n) - 1;
+            if (x < 0 || x >= ops.length) return { etapa, dados: d, resposta: `O número *${n}* não está na lista. Digite números de 1 a ${ops.length} (ex: *1, 2*) ou o nome do exame.${RODAPE}` };
+            novos.push(ops[x]);
+          }
+          continue;
+        }
+        if (p.length < 3 || p.length > 80) return { etapa, dados: d, resposta: `Não entendi "${p}". Escreva o nome do exame (entre 3 e 80 letras) ou use os números da lista.${RODAPE}` };
+        const q = semAcento(p);
+        novos.push(ops.find((o) => semAcento(o).includes(q)) ?? (ehClinico(p) ? 'EXAME CLÍNICO' : p.toUpperCase()));
       }
-      d.exames = [...new Set([...(d.exames ?? []), ...novos])].slice(0, 40);
-      const r = await pedirUnidade(d);
-      return { ...r, resposta: `✅ Exames adicionados: ${novos.map(titulo).join(', ')}\n\n${r.resposta}` };
+      if (!novos.length) return menuExtras(d);
+      const vistos = new Set<string>(); const lista: string[] = [];
+      for (const e of [...(d.exames ?? []), ...novos]) { const k = chaveExame(e); if (!vistos.has(k)) { vistos.add(k); lista.push(e); } }
+      d.exames = lista.slice(0, 40);
+      return confExames(d);
+    }
+    case 'CONF_EXAMES': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para alterar a lista.${RODAPE}` };
+      if (i === 1) { d.exames = [...(d.examesBase ?? [])]; return pedirExtras(d); }
+      if (!d.exames?.length) return { ...menuExtras(d), resposta: `Selecione pelo menos um exame para este atendimento.\n\n${menuExtras(d).resposta}` };
+      return pedirUnidade(d);
     }
     case 'ESCOLHENDO_UNIDADE': {
       const i = escolha(t, d.unidades.length);
@@ -384,17 +471,16 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
       return pedirAnexo(d);
     }
     case 'ANEXO': {
-      if (arquivo) {
-        const tipo = arquivo.tipo.split(';')[0].trim().toLowerCase();
-        const ext = MIMES[tipo];
-        if (!ext) return { etapa, dados: d, resposta: `Esse tipo de arquivo não é aceito. Envie *foto* (JPG/PNG) ou *PDF*, ou digite *1* para continuar sem anexo.${RODAPE}` };
-        if (arquivo.base64.length > 6_800_000) return { etapa, dados: d, resposta: `Arquivo muito grande (máx. 5 MB). Envie outro, ou digite *1* para continuar sem anexo.${RODAPE}` };
-        const nomeArq = (arquivo.nome?.replace(/[^\w.\- ]/g, '').slice(0, 100) || `whatsapp`).replace(/\.[^.]*$/, '') + `.${ext}`;
-        d.anexo = { nome: nomeArq, tipo: tipo === 'image/jpg' ? 'image/jpeg' : tipo, base64: arquivo.base64.replace(/^data:[^,]+,/, '') };
-        return resumo(d);
-      }
+      if (arquivo) return receberAnexo(etapa, d, arquivo);
       if (t === '1') return resumo(d);
       return { etapa, dados: d, resposta: `Envie a foto ou o PDF agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
+    }
+    case 'ANEXO_OK': {
+      if (arquivo) return receberAnexo(etapa, d, arquivo);
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para continuar ou *2* para enviar outro documento.${RODAPE}` };
+      if (i === 1) return { etapa: 'ANEXO', dados: d, resposta: `Envie o novo arquivo ou foto agora (ele substituirá o anterior), ou digite *1* para continuar.${RODAPE}` };
+      return resumo(d);
     }
     case 'CONFIRMANDO': {
       const i = escolha(t, 2);
@@ -404,12 +490,13 @@ async function processar(etapa: string, d: Dados, texto: string, nome?: string, 
         unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode,
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
         data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: d.mudancaRisco,
-        observacoes: [d.obs, `Solicitado via WhatsApp${nome ? ` por ${nome}` : ''}`].filter(Boolean).join('\n'),
+        observacoes: [d.obs && `OBSERVAÇÃO PARA A EQUIPE DO BALCÃO DE ATENDIMENTO: ${d.obs}`, `Solicitado via WhatsApp${nome ? ` por ${nome}` : ''}`].filter(Boolean).join('\n'),
         guia: d.anexo,
       });
       if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}\n\nEscolha a unidade para ver outros horários:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
-      return { etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
-        `✅ Agendamento registrado!\n\nProtocolo: *${data.protocolo}*\n📅 ${d.data} às ${d.hora} — ${titulo(d.unidade.nome)}\n\nLeve um documento com foto. Se precisar de outro agendamento, digite *Oi*.` };
+      await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
+      return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
+        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d)}\n\nLeve um documento oficial com foto no dia do atendimento.\n\nSe precisar de outro agendamento, digite *Oi*.` };
     }
     default:
       return boasVindas(nome);
@@ -428,12 +515,37 @@ Deno.serve(async (req) => {
 
     const { data: sessao } = await admin.from('whatsapp_sessoes').select('etapa, dados_sessao, updated_at').eq('telefone', telefone).maybeSingle();
     const expirada = !sessao || Date.now() - new Date(sessao.updated_at).getTime() > EXPIRA_MS;
-    const reiniciar = !arquivo && ['0', 'menu', 'sair', 'recomeçar', 'recomecar'].includes(texto.trim().toLowerCase());
+    const cmd = texto.trim().toLowerCase();
+    const reiniciar = !arquivo && ['0', 'menu', 'sair', 'recomeçar', 'recomecar'].includes(cmd);
+    const voltar = !arquivo && ['v', 'voltar'].includes(cmd);
     const etapa = expirada || reiniciar || sessao!.etapa === 'FINALIZADO' ? 'INICIO' : sessao!.etapa;
+    const dIn: Dados = etapa === 'INICIO' ? {} : { ...((sessao!.dados_sessao as Dados) ?? {}) };
+    const hist: { e: string; r: string; d: Dados }[] = Array.isArray(dIn.hist) ? dIn.hist : [];
+    const ult: string | undefined = dIn.ult;
+    delete dIn.hist; delete dIn.ult;
+    const ctx: Ctx = { admin, telefone, nome };
 
     let r: Res;
-    try { r = await processar(etapa, expirada || reiniciar ? {} : (sessao!.dados_sessao as Dados) ?? {}, texto, nome, arquivo); }
-    catch (e) { console.error('whatsapp-agendamento', e); r = { ...boasVindas(nome), resposta: 'Tivemos uma instabilidade. Vamos recomeçar: digite o *CNPJ* da empresa.' }; }
+    if (reiniciar && !expirada && sessao?.etapa === 'TERMO') {
+      r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento cancelado. Quando quiser, é só enviar *Oi*. 👋' };
+    } else if (voltar && etapa !== 'INICIO') {
+      const prev = hist.pop();
+      if (prev) {
+        const dd = prev.d;
+        if (!dd.hier && dIn.hier) dd.hier = dIn.hier;
+        if (dIn.anexo && ['ANEXO_OK', 'CONFIRMANDO'].includes(prev.e)) dd.anexo = dIn.anexo;
+        r = { etapa: prev.e, dados: dd, resposta: `↩️ Voltando à etapa anterior.\n\n${prev.r}` };
+      } else r = { etapa, dados: dIn, resposta: `Não há etapa anterior para voltar.${ult ? `\n\n${ult}` : ''}` };
+    } else {
+      // "Foto" da etapa atual para o V (sem o arquivo e sem a estrutura da empresa, que são grandes)
+      const { anexo: _a, hier: _h, ...leve } = dIn;
+      const snap = structuredClone(leve);
+      try { r = await processar(ctx, etapa, dIn, texto, nome, arquivo); }
+      catch (e) { console.error('whatsapp-agendamento', e); r = { ...boasVindas(nome), resposta: 'Tivemos uma instabilidade. Vamos recomeçar: digite *Oi*.' }; }
+      if (r.semVolta) hist.length = 0;
+      else if (r.etapa !== etapa && etapa !== 'INICIO' && ult) hist.push({ e: etapa, r: ult, d: snap });
+    }
+    if (r.etapa !== 'FINALIZADO') { r.dados.hist = hist.slice(-15); r.dados.ult = r.resposta; }
 
     await admin.from('whatsapp_sessoes').upsert({ telefone, nome: nome ?? null, etapa: r.etapa, dados_sessao: r.dados, updated_at: new Date().toISOString() }, { onConflict: 'telefone' });
     return json({ resposta: r.resposta, etapa: r.etapa });
