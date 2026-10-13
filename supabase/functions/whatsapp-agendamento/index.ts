@@ -53,7 +53,7 @@ async function chamar(fn: string, body: unknown) {
 
 const boasVindas = (nome?: string): Res => ({
   etapa: 'AGUARDANDO_CNPJ', dados: {},
-  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed Medicina Ocupacional*.\n\n🔒 Os dados informados serão utilizados exclusivamente para o agendamento ocupacional, nos termos da LGPD (Lei nº 13.709/2018).\n\nPara iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):${RODAPE}`,
+  resposta: `Olá${nome ? `, ${titulo(nome.split(' ')[0])}` : ''}! 👋\n\nSeja bem-vindo(a) à central de Agendamento da *PreverMed*.\nPara iniciarmos, digite o *CNPJ* da empresa (apenas números):\n\n🔒 _Os dados informados serão utilizados exclusivamente para os fins de agendamento, nos termos da LGPD (Lei nº 13.709/2018)._\n\n_Para encerrar, digite *Sair*._`,
 });
 
 const pedirCnpj = (d: Dados): Res => ({ etapa: 'AGUARDANDO_CNPJ', dados: d, resposta: `Para iniciarmos, digite o *CNPJ* da empresa (apenas números ou com pontuação):${RODAPE}` });
@@ -126,6 +126,34 @@ const chaveExame = (e: string) => (ehClinico(e) ? 'CLINICO' : semAcento(e));
 // Na Monitoração Pontual o Exame Clínico é opcional: sai da base e vira opção da lista de extras
 const extrasDe = (d: Dados) => (d.tipoLabel === 'Monitoração Pontual' && !(d.exames ?? []).some(ehClinico) ? ['EXAME CLÍNICO', ...EXTRAS] : EXTRAS);
 const listaExames = (ex: string[]) => (ex.length ? ex.map((e) => `• ${nomeExame(e)}`).join('\n') : '• _(nenhum exame selecionado)_');
+// Exames que não vieram do PCMSO
+const adicionais = (d: Dados) => { const base = new Set((d.examesBase ?? []).map(chaveExame)); return (d.exames ?? []).filter((e: string) => !base.has(chaveExame(e))); };
+// Linha compacta: com PCMSO resume; sem PCMSO lista em linha
+function textoExames(d: Dados) {
+  const ad = adicionais(d).map(nomeExame);
+  if ((d.examesBase ?? []).length) return `Previstos no PCMSO da função${ad.length ? ` + Adicionais: ${ad.join(', ')}` : ''}`;
+  return (d.exames ?? []).map(nomeExame).join(' • ') || '-';
+}
+function adicionar(d: Dados, novos: string[]) {
+  const vistos = new Set<string>(); const lista: string[] = [];
+  for (const e of [...(d.exames ?? []), ...novos]) { const k = chaveExame(e); if (!vistos.has(k)) { vistos.add(k); lista.push(e); } }
+  d.exames = lista.slice(0, 40);
+}
+// Busca no catálogo oficial do SOC por todas as palavras digitadas (sem acento)
+function buscarExame(d: Dados, termo: string): Res {
+  const q = semAcento(termo).replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
+  const alias: Record<string, string> = { RX: 'RAIO', ECG: 'ELETROCARDIOGRAMA', EEG: 'ELETROENCEFALOGRAMA' };
+  const ws = q.map((w) => alias[w] ?? w);
+  if (!ws.length || ws.join('').length < 2) return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Digite pelo menos 2 letras do nome do exame.${RODAPE}` };
+  const cat = [...new Set([...extrasDe(d), ...CATALOGO])];
+  const ach = cat.filter((n) => { const s = semAcento(n).replace(/[^A-Z0-9 ]/g, ' '); return ws.every((w) => s.includes(w)); });
+  if (!ach.length) return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Não encontrei "${termo}" no catálogo de exames. Tente outra palavra (ex: _raio_, _glicemia_, _espirometria_).${RODAPE}` };
+  if (ach.length === 1) { d.achados = ach; return { etapa: 'EXAME_BUSCA', dados: d, resposta: `Encontramos o exame:\n\n🧪 *${nomeExame(ach[0])}*\n\n*1* - Sim, adicionar\n*2* - Buscar outro${RODAPE}` }; }
+  d.achados = ach.slice(0, MAX_OP);
+  const mais = ach.length > MAX_OP ? `\n\n_Mostrando ${MAX_OP} de ${ach.length}. Digite mais letras para refinar._` : '';
+  return { etapa: 'EXAME_BUSCA', dados: d, resposta: `Encontrei estas opções no catálogo:\n\n${menu(d.achados.map(nomeExame))}${mais}\n\nDigite o *número* da opção ou mais letras para refinar.${RODAPE}` };
+}
+const menuAlterar = (d: Dados): Res => ({ etapa: 'ALTERAR_EXAMES', dados: d, resposta: `✏️ *Alterar lista de exames*\n\n*1* - Adicionar outro exame\n*2* - Remover um exame adicionado\n*3* - Manter apenas os exames previstos no PCMSO${RODAPE}` });
 
 function pedirExtras(d: Dados): Res {
   const lista = d.exames?.length ? listaExames(d.exames) : '_Nenhum exame previsto no PCMSO para este atendimento._';
@@ -152,8 +180,10 @@ const fmtCnpj = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/
 const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
 const ENDERECOS: Record<string, string> = { LAPA: 'Rua Afonso Sardinha, 155 - 1° andar', OSASCO: 'Rua Avelino Lopes, 248' };
 const endereco = (u: any) => { const n = semAcento(String(u?.nome ?? '')); const k = Object.keys(ENDERECOS).find((k) => n.includes(k)); return k ? ENDERECOS[k] : ''; };
-const blocoAgendamento = (d: Dados) =>
-  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames:\n${listaExames(d.exames ?? [])}\n📍 Local: *${titulo(d.unidade.nome)}*\n${endereco(d.unidade) ? `🏢 Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`;
+// final=true → comprovante: com endereço completo, sem observação/anexo
+const blocoAgendamento = (d: Dados, final = false) =>
+  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames: ${textoExames(d)}\n📍 Local: *PreverMed - ${titulo(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
+  (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`);
 
 function resumo(d: Dados): Res {
   return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* confira com atenção todas as informações acima. A divergência de dados pode acarretar *custos adicionais* decorrentes de eventual *retificação do ASO* e/ou da *realização de exames complementares* durante o atendimento.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data\n_(ou V para voltar e corrigir qualquer item)_${RODAPE}` };
@@ -417,31 +447,57 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const ops = extrasDe(d);
       const partes = t.split(/[,;\n]+|\s+e\s+/i).map((s) => s.trim()).filter(Boolean);
       const novos: string[] = [];
+      let termo = '';
       for (const p of partes) {
         if (/^[\d\s]+$/.test(p)) {
           for (const n of p.split(/\s+/)) {
             const x = Number(n) - 1;
-            if (x < 0 || x >= ops.length) return { etapa, dados: d, resposta: `O número *${n}* não está na lista. Digite números de 1 a ${ops.length} (ex: *1, 2*) ou o nome do exame.${RODAPE}` };
+            if (x < 0 || x >= ops.length) return { etapa, dados: d, resposta: `O número *${n}* não está na lista. Digite números de 1 a ${ops.length} (ex: *1, 2*) ou parte do nome do exame.${RODAPE}` };
             novos.push(ops[x]);
           }
-          continue;
-        }
-        if (p.length < 3 || p.length > 80) return { etapa, dados: d, resposta: `Não entendi "${p}". Escreva o nome do exame (entre 3 e 80 letras) ou use os números da lista.${RODAPE}` };
-        const q = semAcento(p);
-        novos.push(ops.find((o) => semAcento(o).includes(q)) ?? (ehClinico(p) ? 'EXAME CLÍNICO' : p.toUpperCase()));
+        } else if (!termo) termo = p;
       }
+      if (novos.length) adicionar(d, novos);
+      if (termo) return buscarExame(d, termo);
       if (!novos.length) return menuExtras(d);
-      const vistos = new Set<string>(); const lista: string[] = [];
-      for (const e of [...(d.exames ?? []), ...novos]) { const k = chaveExame(e); if (!vistos.has(k)) { vistos.add(k); lista.push(e); } }
-      d.exames = lista.slice(0, 40);
       return confExames(d);
+    }
+    case 'EXAME_BUSCA': {
+      const ach: string[] = d.achados ?? [];
+      const i = escolha(t, ach.length === 1 ? 2 : ach.length);
+      if (i < 0) {
+        if (/^\d+$/.test(t)) return { etapa, dados: d, resposta: `Digite um número da lista ou parte do nome para buscar novamente.${RODAPE}` };
+        return buscarExame(d, t);
+      }
+      if (ach.length === 1 && i === 1) { delete d.achados; return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Digite parte do nome do exame que deseja buscar (ex: _raio_, _glicemia_):${RODAPE}` }; }
+      adicionar(d, [ach[i]]); delete d.achados;
+      return confExames(d, `✅ *${nomeExame(ach[i])}* adicionado.\n\n`);
     }
     case 'CONF_EXAMES': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para alterar a lista.${RODAPE}` };
-      if (i === 1) { d.exames = [...(d.examesBase ?? [])]; return pedirExtras(d); }
+      if (i === 1) return menuAlterar(d);
       if (!d.exames?.length) return { ...menuExtras(d), resposta: `Selecione pelo menos um exame para este atendimento.\n\n${menuExtras(d).resposta}` };
       return pedirUnidade(d);
+    }
+    case 'ALTERAR_EXAMES': {
+      const i = escolha(t, 3);
+      if (i < 0) return menuAlterar(d);
+      if (i === 0) return menuExtras(d);
+      if (i === 1) {
+        const ad = adicionais(d);
+        if (!ad.length) return { ...menuAlterar(d), resposta: `Não há exames adicionais para remover.\n\n${menuAlterar(d).resposta}` };
+        return { etapa: 'REMOVER_EXAME', dados: d, resposta: `Qual exame deseja remover?\n\n${menu(ad.map(nomeExame))}${RODAPE}` };
+      }
+      d.exames = [...(d.examesBase ?? [])];
+      return confExames(d, `✅ Mantidos apenas os exames previstos no PCMSO.\n\n`);
+    }
+    case 'REMOVER_EXAME': {
+      const ad = adicionais(d);
+      const i = escolha(t, ad.length);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite o *número* do exame a remover.${RODAPE}` };
+      d.exames = (d.exames ?? []).filter((e: string) => e !== ad[i]);
+      return confExames(d, `🗑️ *${nomeExame(ad[i])}* removido.\n\n`);
     }
     case 'ESCOLHENDO_UNIDADE': {
       const i = escolha(t, d.unidades.length);
@@ -499,7 +555,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}\n\nEscolha a unidade para ver outros horários:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
       await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
       return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
-        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d)}\n\nLeve um documento oficial com foto no dia do atendimento.\n\nSe precisar de outro agendamento, digite *Oi*.` };
+        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}\n\n🪪 Leve um *documento oficial com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *Oi*.` };
     }
     default:
       return boasVindas(nome);
@@ -519,7 +575,7 @@ Deno.serve(async (req) => {
     const { data: sessao } = await admin.from('whatsapp_sessoes').select('etapa, dados_sessao, updated_at').eq('telefone', telefone).maybeSingle();
     const expirada = !sessao || Date.now() - new Date(sessao.updated_at).getTime() > EXPIRA_MS;
     const cmd = texto.trim().toLowerCase();
-    const reiniciar = !arquivo && ['0', 'menu', 'sair', 'recomeçar', 'recomecar'].includes(cmd);
+    const reiniciar = !arquivo && ['0', 'menu', 'sair', 'encerrar', 'recomeçar', 'recomecar'].includes(cmd);
     const voltar = !arquivo && ['v', 'voltar'].includes(cmd);
     const etapa = expirada || reiniciar || sessao!.etapa === 'FINALIZADO' ? 'INICIO' : sessao!.etapa;
     const dIn: Dados = etapa === 'INICIO' ? {} : { ...((sessao!.dados_sessao as Dados) ?? {}) };
@@ -529,8 +585,10 @@ Deno.serve(async (req) => {
     const ctx: Ctx = { admin, telefone, nome };
 
     let r: Res;
-    if (reiniciar && !expirada && sessao?.etapa === 'TERMO') {
-      r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento cancelado. Quando quiser, é só enviar *Oi*. 👋' };
+    // "Sair"/"encerrar" a qualquer momento, ou "0" na primeira mensagem (não há o que recomeçar) → encerra
+    const naAbertura = !expirada && ['TERMO', 'AGUARDANDO_CNPJ'].includes(sessao?.etapa ?? '');
+    if (reiniciar && sessao && sessao.etapa !== 'FINALIZADO' && (['sair', 'encerrar'].includes(cmd) || naAbertura)) {
+      r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento encerrado. Quando quiser, é só enviar *Oi*. 👋' };
     } else if (voltar && etapa !== 'INICIO') {
       const prev = hist.pop();
       if (prev) {
