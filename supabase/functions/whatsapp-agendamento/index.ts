@@ -108,6 +108,47 @@ function resumo(d: Dados): Res {
     `Confira os dados do agendamento:\n\n🏢 Empresa: *${titulo(d.empresaNome)}*\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Exame: *${d.tipoLabel ?? d.tipoExame}*\n🧪 Exames: ${ex}\n📍 Local: *${titulo(d.unidade.nome)}*\n📅 Data: *${d.data}* às *${d.hora}*\n📝 Observação: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? 'sim' : 'não'}\n\n*1* - Confirmar\n*2* - Escolher outra data${RODAPE}` };
 }
 
+// ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
+const TIPOS_CADASTRO = ['Admissional', 'Periódico', 'Demissional', 'Mudança de Risco', 'Monitoração Pontual', 'Consulta Ocupacional', 'Retorno ao Trabalho'];
+type Item = { codigo: string; nome: string };
+const semAcento = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+const brIso = (iso: string) => iso.split('-').reverse().join('/');
+function dataBr(t: string) {
+  const m = t.trim().match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/);
+  if (!m) return null;
+  const iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const dt = new Date(iso + 'T12:00:00Z');
+  return isNaN(dt.getTime()) || dt.toISOString().slice(0, 10) !== iso ? null : iso;
+}
+function iniciarCadastro(d: Dados): Res {
+  d.cad = {}; delete d.hier; delete d.filtro;
+  return { etapa: 'CAD_NOME', dados: d, resposta: `📝 *Pré-cadastro do colaborador*\n\nDigite o *nome completo* do colaborador:${RODAPE}` };
+}
+function opcoesNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Item[] {
+  const h = d.hier ?? {};
+  if (nivel === 'unidade') return h.unidades ?? [];
+  if (d.cad.livre) return (nivel === 'setor' ? h.setores : h.cargos) ?? [];
+  const u = (h.unidades ?? []).find((x: any) => x.codigo === d.cad.unidade?.codigo);
+  if (nivel === 'setor') return u?.setores ?? [];
+  return u?.setores?.find((x: any) => x.codigo === d.cad.setor?.codigo)?.cargos ?? [];
+}
+function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
+  const lista = opcoesNivel(d, nivel).map((x) => ({ codigo: x.codigo, nome: x.nome }));
+  const etapa = nivel === 'unidade' ? 'CAD_UNIDADE' : nivel === 'setor' ? 'CAD_SETOR' : 'CAD_CARGO';
+  const rot = { unidade: '🏢 Unidade', setor: '📂 Setor', cargo: '💼 Cargo' }[nivel];
+  delete d.filtro;
+  if (!d.cad.livre && !lista.length) {
+    d.cad[nivel === 'cargo' ? 'setor' : 'unidade'] = undefined;
+    return { ...pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade'), resposta: `Não há ${nivel === 'cargo' ? 'cargos ativos neste setor' : 'setores ativos nesta unidade'}. Escolha outra opção.\n\n` + pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade').resposta };
+  }
+  const mostra = lista.slice(0, 30);
+  const mais = lista.length > 30 ? `\n\n_Mostrando 30 de ${lista.length}. Digite parte do nome para procurar._` : '';
+  const instr = d.cad.livre
+    ? (lista.length ? `Digite o *número* de uma opção existente ou escreva o *nome* do(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
+    : `Digite o *número* da opção (ou parte do nome):`;
+  return { etapa, dados: d, resposta: `${rot} do colaborador\n\n${mostra.length ? menu(mostra.map((x) => titulo(x.nome))) + mais + '\n\n' : ''}${instr}${RODAPE}` };
+}
+
 async function processar(etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
   switch (etapa) {
