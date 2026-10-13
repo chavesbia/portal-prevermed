@@ -3,6 +3,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
+import { CATALOGO } from './catalogo.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -159,7 +160,7 @@ function pedirExtras(d: Dados): Res {
   const lista = d.exames?.length ? listaExames(d.exames) : '_Nenhum exame previsto no PCMSO para este atendimento._';
   return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames previstos no PCMSO para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
 }
-const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os exames complementares desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou escreva o nome do exame (ex: _Raio-X de Tórax OIT_).${RODAPE}` });
+const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os exames complementares desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` });
 const confExames = (d: Dados, prefixo = ''): Res => ({ etapa: 'CONF_EXAMES', dados: d, resposta: `${prefixo}📋 *Confira os exames selecionados para este atendimento:*\n\n${listaExames(d.exames ?? [])}\n\n*1* - Confirmar exames\n*2* - Alterar lista de exames${RODAPE}` });
 const bloqueioPcmso = (d: Dados): Res => ({ etapa: 'PCMSO_BLOQUEIO', dados: d, resposta: `⚠️ *Atenção:* Não localizamos os exames do PCMSO ativos para o cargo *${titulo(d.lotCargo || 'informado')}* nesta unidade.\n\nPara a conformidade do ASO, este atendimento precisa de validação técnica prévia da nossa equipe.\n\n*1* - Solicitar análise da equipe técnica PreverMed\n*2* - Falar com um atendente humano\n*3* - Voltar e conferir o cargo/setor informado${RODAPE}` });
 
