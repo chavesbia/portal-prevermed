@@ -29,6 +29,9 @@ const Body = z.object({
   motivoRetorno: z.string().trim().max(1000).optional(),
   exames: z.array(z.string().trim().min(2).max(80)).max(40).default([]),
   guia: Arquivo.optional(),
+  tipoAnexo: z.string().trim().min(2).max(40).optional(),
+  examesAdicionais: z.array(z.string().trim().min(2).max(80)).max(40).optional(),
+  solicitadoPor: z.string().trim().max(120).optional(),
   documentos: z.array(Arquivo.extend({ tipoDocumento: z.string().trim().min(2).max(80) })).max(10).default([]),
 });
 
@@ -84,7 +87,7 @@ Deno.serve(async (req) => {
     let guiaPath: string | null = null;
     const anexos: { tipo_documento: string; nome_arquivo: string; path: string }[] = [];
     try {
-      if (b.guia) { guiaPath = await salvarArquivo(admin, b.data, b.guia); anexos.push({ tipo_documento: 'Guia', nome_arquivo: b.guia.nome, path: guiaPath }); }
+      if (b.guia) { guiaPath = await salvarArquivo(admin, b.data, b.guia); anexos.push({ tipo_documento: b.tipoAnexo ?? 'Guia', nome_arquivo: b.guia.nome, path: guiaPath }); }
       for (const d of b.documentos) anexos.push({ tipo_documento: d.tipoDocumento, nome_arquivo: d.nome, path: await salvarArquivo(admin, b.data, d) });
     } catch (e) { return json({ error: (e as Error).message }, 400); }
     const exames = [...new Set(b.exames.map((e) => e.toUpperCase()))];
@@ -94,7 +97,7 @@ Deno.serve(async (req) => {
       empresa_nome: emp.razao_social, empresa_cnpj: b.empresaCnpj, codigo_empresa_soc: b.codigoEmpresaSoc,
       colaborador_nome: b.colaboradorNome.toUpperCase(), colaborador_cpf: b.colaboradorCpf,
       tipo_exame: b.tipoExame, data_agendada: b.data, hora_agendada: b.hora,
-      observacoes: [b.mudancaRisco, b.observacoes].filter(Boolean).join('\n') || null,
+      observacoes: [b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
       motivo_retorno: retorno ? b.motivoRetorno : null,
       status: retorno ? 'aguardando_aprovacao' : 'solicitado',
       aprovacao_status: retorno ? 'pendente' : null,
@@ -110,11 +113,12 @@ Deno.serve(async (req) => {
       data: b.data, hora: b.hora, tipoExame: b.tipoExame,
       codigoFuncionarioSoc: sit?.inativo ? sit.codigo ?? undefined : undefined,
       detalhes: [
-        `Portal: ${data.protocolo}`,
-        `Exames: ${exames.join(', ') || '-'}`,
-        b.mudancaRisco ? `ATENÇÃO: ${b.mudancaRisco}` : '',
-        guiaPath ? 'Guia: anexada no Portal' : '',
-        b.observacoes?.trim() ? `Obs: ${b.observacoes.trim()}` : '',
+        `PROTOCOLO: ${data.protocolo}`,
+        b.examesAdicionais ? `EXAMES ADICIONAIS: ${b.examesAdicionais.map((e) => e.toUpperCase()).join(', ') || 'NENHUM'}` : `EXAMES: ${exames.join(', ') || '-'}`,
+        b.mudancaRisco ? `ATENÇÃO: ${b.mudancaRisco.toUpperCase()}` : '',
+        b.observacoes?.trim() ? `OBSERVAÇÃO: ${b.observacoes.trim().toUpperCase()}` : '',
+        guiaPath ? 'ANEXO: SIM (VERIFICAR NO PORTAL)' : '',
+        b.solicitadoPor ? `SOLICITADO VIA ${b.solicitadoPor.toUpperCase()}` : '',
       ].filter(Boolean).join('\n'),
     });
     await admin.from('soc_agendamentos').update({
