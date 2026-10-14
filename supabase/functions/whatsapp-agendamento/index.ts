@@ -180,10 +180,14 @@ function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: s
   if (!ext) return { etapa, dados: d, resposta: `Esse tipo de arquivo não é aceito. Envie *foto* (JPG/PNG) ou *PDF*, ou digite *1* para continuar.${RODAPE}` };
   if (arquivo.base64.length > 6_800_000) return { etapa, dados: d, resposta: `Arquivo muito grande (máx. 5 MB). Envie outro, ou digite *1* para continuar.${RODAPE}` };
   const nomeArq = (arquivo.nome?.replace(/[^\w.\- ]/g, '').slice(0, 100) || `whatsapp`).replace(/\.[^.]*$/, '') + `.${ext}`;
-  d.anexo = { nome: nomeArq, tipo: tipo === 'image/jpg' ? 'image/jpeg' : tipo, base64: arquivo.base64.replace(/^data:[^,]+,/, '') };
-  return { etapa: 'ANEXO_OK', dados: d, resposta: `✅ *Documento recebido com sucesso!*\n📄 Arquivo: ${nomeArq}\n\n*1* - Continuar\n*2* - Enviar outro documento (substitui o atual)${RODAPE}` };
+  const lista = listaAnexos(d);
+  if (lista.length >= 10) return { etapa: 'ANEXO_OK', dados: d, resposta: `Limite de *10 anexos* atingido. Digite *1* para continuar.${RODAPE}` };
+  lista.push({ nome: nomeArq, tipo: tipo === 'image/jpg' ? 'image/jpeg' : tipo, base64: arquivo.base64.replace(/^data:[^,]+,/, '') });
+  d.anexos = lista; delete d.anexo;
+  return { etapa: 'ANEXO_OK', dados: d, resposta: `✅ *Documento recebido com sucesso!*\n📄 Arquivo: ${nomeArq}\n📎 Total de anexos: *${lista.length}*\n\n*1* - Continuar\n*2* - Enviar outro documento${RODAPE}` };
 }
 
+const listaAnexos = (d: Dados): any[] => d.anexos ?? (d.anexo ? [d.anexo] : []);
 const nomeLocal = (n: any) => `PreverMed - ${titulo(String(n ?? '').replace(/^\s*prevermed\s*-\s*/i, ''))}`;
 const fmtCnpj = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
@@ -197,7 +201,7 @@ const examesResumo = (d: Dados) => {
 };
 const blocoAgendamento = (d: Dados, final = false) =>
   `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n${final ? `🧪 Exames: ${textoExames(d)}` : examesResumo(d)}\n📍 Local: *${nomeLocal(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
-  (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`);
+  (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexos: ${listaAnexos(d).length ? `(${listaAnexos(d).length}) ` + listaAnexos(d).map((a: any) => a.nome).join(', ') : 'não'}`);
 
 function resumo(d: Dados): Res {
   return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* Confira todos os dados antes de confirmar. Informações incorretas podem gerar *custos adicionais* com a correção do ASO e/ou a realização de exames complementares extras.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data${RODAPE}` };
@@ -562,7 +566,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (arquivo) return receberAnexo(etapa, d, arquivo);
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para continuar ou *2* para enviar outro documento.${RODAPE}` };
-      if (i === 1) return { etapa: 'ANEXO', dados: d, resposta: `Envie o novo arquivo ou foto agora (ele substituirá o anterior), ou digite *1* para continuar.${RODAPE}` };
+      if (i === 1) return { etapa: 'ANEXO', dados: d, resposta: `Envie o próximo arquivo ou foto agora (os anteriores serão mantidos), ou digite *1* para continuar.${RODAPE}` };
       return resumo(d);
     }
     case 'ERRO_CONF': {
@@ -581,7 +585,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
         data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: d.mudancaRisco,
         observacoes: d.obs || undefined, examesAdicionais: adicionais(d), solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
-        guia: d.anexo, tipoAnexo: 'Anexo WhatsApp',
+        documentos: listaAnexos(d).map((a: any) => ({ ...a, tipoDocumento: 'Anexo WhatsApp' })),
       });
       if (!ok) {
         let det = '';

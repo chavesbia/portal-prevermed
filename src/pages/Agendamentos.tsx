@@ -219,8 +219,8 @@ export default function Agendamentos() {
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
-                <Button key={x.id} variant="outline" size="sm" className="w-full justify-start" onClick={() => abrirArquivo(x.path)}>
-                  <FileText className="mr-2 h-4 w-4" />{x.tipo_documento}<span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>
+                <Button key={x.id} variant="outline" size="sm" className="w-full justify-start min-w-0" onClick={() => abrirArquivo(x.path)}>
+                  <FileText className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{x.tipo_documento}{x.nome_arquivo ? `: ${x.nome_arquivo}` : ""}</span><span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>
                 </Button>
               )) : <p className="text-sm text-muted-foreground">Nenhum arquivo enviado.</p>}
             </div>
