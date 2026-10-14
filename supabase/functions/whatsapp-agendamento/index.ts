@@ -87,7 +87,7 @@ async function registrar(ctx: Ctx, tipo: 'agendamento' | 'analise_pcmso' | 'aten
 
 const portal = (motivo: string): Res => ({
   etapa: 'FINALIZADO', dados: {},
-  resposta: `${motivo}\n\nEsse agendamento precisa ser feito pelo portal, onde é possível enviar os dados e documentos necessários:\n${PORTAL}\n\nSe precisar, digite *Oi* para iniciar um novo atendimento.`,
+  resposta: `${motivo}\n\nEsse agendamento precisa ser feito pelo portal, onde é possível enviar os dados e documentos necessários:\n${PORTAL}\n\nSe precisar, digite *1* para iniciar um novo atendimento.`,
 });
 
 async function pedirCpf(d: Dados): Promise<Res> {
@@ -110,7 +110,10 @@ async function pedirDatas(d: Dados): Promise<Res> {
   });
   if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não consegui consultar a agenda agora. Tente escolher a unidade novamente em instantes.\n\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
   const porData = (data?.porData ?? {}) as Record<string, { hora: string }[]>;
-  const datas = Object.keys(porData).sort((a, b) => isoDe(a).localeCompare(isoDe(b))).slice(0, 5);
+  const { data: ja } = await createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    .from('soc_agendamentos').select('data_agendada').eq('colaborador_cpf', d.cpf).in('status', ['agendado_soc', 'aguardando_aprovacao', 'solicitado']);
+  const ocupadas = new Set((ja ?? []).map((a: any) => a.data_agendada));
+  const datas = Object.keys(porData).filter((k) => !ocupadas.has(isoDe(k))).sort((a, b) => isoDe(a).localeCompare(isoDe(b))).slice(0, 5);
   if (!datas.length) {
     const motivo = data?.indisponiveis?.[0]?.motivo;
     return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não há horários livres nessa unidade nos próximos dias${motivo ? ` (${motivo})` : ''}.\n\nEscolha outra unidade:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
@@ -181,6 +184,7 @@ function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: s
   return { etapa: 'ANEXO_OK', dados: d, resposta: `✅ *Documento recebido com sucesso!*\n📄 Arquivo: ${nomeArq}\n\n*1* - Continuar\n*2* - Enviar outro documento (substitui o atual)${RODAPE}` };
 }
 
+const nomeLocal = (n: any) => `PreverMed - ${titulo(String(n ?? '').replace(/^\s*prevermed\s*-\s*/i, ''))}`;
 const fmtCnpj = (c: string) => c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 const fmtCpf = (c: string) => c.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
 const ENDERECOS: Record<string, string> = { LAPA: 'Rua Afonso Sardinha, 155 - 1° andar', OSASCO: 'Rua Avelino Lopes, 248' };
@@ -192,7 +196,7 @@ const examesResumo = (d: Dados) => {
   return `🧪 Exames: ${textoExames(d)}`;
 };
 const blocoAgendamento = (d: Dados, final = false) =>
-  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n${final ? `🧪 Exames: ${textoExames(d)}` : examesResumo(d)}\n📍 Local: *PreverMed - ${titulo(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
+  `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n${final ? `🧪 Exames: ${textoExames(d)}` : examesResumo(d)}\n📍 Local: *${nomeLocal(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
   (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexo: ${d.anexo ? d.anexo.nome : 'não'}`);
 
 function resumo(d: Dados): Res {
@@ -265,7 +269,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         .in('status', ['agendado_soc', 'aguardando_aprovacao', 'solicitado']).order('data_agendada').limit(1);
       if (dup?.length) {
         const a = dup[0]; const loc = (d.unidades ?? []).find((u: any) => u.id === a.unidade_id)?.nome;
-        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `🚫 *Não foi possível concluir o agendamento*\n\nEste colaborador já possui um agendamento:\n\n🔖 Protocolo: *${a.protocolo}*\n📅 Data: *${brIso(a.data_agendada)}* às *${String(a.hora_agendada).slice(0, 5)}*${loc ? `\n📍 Local: *PreverMed - ${titulo(loc)}*` : ''}\n\nPara trocar data, horário, unidade ou cancelar, fale com nossa equipe ou acesse o Portal PreverMed:\n${PORTAL}\n\nSe precisar de outro agendamento, digite *1*.` };
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `🚫 *Não foi possível concluir o agendamento*\n\nEste colaborador já possui um agendamento:\n\n🔖 Protocolo: *${a.protocolo}*\n📅 Data: *${brIso(a.data_agendada)}* às *${String(a.hora_agendada).slice(0, 5)}*${loc ? `\n📍 Local: *${nomeLocal(loc)}*` : ''}\n\nPara trocar data, horário, unidade ou cancelar, fale com nossa equipe ou acesse o Portal PreverMed:\n${PORTAL}\n\nSe precisar de outro agendamento, digite *1*.` };
       }
       d.termoAceito = new Date().toISOString();
       return pedirCnpj(d);
@@ -438,11 +442,11 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1*, *2* ou *3*.${RODAPE}` };
       if (i === 0) {
         const prot = await registrar(ctx, 'analise_pcmso', d);
-        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `✅ *Solicitação de análise registrada!*\n\n🔖 Protocolo: *${prot}*\n\nNossa equipe técnica já foi avisada e retornará por este número após validar o PCMSO do cargo *${titulo(d.lotCargo || '-')}*.\n\nSe precisar de outro atendimento, digite *Oi*.` };
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `✅ *Solicitação de análise registrada!*\n\n🔖 Protocolo: *${prot}*\n\nNossa equipe técnica já foi avisada e retornará por este número após validar o PCMSO do cargo *${titulo(d.lotCargo || '-')}*.\n\nSe precisar de outro atendimento, digite *1*.` };
       }
       if (i === 1) {
         const prot = await registrar(ctx, 'atendimento_humano', d, undefined, { motivo: 'PCMSO sem exames para o cargo' });
-        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `👩‍💼 Pedido de atendimento registrado (protocolo *${prot}*).\n\nUm atendente da PreverMed vai continuar o atendimento por este número em breve.` };
+        return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `👩‍💼 Pedido de atendimento registrado (protocolo *${prot}*).\n\nUm atendente da PreverMed vai continuar o atendimento por este número em breve.\n\nSe precisar de outro atendimento, digite *1*.` };
       }
       d.tipos = d.tiposAnt;
       return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `Confira a lotação cadastrada do colaborador:\n\n👤 *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nSe o cargo/setor estiver incorreto, a lotação precisa ser atualizada no SOC antes do agendamento.\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
@@ -561,6 +565,12 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i === 1) return { etapa: 'ANEXO', dados: d, resposta: `Envie o novo arquivo ou foto agora (ele substituirá o anterior), ou digite *1* para continuar.${RODAPE}` };
       return resumo(d);
     }
+    case 'ERRO_CONF': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para escolher outra data ou *2* para um novo agendamento.${RODAPE}` };
+      if (i === 0) return pedirDatas(d);
+      return { ...boasVindas(nome), semVolta: true };
+    }
     case 'CONFIRMANDO': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para escolher outra data.${RODAPE}` };
@@ -570,10 +580,18 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode,
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
         data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: d.mudancaRisco,
-        observacoes: [d.obs && `OBSERVAÇÃO PARA A EQUIPE DO BALCÃO DE ATENDIMENTO: ${d.obs}`, `Solicitado via WhatsApp${nome ? ` por ${nome}` : ''}`].filter(Boolean).join('\n'),
-        guia: d.anexo,
+        observacoes: d.obs || undefined, examesAdicionais: adicionais(d), solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
+        guia: d.anexo, tipoAnexo: 'Anexo WhatsApp',
       });
-      if (!ok) return { etapa: 'ESCOLHENDO_UNIDADE', dados: d, resposta: `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}\n\nEscolha a unidade para ver outros horários:\n${menu(d.unidades.map((u: any) => titulo(u.nome)))}${RODAPE}` };
+      if (!ok) {
+        let det = '';
+        if (String(data?.error ?? '').includes('já tem agendamento')) {
+          const { data: a } = await ctx.admin.from('soc_agendamentos').select('protocolo, data_agendada, hora_agendada, unidade_id, soc_agenda_unidades(nome)')
+            .eq('colaborador_cpf', d.cpf).eq('data_agendada', isoDe(d.data)).in('status', ['agendado_soc', 'aguardando_aprovacao', 'solicitado']).limit(1).maybeSingle();
+          if (a) det = `\n\n🔖 Protocolo: *${a.protocolo}*\n📅 Data: *${brIso(a.data_agendada)}* às *${String(a.hora_agendada).slice(0, 5)}*\n📍 Local: *${nomeLocal((a as any).soc_agenda_unidades?.nome)}*`;
+        }
+        return { etapa: 'ERRO_CONF', dados: d, resposta: `⚠️ ${det ? 'Este colaborador já possui um agendamento nesta data:' : `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}`}${det}\n\nO que deseja fazer?\n*1* - Escolher outra data para este colaborador\n*2* - Novo agendamento (outro colaborador)${RODAPE}` };
+      }
       await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
       return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
         `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *1*.` };
@@ -609,7 +627,7 @@ Deno.serve(async (req) => {
     // "Sair"/"encerrar" a qualquer momento, ou "0" na primeira mensagem (não há o que recomeçar) → encerra
     const naAbertura = !expirada && ['TERMO', 'AGUARDANDO_CNPJ'].includes(sessao?.etapa ?? '');
     if (reiniciar && sessao && sessao.etapa !== 'FINALIZADO' && (['sair', 'encerrar'].includes(cmd) || naAbertura)) {
-      r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento encerrado. Quando quiser, é só enviar *Oi*. 👋' };
+      r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento encerrado. Quando quiser, é só enviar *1*. 👋' };
     } else if (voltar && etapa !== 'INICIO') {
       const prev = hist.pop();
       if (prev) {
@@ -623,7 +641,7 @@ Deno.serve(async (req) => {
       const { anexo: _a, hier: _h, ...leve } = dIn;
       const snap = structuredClone(leve);
       try { r = await processar(ctx, etapa, dIn, texto, nome, arquivo); }
-      catch (e) { console.error('whatsapp-agendamento', e); r = { ...boasVindas(nome), resposta: 'Tivemos uma instabilidade. Vamos recomeçar: digite *Oi*.' }; }
+      catch (e) { console.error('whatsapp-agendamento', e); r = { ...boasVindas(nome), resposta: 'Tivemos uma instabilidade. Vamos recomeçar: digite *1*.' }; }
       if (r.semVolta) hist.length = 0;
       else if (r.etapa !== etapa && etapa !== 'INICIO' && ult) hist.push({ e: etapa, r: ult, d: snap });
     }
