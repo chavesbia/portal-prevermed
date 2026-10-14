@@ -158,14 +158,17 @@ export async function importarVendas(
     (data || []).forEach((r: any) => existentes.add(`${r.emitente_cnpj}|${r.numero_venda}`));
     if (!data || data.length < 1000) break;
   }
-  const inseridas = vendas.filter(v => !existentes.has(`${v.emitente_cnpj}|${v.numero_venda}`)).length;
+  const novas = vendas.filter(v => !existentes.has(`${v.emitente_cnpj}|${v.numero_venda}`));
+  const inseridas = novas.length;
+  const novasComerciais = novas.filter(v => v.vendedor && v.vendedor !== 'Faturamento').length;
 
   const { data: imp, error: impErr } = await db.from('vendas_importacoes')
     .insert({ arquivo_nome: arquivoNome, total_vendas: vendas.length, inseridas, atualizadas: vendas.length - inseridas, created_by: userId })
     .select().single();
   if (impErr) throw impErr;
 
-  const lote = 300;
+  // Lotes menores evitam falha por endereço de consulta muito longo (lista de ids)
+  const lote = 100;
   for (let i = 0; i < vendas.length; i += lote) {
     const chunk = vendas.slice(i, i + lote);
     // Upsert só com colunas de importação — tipo de comissão, divisão e validação são preservados
@@ -190,5 +193,5 @@ export async function importarVendas(
     }
     onProgress?.(Math.min(100, Math.round(((i + chunk.length) / vendas.length) * 100)));
   }
-  return { total: vendas.length, inseridas, atualizadas: vendas.length - inseridas };
+  return { total: vendas.length, inseridas, novasComerciais, atualizadas: vendas.length - inseridas };
 }
