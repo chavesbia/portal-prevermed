@@ -2,7 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { bloqueioExames, bloqueioUnidade, brData, carregarRegras, contarDia, descreverExames, isoData, limiteDia } from '../_shared/agendaRegras.ts';
+import { bloqueioExames, bloqueioUnidade, brData, carregarRegras, contarDia, descreverExames, isoData, limiteDia, naoAgendaveisGlobais } from '../_shared/agendaRegras.ts';
 
 const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
 
@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
       const { data } = await admin.from('agenda_documentos_exigidos').select('tipo_exame, nome, obrigatorio').order('ordem');
       return json({ documentos: data ?? [] });
     }
+    if (raw?.naoAgendaveis) return json({ exames: await naoAgendaveisGlobais(admin) });
     const parsed = Body.safeParse(raw);
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { unidadeId, dataInicio, dataFim, tipoExame, exames } = parsed.data;

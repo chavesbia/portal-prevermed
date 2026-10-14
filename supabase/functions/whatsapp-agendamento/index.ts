@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { CATALOGO } from './catalogo.ts';
+import { naoAgendaveisGlobais } from '../_shared/agendaRegras.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -120,7 +121,8 @@ async function pedirDatas(d: Dados): Promise<Res> {
   }
   d.horarios = Object.fromEntries(datas.map((k) => [k, porData[k].map((h) => h.hora)]));
   d.datas = datas;
-  const aviso = typeof data?.regrasExames === 'string' && data.regrasExames.trim() ? `\n\n_${data.regrasExames.trim()}_` : '';
+  const rx = Array.isArray(data?.regrasExames) ? data.regrasExames.map((x: any) => `⚠️ ${nomeExame(x.exame)}: ${x.texto}`).join('\n') : typeof data?.regrasExames === 'string' ? data.regrasExames.trim() : '';
+  const aviso = rx ? `\n\n_${rx}_` : '';
   return { etapa: 'ESCOLHENDO_DATA', dados: d, resposta: `📅 Datas disponíveis em *${titulo(d.unidade.nome)}*:\n\n${menu(datas)}${aviso}${RODAPE}` };
 }
 
@@ -148,12 +150,13 @@ function adicionar(d: Dados, novos: string[]) {
   d.exames = lista.slice(0, 40);
 }
 // Busca no catálogo oficial do SOC por todas as palavras digitadas (sem acento)
-function buscarExame(d: Dados, termo: string): Res {
+async function buscarExame(d: Dados, termo: string): Promise<Res> {
   const q = semAcento(termo).replace(/[^A-Z0-9 ]/g, ' ').split(/\s+/).filter(Boolean);
   const alias: Record<string, string> = { RX: 'RAIO', ECG: 'ELETROCARDIOGRAMA', EEG: 'ELETROENCEFALOGRAMA' };
   const ws = q.map((w) => alias[w] ?? w);
   if (!ws.length || ws.join('').length < 2) return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Digite pelo menos 2 letras do nome do exame.${RODAPE}` };
-  const cat = [...new Set([...extrasDe(d), ...CATALOGO])];
+  const fora = new Set((await naoAgendaveisGlobais(createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!))).map(semAcento));
+  const cat = [...new Set([...extrasDe(d), ...CATALOGO])].filter((n) => !fora.has(semAcento(n)));
   const ach = cat.filter((n) => { const s = semAcento(n).replace(/[^A-Z0-9 ]/g, ' '); return ws.every((w) => s.includes(w)); });
   if (!ach.length) return { etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Não encontrei "${termo}" no catálogo de exames. Tente outra palavra (ex: _raio_, _glicemia_, _espirometria_).${RODAPE}` };
   if (ach.length === 1) { d.achados = ach; return { etapa: 'EXAME_BUSCA', dados: d, resposta: `Encontramos o exame:\n\n🧪 *${nomeExame(ach[0])}*\n\n*1* - Sim, adicionar\n*2* - Buscar outro${RODAPE}` }; }
