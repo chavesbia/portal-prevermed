@@ -34,7 +34,7 @@ export function VendasImportacao() {
     try {
       const r = await importarVendas(preview, arquivo.name, user?.id ?? null, setProgress);
       await auditVendas(user?.id, 'import', null, { arquivo: arquivo.name, ...r });
-      toast({ title: 'Importação concluída', description: `${r.inseridas} novas e ${r.atualizadas} atualizadas.` });
+      toast({ title: 'Importação concluída', description: `${r.novasComerciais} novas vendas comerciais (+ ${r.inseridas - r.novasComerciais} de Faturamento/sem vendedor, fora da comissão) e ${r.atualizadas} atualizadas.` });
       setPreview(null); setArquivo(null);
       invalidate();
     } catch (e: any) {
@@ -48,6 +48,7 @@ export function VendasImportacao() {
     concl: preview.filter(v => v.situacao === 'Concluído'),
     semVend: preview.filter(v => v.situacao === 'Concluído' && !v.vendedor).length,
     fat: preview.filter(v => v.vendedor === VENDEDOR_FATURAMENTO).length,
+    comerciais: preview.filter(v => v.vendedor && v.vendedor !== VENDEDOR_FATURAMENTO).length,
     comp: preview.filter(v => v.compartilhada).length,
   };
 
@@ -65,9 +66,11 @@ export function VendasImportacao() {
 
           {resumo && (
             <div className="space-y-2 text-sm">
-              <div>Vendas no arquivo: <strong>{preview!.length}</strong></div>
-              <div>Concluídas: <strong>{resumo.concl.length}</strong> ({brl(resumo.concl.reduce((s, v) => s + v.valor, 0))})</div>
-              <div>Vendedor Faturamento (não gera comissão): <strong>{resumo.fat}</strong></div>
+              <div>Registros no arquivo: <strong>{preview!.length}</strong></div>
+              <div>Vendas da equipe comercial: <strong>{resumo.comerciais}</strong></div>
+              <div>Rotinas do Faturamento (fora da comissão): <strong>{resumo.fat}</strong></div>
+              <div>Sem vendedor (fora da comissão): <strong>{preview!.length - resumo.comerciais - resumo.fat}</strong></div>
+              <div>Concluídas (todas): <strong>{resumo.concl.length}</strong> ({brl(resumo.concl.reduce((s, v) => s + v.valor, 0))})</div>
               <div>Vendas compartilhadas (100% ao 1º vendedor): <strong>{resumo.comp}</strong></div>
               {resumo.semVend > 0 && (
                 <div className="flex items-center gap-2 text-destructive"><AlertTriangle className="h-4 w-4" /> {resumo.semVend} concluídas sem vendedor</div>
