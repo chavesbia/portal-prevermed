@@ -164,7 +164,11 @@ function buscarExame(d: Dados, termo: string): Res {
 const menuAlterar = (d: Dados): Res => ({ etapa: 'ALTERAR_EXAMES', dados: d, resposta: `✏️ *Alterar lista de exames*\n\n*1* - Adicionar outro exame\n*2* - Remover um exame adicionado\n*3* - Manter apenas os exames previstos no PCMSO${RODAPE}` });
 
 function pedirExtras(d: Dados): Res {
-  const lista = d.exames?.length ? listaExames(d.exames) : '_Nenhum exame previsto no PCMSO para este atendimento._';
+  if (!d.exames?.length) {
+    const m = menuExtras(d);
+    return { ...m, resposta: `🩺 Este atendimento não possui exames pré-definidos no PCMSO.\n\nSelecione os *exames que serão realizados*:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` };
+  }
+  const lista = listaExames(d.exames);
   return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames *previstos no PCMSO* para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
 }
 const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os *exames complementares* desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` });
