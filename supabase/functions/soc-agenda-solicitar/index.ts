@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         b.examesAdicionais ? `EXAMES ADICIONAIS: ${b.examesAdicionais.map((e) => e.toUpperCase()).join(', ') || 'NENHUM'}` : `EXAMES: ${exames.join(', ') || '-'}`,
         b.mudancaRisco ? `ATENÇÃO: ${b.mudancaRisco.toUpperCase()}` : '',
         b.observacoes?.trim() ? `OBSERVAÇÃO: ${b.observacoes.trim().toUpperCase()}` : '',
-        guiaPath ? 'ANEXO: SIM (VERIFICAR NO PORTAL)' : '',
+        anexos.length ? `ANEXO: SIM${anexos.length > 1 ? ` (${anexos.length} ARQUIVOS)` : ''} (VERIFICAR NO PORTAL)` : '',
         b.solicitadoPor ? `SOLICITADO VIA ${b.solicitadoPor.toUpperCase()}` : '',
       ].filter(Boolean).join('\n'),
     });
