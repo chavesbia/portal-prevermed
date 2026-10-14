@@ -226,6 +226,7 @@ export type Database = {
           hora_fim: string
           hora_inicio: string
           id: string
+          nao_agendavel: boolean
           observacao: string | null
           parceiro: boolean
           unidade_id: string | null
@@ -239,6 +240,7 @@ export type Database = {
           hora_fim?: string
           hora_inicio?: string
           id?: string
+          nao_agendavel?: boolean
           observacao?: string | null
           parceiro?: boolean
           unidade_id?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           hora_fim?: string
           hora_inicio?: string
           id?: string
+          nao_agendavel?: boolean
           observacao?: string | null
           parceiro?: boolean
           unidade_id?: string | null

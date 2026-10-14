@@ -6,7 +6,7 @@ export type Regras = {
   calendario: { dia_semana: number; hora_inicio: string; hora_fim: string; ativo: boolean }[];
   bloqueios: { data: string; hora_fim_antecipada: string | null; motivo: string }[];
   limites: { tipo_exame: string; dia_semana: number | null; maximo: number }[];
-  exames: { exame_nome: string; dias_semana: number[]; hora_inicio: string; hora_fim: string; antecedencia_dias: number; parceiro: boolean; observacao: string | null }[];
+  exames: { exame_nome: string; dias_semana: number[]; hora_inicio: string; hora_fim: string; antecedencia_dias: number; parceiro: boolean; observacao: string | null; nao_agendavel?: boolean }[];
 };
 
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
@@ -24,7 +24,7 @@ export async function carregarRegras(admin: Admin, unidadeId: string): Promise<R
     admin.from('agenda_calendario').select('dia_semana, hora_inicio, hora_fim, ativo').eq('unidade_id', unidadeId),
     admin.from('agenda_bloqueios').select('data, hora_fim_antecipada, motivo').or(ou).gte('data', hojeSP()),
     admin.from('agenda_limites').select('tipo_exame, dia_semana, maximo').or(ou),
-    admin.from('agenda_exames_regras').select('exame_nome, dias_semana, hora_inicio, hora_fim, antecedencia_dias, parceiro, observacao').or(ou).eq('ativo', true),
+    admin.from('agenda_exames_regras').select('exame_nome, dias_semana, hora_inicio, hora_fim, antecedencia_dias, parceiro, observacao, nao_agendavel').or(ou).eq('ativo', true),
     admin.from('feriados').select('data, descricao').gte('data', hojeSP()),
   ]);
   return {
@@ -58,7 +58,21 @@ export function limiteDia(r: Regras, iso: string, tipoExame: string): number | n
 
 export function regrasDosExames(r: Regras, exames: string[]) {
   const sel = new Set(exames.map(norm));
-  return r.exames.filter((e) => sel.has(norm(e.exame_nome)));
+  return r.exames.filter((e) => !e.nao_agendavel && sel.has(norm(e.exame_nome)));
+}
+
+export const AVISO_NAO_AGENDAVEL = 'Este exame não é agendado pela central. Nossa equipe entrará em contato para combinar a realização.';
+
+/** Exames marcados como "Não agendável" (vale para a unidade informada ou todas) */
+export function naoAgendaveis(r: Regras, exames: string[]) {
+  const nao = new Set(r.exames.filter((e) => e.nao_agendavel).map((e) => norm(e.exame_nome)));
+  return exames.filter((e) => nao.has(norm(e)));
+}
+
+/** Nomes marcados como "Não agendável" para todas as unidades (saem da busca de exames) */
+export async function naoAgendaveisGlobais(admin: Admin): Promise<string[]> {
+  const { data } = await admin.from('agenda_exames_regras').select('exame_nome').eq('nao_agendavel', true).eq('ativo', true).is('unidade_id', null);
+  return (data ?? []).map((x: any) => x.exame_nome);
 }
 
 /** Motivo de exame especial não atender o dia/horário. null = atende */
@@ -74,12 +88,12 @@ export function bloqueioExames(r: Regras, iso: string, hora: string, exames: str
 }
 
 export function descreverExames(r: Regras, exames: string[]) {
-  return regrasDosExames(r, exames).map((e) => ({
+  return [...naoAgendaveis(r, exames).map((e) => ({ exame: e, texto: AVISO_NAO_AGENDAVEL })), ...regrasDosExames(r, exames).map((e) => ({
     exame: e.exame_nome,
     texto: `Somente às ${e.dias_semana.map((x) => DIAS[x]).join(', ')}, das ${hm(e.hora_inicio)} às ${hm(e.hora_fim)}`
       + (e.antecedencia_dias ? `, com ${e.antecedencia_dias} dia(s) de antecedência` : '')
       + (e.parceiro ? ' (realizado em parceiro)' : '') + (e.observacao ? `. ${e.observacao}` : '') + '.',
-  }));
+  }))];
 }
 
 export async function contarDia(admin: Admin, unidadeId: string, iso: string, tipoExame: string) {

@@ -139,11 +139,15 @@ export default function AgendamentoPublico() {
   const mostrarGrade = !usaGradePcmso;
 
   const [busca, setBusca] = useState("");
+  const [foraAgenda, setForaAgenda] = useState<string[]>([]);
+  useEffect(() => {
+    supabase.functions.invoke("soc-agenda-horarios", { body: { naoAgendaveis: true } }).then(({ data }) => setForaAgenda((data?.exames ?? []).map((n: string) => semAcento(n))));
+  }, []);
   const sugestoes = useMemo(() => {
     const q = semAcento(busca.trim());
     if (q.length < 2) return [];
-    return EXAMES_SOC.filter((e) => e.nome !== CLINICO && !exames.includes(e.nome) && semAcento(e.nome).includes(q)).slice(0, 8);
-  }, [busca, exames]);
+    return EXAMES_SOC.filter((e) => e.nome !== CLINICO && !exames.includes(e.nome) && !foraAgenda.includes(semAcento(e.nome)) && semAcento(e.nome).includes(q)).slice(0, 8);
+  }, [busca, exames, foraAgenda]);
 
   const dias = useMemo(() => Object.keys(porData).sort((a, b) => toIso(a).localeCompare(toIso(b))), [porData]);
 
