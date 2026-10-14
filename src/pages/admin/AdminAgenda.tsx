@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarDays, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { EXAMES_SOC } from "@/data/examesSoc";
+import { RegrasExames } from "@/components/agenda/RegrasExames";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"];
@@ -85,23 +85,23 @@ export default function AdminAgenda() {
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calendario" className="space-y-4">
+        <TabsContent value="calendario" className="grid gap-3 md:grid-cols-2">
           {unidades.map((u: any) => (
             <Card key={u.id}>
-              <CardHeader><CardTitle className="text-base">{u.nome}</CardTitle></CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader><TableRow><TableHead>Dia</TableHead><TableHead>Atende</TableHead><TableHead>Início</TableHead><TableHead>Fim</TableHead></TableRow></TableHeader>
+              <CardHeader className="py-2"><CardTitle className="text-sm">{u.nome}</CardTitle></CardHeader>
+              <CardContent className="pb-2">
+                <Table className="text-xs">
+                  <TableHeader><TableRow><TableHead className="h-7">Dia</TableHead><TableHead className="h-7">Atende</TableHead><TableHead className="h-7">Início</TableHead><TableHead className="h-7">Fim</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {DIAS.map((nome, d) => {
                       const c = calendario.find((x: any) => x.unidade_id === u.id && x.dia_semana === d);
                       const salvar = (patch: Record<string, unknown>) => run(db.from("agenda_calendario").upsert({ unidade_id: u.id, dia_semana: d, hora_inicio: c?.hora_inicio ?? "07:00", hora_fim: c?.hora_fim ?? "16:00", ativo: c?.ativo ?? false, ...patch }, { onConflict: "unidade_id,dia_semana" }), "agenda_calendario");
                       return (
                         <TableRow key={d}>
-                          <TableCell className="font-medium">{nome}</TableCell>
-                          <TableCell><Switch checked={!!c?.ativo} onCheckedChange={(v) => salvar({ ativo: v })} /></TableCell>
-                          <TableCell><Input type="time" className="w-28" disabled={!c?.ativo} defaultValue={c?.hora_inicio?.slice(0, 5) ?? "07:00"} key={`i${c?.hora_inicio}`} onBlur={(e) => c && e.target.value !== c.hora_inicio.slice(0, 5) && salvar({ hora_inicio: e.target.value })} /></TableCell>
-                          <TableCell><Input type="time" className="w-28" disabled={!c?.ativo} defaultValue={c?.hora_fim?.slice(0, 5) ?? "16:00"} key={`f${c?.hora_fim}`} onBlur={(e) => c && e.target.value !== c.hora_fim.slice(0, 5) && salvar({ hora_fim: e.target.value })} /></TableCell>
+                          <TableCell className="py-1 font-medium">{nome}</TableCell>
+                          <TableCell className="py-1"><Switch className="scale-75" checked={!!c?.ativo} onCheckedChange={(v) => salvar({ ativo: v })} /></TableCell>
+                          <TableCell className="py-1"><Input type="time" className="h-7 w-24 text-xs" disabled={!c?.ativo} defaultValue={c?.hora_inicio?.slice(0, 5) ?? "07:00"} key={`i${c?.hora_inicio}`} onBlur={(e) => c && e.target.value !== c.hora_inicio.slice(0, 5) && salvar({ hora_inicio: e.target.value })} /></TableCell>
+                          <TableCell className="py-1"><Input type="time" className="h-7 w-24 text-xs" disabled={!c?.ativo} defaultValue={c?.hora_fim?.slice(0, 5) ?? "16:00"} key={`f${c?.hora_fim}`} onBlur={(e) => c && e.target.value !== c.hora_fim.slice(0, 5) && salvar({ hora_fim: e.target.value })} /></TableCell>
                         </TableRow>
                       );
                     })}
@@ -143,44 +143,17 @@ export default function AdminAgenda() {
 
         <TabsContent value="exames">
           <Card>
-            <CardHeader><CardTitle className="text-base">Exames com dias, horários ou antecedência próprios</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">Ex.: Audiometria, Avaliação Psicológica, Psicossocial, Teste Oftalmológico, Ergométrico (parceiro). Ao agendar, só aparecem horários em que todos os exames escolhidos podem ser feitos, com a explicação para o cliente.</p>
-              <div className="grid gap-2 md:grid-cols-4 items-end">
-                <div className="md:col-span-2"><Label>Exame (catálogo SOC) *</Label>
-                  <Input list="catalogo-exames" value={rg.exame_nome} onChange={(e) => setRg({ ...rg, exame_nome: e.target.value.toUpperCase() })} placeholder="Digite para buscar ou cadastre um novo nome" />
-                  <datalist id="catalogo-exames">{EXAMES_SOC.map((e) => <option key={e.nome} value={e.nome} />)}</datalist></div>
-                <div><Label>Unidade</Label><select className={sel} value={rg.unidade_id} onChange={(e) => setRg({ ...rg, unidade_id: e.target.value })}><option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}</select></div>
-                <div><Label>Antecedência (dias)</Label><Input type="number" min={0} value={rg.antecedencia_dias} onChange={(e) => setRg({ ...rg, antecedencia_dias: e.target.value })} /></div>
-                <div className="md:col-span-2"><Label>Dias da semana</Label>
-                  <div className="flex flex-wrap gap-1">{DIAS.map((n, d) => (
-                    <Button key={d} type="button" size="sm" variant={rg.dias_semana.includes(d) ? "default" : "outline"} onClick={() => setRg({ ...rg, dias_semana: rg.dias_semana.includes(d) ? rg.dias_semana.filter((x) => x !== d) : [...rg.dias_semana, d].sort() })}>{n}</Button>
-                  ))}</div></div>
-                <div><Label>Das</Label><Input type="time" value={rg.hora_inicio} onChange={(e) => setRg({ ...rg, hora_inicio: e.target.value })} /></div>
-                <div><Label>Até</Label><Input type="time" value={rg.hora_fim} onChange={(e) => setRg({ ...rg, hora_fim: e.target.value })} /></div>
-                <label className="flex items-center gap-2 text-sm"><Switch checked={rg.parceiro} onCheckedChange={(v) => setRg({ ...rg, parceiro: v })} />Realizado em parceiro</label>
-                <div className="md:col-span-2"><Label>Orientação ao cliente</Label><Input value={rg.observacao} maxLength={200} onChange={(e) => setRg({ ...rg, observacao: e.target.value })} /></div>
-                <Button disabled={rg.exame_nome.trim().length < 3 || !rg.dias_semana.length || rg.hora_fim <= rg.hora_inicio} onClick={async () => {
-                  if (await run(db.from("agenda_exames_regras").insert({ ...rg, exame_nome: rg.exame_nome.trim(), unidade_id: rg.unidade_id || null, antecedencia_dias: Number(rg.antecedencia_dias) || 0, observacao: rg.observacao.trim() || null }), "agenda_exames_regras"))
-                    setRg({ ...rg, exame_nome: "", observacao: "" });
-                }}><Plus className="mr-1 h-4 w-4" />Adicionar</Button>
-              </div>
-              <Table>
-                <TableHeader><TableRow><TableHead>Exame</TableHead><TableHead>Unidade</TableHead><TableHead>Dias</TableHead><TableHead>Horário</TableHead><TableHead>Antecedência</TableHead><TableHead>Ativa</TableHead><TableHead /></TableRow></TableHeader>
-                <TableBody>
-                  {regras.map((r: any) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.exame_nome}{r.parceiro && <Badge variant="outline" className="ml-2 whitespace-nowrap">Parceiro</Badge>}</TableCell>
-                      <TableCell>{nomeUn(r.unidade_id)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{r.dias_semana.map((d: number) => DIAS[d]).join(", ")}</TableCell>
-                      <TableCell className="whitespace-nowrap">{r.hora_inicio.slice(0, 5)}–{r.hora_fim.slice(0, 5)}</TableCell>
-                      <TableCell>{r.antecedencia_dias} dia(s)</TableCell>
-                      <TableCell><Switch checked={r.ativo} onCheckedChange={(v) => run(db.from("agenda_exames_regras").update({ ativo: v }).eq("id", r.id), "agenda_exames_regras")} /></TableCell>
-                      <TableCell><Button size="icon" variant="ghost" onClick={() => remover("agenda_exames_regras", r.id)}><Trash2 className="h-4 w-4" /></Button></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardHeader className="py-3"><CardTitle className="text-sm">Exames com dias, horários ou antecedência próprios</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">Marque vários exames (ou um grupo) e aplique o mesmo horário a todos. Exames sem regra seguem o horário da unidade.</p>
+              <RegrasExames
+                regras={regras} unidades={unidades} nomeUn={nomeUn}
+                salvar={(linhas, editId) => editId
+                  ? run(db.from("agenda_exames_regras").update(linhas[0]).eq("id", editId), "agenda_exames_regras", "Regra atualizada")
+                  : run(db.from("agenda_exames_regras").insert(linhas), "agenda_exames_regras", `${linhas.length} regra(s) criada(s)`)}
+                ativar={(id, v) => run(db.from("agenda_exames_regras").update({ ativo: v }).eq("id", id), "agenda_exames_regras")}
+                remover={(id) => remover("agenda_exames_regras", id)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
