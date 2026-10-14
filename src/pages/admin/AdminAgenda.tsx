@@ -187,7 +187,8 @@ export default function AdminAgenda() {
 
         <TabsContent value="documentos">
           <Card>
-            <CardHeader><CardTitle className="text-base">Documentos exigidos por tipo de exame</CardTitle></CardHeader>
+            <CardHeader className="py-3"><CardTitle className="text-sm">Documentos exigidos por tipo de exame</CardTitle>
+              <p className="text-xs text-muted-foreground">Cada documento marcado como obrigatório vira um anexo que o cliente precisa enviar para concluir o agendamento daquele tipo. Ex.: 3 obrigatórios no Retorno = 3 anexos exigidos. Os não obrigatórios aparecem como opcionais.</p></CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">No Retorno ao Trabalho é exigido pelo menos um documento, além dos marcados como obrigatórios, e o agendamento aguarda aprovação da equipe de saúde.</p>
               <div className="grid gap-2 md:grid-cols-4 items-end">
