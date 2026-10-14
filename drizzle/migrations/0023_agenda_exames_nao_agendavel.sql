@@ -1,0 +1,1 @@
+ALTER TABLE public.agenda_exames_regras ADD COLUMN IF NOT EXISTS nao_agendavel boolean NOT NULL DEFAULT false;

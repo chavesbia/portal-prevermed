@@ -162,6 +162,13 @@
       "when": 1791905221440,
       "tag": "0022_whatsapp_sessoes",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791998734314,
+      "tag": "0023_agenda_exames_nao_agendavel",
+      "breakpoints": true
     }
   ]
 }
