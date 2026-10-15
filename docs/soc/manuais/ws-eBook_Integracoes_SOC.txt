@@ -1,0 +1,1215 @@
+E-BOOK DE INTEGRAÇÕES SOC
+
+SUMÁRIO
+
+1. Objetivo ........................................................................................ 2
+2. Conceito – Integração ..................................................................... 3
+2.1. Web Service.............................................................................. 4
+2.2. SFTP ........................................................................................ 4
+3. Integrações Padrão SOC .................................................................. 5
+3.1 Web Services ............................................................................. 6
+3.1.1. Cadastro de Funcionário (Modelo 2) ........................................ 7
+3.1.2. Resultado de Exames ............................................................ 7
+3.1.3. Licença Médica ..................................................................... 8
+3.1.4. Cadastro de EPI ................................................................... 9
+3.1.5. Entrega de EPI ................................................................... 10
+3.1.6. Empresa ........................................................................... 11
+3.1.7. Unidade ............................................................................ 12
+3.1.8. Setor ................................................................................ 13
+3.1.9. Cargo ............................................................................... 14
+3.1.10. Centro de Custo ............................................................... 15
+3.1.11. Exame ............................................................................ 16
+3.1.12. Risco .............................................................................. 17
+3.1.13. Histórico de Funcionários ................................................... 18
+3.1.14. Prestador......................................................................... 19
+3.1.15. Resposta eSocial .............................................................. 20
+3.1.16. Solicitação Token .............................................................. 21
+3.1.17. Transferência de Funcionários ............................................ 22
+3.1.18. SOCGED .......................................................................... 23
+
+3.1.19. Download Arquivos SOCGED .............................................. 24
+3.1.20. Upload de Arquivos ........................................................... 25
+3.1.21. Usuários .......................................................................... 26
+3.1.22. Treinamentos, Capacitações, Exercícios Simulados e Outras
+Anotações .................................................................................. 27
+3.1.23. Exporta Dados ................................................................. 28
+3.1.24. Solicitação de Processamento Assíncrono ............................. 29
+3.1.25. Agendamento................................................................... 30
+3.1.26. Hierarquia ....................................................................... 31
+3.1.27. Guia de Encaminhamento de Exames .................................. 33
+3.2. SFTP ...................................................................................... 33
+3.2.1. SOCGED – Envio de Arquivos via SFTP .................................. 34
+3.2.2. Arquivos eSocial via SFTP .................................................... 34
+3.3. Instruções para Implementação ................................................. 35
+3.3.1 Web Service ....................................................................... 36
+3.3.2 SFTP .................................................................................. 38
+3.3.3 Exporta Dados .................................................................... 40
+3.4. Integrações eSocial .................................................................. 42
+3.4.1 Preenchimento dos Dados no SOC para o eSocial ..................... 43
+3.4.2 Extração dos Dados para o eSocial......................................... 44
+3.4.2.1 Integração de Dados - Interface específica com outros
+Sistemas .................................................................................. 45
+3.4.2.2 Integração de Arquivos - Portal eSOCial ............................. 46
+4. Integrações com Parceiros ............................................................. 48
+4.1. Integrações LG FPW ................................................................. 49
+4.1.1. eSocial .............................................................................. 49
+4.1.2. Funcionários ...................................................................... 50
+
+4.1.3. Licença Médica ................................................................... 50
+4.1.4. Transferência de Funcionários .............................................. 51
+4.1.5. Histórico de Funcionários ..................................................... 52
+4.2. Integrações SAP ...................................................................... 53
+4.2.1. Funcionários ...................................................................... 54
+4.2.2. Licença Médica ................................................................... 54
+4.3. Integrações Portal Telemedicina ................................................ 55
+4.3.1. Resultado/Laudo de Exames ................................................ 56
+4.4. Integrações SinergyRH ............................................................. 56
+4.4.1. Funcionários ...................................................................... 57
+4.5. Integrações TOTVS RM ............................................................. 57
+4.5.1. Funcionários ...................................................................... 58
+4.5.2. Licença Médica ................................................................... 58
+4.5.3 eSocial ............................................................................... 59
+4.6. Integrações Senior................................................................... 60
+4.6.1. Funcionários ...................................................................... 61
+4.6.2. eSocial .............................................................................. 61
+4.7. Integrações Tidexa RHSoft ........................................................ 62
+4.7.1. Funcionários ...................................................................... 63
+4.7.2. Licença Médica ................................................................... 63
+4.7.3. eSocial .............................................................................. 64
+4.8. Integração Portal Escudo .......................................................... 65
+4.8.1. Treinamentos..................................................................... 66
+4.8. Instruções para Implementação ................................................. 67
+
+1. Objetivo
+Este documento visa apresentar as integrações disponibilizadas pelo SOC –
+Software Integrado de Gestão Ocupacional, que permitem a comunicação
+automática com outros sistemas de mercado. Além disso, também são
+apresentadas as soluções desenvolvidas por Empresas Parceiras, que
+permitem integrar as informações com seus respectivos sistemas.
+
+2. Conceito – Integração
+A integração é uma solução que visa automatizar a sincronização das
+informações contidas em diferentes sistemas. Esta solução possibilita, por
+exemplo, integrar um software de Folha de Pagamento com o SOC, para
+que as informações dos Funcionários e de seus Atestados estejam sempre
+atualizadas e correspondentes.
+2.1. Web Service
+Web Service é uma tecnologia que permite, através do envio e recebimento
+de informações, por meio de arquivos no formato XML, a integração entre
+diferentes sistemas, independentemente de suas plataformas. Ou seja, a
+partir de uma solicitação enviada pelo sistema externo, as informações da
+mesma serão registradas no SOC.
+Isso significa que qualquer sistema poderá se comunicar com o SOC, desde
+que utilize os padrões especificados na Documentação Técnica.
+Cada Web Service possui um objetivo específico quanto às informações a
+serem integradas. Temos um serviço para o cadastro de Funcionários, outro
+para cadastro de EPIs, outro para Resultado de Exames, e assim por diante.
+
+1. O Sistema Externo envia os dados para a interface de integração. Por
+exemplo, um sistema de folha envia os dados de um funcionário para a
+interface.
+2. A interface adequa os dados para o formato de requisição recebido pelo
+SOC e realiza o envio.
+3. O SOC processa a requisição e responde quanto ao sucesso da mesma.
+Confira, no tópico “3.1 Web Services”, quais são os serviços disponibilizados
+atualmente pelo SOC.
+
+2.2. SFTP
+O SFTP é um método de transferência de arquivos entre sistemas remotos,
+por meio de uma conexão protegida, onde os arquivos serão enviados ou
+consumidos de forma segura e criptografada.
+Essa solução permite, por exemplo, que os arquivos gerados e vinculados
+ao SOCGED, bem como os arquivo incluídos diretamente no GED (via
+upload), sejam enviados para o diretório informado pelo cliente. Essa
+solução pode ser utilizada, por exemplo, para que os arquivos gerados no
+Portal eSocial, e armazenados no SOCGED, sejam enviados diretamente
+para um servidor configurado.
+
+A solução SFTP também possibilita, por exemplo, que os arquivos gerados
+no Portal eSocial sejam armazenados em um SFTP do SOC para que, por
+meio de login e senha fornecidos, possam ser consumidos por um sistema
+externo.
+
+3. Integrações Padrão SOC
+Abaixo estão listadas as integrações disponíveis no layout padrão do SOC,
+por meio de Web Services ou SFTP. Estas integrações, além de gratuitas,
+estão prontas para serem utilizadas, bastando que a interface seja
+desenvolvida do lado do software que será integrado, com base nas
+documentações técnicas disponibilizadas pelo SOC.
+Com o intuito de identificar as integrações que possuem relação com dados
+a serem enviados ao eSocial, as mesmas estão sinalizadas com um ícone no
+canto superior direito.
+Junto a cada integração listada, está disponível um esquema que representa
+o fluxo da informação e possíveis ações que podem ser realizadas por meio
+da interface. Para mais detalhes técnicos sobre o funcionamento da
+integração, utilize os QR Codes para acessar as suas respectivas
+documentações. Para isso, leia-os por meio da câmera de um smartphone,
+ou clique no próprio QR Code, caso esteja visualizando a versão digital
+deste eBook.
+
+3.1 Web Services
+3.1.1. Cadastro de Funcionário (Modelo 2)
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+Permitir a inclusão e alteração de
+Funcionários a partir de outros
+sistemas, possibilitando, por exemplo,
+a sincronização dos dados de
+funcionários entre o SOC e um sistema
+de folha.
+Objetivo
+
+Telas impactadas
+
+A função principal deste serviço é a
+manutenção de Funcionários, porém,
+de acordo com algumas regras, as
+informações de estrutura
+organizacional (Unidade, Setor, Cargo)
+também podem ser atualizadas.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+
+3.1.2. Resultado de Exames
+O Resultado de Exames consiste no preenchimento das informações
+provenientes da realização dos exames definidos no Pedido de Exame.
+
+Objetivo
+
+Telas impactadas
+
+Possibilitar a inclusão e alteração de informações
+de Atendimento a partir de outros sistemas.
+Neste serviço, as informações de Atendimento
+estão divididas em:
+- Resultado de Exames
+- ASOs
+- Respostas da Personalização da Ficha Clínica
+229 – Ficha Clínica
+248 – Pedido de Exames
+250 – Resultado de Exames
+264 – ASO
+
+3.1.3. Licença Médica
+A Licença Médica é usada para registro de atestados médicos e
+declarações de horas.
+
+Objetivo
+
+Telas impactadas
+
+Permitir a inclusão, alteração, exclusão e
+consulta de Licenças Médicas e Afastamentos a
+partir de outros sistemas.
+A função principal deste serviço é a manutenção
+de Licenças Médicas. Porém, de acordo com
+algumas regras, as informações serão refletidas
+na tela de Afastamento do SOC.
+253 – Licença Médica
+726 – Afastamento
+
+3.1.4. Cadastro de EPI
+Os EPIs (Equipamentos de Proteção Individual) são responsáveis pela
+proteção e integridade do indivíduo no ambiente de trabalho e promovem
+a saúde, o bem-estar e a prevenção de acidentes e doenças ocupacionais.
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão do
+cadastro de EPIs a partir de outros sistemas.
+164 - EPI
+
+3.1.5. Entrega de EPI
+A Entrega de EPI permite registrar as concessões, reposições e
+devoluções dos equipamentos de proteção dos funcionários.
+
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração, troca e exclusão
+de Entrega de EPI a partir de outros sistemas.
+Para utilizar este serviço, é necessário possuir o
+EPI em questão já cadastrado.
+268 - EPI
+
+3.1.6. Empresa
+No SOC, o cadastro de empresa pode representar o próprio prestador ou
+SESMT, além de também permitir o cadastro das empresas/clientes que
+terão os funcionários gerenciados no sistema.
+Objetivo
+Telas impactadas
+
+Permite a inclusão e alteração do cadastro de
+Empresas Clientes a partir de outros sistemas.
+337 – Empresa/Cliente
+
+3.1.7. Unidade
+O cadastro de Unidade, no SOC, representa as Divisões/Filiais de uma
+empresa cadastrada, possibilitando a inclusão das Estruturas
+Organizacionais (Unidade/Setor/Cargo).
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão do
+cadastro de Unidades a partir de outros
+sistemas.
+231 - Unidade
+
+3.1.8. Setor
+O cadastro de Setor, no SOC, representa as Divisões/Departamentos de
+uma unidade da empresa, utilizado para a inclusão das Estruturas
+Organizacionais (Unidade/Setor/Cargo).
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão do
+cadastro de Setores a partir de outros sistemas.
+220 - Setor
+
+3.1.9. Cargo
+No SOC, o cadastro de Cargo representa as Funções exercidas em uma
+empresa. Necessário para a inclusão das Estruturas Organizacionais
+(Unidade/Setor/Cargo).
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão do
+cadastro de Cargos a partir de outros sistemas.
+280 - Cargo
+
+3.1.10. Centro de Custo
+O Centro de Custo pode ser vinculado no cadastro de funcionário e
+representa um agrupamento, que pode ser visualizado, por exemplo, no
+Relatório de Fatura.
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão de
+Centros de Custo a partir de outros
+sistemas.
+206 - Centro de Custo
+
+3.1.11. Exame
+O cadastro de exame representa os procedimentos de saúde ocupacional
+a serem realizados para os colaboradores das empresas/clientes.
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração, cópia e
+exclusão do cadastro de exames a partir de
+outros sistemas.
+203 - Exame
+
+3.1.12. Risco
+No SOC, o cadastro de risco representa os agentes ocupacionais aos quais
+os funcionários das empresas/clientes podem ser expostos.
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração, cópia e exclusão
+dos cadastros de riscos a partir de outros
+sistemas.
+191 - Risco
+
+3.1.13. Histórico de Funcionários
+O Histórico dos Funcionários consiste nas hierarquias em que o
+funcionário já foi alocado durante a sua vida laboral na Empresa.
+Objetivo
+
+Telas impactadas
+
+Permitir a importação de históricos de
+funcionários, a partir do consumo de
+WebService.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+
+3.1.14. Prestador
+No SOC, os cadastros de Prestadores de Serviços são utilizados para
+representar empresas que oferecem serviços de SST, como a realização
+de exames ou elaboração de documentos legais.
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão de
+prestadores a partir de outros sistemas.
+245 - Prestadores
+
+3.1.15. Resposta eSocial
+O Recibo do eSocial é a forma de resposta que representa o sucesso do
+processamento de um registro pelo ambiente nacional do eSocial.
+Objetivo
+Telas impactadas
+
+Permitir a inserção do campo Número de Recibo
+no módulo “Portal eSocial”.
+859 - Portal eSocial
+
+3.1.16. Solicitação Token
+O Token é um dispositivo eletrônico utilizado para gerar senhas, que
+permite ao usuário logar automaticamente no sistema por meio de uma
+URL, sem que seja necessário informar login e senha.
+Objetivo
+Telas impactadas
+
+Possibilitar ao usuário realizar login automático
+no sistema SOC.
+Nenhuma
+
+3.1.17. Transferência de Funcionários
+A Transferência de Funcionários possibilita a cópia das informações de
+cadastro de funcionários e fichas clínicas entre Empresas Clientes do SOC.
+Objetivo
+
+Telas impactadas
+
+Permitir que o cliente transfira funcionários e/ou
+Fichas Clínicas entre empresas a partir do
+consumo de WebService.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 - Visualiza Hierarquia
+229 - Ficha Clínica
+
+3.1.18. SOCGED
+O SOCGED possibilita o gerenciamento, armazenamento e o
+compartilhamento de documentos internos/externos de forma prática com
+vínculo à Empresa, Unidade e Funcionário.
+
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão do
+cadastro de SOCGED.
+611 – SOCGED
+
+3.1.19. Download Arquivos SOCGED
+O SOCGED possibilita o gerenciamento, armazenamento e o
+compartilhamento de documentos internos/externos de forma prática com
+vínculo à Empresa, Unidade e Funcionário.
+
+Objetivo
+Telas impactadas
+
+Permitir o download de arquivos armazenados
+no SOCGED.
+611 – SOCGED
+
+3.1.20. Upload de Arquivos
+O SOCGED possibilita o gerenciamento, armazenamento e o
+compartilhamento de documentos internos/externos de forma prática com
+vínculo à Empresa, Unidade e Funcionário.
+Objetivo
+Telas impactadas
+
+Permitir o upload de arquivos no SOCGED.
+611 - SOCGED
+
+3.1.21. Usuários
+Um usuário, no SOC, representa a pessoa que irá, efetivamente, operar o
+sistema. Geralmente é criado para os técnicos, médicos e funcionários da
+própria empresa de SST ou SESMT.
+Objetivo
+Telas impactadas
+
+Permitir a manutenção do cadastro de usuário a
+partir de outros sistemas, possibilitando criar,
+alterar, inativar e alterar a senha de usuários.
+189 – Pessoas
+
+3.1.22. Treinamentos, Capacitações, Exercícios
+Simulados e Outras Anotações
+Os treinamentos, no SOC, possibilitam registrar, monitorar e certificar
+treinamentos realizados pelos funcionários, através da relação entre
+turmas e cursos.
+Objetivo
+Telas impactadas
+
+Possibilitar a inclusão, alteração e
+exclusão de Treinamentos a partir de
+outros sistemas.
+251 - Turma
+
+3.1.23. Exporta Dados
+Os Exporta Dados têm por finalidade facilitar a extração de dados do SOC
+para fins de integração e, em alguns casos, pode ser utilizado como um
+gerador simples de relatórios.
+
+Objetivo
+
+Telas impactadas
+
+Disponibilizar informações do SOC para
+serem consumidas por outro sistema.
+Este serviço é utilizado para consultar as
+informações por meio da ferramenta
+“Exporta Dados”.
+Os dados são agrupados de acordo com
+um contexto específico. Por exemplo, é
+possível utilizar este Web Service para
+consumir informações de Entrega de
+EPI, ASOs do Funcionário, dados do
+eSocial e assim por diante.
+Os Exporta Dados têm a finalidade de
+extrair informações do SOC, portanto,
+não tem função de inserção, alteração
+ou exclusão.
+Ao todo, temos mais de 100 Exporta
+Dados disponíveis.
+Nenhuma
+
+3.1.24. Solicitação de Processamento Assíncrono
+A funcionalidade Processamento Assíncrono permite a extração de dados
+de processamentos complexos, por meio do agendamento dos mesmos.
+Uma vez realizado o processamento, os dados são disponibilizados para
+consulta através de Webservice.
+
+Objetivo
+Telas impactadas
+
+Permitir a inclusão de solicitação de
+processamento da funcionalidade
+“Processamento Assíncrono”
+Nenhuma
+
+3.1.25. Agendamento
+No SOC, a utilização da agenda permite o controle dos atendimentos a
+serem realizados, por meio da inclusão de agendamentos.
+
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, alteração e exclusão de
+agendamentos a partir de outros sistemas.
+236 - Agenda
+
+3.1.26. Hierarquia
+O cadastro de hierarquia no SOC tem por objetivo a definição da estrutura
+organizacional da empresa, por meio da associação dos cadastros de
+unidade, setor e cargo.
+
+Objetivo
+Telas impactadas
+
+Permitir a inclusão, exclusão e alteração de
+cadastro de hierarquias no SOC.
+163 – Visualiza Hierarquia
+
+3.1.27. Guia de Encaminhamento de Exames
+A Guia de Encaminhamento de Exames possibilita ao usuário incluir um
+Pedido de Exame, sem que uma Ficha Clínica seja criada.
+
+Objetivo
+
+Telas impactadas
+
+Permitir a inclusão de guias de
+encaminhamento de exames no
+SOC.
+675 – Guia de Encaminhamento de
+Exames
+
+3.2. SFTP
+3.2.1. SOCGED – Envio de Arquivos via SFTP
+O SOCGED possibilita o gerenciamento, armazenamento e o
+compartilhamento de documentos internos/externos de forma prática com
+vínculo à Empresa, Unidade e Funcionário.
+
+Objetivo
+
+Telas impactadas
+
+Permitir que os arquivos gerados e
+vinculados ao SOCGED, bem como os
+arquivo incluídos diretamente no GED
+(via upload), sejam enviados para um
+diretório informado pelo cliente. Para
+utilizar este recurso, é necessário que as
+credenciais do SFTP estejam
+configuradas no cadastro da Empresa.
+Nenhuma
+
+3.2.2. Arquivos eSocial via SFTP
+O SOC possibilita a geração dos arquivos XML no layout dos eventos do
+eSocial, por meio do Portal eSOCial. Esses arquivos podem ser
+consumidos pelo sistema do cliente, que realizará o envio das
+informações ao governo.
+
+Objetivo
+
+Telas impactadas
+
+Permitir que os arquivos gerados no
+Portal eSocial sejam disponibilizados no
+SFTP SOC, para que, através de login e
+senha fornecidos, o sistema externo
+possa obter os arquivos para realizar o
+envio ao governo.
+Nenhuma
+
+3.3. Instruções para Implementação
+Ao identificar a necessidade de utilizar alguma das Integrações
+apresentadas neste documento, será necessário realizar as configurações
+correspondentes à mesma.
+3.3.1 Web Service
+Para realizar as configurações básicas para a utilização dos
+Web Services, logue na empresa principal e acesse
+Menu > Cadastros > Estrutura > Empresa/Cliente > Empresa
+Principal > Ícone “Configuração de Integração”
+
+Clique no ícone “Usuários Webservice” para selecionar o usuário que
+consumirá o serviço.
+
+Esta tela apresenta todas as informações importantes para viabilizar a
+integração. Clique no ícone “Alterar” para editar os campos:
+
+Na aba “Identificação”, será possível visualizar os dados que deverão ser
+preenchidos nas requisições, que permitirão identificar o usuário em
+questão. Além disso, no campo “Chave de Acesso/Password”, será possível
+gerar a chave de acesso que será utilizada nas requests. A aba “Certificado”
+permite a criação de um certificado para criptografar o conteúdo da
+mensagem nas integrações com o SOC, disponível nos formatos JKS
+(compatível com Java) e PKCS12 (compatível com C#).
+
+Na aba “Web Services”, devem ser selecionados os Serviços que serão
+utilizados. Após selecionar, clicar em “Gravar”.
+
+Após isso, os Web Services selecionados serão exibidos como “links”.
+Para visualizar a documentação técnica dos serviços, acesse:
+Menu > Administração > Central de Ajuda > Downloads
+
+A partir de então, basta entregar a Documentação Técnica ao setor de TI
+responsável de sua empresa, ou de seu cliente, para que o serviço seja
+construído do outro lado.
+
+3.3.2 SFTP
+A solução SFTP pode ser configurada para utilizar um diretório do próprio
+SOC ou um informado pelo cliente.
+Com relação ao SFTP do SOC, para acessá-lo, a empresa deverá entrar em
+contato com o Suporte SOC (suporte@soc.com.br) para que seja liberado
+um login e senha para acesso ao diretório com as informações.
+Para configurar a utilização de um SFTP, acesse “Menu > Cadastros >
+Estrutura > Empresa/Cliente” e selecione a empresa. Clique em "Mais
+Ícones" e em seguida em "Configuração das Credenciais de SFTP".
+
+Na tela a seguir, clique em "Incluir".
+
+Preencha os campos referentes às credenciais da empresa:
+
+3.3.3 Exporta Dados
+O módulo Exporta Dados tem por finalidade facilitar a extração
+de informações do SOC para fins de integração e, em alguns
+casos, pode ser utilizado como um simples gerador de relatórios.
+Para a utilização do Web Service “Exporta Dados”, e das soluções
+desenvolvidas por parceiros que o utilizam, se faz necessária a
+configuração dos Exporta Dados a serem utilizados. Para isso,
+realize o seguinte procedimento:
+Acesse Menu > Relatórios > Relatório Exporta Dados
+
+Clique no ícone “Copia Exporta Dados” e clique no código do Exporta Dados
+que deseja copiar.
+
+Para confirmar a ação, clique no ícone “Gravar”.
+
+Após isso, será possível construir a integração para consumir este Exporta
+Dados.
+O campo “String teste” deverá ser informado no Web Service para que a
+comunicação seja efetiva.
+
+3.4. Integrações eSocial
+Por meio das integrações disponíveis no SOC é possível tornar mais
+eficiente a inclusão e a extração das informações necessárias para atender
+ao eSocial. As soluções Interface específica com outros Sistemas
+(Integração de Dados) e Portal eSOCial (Integração de Arquivos)
+permitem que as informações a serem enviadas para o eSocial sejam
+integradas com sistemas externos, como os de RH, ERP e Folha.
+Integração de Dados: Os dados existentes no SOC são disponibilizados
+para que o sistema do cliente consuma, consolide, transmita e controle os
+leiautes para o eSOCial. Como essa solução não realiza a geração dos
+arquivos no SOC, não é possível utilizar o Web Service Resposta eSocial
+para o preenchimento do recibo de resposta do eSocial.
+Integração de Arquivos: Os arquivos XML são gerados pelo SOC, no
+formato a ser recebido pela plataforma do governo. Dessa forma, os
+sistemas integrados poderão buscar os arquivos prontos e realizar o envio
+para o eSocial. Esta solução permite o controle do retorno dos envios, por
+meio do Web Service Resposta eSocial, possibilitando o preenchimento do
+recibo retornado pelo eSocial.
+
+3.4.1 Preenchimento dos Dados no SOC para o eSocial
+Por meio dos Web Services disponíveis no SOC, sinalizados com o ícone
+“eSocial” no tópico “Integrações Padrão SOC”, é possível integrar
+informações para que sejam enviadas para a plataforma do governo. Por
+exemplo: os cadastros de funcionários do sistema de folha podem ser
+integrados ao SOC, para que estejam sempre atualizados.
+Na imagem abaixo, pode ser visualizada a relação dos Web Services com
+cada layout do eSocial. Estão sinalizados os serviços que impactam em
+algum dado nos respectivos layouts. Dessa forma, é possível visualizar
+todos os Web Services que podem ser utilizados para preenchimento de
+acordo com cada layout.
+
+3.4.2 Extração dos Dados para o eSocial
+Entre as Soluções eSOCial disponíveis, as duas primeiras (1 - Interface
+específica com outros Sistemas e 2 - Portal eSOCial) permitem configurar
+integrações para a exportação das informações contidas no SOC.
+O SOC possibilita a exportação de dados do eSocial de duas formas:
+3.4.2.1 Integração de Dados - Interface específica com outros Sistemas
+
+Essa solução permite que os dados exigidos pelo eSOCial sejam
+consumidos para serem integrados aos Sistemas de Folha de
+Pagamento/RH.
+Os dados solicitados serão disponibilizados através da ferramenta Exporta
+Dados, para que os Clientes SOC (diretos ou indiretos) desenvolvam
+interfaces com o software e integrem essas informações com sistemas de
+Folha de Pagamento/RH, que serão os responsáveis por reproduzir e
+transmitir os layouts ao Governo Federal. Nesta solução, os dados
+existentes no SOC são disponibilizados sem que estejam no layout dos
+eSocial, para que sejam consumidos, consolidados e transmitidos. Como
+essa solução não realiza a geração dos arquivos no Portal, não é possível
+utilizar o Web Service Resposta eSocial para o controle dos arquivos
+processados pela plataforma do governo.
+Para realizar a integração dessa solução, deve ser utilizado o Web Service
+Exporta Dados, descrito no item 3.1.22. Exporta Dados. Este serviço
+possibilitará a utilização dos Relatórios Exporta Dados em integrações com
+outros sistemas, de modo a possibilitar que os mesmos consumam os dados
+contidos no SOC.
+
+Integração de Dados (Interface Específica com Outros Sistemas)
+Essa solução permite que os dados de Saúde e Segurança Ocupacional
+exigidos pelo eSOCial sejam consumidos para serem integrados aos
+Sistemas de Folha de Pagamento/RH.
+Os dados solicitados serão disponibilizados através da ferramenta Exporta
+Dados, para que os Clientes SOC (diretos ou indiretos) desenvolvam
+interfaces com o software e integrem essas informações com sistemas de
+Folha de Pagamento/RH, que serão os responsáveis por reproduzir e
+transmitir os leiautes ao Governo Federal.
+Requisito
+Web Service Exporta
+Dados
+
+Objetivo
+Permitir a extração dos dados referentes à
+cada layout. Se faz necessária a cópia dos
+Exporta Dados relativos à cada layout a ser
+integrado (S-1060, S-2210, S-2220, S-2230,
+S-2240, S-2245).
+
+1. O SOC disponibiliza as informações dos layouts nos respectivos Exporta
+Dados;
+2. O sistema do cliente solicita as informações do layout desejado, por meio
+do Web Service Exporta Dados;
+3. O SOC, por meio do Web Service Exporta Dados, fornece os dados
+solicitados, para que sejam consumidos pelo sistema externo;
+4. O sistema do cliente trata e formata os dados no padrão a ser recebido
+pelo eSocial, realizando o envio do XML à plataforma do governo.
+
+3.4.2.2 Integração de Arquivos - Portal eSOCial
+
+Essa solução permite criar e gerenciar os arquivos XML no
+formato do eSocial, com base nas informações preenchidas
+no SOC. A integração nessa solução tem como fim a
+transmissão destes arquivos para os sistemas de
+RH/Mensageria, que realizarão o envio à plataforma do governo.
+Por meio das integrações disponíveis, é possível automatizar o download
+dos arquivos gerados, de modo a viabilizar a extração destes arquivos pelo
+sistema externo, além de permitir o preenchimento do recibo retornado pela
+plataforma do governo, possibilitando um maior controle do envio das
+informações. Para isso, se faz necessária a utilização dos Web Services de
+Download de Arquivos SOCGED, que permite o download dos arquivos XML
+gerados no Portal eSOCial e o de Resposta eSocial, que permite informar o
+recibo retornado pela plataforma do governo, possibilitando o controle das
+informações enviadas.
+Outra possibilidade é a alocação desses arquivos, já no formato do eSocial,
+em um SFTP do SOC ou do próprio cliente, para que possam ser acessados
+pelo sistema do cliente, que realizará o envio do arquivo à plataforma do
+governo. Essas soluções podem ser visualizadas nos tópicos SFTP e
+Instruções para Implementação SFTP.
+No quadro a seguir, é ilustrada a utilização dessa solução de forma
+automatizada por meio dos Web Services disponíveis.
+
+Integração de Arquivos (Portal eSOCial)
+Essa solução cria, gerencia e disponibiliza o leiaute no formato do eSOCial
+aos sistemas de RH/Mensageria. Os usuários poderão definir a
+periodicidade para gerar os leiautes de SST que poderão ser
+disponibilizadas via e-mail, armazenamento SOCGED ou em formato XML,
+de acordo com o padrão informado pelo governo. Esta solução, permite
+ser utilizada de forma Manual e/ou Automatizada.
+Requisito
+Web Service Download
+Arquivos SOCGED
+Web Service Resposta
+eSocial
+
+Objetivo
+Possibilitar o download dos arquivos
+XML gerados no Portal eSOCial.
+Permitir que o sistema do cliente
+devolva o número do recibo retornado
+pelo eSocial, de forma a possibilitar o
+controle das informações já enviadas e
+retornadas pelo eSocial.
+
+1. Por meio da utilização do Web Service Download Arquivos SOCGED, o
+sistema do cliente solicita os arquivos gerados no Portal eSOCial,
+armazenados no SOCGED. Os arquivos existentes são retornados para o
+sistema do cliente.
+2. Tendo obtido os arquivos XML gerados pelo SOC, o sistema do cliente
+realiza o envio dos mesmos à plataforma do governo.
+3. Após processado o evento pelo eSocial, é retornado o recibo para o
+sistema do cliente.
+4. Por meio do Web Service Resposta eSocial, o sistema externo informa ao
+SOC o recibo retornado pelo eSocial, possibilitando o controle da situação
+de cada registro.
+Observação: Nessa solução, é opcional a utilização do Exporta Dados
+“Eventos do eSocial”. A utilização desse Exporta Dados permitirá identificar
+os arquivos gerados no Portal eSOCial para que possam ser solicitados por
+meio do Web Service Download Arquivos SOCGED, permitindo assim
+especificar os arquivos que serão extraídos. Caso desejado, será necessário
+consumi-lo por meio do Web Service Exporta Dados.
+
+4. Integrações com Parceiros
+A seguir, podem ser consultadas as soluções desenvolvidas por Empresas
+Parceiras do SOC para seus respectivos sistemas, além dos contatos para
+aquisição dos mesmos e contatos para dúvidas técnicas com relação às
+integrações. Junto aos Parceiros, também podem ser visualizados QR
+Codes, que o direcionam para a página da Empresa Parceira. Os mesmos
+podem ser lidos, através da câmera de um smartphone, ou clicados, caso
+esteja visualizando a versão digital deste eBook.
+4.1. Integrações LG FPW
+
+Contato para Aquisição: Carlos Torrezilhas | (11) 98601-2725
+Contato Técnico: Geraldo Moraes | (62) 98103-0760
+4.1.1. eSocial
+A Integração eSocial possibilita que as informações de SST disponíveis no
+SOC sejam consumidas pelo FPW, através do Web Service Exporta Dados,
+para que sejam utilizadas na geração dos arquivos e envio ao eSocial.
+
+Objetivo
+Telas impactadas
+Web Service
+Utilizado
+
+Permitir que os dados de Saúde e
+Segurança Ocupacional exigidos pelo
+eSocial sejam consumidos para serem
+integrados ao Sistema FPW.
+Nenhuma
+Exporta Dados
+
+4.1.2. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados do Sistema
+FPW.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.1.3. Licença Médica
+A Licença Médica é usada para registro de atestados médicos e
+declarações de horas.
+Objetivo
+Telas impactadas
+Web Service
+Utilizado
+
+Possibilitar a integração dos atestados do
+Sistema FPW para o SOC.
+253 – Licença Médica
+726 – Afastamento
+Licença Médica
+
+4.1.4. Transferência de Funcionários
+A Transferência de Funcionários possibilita a cópia das informações de
+cadastro de funcionários e fichas clínicas entre Empresas Clientes do SOC.
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Permitir que o cliente transfira funcionários e/ou
+Fichas Clínicas entre empresas a partir dos
+dados do FPW.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+229 – Ficha Clínica
+Transferência de Funcionários
+
+4.1.5. Histórico de Funcionários
+O Histórico dos Funcionários consiste nas hierarquias em que o
+funcionário já foi alocado durante a sua vida laboral na Empresa.
+Objetivo
+
+Telas impactadas
+Web Service
+Utilizado
+
+Permitir a importação de históricos de
+funcionários, a partir dos dados enviados a partir
+do Sistema FPW.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+Histórico de Funcionários
+
+4.2. Integrações SAP
+
+Contatos para Aquisição:
+Novos Clientes: comercial@soc.com.br | (13) 3202-9111
+Cliente SOC: servicos@soc.com.br | (13) 3202-9111
+Contato Técnico: Chamado de suporte Integração no Portal do cliente.
+4.2.1. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados do Sistema
+SAP.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.2.2. Licença Médica
+A Licença Médica é usada para registro de atestados médicos e
+declarações de horas.
+Objetivo
+Telas impactadas
+Web Service
+Utilizado
+
+Possibilitar que os atestados provenientes
+do Sistema SAP possam migrados para o
+SOC.
+253 – Licença Médica
+726 – Afastamento
+Licença Médica
+
+4.3. Integrações Portal Telemedicina
+
+Contato para Aquisição: Deivis Melo | (11) 98331-0494
+Contato Técnico: Roberto Figueroa | (11) 2538-1455 | (11) 2476-5710 |
+(11) 2973-8473
+4.3.1. Resultado/Laudo de Exames
+A solução de integração desenvolvida pela Portal Telemedicina faz uso de
+três dos Web Services disponibilizados pelo SOC, são eles: Exporta
+Dados, Resultado de Exames e Upload de Arquivos. Através da utilização
+dos serviços, a Portal Telemedicina consome as informações de exames,
+inclui os resultados no SOC e realiza o upload do arquivo do laudo
+diretamente no SOCGED.
+
+Objetivo
+
+Telas impactadas
+
+Web Services
+Utilizados
+
+Visa uma maior fluidez e agilidade na
+troca das informações dos atendimentos
+médicos realizados, a partir do consumo e
+envio de informações por parte da Portal
+Telemedicina, utilizando os Web Services
+disponibilizados pelo SOC.
+229 – Ficha Clínica
+248 – Pedido de Exames
+250 – Resultado de Exames
+264 – ASO
+611 – SOCGED
+Exporta Dados
+Resultado de Exames
+Upload de Arquivos
+
+4.4. Integrações SinergyRH
+
+Contato para Aquisição: Marcelo Tolentino | (11) 98511-0412
+Contato Técnico: Leandro Melo da Silva | (11) 98511-0401
+4.4.1. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados do Sistema
+SinergyRH.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.5. Integrações TOTVS RM
+
+Contato Técnico/Aquisição: Valéria Pinho | (31) 98452-2229
+4.5.1. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados enviados a
+partir do Sistema TOTVS RM.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.5.2. Licença Médica
+A Licença Médica é usada para registro de atestados médicos e
+declarações de horas.
+
+Objetivo
+
+Telas impactadas
+Web Service
+Utilizado
+
+Possibilitar que os atestados provenientes
+do Sistema TOTVS RM possam ser
+migrados para o SOC, bem como o
+consumo dos mesmos.
+253 – Licença Médica
+726 – Afastamento
+Licença Médica
+
+4.5.3 eSocial
+A Integração eSocial possibilita que as informações de SST disponíveis no
+SOC sejam consumidas pelo RM, através do Web Service Exporta Dados,
+para que sejam utilizadas na geração dos arquivos e envio ao eSocial.
+
+Objetivo
+Telas impactadas
+Web Service
+Utilizado
+
+Permitir que os dados de Saúde e
+Segurança Ocupacional exigidos pelo
+eSocial sejam consumidos para serem
+integrados ao Sistema TOTVS RM.
+Nenhuma
+Exporta Dados
+
+4.6. Integrações Senior
+
+Contato Técnico/Aquisição: 0800 648 3300 | WhatsApp: (11) 954850300 | Skype: senior.sistemas1
+4.6.1. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados enviados a
+partir do sistema Senior.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.6.2. eSocial
+A Integração eSocial possibilita que os arquivos de SST gerados no SOC
+sejam enviadas para o Senior, que realizará o envio à plataforma do
+governo. Uma vez enviadas e processadas, o Senior retorna as
+informações de resposta do processamento do evento.
+
+Objetivo
+
+Telas impactadas
+Web Service
+Utilizado
+
+Permitir que os arquivos de Saúde e
+Segurança Ocupacional exigidos pelo
+eSocial, gerados por meio do SOC, sejam
+enviados para o Sistema Senior e que
+sejam recebidos os dados de resposta do
+evento. Assim que gerados no Portal
+eSOCial, os arquivos serão enviados ao
+Senior.
+Nenhuma
+Resposta eSocial
+
+4.7. Integrações Tidexa RHSoft
+
+Contato Técnico/Aquisição: Edison Simonato | (11) 4567-5330 / (11)
+99685-3395
+4.7.1. Funcionários
+O cadastro de Funcionário, no SOC, representa o colaborador que terá as
+informações gerenciadas.
+
+Objetivo
+
+Telas impactadas
+
+Web Service
+Utilizado
+
+Possibilitar que os cadastros de
+funcionários no SOC possam ser
+alimentados a partir dos dados enviados a
+partir do sistema RHSoft da Tidexa.
+232 – Funcionário
+231 – Unidade
+220 – Setor
+225 – Cargo
+163 – Visualiza Hierarquia
+206 – Centro de Custo
+213 – Turnos
+354 – Motivo Licença
+Cadastro de Funcionário (Modelo 2)
+
+4.7.2. Licença Médica
+A Licença Médica é usada para registro de atestados médicos e
+declarações de horas.
+
+Objetivo
+
+Telas impactadas
+Web Service
+Utilizado
+
+Possibilitar que os atestados provenientes
+do Sistema RHSoft possam ser migrados
+para o SOC, bem como o consumo dos
+mesmos.
+253 – Licença Médica
+726 – Afastamento
+Licença Médica
+
+4.7.3. eSocial
+A Integração eSocial possibilita que os arquivos de SST gerados no SOC
+sejam consumidos pelo RHSoft. Uma vez realizado o consumo e o envio à
+plataforma do governo, é retornado para o SOC o recibo fornecido pelo
+eSocial.
+
+Objetivo
+
+Telas impactadas
+Web Service
+Utilizado
+
+Permitir que os arquivos de Saúde e
+Segurança Ocupacional exigidos pelo
+eSocial, gerados por meio do SOC, sejam
+consumidos pelo sistema RHSoft e que
+sejam recebidos os dados de resposta do
+evento.
+Nenhuma
+Download de Arquivos
+Resposta eSocial
+
+4.8. Integração Portal Escudo
+
+4.8.1. Treinamentos
+O cadastro de Turmas no SOC possibilitada gerenciar os cursos e certificar
+treinamentos.
+A integração entre o SOC e o Portal
+Escudo visa levar mais conhecimento aos
+trabalhadores de SST, de forma mais
+simples e eficaz, garantindo uma melhor
+Objetivo
+experiência de aprendizagem e gestão
+inteligente. Assim, tornando o módulo de
+Treinamento SOC automático e com
+maior qualidade.
+242 – Cursos
+Telas impactadas
+251 - Turmas
+Web Service
+Treinamentos
+Utilizado
+
+4.8. Instruções para Implementação
+As soluções desenvolvidas por Parceiros, citadas acima, utilizam os Web
+Services disponibilizados pelo SOC. Sendo assim, os procedimentos a serem
+realizados no SOC são os mesmos das Instruções de Implementação dos
+Web Services Padrão SOC, descritas no tópico 3.3.1.
+Para cada integração listada, estão especificados, no campo “Web Services
+Utilizados”, os Web Services necessários para o funcionamento da mesma.
+Além das configurações a serem realizadas no SOC, também se faz
+necessário o contato com a empresa parceira, por meio do contato técnico
+descrito, para que possam ser realizadas as demais configurações.
+Observação: As integrações dos parceiros SinergyRH e Senior utilizam o
+módulo de Integração com Parceiros do SOC, que torna a implementação
+da integração mais rápida e fácil. Para mais detalhes, pode ser consultado o
+item “Integração com Sistemas Parceiros” do nosso Manual.
+
+

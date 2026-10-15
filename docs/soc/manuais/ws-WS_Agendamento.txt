@@ -1,0 +1,4109 @@
+Web Service de Agendamento
+Especificação Técnica
+Versão <1.6>
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Histórico de Revisão
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+27/01/2020
+
+1.0
+
+Elaboração da documentação
+
+Gustavo Matos
+
+17/08/2020
+
+1.1
+
+Inclusão do endpoint alterarAgendamento
+
+Gustavo Matos
+
+26/10/2020
+
+1.2
+
+Inclusão da propriedade codigoPrestador nos
+
+Gustavo Matos
+
+endpoints incluirAgendamento e
+alterarAgendamento
+25/11/2020
+
+1.2.1
+
+Atualização da observação das propriedades
+
+Gustavo Matos
+
+dos endpoints de inclusão e alteração
+18/07/2022
+
+1.3
+
+Incluída consideração sobre certificado de
+
+Marcos Santiago
+
+conexão HTTPS
+19/01/2023
+
+1.4
+
+Incluída consideração sobre o paralelismo de
+
+Marcos Santiago
+
+requisições
+23/10/2023
+
+1.5
+
+Removidas as considerações referentes à
+
+Marcos Santiago
+
+autenticação por empresa principal e cliente.
+06/05/2024
+
+1.5.1
+
+Incluída a opção CPF_ATIVO ao Enum da tag
+
+Marcos Santiago
+
+tipoBuscaFuncionario
+26/02/2025
+
+1.5.2
+
+Incluída uma observação sobre a tag
+
+Marcos Santiago
+
+codigoUsuarioAgenda
+29/12/2025
+
+1.6
+
+Incluída mensagem de erro para
+
+Marcos Santiago
+
+empresa/unidade sem autorização
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 2
+
+Web Service de Agendamento
+Especificação Técnica
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Desenvolvimento – M-DEV-15023
+
+Índice
+1.
+
+Introdução 3
+1.1.......................................................................................................................................................... Objetivo 3
+1.2.............................................................................................................................................. Funcionamento 3
+1.3................................................................................................................................................ Considerações 3
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço 4
+2.1.....................................................................................................................................Configuração Padrão 5
+2.2.....................................Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço 5
+2.3.................................................................... Considerações para as Propriedades da tag wsse security 8
+
+3.
+
+Entradas 9
+3.1.........................................................................................Mensagem SOAP request incluirAgendamento 9
+3.1.1 ............................................................................................ Tabela de Propriedades da entrada 11
+3.1.1.1 Tag identificacaoWsVo 11
+3.1.1.2 Tag dadosAgendamentoWsVo 12
+3.1.1.3 Tag emailWsVo 16
+3.1.1.4 Tag socmsWsVo 16
+3.1.2 .......................................................................................... Considerações para as propriedades 17
+3.2..................................................................................... Mensagem SOAP request excluirAgendamento 18
+3.2.1 ............................................................................................ Tabela de Propriedades da entrada 19
+3.2.1.1 Tag identificacaoWsVo 19
+3.2.2 .......................................................................................... Considerações para as propriedades 20
+3.3..................................................................................... Mensagem SOAP request alterarAgendamento 20
+3.3.1 ............................................................................................ Tabela de Propriedades da entrada 21
+3.3.1.1 Tag identificacaoWsVo 22
+3.3.1.2 Tag dadosAgendamentoWsVo 22
+3.3.1.3 Tag emailWsVo 26
+3.3.1.4 Tag socmsWsVo 26
+3.3.2 .......................................................................................... Considerações para as propriedades 27
+
+4.
+
+Saídas 27
+4.1.................................................................................... Mensagem SOAP response incluirAgendamento 27
+4.1.1 ............................................................................................................Tag AgendamentoRetorno 29
+4.1.1.1 Tag dadosAgendamento 29
+4.1.1.1.1 Tag emailWsVo 31
+4.1.1.1.2 Tag socmsWsVo 32
+4.2................................................................................... Mensagem SOAP response excluirAgendamento 32
+4.2.1 ................................................................................................ Tabela de Propriedades da Saída 33
+4.2.1.1 Tag webServiceInfoGeralVo 33
+4.2.1.2 Tag mensagemOperacaoDetalheList 34
+4.3................................................................................... Mensagem SOAP response alterarAgendamento 34
+4.3.1 ............................................................................................................Tag AgendamentoRetorno 36
+4.3.1.1 Tag dadosAgendamento 36
+4.1.1.1.3 Tag emailWsVo 38
+4.1.1.1.4 Tag socmsWsVo 38
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 3
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+5
+
+Lista de falhas 39
+5.1................................................................................................................................... Falhas na requisição 39
+5.1.1 .................................................................................................. Username e password inválidos 39
+5.1.2 ..................................................................................... Tag Header preenchida incorretamente 40
+5.1.3 ....................................................................................................................... Requisição expirada 40
+5.2................................................................................................................................Falhas na consistência 41
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Possibilitar que o cliente realize a inclusão, alteração e exclusão de agendamentos, a partir do
+consumo de WebService.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os dados
+do agendamento que será manipulado pelo cliente a partir de sua origem.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando o
+sucesso da operação, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir ou excluir um agendamento por vez que é
+invocado;
+3. O arquivo WSDL a ser usado está disponível nas configurações de integração do usuário.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. O usuário informado no campo “codigoUsuario” da TAG de identificação deve ser um
+usuário diferente do usuário super SOC e ter os acessos necessários descritos no cadastro
+do Serviço, no campo Observações.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 4
+
+Web Service de Agendamento
+Especificação Técnica
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Desenvolvimento – M-DEV-15023
+
+6. Além dos acessos de programa e empresa, serão validadas as configurações realizadas no
+cadastro da agenda e do usuário informado.
+7. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+8. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique
+a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 5
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, adota as políticas de
+segurança fornecidas pela especificação WS-Security, utilizando a TAG Header com itens de
+segurança conforme política. Segue um modelo do que deverá ser informado.
+2.1
+
+Configuração Padrão
+A configuração padrão diz respeito ao uso de autenticação, que é um requisito obrigatório.
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 6
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 7
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 8
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+
+Propriedade
+
+Detalhes
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 9
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Timestamp
+
+É o tempo de validade da requisição. Recomendamos o uso de um minuto.
+Requisições com timestamp superior a dois minutos serão negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração). Contudo
+o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada requisição
+que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request incluirAgendamento
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirAgendamento>
+<IncluirAgendamentoWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<dadosAgendamentoWsVo>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 10
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<codigoEmpresa></codigoEmpresa>
+<reservarCompromissoParaEmpresa></ reservarCompromissoParaEmpresa>
+<tipoBuscaFuncionario></tipoBuscaFuncionario>
+<codigoFuncionario></codigoFuncionario>
+<codigoUsuarioAgenda></codigoUsuarioAgenda>
+<data></data>
+<horaInicial></horaInicial>
+<horaFinal></horaFinal>
+<codigoCompromisso></codigoCompromisso>
+<usaOutroCompromisso></usaOutroCompromisso>
+<conteudoOutroCompromisso></conteudoOutroCompromisso>
+<tipoCompromisso></tipoCompromisso>
+<detalhes></detalhes>
+<codigoProfissionalAgenda></codigoProfissionalAgenda>
+<horarioChegada></horarioChegada>
+<horarioSaida></horarioSaida>
+<priorizarAtendimento></priorizarAtendimento>
+<atendido></atendido>
+<codigoMotivoCancelamento></codigoMotivoCancelamento>
+<usaEnviarEmail></usaEnviarEmail>
+<emailWsVo>
+<data></data>
+<hora></hora>
+<email></email>
+</emailWsVo>
+<usaEnviarSocms></usaEnviarSocms>
+<socmsWsVo>
+<data></data>
+<hora></hora>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 11
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<telefone></telefone>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+</socmsWsVo>
+<codigoPrestador>
+</dadosAgendamentoWsVo>
+</IncluirAgendamentoWsVo>
+</ser:incluirAgendamento>
+</soapenv:Body>
+</soapenv:Envelope>
+3.1.1
+
+Tabela de Propriedades da entrada
+Tag IncluirAgendamentoWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+dadosAgendamentoWsVo
+
+dadosAgendamentoWsVo
+
+Sim
+
+3.1.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tamanho
+-
+
+Tipo
+
+Obrigatório
+
+Código SOC de identificação da empresa Sim
+principal. A informação pode ser consultada
+nas configurações de integração no cadastro
+de Empresa.
+
+codigoResponsavel
+
+-
+
+Código
+
+de
+
+identificação
+
+do
+
+usuário Sim
+
+responsável
+
+da
+
+empresa
+
+informada.
+
+informação
+
+pode
+
+ser
+
+consultada
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+A
+nas
+Página 12
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+configurações de integração no cadastro de
+Empresa.
+codigoUsuario
+
+-
+
+Código do Usuário responsável pela ação.
+
+Sim¹
+
+3.1.1.2 Tag dadosAgendamentoWsVo
+Tag dadosAgendamentoWsVo
+Propriedade
+
+Tamanho
+
+Tipo
+
+Observação
+
+Obrigatório
+
+Indica como será feita
+a busca pela empresa
+
+Enum
+
+do
+
+Valores possíveis:
+
+tipoBuscaEmpresa
+
+agendamento.
+
+valor
+
+informado
+
+O
+na
+
+•
+
+CODIGO_SOC
+
+propriedade
+
+•
+
+CODIGO_CLIEN
+
+codigoEmpresa
+
+TE
+
+corresponder ao tipo
+
+-
+
+Não
+
+deve
+
+de busca definido.
+Código da empresa do
+
+codigoEmpresa
+
+-
+
+Numérico
+
+Não
+
+agendamento.
+Caso habilitado, o
+compromisso será
+incluído para a empresa
+
+reservarCompromissoParaE
+mpresa
+
+informada, sem
+true/false
+
+Booleano
+
+Não
+
+funcionário específico.
+Indica como será feita a
+busca pelo funcionário
+
+Enum
+
+do agendamento. O
+
+Valores possíveis:
+
+tipoBuscaFuncionario
+
+-
+
+•
+
+CODIGO_SOC
+
+•
+
+MATRICULA
+
+•
+
+CPF_ATIVO
+
+valor informado na
+propriedade
+codigoFuncionario deve
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+corresponder ao tipo de
+Página 13
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+busca definido.
+Código do funcionário
+codigoFuncionario
+
+-
+
+Numérico
+
+Não
+
+do agendamento.
+Código SOC da agenda
+na qual deve ser
+incluído o
+
+codigoUsuarioAgenda
+
+-
+
+Numérico
+
+Sim2, 9
+
+agendamento.
+
+data
+
+10
+
+Data (dd/mm/aaaa)
+
+Sim
+
+Data do agendamento.
+Horário inicial do
+
+horaInicial
+
+10
+
+Hora (hh:mm)
+
+Sim3
+
+agendamento.
+Horário final do
+
+horaFinal
+
+10
+
+Hora (hh:mm)
+
+Não
+
+agendamento.
+Código SOC do
+compromisso do
+
+codigoCompromisso
+
+-
+
+Numérico
+
+Não4
+
+agendamento.
+Quando habilitado, o
+compromisso do
+agendamento deve ser
+informado na
+propriedade
+conteudoOutroCompro
+misso, não necessitando
+que o cadastro exista
+no SOC. O compromisso
+não será cadastrado no
+
+usaOutroCompromisso
+
+true/false
+
+Booleano
+
+Não
+
+SOC.
+Nome do compromisso,
+
+conteudoOutroCompromiss
+o
+
+quando habilitada a
+-
+
+Texto
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+propriedade
+Página 14
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+usaOutroCompromisso.
+Enum
+Valores possíveis:
+•
+
+ADMISSIONAL
+
+•
+
+PERIODICO
+
+•
+
+RETORNO_TRA
+BALHO
+
+•
+
+MUDANCA_FUN
+CAO
+
+•
+
+DEMISSIONAL
+
+•
+
+MONITORACAO
+_PONTUAL
+
+•
+
+CONSULTA
+
+•
+
+ACIDENTE
+
+•
+
+LICENCA_MEDI
+CA
+
+tipoCompromisso
+
+•
+
+ENFERMAGEM
+
+•
+
+TERCEIROS
+
+do agendamento,
+
+•
+
+CONSULTA_ASS
+
+referente ao tipo de
+
+-
+
+ISTENCIAL
+
+Tipo de compromisso
+
+Não
+
+exame.
+Campo destinado a
+detalhes do
+
+detalhes
+
+32000
+
+Texto
+
+Não
+
+agendamento.
+Código de pessoa do
+Profissional Agenda do
+
+codigoProfissionalAgenda
+
+-
+
+Numérico
+
+Não5
+
+agendamento.
+Horário de chegada do
+
+horarioChegada
+
+10
+
+Hora (hh:mm)
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+funcionário.
+
+Página 15
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Horário de saída do
+horarioSaida
+
+10
+
+Hora (hh:mm)
+
+Não
+
+funcionário.
+Indica se o atendimento
+
+priorizarAtendimento
+
+true/false
+
+Booleano
+
+Não
+
+é prioritário.
+
+Enum
+Valores possíveis:
+
+atendido
+
+-
+
+•
+
+SIM
+
+•
+
+NAO
+
+•
+
+AGUARDANDO
+
+•
+
+CANCELADO
+
+•
+
+NAO_COMPARE
+CEU
+
+Indica a situação do
+Não
+
+atendimento.
+Código do motivo de
+cancelamento, quando
+o valor informado na
+propriedade atendido
+
+codigoMotivoCancelamento -
+
+Numérico
+
+Não
+
+6
+
+for CANCELADO.
+Indica a utilização da
+funcionalidade de envio
+de email. Os dados
+devem ser informados
+na propriedade
+
+usaEnviarEmail
+
+true/false
+
+Booleano
+
+Não
+
+emailWsVo.
+Tag responsável pelos
+dados de envio de email
+
+emailWsVo
+
+-
+
+emailWsVo
+
+Não
+
+do agendamento.
+Indica a utilização da
+funcionalidade de envio
+
+UsaEnviarSocms
+
+true/false
+
+Booleano
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+de SOCMS. Os dados
+Página 16
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+devem ser informados
+na propriedade
+usaEnviarEmail.
+Tag responsável pelos
+dados de envio de
+SOCMS do
+socmsWsVo
+
+-
+
+socmsWsVo
+
+Não
+
+agendamento.
+Código do prestador do
+
+codigoPrestador
+
+-
+
+Numérico
+
+Não
+
+agendamento
+
+3.1.1.3 Tag emailWsVo
+Tag emailWsVo
+Propriedade
+data
+
+Tamanho
+10
+
+Tipo
+Data (dd/mm/aaaa)
+
+Obrigatório
+Não
+
+Observação
+Data para envio do e-mail de
+agendamento
+
+hora
+
+5
+
+Hora (hh:mm)
+
+Não
+
+Hora para envio do e-mail
+de agendamento
+
+email
+
+-
+
+Texto
+
+Não
+
+Endereço para envio do email de agendamento
+
+3.1.1.4 Tag socmsWsVo
+Tag socmsWsVo
+Propriedade
+data
+
+Tamanho
+10
+
+Tipo
+Data (dd/mm/aaaa)
+
+Obrigatório
+Não
+
+Observação
+Data para envio do SOCMS
+de agendamento
+
+hora
+
+5
+
+Hora (hh:mm)
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Hora para envio do SOCMS
+
+Página 17
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+de agendamento
+telefone
+
+11
+
+Numérico
+
+Não7
+
+Telefone para envio do
+SOCMS de agendamento
+
+codigoMensagem
+
+-
+
+Numérico
+
+Não8
+
+Código SOC da Mensagem,
+quando cadastrada.
+
+mensagem
+
+140
+
+Texto
+
+Não
+
+Mensagem para envio do
+SOCMS de agendamento.
+
+3.1.2
+
+Considerações para as propriedades
+1. Deve ser um usuário diferente do usuário super SOC e ter os acessos necessários
+descrito no cadastro do Serviço, no campo Observações.
+2. Caso a agenda tenha sido cadastrada na tela de Pessoas, no SOC, deve ser informado o
+código do usuário; caso o cadastro tenha sido por meio da tela Cadastro Agenda, deve
+ser informado o código de cadastro da respectiva tela.
+3. Os horários disponíveis da agenda podem ser consultados em tela ou por meio do
+Exporta Dados Horários Livres da Agenda.
+4. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Cadastro de
+Compromissos.
+5. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Profissionais
+da Agenda.
+6. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Cadastro de
+Motivos de Cancelamento.
+7. Pode ser enviado com ou sem formatação, exemplo: (99) 99999-9999;
+8. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Mensagens
+SOCMS da Empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 18
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+9. Caso a agenda informada tenha o campo "Usuário Externo de Agenda" habilitado na tela
+189 - Pessoas (Ícone "Acessos Agenda"), para poder acessá-la, o usuário da requisição
+(codigoUsuario) deve ter a agenda selecionada no campo "Agenda Padrão" também da
+tela 189 - Pessoas (Ícone "Acessos Agenda").
+3.2
+
+Mensagem SOAP request excluirAgendamento
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:excluirAgendamento>
+<ExcluirAgendamentoWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoAgendamento></codigoAgendamento>
+<codigoAgenda></codigoAgenda>
+</ExcluirAgendamentoWsVo>
+</ser:excluirAgendamento>
+</soapenv:Body>
+</soapenv:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 19
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+3.2.1
+
+Tabela de Propriedades da entrada
+Tag ExcluirAgendamentoWsVo
+Propriedade
+
+identificacaoWsVo
+
+Tipo
+
+Observação
+
+Obrigatório
+
+identificacaoWsVo
+
+Sim
+
+Tag responsável pela
+identificação da empresa
+que está enviando a
+requisição.
+
+codigoAgendamento
+
+Sim1
+
+Numérico
+
+Código do agendamento
+a ser excluído.
+
+codigoAgenda
+
+Numérico
+
+Sim
+
+Código da agenda do
+agendamento a ser
+excluído.
+
+3.2.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tamanho
+-
+
+Tipo
+
+Obrigatório
+
+Código SOC de identificação da empresa Sim
+principal. A informação pode ser consultada
+nas configurações de integração no cadastro
+de Empresa.
+
+codigoResponsavel
+
+-
+
+Código
+
+de
+
+identificação
+
+do
+
+usuário Sim
+
+responsável
+
+da
+
+empresa
+
+informada.
+
+informação
+
+pode
+
+ser
+
+consultada
+
+A
+nas
+
+configurações de integração no cadastro de
+Empresa.
+codigoUsuario
+
+-
+
+Código do Usuário responsável pela ação
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Sim2
+
+Página 20
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+3.2.2
+
+Considerações para as propriedades
+1. O código do agendamento é retornado na resposta da requisição de inclusão.
+2. Deve ser um usuário diferente do usuário super SOC e ter os acessos descritos no
+cadastro do serviço
+
+3.3
+
+Mensagem SOAP request alterarAgendamento
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:alterarAgendamento>
+<AlterarAgendamentoWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<dadosAgendamentoWsVo>
+<codigoAgendamento></codigoAgendamento>
+<data></data>
+<horaInicial></horaInicial>
+<horaFinal></horaFinal>
+<codigoCompromisso></codigoCompromisso>
+<usaOutroCompromisso></usaOutroCompromisso>
+<conteudoOutroCompromisso></conteudoOutroCompromisso>
+<tipoCompromisso></tipoCompromisso>
+<detalhes></detalhes>
+<codigoProfissionalAgenda></codigoProfissionalAgenda>
+<horarioChegada></horarioChegada>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 21
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<horarioSaida></horarioSaida>
+<priorizarAtendimento></priorizarAtendimento>
+<atendido></atendido>
+<codigoMotivoCancelamento></codigoMotivoCancelamento>
+<usaEnviarEmail></usaEnviarEmail>
+<emailWsVo>
+<data></data>
+<hora></hora>
+<email></email>
+</emailWsVo>
+<usaEnviarSocms></usaEnviarSocms>
+<socmsWsVo>
+<data></data>
+<hora></hora>
+<telefone></telefone>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+</socmsWsVo>
+<codigoPrestador></codigoPrestador>
+</dadosAgendamentoWsVo>
+</AlterarAgendamentoWsVo>
+</ser:alterarAgendamento>
+</soapenv:Body>
+</soapenv:Envelope>
+3.3.1
+
+Tabela de Propriedades da entrada
+Tag AlterarAgendamentoWsVo
+Propriedade
+
+Tipo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Obrigatório
+
+Página 22
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+dadosAgendamentoWsVo
+
+dadosAgendamentoWsVo
+
+Sim
+
+3.3.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tamanho
+-
+
+Tipo
+
+Obrigatório
+
+Código SOC de identificação da empresa Sim
+principal. A informação pode ser consultada
+nas configurações de integração no cadastro
+de Empresa.
+
+codigoResponsavel
+
+-
+
+Código
+
+de
+
+identificação
+
+do
+
+usuário Sim
+
+responsável
+
+da
+
+empresa
+
+informada.
+
+informação
+
+pode
+
+ser
+
+consultada
+
+A
+nas
+
+configurações de integração no cadastro de
+Empresa.
+codigoUsuario
+
+-
+
+Código do Usuário responsável pela ação.
+
+Sim¹
+
+3.3.1.2 Tag dadosAgendamentoWsVo
+Tag dadosAgendamentoWsVo
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+Código do agendamento
+
+codigoAgendamento
+
+-
+
+Numérico
+
+Sim2
+
+a ser alterado.
+
+data
+
+10
+
+Data (dd/mm/aaaa)
+
+Sim
+
+Data do agendamento.
+Horário inicial do
+
+horaInicial
+
+10
+
+Hora (hh:mm)
+
+Sim3
+
+agendamento.
+
+horaFinal
+
+10
+
+Hora (hh:mm)
+
+Não
+
+Horário final do
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 23
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+agendamento.
+Código SOC do
+compromisso do
+codigoCompromisso
+
+-
+
+Numérico
+
+Não4
+
+agendamento.
+Quando habilitado, o
+compromisso do
+agendamento deve ser
+informado na
+propriedade
+conteudoOutroCompro
+misso, não necessitando
+que o cadastro exista
+no SOC. O compromisso
+não será cadastrado no
+
+usaOutroCompromisso
+
+true/false
+
+Booleano
+
+Não
+
+SOC.
+Nome do compromisso,
+quando habilitada a
+
+conteudoOutroCompromiss
+o
+
+propriedade
+-
+
+Texto
+
+Não
+
+usaOutroCompromisso.
+
+Enum
+Valores possíveis:
+•
+
+ADMISSIONAL
+
+•
+
+PERIODICO
+
+•
+
+RETORNO_TRA
+BALHO
+
+•
+
+MUDANCA_FUN
+CAO
+
+tipoCompromisso
+
+-
+
+Tipo de compromisso
+
+•
+
+DEMISSIONAL
+
+do agendamento,
+
+•
+
+MONITORACAO
+
+referente ao tipo de
+
+_PONTUAL
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+exame.
+Página 24
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+•
+
+CONSULTA
+
+•
+
+ACIDENTE
+
+•
+
+LICENCA_MEDI
+CA
+
+•
+
+ENFERMAGEM
+
+•
+
+TERCEIROS
+
+•
+
+CONSULTA_ASS
+ISTENCIAL
+Campo destinado a
+detalhes do
+
+detalhes
+
+32000
+
+Texto
+
+Não
+
+agendamento.
+Código de pessoa do
+Profissional Agenda do
+
+codigoProfissionalAgenda
+
+-
+
+Numérico
+
+Não5
+
+agendamento.
+Horário de chegada do
+
+horarioChegada
+
+10
+
+Hora (hh:mm)
+
+Não
+
+funcionário.
+Horário de saída do
+
+horarioSaida
+
+10
+
+Hora (hh:mm)
+
+Não
+
+funcionário.
+Indica se o atendimento
+
+priorizarAtendimento
+
+true/false
+
+Booleano
+
+Não
+
+é prioritário.
+
+Enum
+Valores possíveis:
+
+atendido
+
+-
+
+•
+
+SIM
+
+•
+
+NAO
+
+•
+
+AGUARDANDO
+
+•
+
+CANCELADO
+
+•
+
+NAO_COMPARE
+CEU
+
+Indica a situação do
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+atendimento.
+Página 25
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Código do motivo de
+cancelamento, quando
+o valor informado na
+propriedade atendido
+codigoMotivoCancelamento -
+
+Numérico
+
+Não6
+
+for CANCELADO.
+Indica a utilização da
+funcionalidade de envio
+de email. Os dados
+devem ser informados
+na propriedade
+
+usaEnviarEmail
+
+true/false
+
+Booleano
+
+Não
+
+emailWsVo.
+Tag responsável pelos
+dados de envio de email
+
+emailWsVo
+
+-
+
+emailWsVo
+
+Não
+
+do agendamento.
+Indica a utilização da
+funcionalidade de envio
+de SOCMS. Os dados
+devem ser informados
+na propriedade
+
+usaEnviarSocms
+
+true/false
+
+Booleano
+
+Não
+
+usaEnviarEmail.
+Tag responsável pelos
+dados de envio de
+SOCMS do
+
+socmsWsVo
+
+-
+
+socmsWsVo
+
+Não
+
+agendamento.
+Código do prestador do
+
+codigoPrestador
+
+-
+
+Numérico
+
+Não
+
+agendamento
+
+3.3.1.3 Tag emailWsVo
+Tag emailWsVo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 26
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Propriedade
+data
+
+Tamanho
+10
+
+Tipo
+Data (dd/mm/aaaa)
+
+Obrigatório
+Não
+
+Observação
+Data para envio do e-mail de
+agendamento
+
+hora
+
+5
+
+Hora (hh:mm)
+
+Não
+
+Hora para envio do e-mail
+de agendamento
+
+email
+
+-
+
+Texto
+
+Não
+
+Endereço para envio do email de agendamento
+
+3.3.1.4 Tag socmsWsVo
+Tag socmsWsVo
+Propriedade
+data
+
+Tamanho
+10
+
+Tipo
+Data (dd/mm/aaaa)
+
+Obrigatório
+Não
+
+Observação
+Data para envio do SOCMS
+de agendamento
+
+hora
+
+5
+
+Hora (hh:mm)
+
+Não
+
+Hora para envio do SOCMS
+de agendamento
+
+telefone
+
+11
+
+Numérico
+
+Não7
+
+Telefone para envio do
+SOCMS de agendamento
+
+codigoMensagem
+
+-
+
+Numérico
+
+Não8
+
+Código SOC da Mensagem,
+quando cadastrada.
+
+mensagem
+
+140
+
+Texto
+
+Não
+
+Mensagem para envio do
+SOCMS de agendamento.
+
+3.3.2
+
+Considerações para as propriedades
+3. Deve ser um usuário diferente do usuário super SOC e ter os acessos necessários
+descrito no cadastro do Serviço, no campo Observações.
+4. O código do agendamento é retornado na resposta da requisição de inclusão.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 27
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+5. Os horários disponíveis da agenda podem ser consultados em tela ou por meio do
+Exporta Dados Horários Livres da Agenda.
+6. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Cadastro de
+Compromissos.
+7. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Profissionais
+da Agenda.
+8. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Cadastro de
+Motivos de Cancelamento.
+9. Pode ser enviado com ou sem formatação, exemplo: (99) 99999-9999;
+10. Os códigos podem ser consultados em tela ou por meio do Exporta Dados Mensagens
+SOCMS da Empresa.
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response incluirAgendamento
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:incluirAgendamentoResponse xmlns:ns2="http://services.soc.age.com/">
+<AgendamentoRetorno>
+<dadosAgendamento>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<reservarCompromissoEmpresaSemFuncionario>
+</reservarCompromissoEmpresaSemFuncionario>
+<codigoFuncionario></codigoFuncionario>
+<codigoUsuarioAgenda></codigoUsuarioAgenda>
+<data></data>
+<horaInicial></horaInicial>
+<horaFinal><horaFinal/>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 28
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<codigoCompromisso></codigoCompromisso>
+<usaOutroCompromisso></usaOutroCompromisso>
+<conteudoOutroCompromisso></conteudoOutroCompromisso>
+<detalhes><detalhes/>
+<codigoProfissionalAgenda></codigoProfissionalAgenda>
+<horarioChegada></horarioChegada>
+<horarioSaida></horarioSaida>
+<priorizarAtendimento></priorizarAtendimento>
+<codigoMotivoCancelamento></codigoMotivoCancelamento>
+<usaEnviarEmail></usaEnviarEmail>
+<emailWsVo>
+<data>/<data>
+<hora></hora>
+<email></email>
+</emailWsVo>
+<usaEnviarSocms></usaEnviarSocms>
+<socmsWsVo>
+<data></data>
+<hora></hora>
+<telefone></telefone>
+<codigoMensagem><codigoMensagem/>
+<mensagem></mensagem>
+</socmsWsVo>
+<codigoPrestador></ codigoPrestador>
+</dadosAgendamento>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<numeroErros></numeroErros>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 29
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+</informacaoGeral>
+<codigoAgendamento></codigoAgendamento>
+</AgendamentoRetorno>
+</ns2:incluirAgendamentoResponse>
+</soap:Body>
+</soap:Envelope>
+4.1.1
+
+Tag AgendamentoRetorno
+Tag AgendamentoRetorno
+
+Propriedade
+
+Tipo
+
+Observação
+
+dadosAgendamento
+
+dadosAgendamento
+
+Retorna os dados do
+agendamento incluído
+
+informacaoGeral
+
+informacaoGeral
+
+Retorna as informações
+gerais da execução da
+ação solicitada.
+
+codigoAgendamento
+
+Numérico
+
+Retorna o código do
+agendamento incluído.
+
+4.1.1.1 Tag dadosAgendamento
+Tag dadosAgendamento
+Propriedade
+
+tipoBuscaEmpresa
+
+reservarCompromissoEmpresaSe
+mFuncionario
+
+Observação
+
+Tipo
+Enum
+
+Retorna o tipo de busca utilizado
+
+Valores possíveis:
+
+para localizar a empresa do
+
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+Booleano
+
+agendamento.
+
+Retorna se o agendamento foi
+incluído para uma empresa, sem
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 30
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+funcionário específico.
+
+codigoFuncionario
+
+Numérico
+
+codigoUsuarioAgenda
+
+Numérico
+
+data
+
+Data (dd/mm/aaaa)
+
+horaInicial
+
+Hora (hh:mm)
+
+horaFinal
+
+Hora (hh:mm)
+
+codigoCompromisso
+
+Numérico
+
+Retorna o código do funcionário
+do agendamento
+Retorna o código da agenda em
+que o agendamento foi incluído
+Retorna a data do agendamento
+incluído.
+Retorna a hora inicial do
+agendamento incluído.
+Retorna a hora final do
+agendamento incluído.
+Retorna o código do compromisso
+do agendamento incluído.
+Retorna se o agendamento
+
+usaOutroCompromisso
+
+Booleano
+
+incluído utiliza um compromisso
+não cadastrado.
+Retorna o compromisso quando
+
+conteudoOutroCompromisso
+
+Texto
+
+utilizado um compromisso não
+cadastrado.
+
+detalhes
+
+Texto
+
+codigoProfissionalAgenda
+
+Numérico
+
+horarioChegada
+
+Hora (hh:mm)
+
+horarioSaida
+
+Hora (hh:mm)
+
+Retorna os detalhes do
+agendamento incluído.
+Retorna o código do profissional
+agenda do agendamento incluído.
+Retorna o horário de chegada do
+agendamento incluído.
+Retorna o horário de saída do
+agendamento incluído.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 31
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+priorizarAtendimento
+
+Retorna se o agendamento
+
+Booleano
+
+incluído é prioritário.
+Retorna o código do motivo de
+
+codigoMotivoCancelamento
+
+Numérico
+
+cancelamento do agendamento
+incluído.
+Retorna se o agendamento
+
+usaEnviarEmail
+
+Booleano
+
+incluído utiliza a funcionalidade de
+envio de e-mail.
+
+emailWsVo
+
+Tag responsável pelo retorno dos
+
+emailWsVo
+
+dados de e-mail do agendamento.
+Retorna se o agendamento
+
+usaEnviarSocms
+
+Booleano
+
+incluído utiliza a funcionalidade de
+envio de SOCMS.
+Tag responsável pelo retorno dos
+
+socmsWsVo
+
+socmsWsVo
+
+dados de SOCMS do
+agendamento.
+
+codigoPrestador
+
+4.1.1.1.1
+
+Retorna o código do prestador do
+
+Numérico
+
+agendamento.
+
+Tag emailWsVo
+Tag emailWsVo
+
+Propriedade
+
+Tipo
+
+Observação
+
+data
+
+Texto
+
+Retorna a data do e-mail de agendamento.
+
+hora
+
+Hora (hh:mm)
+
+Retorna a hora do e-mail de agendamento.
+
+email
+
+Texto
+
+Retorna o endereço do e-mail de agendamento.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 32
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+4.1.1.1.2
+
+Tag socmsWsVo
+Tag socmsWsVo
+
+Propriedade
+
+Tipo
+
+data
+
+Data (dd/mm/aaaa)
+
+hora
+
+Hora (hh:mm)
+
+telefone
+
+Texto
+
+codigoMensagem
+
+Numérico
+
+Observação
+Retorna a data de envio do
+SOCMS do agendamento.
+Retorna a hora de envio do
+SOCMS do agendamento.
+Retorna o telefone de envio do
+SOCMS do agendamento.
+Retorna o código da mensagem
+do SOCMS do agendamento.
+Retorna a descrição da
+
+mensagem
+
+Texto
+
+mensagem do SOCMS do
+agendamento.
+
+4.2
+
+Mensagem SOAP response excluirAgendamento
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:excluirAgendamento>
+<ExcluirAgendamentoWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 33
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+</identificacaoWsVo>
+<codigoAgendamento> </codigoAgendamento>
+<codigoAgenda></codigoAgenda>
+</ExcluirAgendamentoWsVo>
+</ser:excluirAgendamento>
+</soapenv:Body>
+</soapenv:Envelope>
+4.2.1
+
+Tabela de Propriedades da Saída
+
+Tag AgendamentoRetornoExclusao
+Propriedade
+
+Tipo
+
+informacaoGeral
+
+informacaoGeral
+
+4.2.1.1 Tag webServiceInfoGeralVo
+Tag informacaoGeral
+Propriedade
+
+Observação
+
+Tipo
+
+Retorna o código da mensagem,
+codigoMensagem
+
+Texto
+
+SOC-100 para Sucesso ou SOC200 para erro.
+
+Mensagem
+
+Texto
+
+mensagemOperacaoDetalheList
+
+numeroErros
+
+Retorna a descrição do status da
+mensagem.
+
+Lista de
+
+Tag responsável pelo retorno dos
+
+mensagemOperacaoDetalheList
+
+detalhes da reposta de execução.
+
+Numero
+
+Retorna a quantidade de erros na
+mensagem.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 34
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+4.2.1.2 Tag mensagemOperacaoDetalheList
+
+Tag mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+Código
+
+Texto
+
+Retorna o código do erro;
+
+Mensagem
+
+Texto
+
+Retorna a descrição do err
+
+4.3
+
+Mensagem SOAP response alterarAgendamento
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:alterarAgendamentoResponse xmlns:ns2="http://services.soc.age.com/">
+<AgendamentoRetornoAlteracao>
+<dadosAgendamento>
+<reservarCompromissoParaEmpresa> </reservarCompromissoParaEmpresa>
+<codigoUsuarioAgenda> </codigoUsuarioAgenda>
+<data> </data>
+<horaInicial> </horaInicial>
+<horaFinal> <horaFinal/>
+<codigoCompromisso> <codigoCompromisso/>
+<usaOutroCompromisso> </usaOutroCompromisso>
+<conteudoOutroCompromisso> <conteudoOutroCompromisso/>
+<detalhes> <detalhes/>
+<codigoProfissionalAgenda> <codigoProfissionalAgenda/>
+<horarioChegada> <horarioChegada/>
+<horarioSaida> <horarioSaida/>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 35
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<priorizarAtendimento> </priorizarAtendimento>
+<codigoMotivoCancelamento> <codigoMotivoCancelamento/>
+<usaEnviarEmail> </usaEnviarEmail>
+<emailWsVo>
+<data> <data/>
+<hora> <hora/>
+<email> <email/>
+</emailWsVo>
+<usaEnviarSocms> </usaEnviarSocms>
+<socmsWsVo>
+<data><data/>
+<hora><hora/>
+<telefone> <telefone/>
+<codigoMensagem/>
+<mensagem> <mensagem/>
+</socmsWsVo>
+<codigoPrestador></codigoPrestador>
+</dadosAgendamento>
+<informacaoGeral>
+<codigoMensagem> </codigoMensagem>
+<mensagem> </mensagem>
+<numeroErros> </numeroErros>
+</informacaoGeral>
+<codigoAgendamento></codigoAgendamento>
+</AgendamentoRetornoAlteracao>
+</ns2:alterarAgendamentoResponse>
+</soap:Body>
+</soap:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 36
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+4.3.1
+
+Tag AgendamentoRetorno
+Tag AgendamentoRetorno
+
+Propriedade
+
+Tipo
+
+Observação
+
+dadosAgendamento
+
+dadosAgendamento
+
+Retorna os dados do
+agendamento alterado
+
+informacaoGeral
+
+informacaoGeral
+
+Retorna as informações
+gerais da execução da
+ação solicitada.
+
+codigoAgendamento
+
+Numérico
+
+Retorna o código do
+agendamento alterado.
+
+4.3.1.1 Tag dadosAgendamento
+Tag dadosAgendamento
+Propriedade
+
+Tipo
+
+reservarCompromissoEmpresaSe
+mFuncionario
+
+Observação
+Retorna se o agendamento
+
+Booleano
+
+alterado é do tipo reservado para
+empresa.
+
+codigoFuncionario
+
+Numérico
+
+codigoUsuarioAgenda
+
+Numérico
+
+data
+
+Data (dd/mm/aaaa)
+
+horaInicial
+
+Hora (hh:mm)
+
+horaFinal
+
+Hora (hh:mm)
+
+Retorna o código do funcionário
+do agendamento
+Retorna o código da agenda em
+que o agendamento foi alterado
+Retorna a data do agendamento
+alterado.
+Retorna a hora inicial do
+agendamento alterado.
+Retorna a hora final do
+agendamento alterado.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 37
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+codigoCompromisso
+
+Numérico
+
+Retorna o código do compromisso
+do agendamento alterado.
+Retorna se o agendamento
+
+usaOutroCompromisso
+
+Booleano
+
+alterado utiliza um compromisso
+não cadastrado.
+Retorna o compromisso quando
+
+conteudoOutroCompromisso
+
+Texto
+
+utilizado um compromisso não
+cadastrado.
+
+detalhes
+
+Texto
+
+Retorna os detalhes do
+agendamento alterado.
+Retorna o código do profissional
+
+codigoProfissionalAgenda
+
+Numérico
+
+agenda do agendamento
+alterado.
+
+horarioChegada
+
+Hora (hh:mm)
+
+horarioSaida
+
+Hora (hh:mm)
+
+priorizarAtendimento
+
+Booleano
+
+Retorna o horário de chegada do
+agendamento alterado.
+Retorna o horário de saída do
+agendamento alterado.
+Retorna se o agendamento
+alterado é prioritário.
+Retorna o código do motivo de
+
+codigoMotivoCancelamento
+
+Numérico
+
+cancelamento do agendamento
+alterado.
+Retorna se o agendamento
+
+usaEnviarEmail
+
+Booleano
+
+alterado utiliza a funcionalidade
+de envio de e-mail.
+
+emailWsVo
+
+emailWsVo
+
+usaEnviarSocms
+
+Booleano
+
+Tag responsável pelo retorno dos
+dados de e-mail do agendamento.
+Retorna se o agendamento
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 38
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+alterado utiliza a funcionalidade
+de envio de SOCMS.
+Tag responsável pelo retorno dos
+socmsWsVo
+
+socmsWsVo
+
+dados de SOCMS do
+agendamento.
+
+codigoPrestador
+
+4.3.1.1.1
+
+Retorna o código do prestador do
+
+Numérico
+
+agendamento
+
+Tag emailWsVo
+Tag emailWsVo
+
+Propriedade
+
+Tipo
+
+Observação
+
+data
+
+Texto
+
+Retorna a data do e-mail de agendamento.
+
+hora
+
+Hora (hh:mm)
+
+Retorna a hora do e-mail de agendamento.
+
+email
+
+Texto
+
+Retorna o endereço do e-mail de agendamento.
+
+4.3.1.1.2
+
+Tag socmsWsVo
+Tag socmsWsVo
+
+Propriedade
+
+Tipo
+
+data
+
+Data (dd/mm/aaaa)
+
+hora
+
+Hora (hh:mm)
+
+telefone
+
+Texto
+
+codigoMensagem
+
+Numérico
+
+Observação
+Retorna a data de envio do
+SOCMS do agendamento.
+Retorna a hora de envio do
+SOCMS do agendamento.
+Retorna o telefone de envio do
+SOCMS do agendamento.
+Retorna o código da mensagem
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 39
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+do SOCMS do agendamento.
+Retorna a descrição da
+mensagem
+
+Texto
+
+mensagem do SOCMS do
+agendamento.
+
+5.
+
+Lista de falhas
+
+Abaixo estão listadas as principais falhas que podem ser retornadas durante o consumo do Web
+Service Agendamento.
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 40
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header for preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp verifica
+a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 41
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+Verificar item 2 desse documento
+de especificação.
+
+wsu:Expires = wsu:Created + (tempo de validade);
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+5.2
+
+Ajustar horário do computador;
+
+Falhas na consistência
+O serviço poderá retornar as seguintes falhas:
+
+Código
+
+Descrição
+
+Observação
+Mensagem retornada quando não realizada a
+
+SOC-200
+
+ERRO. Operação não realizada.
+
+operação
+
+solicitada.
+
+mensagemOperacaoDetalheList
+
+Na
+
+tag
+
+podem
+
+ser
+
+visualizados os detalhes.
+
+SOC-201
+
+ERRO DESCONHECIDO. Por favor, contate o
+
+Quando retornada, necessário contato com o
+
+suporte SOC.
+
+Suporte SOC.
+Mensagem retornada quando o valor informado na
+
+SOC-202
+
+ERRO. Código Empresa inválida.
+
+propriedade codigoEmpresa não representa uma
+empresa válida.
+Mensagem
+
+SOC-203
+
+retornada
+
+quando
+
+especificado
+
+na
+
+ERRO. Empresa informada não é de
+
+requisição que a empresa é de homologação, mas a
+
+homologação.
+
+empresa informada não está configurada como de
+homologação.
+Mensagem retornada quando o valor informado na
+
+SOC-204
+
+ERRO. codigoUsuario Inválido.
+
+propriedade codigoUsuario não configura um código
+de usuário válido do SOC.
+
+SOC-205
+
+ERRO. Identificação Inválida.
+
+Mensagem retornada quando os dados informados
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 42
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+na tag identificacaoWsVo não configuram uma
+credencial válida de acesso aos Web Services.
+Mensagem retornada quando a empresa não possui
+SOC-206
+
+ERRO. Empresa sem Acesso ao Webservice.
+
+o web service habilitado nas Configurações de
+Integração da empresa.
+Mensagem retornada quando o IP de origem da
+
+SOC-207
+
+ERRO. Ip não autorizado.
+
+requisição
+
+não
+
+consta
+
+nos
+
+IPs
+
+autorizados
+
+configurados na empresa.
+Mensagem retornada quando não é possível
+SOC-208
+
+ERRO. Login não localizado.
+
+localizar
+
+o
+
+login
+
+do
+
+usuário
+
+informado
+
+na
+
+propriedade codigoUsuario.
+Mensagem retornada quando o usuário informado
+SOC-209
+
+ERRO. O usuário não tem acessos suficientes.
+
+na propriedade codigoUsuario não possui os acessos
+necessários para realizar a ação solicitada.
+
+SOC-210
+
+SOC-301
+
+ERRO. Campos não preenchidos ou preenchidos Mensagem
+incorretamente.
+
+retornada
+
+quando
+
+há
+
+erro
+
+de
+
+informado
+
+um
+
+preenchimento nos campos da requisição.
+
+O campo
+DadosAgendamentoWsVo.codigoEmpresa deve
+ser informado quando
+
+Mensagem
+
+retornada
+
+quando
+
+DadosAgendamentoWsVo.codigoFuncionario for funcionário para agendamento e não informada a
+preenchido.
+SOC-302
+
+empresa na propriedade codigoEmpresa.
+
+O campo
+DadosAgendamentoWsVo.tipoBuscaFuncionario Mensagem
+deve ser informado quando
+
+retornada
+
+quando
+
+informado
+
+um
+
+funcionário para agendamento e, na propriedade
+
+DadosAgendamentoWsVo.codigoFuncionario for tipoBuscaFuncionario, não informado o tipo de
+
+SOC-303
+
+preenchido.
+
+busca a ser utilizado.
+
+Funcionário não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o funcionário a partir dos dados informados
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 43
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+na requisição.
+SOC-304
+
+Empresa Inválida.
+
+Mensagem retornada quando o valor informado na
+propriedade codigoEmpresa não representa uma
+empresa válida.
+
+SOC-305
+
+Profissional Agenda não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o
+
+profissional agenda informado na
+
+propriedade codigoResponsavel.
+SOC-306
+
+Compromisso no mesmo dia e mesma hora.
+
+Mensagem retornada quando, na data e hora
+informada, já existe agendamento cadastrado.
+
+SOC-307
+
+SOC-308
+
+Já existe um compromisso marcado para esse
+
+Mensagem retornada quando, na data e hora
+
+mesmo profissional na mesma hora
+
+informada já existe agendamento cadastrado com o
+
+selecionada.
+
+mesmo profissional agenda.
+
+Limite de compromisso excedido.
+
+Mensagem
+
+retornada
+
+quando
+
+o
+
+limite
+
+de
+
+compromissos configurado na agenda é excedido,
+impedindo a inclusão.
+SOC-310
+
+SOC-311
+
+SOC-312
+
+Período Inválido, Inconsistência com
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.horaInicial.
+
+propriedade horaInicial não é uma hora válida.
+
+Ocorreu uma falha ao salvar o registro de Sms.
+
+Mensagem retornada quando ocorre erro no registro
+
+Contate o suporte.
+
+do SOCMS. Necessário contato com o suporte SOC.
+
+Cadastro de agenda não localizado.
+
+Mensagem retornada quando não é possível
+localizar a agenda informada na propriedade
+codigoUsuarioAgenda.
+
+SOC-313
+
+Cadastro de agenda somente para Consulta.
+
+Mensagem retornada quando o usuário informado
+na propriedade codigoUsuario somente possui
+acesso a consulta da agenda informada na
+propriedade codigoUsuarioAgenda.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 44
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+SOC-314
+
+Ocorreu uma falha ao localizar a Agenda
+
+Mensagem retornada quando ocorre erro na
+
+cadastrada. Contate o suporte.
+
+localização da agenda informada na propriedade
+codigoUsuarioAgenda. Necessário contato com o
+suporte SOC.
+
+SOC-315
+
+Compromisso não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o compromisso a partir do valor informado
+na propriedade codigoCompromisso.
+
+SOC-316
+
+Tipo compromisso não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o tipo de compromisso a partir do valor
+informado na propriedade tipoCompromisso.
+
+SOC-317
+
+Usuário agenda não encontrado.
+
+Mensagem retornada quando não é possível
+localizar a agenda a partir do valor informado na
+propriedade codigoUsuarioAgenda.
+
+SOC-318
+
+Código da mensagem SMS inválido.
+
+Mensagem retornada quando o valor informado na
+propriedade
+
+socmsWsVo.
+
+codigoMensagem
+
+é
+
+inválido.
+SOC-319
+
+O Campo
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.socmsWsVo.telefone
+
+propriedade
+
+é inválido.
+
+DadosAgendamentoWsVo.emailWsVo.telefone não
+é um telefone válido.
+
+SOC-320
+
+O Campo
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.emailWsVo.email é
+
+propriedade
+
+inválido.
+
+DadosAgendamentoWsVo.emailWsVo.email não é
+um e-mail válido.
+
+SOC-321
+
+O Campo
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.emailWsVo.hora é
+
+propriedade
+
+inválido.
+
+DadosAgendamentoWsVo.emailWsVo.hora não é
+uma hora válida.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 45
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+SOC-322
+
+O Campo
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.emailWsVo.data é
+
+propriedade
+
+inválido.
+
+DadosAgendamentoWsVo.emailWsVo.data não é
+uma data válida.
+
+SOC-323
+
+O código de motivo de cancelamento é inválido. Mensagem retornada quando o valor informado na
+propriedade codigoMotivoCancelamento não é um
+motivo de cancelamento válido.
+
+SOC-325
+
+O campo DadosAgendamentoWsVo.data é
+
+Mensagem retornada quando o valor informado na
+
+invalido.
+
+propriedade DadosAgendamentoWsVo.data não é
+uma data válida.
+
+SOC-326
+
+O campo DadosAgendamentoWsVo.horaInicial é Mensagem retornada quando o valor informado na
+inválido.
+
+propriedade
+
+DadosAgendamentoWsVo.horaInicial
+
+não é uma hora válida.
+SOC-327
+
+Horário de Agenda não disponível.
+
+Mensagem retornada quando, com base nas
+configurações da agenda informada, o horário não
+está disponível para agendamento.
+
+SOC-328
+
+O campo
+DadosAgendamentoWsVo.codigoEmpresa deve
+
+Mensagem retornada quando na requisição é
+
+ser informado quando
+
+solicitada a inclusão do agendamento para uma
+
+DadosAgendamentoWsVo.reservarCompromisso empresa e na propriedade codigoEmpresa não é
+
+SOC-329
+
+ParaEmpresa for preenchido.
+
+informado o código dela.
+
+O campo DadosAgendamentoWsVo.horaFinal é
+
+Mensagem retornada quando o valor informado na
+
+invalida.
+
+propriedade
+
+DadosAgendamentoWsVo.horaFinal
+
+não é uma hora válida.
+SOC-330
+
+SOC-331
+
+O campo
+
+Mensagem retornada quando o valor informado na
+
+DadosAgendamentoWsVo.horarioChegada é
+
+propriedade
+
+inválido.
+
+não é uma hora válida.
+
+O campo
+
+Mensagem retornada quando o valor informado na
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+DadosAgendamentoWsVo.horaFinal
+
+Página 46
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+SOC-332
+
+SOC-332
+
+DadosAgendamentoWsVo.horarioSaida é
+
+propriedade DadosAgendamentoWsVo.horarioSaida
+
+inválido.
+
+não é uma hora válida.
+
+Não é permitido
+DadosAgendamentoWsVo.emailWsVo.data
+
+Mensagem retornada quando a data de envio de e-
+
+menor que o dia corrente.
+
+mail informada é menor que a data atual.
+
+A empresa/unidade não possui autorização de
+
+Mensagem retornada quando a empresa ou a
+
+inclusão de agenda.
+
+unidade (unidade da lotação do funcionário) estão
+selecionadas como inadimplente na tela 230 Preços.
+
+SOC-334
+
+Data agendamento não permitido para usuário
+
+Mensagem retornada quando a data informada
+
+externo, limite de dias ultrapassado.
+
+excede o limite de dias adiante para agendamento,
+quando
+
+o
+
+usuário
+
+informado na propriedade
+
+codigoUsuario é um usuário externo de agenda.
+SOC-335
+
+Data agendamento no dia corrente não é
+
+Mensagem
+
+retornada
+
+quando
+
+a
+
+data
+
+de
+
+permitido para usuário externo.
+
+agendamento é o dia corrente e o usuário informado
+na propriedade codigoUsuario é um usuário externo
+de agenda. Por regra, usuários externos não podem
+realizar agendamento para o dia corrente.
+
+SOC-336
+
+Usuário sem permissão para incluir
+
+Mensagem retornada quando não informado um
+
+agendamento sem funcionário.
+
+funcionário para o agendamento e o usuário
+informado na propriedade codigoUsuario é um
+usuário externo configurado para não incluir
+agendamentos sem funcionário.
+
+SOC-337
+
+Limite máximo de inclusão de agendamentos
+
+Mensagem retornada quando excedido o limite de
+
+atingido para usuário externo.
+
+agendamentos configurado para o usuário externo
+informado na propriedade codigoUsuario.
+
+SOC-338
+
+Limite máximo de inclusão diária de
+
+Mensagem retornada quando excedido o limite
+
+agendamentos atingidos para usuário externo.
+
+diário de agendamentos configurado para o usuário
+externo informado na propriedade codigoUsuario.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 47
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+SOC-339
+
+Não é permitido uso de outro compromisso para Mensagem retornada quando informado o valor true
+usuário externo.
+
+para a propriedade usaOutroCompromisso e o
+usuário informado na propriedade codigoUsuario é
+um usuário externo. Por regra, um usuário externo
+somente
+
+pode
+
+selecionar
+
+compromissos
+
+já
+
+cadastrados.
+SOC-340
+
+Limite de inclusão de agendamentos atingido no Mensagem retornada quando excedido o limite
+dia.
+
+diário de agendamentos configurados para a
+agenda informada.
+
+SOC-341
+
+SOC-342
+
+Tipo compromisso não encontrado. Habilitado
+
+Mensagem retornada quando informado um tipo de
+
+somente Tipo Compromisso Demissional para
+
+compromisso diferente de Demissional para um
+
+funcionário inativo.
+
+funcionário inativo.
+
+Usuário sem acesso.
+
+Mensagem retornada quando o usuário informado
+na propriedade codigoUsuario não possui os acessos
+necessários para a ação solicitada. Os acessos
+necessários podem ser consultados no cadastro do
+serviço.
+
+SOC-343
+
+Ocorreu uma falha ao excluir o agendamento.
+
+Mensagem retornada quando ocorrido erro na
+
+Contate o suporte.
+
+exclusão do agendamento. Necessário contato com
+o suporte SOC.
+
+SOC-344
+
+Agendamento não localizado.
+
+Mensagem retornada quando não é possível
+localizar o agendamento informado na requisição de
+exclusão.
+
+SOC-345
+
+SOC-346
+
+O Campo
+DadosAgendamentoWsVo.socmsWsVo.hora é
+
+Mensagem retornada quando a hora de envio do
+
+inválido.
+
+SOCMS informada é inválida.
+
+O DadosAgendamentoWsVo.emailWsVo é
+
+Mensagem retornada quando o endereço informado
+
+inválido.
+
+para o envio de e-mail é inválido.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 48
+
+Web Service de Agendamento
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-15023
+
+SOC-347
+
+O DadosAgendamentoWsVo.socmsWsVo é
+
+Mensagem retornada quando os dados de SOCMS
+
+inválido.
+
+informados
+
+na
+
+propriedade
+
+socmsWsVo
+
+não
+
+representam um SOCMS válido.
+SOC-348
+
+SOC-349
+
+O campo
+
+Mensagem retornada quando é informado um
+
+DadosAgendamentoWsVo.codigoMotivoCancela
+
+motivo de cancelamento para um agendamento não
+
+mento é exclusivo para
+
+cancelado. Por regra, somente é possível informar
+
+DadosAgendamentoWsVo.tipoAtendimento
+
+um motivo de cancelamento para agendamentos
+
+'CANCELADO'.
+
+cancelados.
+
+Usuário não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o usuário informado na requisição.
+
+SOC-350
+
+Usuário Externo sem permissão de exclusão.
+
+Mensagem retornada quando solicitada a exclusão
+de um agendamento e o usuário informado na
+propriedade codigoUsuário é um usuário externo
+configurado
+
+para
+
+não
+
+realizar
+
+exclusões
+
+de
+
+agendamento.
+SOC-351
+
+O Campo
+DadosAgendamentoWsVo.socmsWsVo.mensage Mensagem retornada quando o valor da mensagem
+
+SOC-352
+
+m é inválido.
+
+do SOCMS informado na requisição não é válido.
+
+O Campo
+
+Mensagem retornada quando a mensagem de
+
+DadosAgendamentoWsVo.socmsWsVo.mensage SOCMS
+
+SOC-353
+
+informada
+
+excede
+
+o
+
+limite
+
+de
+
+140
+
+m não tem entre 0 e 140 caracteres.
+
+caracteres.
+
+Horário final de agenda não disponível.
+
+Mensagem retornada quando a hora final informada
+na requisição não está disponível de acordo com a
+grade e configuração da agenda.
+
+SOC-362
+
+SOC-363
+
+O usuário não tem acesso a consultar
+
+Mensagem retornada quando o usuário informado
+
+Prestador.
+
+não possui acesso à consulta de prestador.
+
+O usuário não tem acesso a consultar Prestador Mensagem
+do tipo segurança.
+
+retornada
+
+quando
+
+informado
+
+um
+
+prestador do tipo segurança e o usuário da
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 49
+
+Web Service de Agendamento
+Especificação Técnica
+
+Versão:
+<1.6>
+Date: <29/12/2025>
+
+Desenvolvimento – M-DEV-15023
+
+propriedade
+
+codigoUsuario
+
+possui
+
+o
+
+acesso
+
+“Bloquear dados do prestador e tipo segurança”
+habilitado.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 50
+
+

@@ -1,0 +1,1578 @@
+Web Service de Resultado de Exames – Pedido de
+Exames
+Especificação Técnica
+Versão <1.5>
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+01/02/2021
+
+1.0
+
+Elaboração documentação
+
+Gustavo Matos
+
+15/07/2022
+
+1.1
+
+Incluída consideração sobre certificado de
+
+Marcos Santiago
+
+conexão HTTPS
+19/01/2023
+
+1.2
+
+Incluída consideração sobre o paralelismo
+
+Marcos Santiago
+
+de requisições
+27/07/2023
+
+1.3
+
+Inclusão de tipoExame por ficha
+
+Marcos Santiago
+
+personalizada
+23/10/2023
+
+1.4
+
+Removidas as considerações referentes à
+
+Marcos Santiago
+
+autenticação por empresa principal e
+cliente.
+17/04/2025
+
+1.5
+
+Incluídas as tags dataAgendamento e
+
+Marcos Santiago
+
+horaAgendamento
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 2
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+Índice
+1. Introdução ...................................................................................................................................................................3
+1.1 Objetivo ............................................................................................................................................................3
+1.2 Funcionamento .................................................................................................................................................3
+1.3 Considerações ...................................................................................................................................................3
+2. Parâmetros de Segurança para Acesso Ao Serviço .....................................................................................................4
+2.1 Configuração Padrão ........................................................................................................................................4
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço ..............................................5
+2.3 Considerações para as Propriedades da tag wsse security ................................................................................7
+2.4 Configurações adicionais para a tag wsse security...........................................................................................8
+3. Entradas .......................................................................................................................................................................9
+3.1 Mensagem SOAP request incluirPedidoExame ...............................................................................................9
+3.1.1 Tabela de Propriedades da entrada .....................................................................................................10
+3.1.1.1 Tag identificacao ...................................................................................................................................12
+3.1.1.2 Tag resultadoExamesDadosWsVo ........................................................................................................12
+3.2.1 Considerações para as propriedades ...................................................................................................14
+4. Saídas ........................................................................................................................................................................14
+4.1 Mensagem SOAP response porta incluirPedidoExame .................................................................................15
+4.1.1 Tabela de Propriedades da Saída ........................................................................................................16
+5. Lista de falhas ...........................................................................................................................................................17
+5.1 Falhas na requisição .......................................................................................................................................17
+5.1.1 Username e password inválidos..........................................................................................................17
+5.1.2 Tag Header preenchida incorretamente ..............................................................................................17
+5.1.3 Requisição expirada ............................................................................................................................18
+5.1.4 Empresa sem acesso............................................................................................................................19
+5.2 Falhas de Acesso ............................................................................................................................................20
+5.3 Falhas na consistência ....................................................................................................................................20
+
+1. Introdução
+
+1.1 Objetivo
+Possibilitar a inclusão de pedidos de exames no sistema SOC a partir através de Web Service.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 3
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+1.2 Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os dados
+do resultado que será manipulado pelo cliente a partir de sua origem;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os
+dados do resultado manipulado, bem como possíveis irregularidades nos dados enviados.
+
+1.3 Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir / atualizar 1 (um) pedido de exame por
+vez que é
+
+invocado;
+
+3. Propriedades não enviadas serão desconsideradas, se enviada em
+branco será considerado;
+4. O arquivo WSDL a ser usado já será enviado com as configurações de
+acordo com o ambiente que for definido com o cliente;
+5. O acesso ao serviço deve constar nas configurações de integração do usuário;
+6. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+7. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique
+a performance do SOC, a integração será desligada sem aviso prévio.
+
+2. Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar as
+políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG Header com
+itens de segurança conforme política, segue um modelo do que deverá ser informado.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 4
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+2.1 Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 5
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 6
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 7
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3 Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Detalhes
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 8
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+Timestamp
+
+O valor inserido na tag define o tempo de vida do timestamp e,
+consequentemente, da mensagem. Mensagens enviadas com timestamp
+expirado devem ser rejeitadas pelo Web Service que as estão consumindo.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4 Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da versão
+com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+3. Entradas
+
+3.1 Mensagem SOAP request incluirPedidoExame
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 9
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+<soapenv:Body>
+<ser:incluirPedidoExame>
+<PedidoExame>
+<identificacao>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<homologacao></homologacao>
+<codigoUsuario></codigoUsuario>
+</identificacao>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaFuncionario></tipoBuscaFuncionario>
+<codigoFuncionario></codigoFuncionario>
+<dataFicha></dataFicha>
+<tipoExame></tipoExame>
+<exames>
+<exame>
+<codigo></codigo>
+<tipoBusca></tipoBusca>
+<codigoPrestador></codigoPrestador>
+<tipoBuscaPrestador></tipoBuscaPrestador>
+<dataAgendamento></dataAgendamento>
+<horaAgendamento></horaAgendamento>
+</exame>
+</exames>
+<tipoBuscaMedico></tipoBuscaMedico>
+<codigoMedico></codigoMedico>
+<campoString01></campoString01>
+</PedidoExame>
+</ser:incluirPedidoExame>
+</soapenv:Body>
+</soapenv:Envelope>
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 10
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+3.1.1 Tabela de Propriedades da entrada
+PedidoExame
+Propriedade
+identificacao
+
+Tamanho
+-
+
+Tipo
+identificacao
+
+Obrigatório
+
+Observação
+
+Sim
+
+Tag destinada à
+identificação da empresa
+que está enviando a
+requisição
+
+tipoBuscaEmpresa
+
+-
+
+Enum
+
+Não
+
+utilizado para localizar a
+
+Valores possíveis:
+
+codigoEmpresa
+
+-
+
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+Numérico
+
+Tipo de busca a ser
+empresa do funcionário.
+Valor padrão:
+CODIGO_SOC
+
+Sim
+
+Código da empresa do
+funcionário do pedido de
+exames. Deve ser
+informado conforme o tipo
+de busca definido na
+Propriedade
+tipoBuscaEmpresa
+
+tipoBuscaFuncionario
+
+-
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CPF
+
+•
+
+CPF_ATIVO
+
+•
+
+MATRICULA
+
+•
+
+MATRICULA_RH
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Tipo de busca a ser
+utilizado para localizar o
+funcionário do pedido de
+exames.
+
+Página 11
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+codigoFuncionario
+
+-
+
+Alfanumérico
+
+Sim
+
+Código do funcionário do
+pedido de exames a ser
+incluído. Valor deve ser
+informado de acordo com
+o tipo de busca definido
+na propriedade
+tipoBuscaFuncionario.
+
+dataFicha
+
+-
+
+Data (dd/mm/aaaa)
+
+Sim
+
+Data da ficha clínica do
+pedido de exames a ser
+incluído.
+
+tipoExame
+
+-
+
+Numérico
+
+Sim3
+
+Código do tipo de exame
+do pedido de exames a
+
+Valores possíveis:
+
+ser incluído. Quando
+
+1 – Admissional
+
+informado um código
+
+2 – Periódico
+3 – Retorno ao Trabalho
+4 – Mudança de Função
+5 – Demissional
+6 – Especial
+
+válido entre 900 e 999
+será buscada a Ficha
+Personalizada de código
+correspondente e o
+
+10 – Consulta
+11 – Retorno Consulta
+
+registro da ficha será
+criado.
+
+12 – Acidente
+13 – Licença Médica
+14 – Enfermagem
+20 – Terceiros
+900 a 999 – Fichas
+Personalizadas
+exames
+
+-
+
+exame
+
+Sim2
+
+Tag destinada à
+identificação dos exames
+do pedido de exame.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 12
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+codigoMedico
+
+-
+
+Numérico
+
+Sim
+
+Código do usuário médico
+do pedido de exames.
+
+tipoBuscaMedico
+
+-
+
+Enum
+
+Não
+
+Tipo de busca a ser
+utilizado para localizar o
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_RH
+
+usuário médico do pedido
+de exames.
+
+3.1.1.1 Tag identificacao
+identificacao
+Propriedade
+codigoEmpresaPrincipal
+
+Tamanho
+10
+
+Tipo
+Numérico
+
+Obrigatório
+
+Observação
+
+Sim¹
+
+Código da empresa principal da
+empresa que está solicitando o
+serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim1
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário responsável pela
+ação
+
+3.1.1.2 Tag resultadoExamesDadosWsVo
+
+exames
+Propriedade
+tipoBusca
+
+Tamanho
+-
+
+Tipo
+Enum
+
+Obrigatório
+Sim
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_RH
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Observação
+Tipo de busca a ser
+utilizado na localização
+do exame do pedido.
+
+Página 13
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+codigo
+
+-
+
+Numérico
+
+Sim
+
+Código do exame a
+ser incluído no pedido.
+O valor informado
+deve corresponder ao
+tipo de busca definido
+na propriedade
+tipoBusca.
+
+codigoPrestador
+
+-
+
+Numérico
+
+Não
+
+Código do prestador
+do exame a ser
+incluído no pedido. O
+valor informado deve
+corresponder ao tipo
+de busca definido na
+propriedade
+tipoBuscaPrestador.
+
+tipoBuscaPrestador
+
+-
+
+Enum
+
+Não
+
+utilizado na localização
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_RH
+
+Data (dd/mm/aaaa)
+
+dataAgendamento
+
+Tipo de busca a ser
+do prestador do
+exame do pedido.
+
+Não
+
+Respectivo ao campo
+“Data Agendamento”
+da tela de Pedido de
+exames.
+
+Hora (hh:mm)
+
+horaAgendamento
+
+Não
+
+Respectivo ao campo
+“Hora Agendamento”
+da tela de Pedido de
+exames.
+
+3.2.1 Considerações para as propriedades
+1. A informação pode ser consultada nas configurações de integração da empresa;
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 14
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+2. A propriedade exame deve ser informada para cada exame do pedido. Exemplo:
+<exames>
+<exame>
+<codigo>1</codigo>
+<tipoBusca>CODIGO_SOC</tipoBusca>
+<codigoPrestador>123</codigoPrestador>
+<tipoBuscaPrestador>CODIGO_RH</tipoBuscaPrestador>
+</exame>
+<exame>
+<codigo>2</codigo>
+<tipoBusca>CODIGO_SOC</tipoBusca>
+<codigoPrestador>321</codigoPrestador>
+<tipoBuscaPrestador>CODIGO_SOC</tipoBuscaPrestador>
+</exame>
+</exames>
+3. Quando enviado um código entre 900 e 999, o registro será criado na tela da ficha
+personalizada somente com o cabeçalho da ficha preenchido. Para enviar o
+preenchimento dos campos da personalização verifique a documentação técnica do
+método respostasPersonalizacao deste Webservice.
+
+4. Saídas
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirPedidoExameResponse xmlns:ns2="http://services.soc.age.com/">
+<PedidoExameRetorno>
+<pedidoExame>
+<codigoEmpresa/>
+<codigoFuncionario/>
+<codigoMedico/>
+<dataFicha/>
+<exames>
+<exame>
+<codigo/>
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 15
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+<tipoBusca/>
+<codigoPrestador/>
+<tipoBuscaPrestador/>
+</exame>
+</exames>
+<sequencialFicha/>
+<tipoBuscaEmpresa/>
+<tipoBuscaFuncionario/>
+<tipoBuscaMedico/>
+<tipoExame/>
+</pedidoExame>
+<informacaoGeral>
+<codigoMensagem/>
+<mensagem/>
+<numeroErros/>
+</informacaoGeral>
+</PedidoExameRetorno>
+</ns2:incluirPedidoExameResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1 Mensagem SOAP response porta incluirPedidoExame
+
+4.1.1 Tabela de Propriedades da Saída
+Propriedade
+codigoEmpresa
+
+Tipo
+Numérico
+
+Observação
+Retorna o código da empresa do
+pedido de exames incluído
+
+codigoFuncionario
+
+Numérico
+
+Retorna o código do funcionário
+do pedido de exames incluído
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 16
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+codigoMedico
+
+Numérico
+
+Retorna o código do usuário
+médico do pedido de exames
+incluído
+
+dataFicha
+
+Data
+
+Retorna a data da ficha clínica do
+pedido de exames incluído
+
+exames
+
+Exame
+
+Retorna os exames do pedido de
+exame incluído
+
+sequencialFicha
+
+Numérico
+
+Retorna o sequencial da ficha do
+pedido de exames incluído
+
+tipoBuscaEmpresa
+
+Enum
+
+Retorna o tipo de busca de
+empresa que foi utilizado
+
+tipoBuscaFuncionario
+
+Enum
+
+Retorna o tipo de busca de
+funcionário que foi utilizado
+
+tipoBuscaMedico
+
+Enum
+
+Retorna o tipo de busca do
+usuário médico que foi utilizado
+
+tipoExame
+
+Enum
+
+Retorna o tipo de exame do
+pedido de exames incluído
+
+informacaoGeral
+
+informacaoGeral
+
+Tag responsável pelo retorno
+dasinformações gerais do
+resultado da requisição
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag responsável pelo retorno
+específico dos erros da
+requisição,quando houver.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 17
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+5. Lista de falhas
+
+5.1 Falhas na requisição
+
+5.1.1 Username e password inválidos.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2 Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 18
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3 Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp verifica
+a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 19
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+Ajustar horário do computador;
+
+5.1.4 Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração - Empresa/Cliente
+(337) no SOC e adicionar o serviço à lista de webservices da empresa.
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 20
+
+Web Service de Resultado de Exames
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+5.2 Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+
+Identificação Inválida;
+
+
+
+Empresa Invalida;
+
+
+
+Usuário Sem Acesso;
+
+
+
+Login não Localizado;
+
+5.3 Falhas na consistência
+O serviço poderá retornar as seguintes falhas:
+Código
+SOC-201
+
+SOC-202
+
+Descrição
+
+Observação
+
+ERRO DESCONHECIDO. Por favor, contate o
+
+Quando retornada, necessário contato
+
+suporte SOC.
+
+com o Suporte SOC.
+
+ERRO. Código Empresa invalida.
+
+Mensagem retornada quando o valor
+informado na propriedade
+codigoEmpresa não representa uma
+empresa válida.
+
+SOC-203
+
+ERRO. Empresa informada não é de
+
+Mensagem retornada quando
+
+homologação.
+
+especificado na requisição que a
+empresa é de homologação, mas a
+empresa informada não está configurada
+como de homologação.
+
+SOC-204
+
+ERRO. codigoUsuario Inválido.
+
+Mensagem retornada quando o valor
+informado na propriedade codigoUsuario
+não configura um código de usuário
+válido do SOC.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 21
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+SOC-205
+
+ERRO. Identificação Inválida.
+
+Mensagem retornada quando os dados
+informados na tag identificacaoWsVo
+não configuram uma credencial válida de
+acesso aos Web Services.
+
+SOC-206
+
+ERRO. Empresa sem Acesso ao Webservice.
+
+Mensagem retornada quando a empresa
+não possui o web service habilitado nas
+Configurações de Integração da
+empresa.
+
+SOC-207
+
+ERRO. Ip não autorizado.
+
+Mensagem retornada quando o IP de
+origem da requisição não consta nos IPs
+autorizados configurados na empresa
+
+SOC-208
+
+ERRO. Login não localizado.
+
+Mensagem retornada quando não é
+possível localizar o login do usuário
+informado na propriedade
+codigoUsuario.
+
+SOC-209
+
+ERRO. O usuário não tem acessos suficientes.
+
+Mensagem retornada quando o usuário
+informado na propriedade codigoUsuario
+não possui os acessos necessários para
+realizar a ação solicitada.
+
+SOC-210
+
+ERRO. Campos não preenchidos ou preenchidos
+incorreta
+
+Mensagem retornada quando há erro de
+preenchimento nos campos da
+requisição.
+
+SOC-210
+
+O campo dataAgendamento é inválido
+
+Mensagem retornada quando a tag
+“dataAgendamento” não é preenchida
+com um valor válido. A data deve ser
+enviada no formato dd/mm/aaaa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 22
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+SOC-210
+
+O campo horaAgendamento é inválido.
+
+Mensagem retornada quando a tag
+“horaAgendamento” não é preenchida
+com um valor válido. A hora deve ser
+enviada no formato hh:mm.
+
+SOC-301
+
+Codigo Empresa é inválido
+
+Mensagem retornada quando o valor
+informado na propriedade
+codigoEmpresa não é uma empresa
+válida.
+
+SOC-302
+
+Tipo exame não encontrado
+
+Mensagem retornada quando não
+encontrado um tipo de exame com o
+código informado na propriedade
+tipoExame.
+
+SOC-303
+
+Exame não encontrado
+
+Mensagem retornada quando não é
+possível localizar o exame informado na
+propriedades exames.exame.codigo.
+
+SOC-304
+
+Funcionário não encontrado
+
+Mensagem retornada quando não é
+possível localizar o funcionário informado
+na propriedade codigoFuncionario.
+
+SOC-305
+
+Código funcionário inválido
+
+Mensagem retornada quando o valor
+informado na propriedade
+codigoFuncionario não é um código.
+
+SOC-306
+
+Não foi possível selecionar exames da empresa
+
+Mensagem retornada quando a empresa
+informada não possui exames para
+seleção.
+
+SOC-307
+
+Código médico é inválido
+
+Mensagem retornada quando o valor
+informado na propriedade codigoMedico
+não é um código válido de usuário
+médico. Ocorre também se o parâmetro
+de empresa principal “Permite Ficha
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 23
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+Clínica sem Médico” estiver desabilitado
+na empresa principal que está sendo
+incluído o pedido de exame e não for
+informado médico na requisição.
+SOC-308
+
+Prestador não encontrado
+
+Mensagem retornada quando não é
+possível localizar o prestador informado
+na propriedade
+exames.exame.codigoPrestador.
+
+SOC-310
+
+Prestador sem acesso ao exame
+
+Mensagem retornada quando o
+prestador informado na requisição não
+possui acesso configurado ao exame
+informado na requisição.
+
+SOC-311
+
+Ficha clínica deste tipo exame já cadastrada nesta Mensagem retornada quando o
+data
+funcionário informado já possui uma
+ficha clínica com a mesma data e tipo
+informados na requisição, impedindo a
+inclusão de uma nova ficha.
+
+SOC-312
+
+Já existe uma licença nesse dia com esse período. Mensagem retornada quando o
+funcionário informado já possui uma
+ficha do tipo licença cadastrada na
+mesma data.
+
+SOC-313
+
+Data da ficha é maior que a data de inativação da Mensagem retornada quando a data
+empresa
+informada na propriedade dataFicha é
+posterior à data de inativação do
+cadastro da empresa do funcionário.
+
+SOC-314
+
+Unidade inadimplente. Ação não permitida
+
+Mensagem retornada quando a unidade
+possui a parametrização de
+inadimplência habilitada, impedindo a
+inclusão de ficha clínica.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 24
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+SOC-315
+
+Data ficha é inválida
+
+Mensagem retornada quando o valor
+informado na propriedade dataFicha não
+é uma data válida.
+
+SOC-317
+
+Funcionário com data de demissão
+
+Mensagem retornada quando solicitada
+ainclusão de ficha para um funcionário
+que possui data de demissão
+preenchida, impedindo a inclusão da
+ficha.
+
+SOC-318
+
+Funcionário está inativo
+
+Mensagem retornada quando solicitada
+ainclusão de uma ficha para um
+funcionário inativo. Por regra, não é
+possível incluir ficha clínica para
+funcionários com a situação “Inativo”.
+
+SOC-319
+
+O funcionário tem uma licença com o benefício
+B91 ou B94
+
+Mensagem retornada quando o
+funcionário informado na requisição
+possui licença com benefício B91 ou B94
+cadastrada.
+
+SOC-322
+
+Tipo da ficha não selecionado
+
+Mensagem retornada quando não
+informada a propriedade tipoExame.
+
+SOC-324
+
+Não é possível realizar esta ação porque um ou
+Mensagem retornada quando ao menos
+mais exames se encontram em lote com análise já
+um dos exames do pedido já existe em
+iniciada
+um lote com análise iniciada.
+
+SOC-325
+
+Não é possível realizar essa ação porque já existe Mensagem retornada quando ao menos
+alguma análise de atendimento iniciada no
+um dos exames do pedido já possui
+módulo Contas Médicas
+análise de atendimento iniciada no
+módulo Contas Médicas.
+
+SOC-326
+
+Encaminhamento prestador inválido
+
+Mensagem retornada quando o
+prestador preenchido na propriedade
+exames.exame.prestador não é um
+prestador válido para encaminhamento.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 25
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: <17/04/2025>
+
+Desenvolvimento – M-DEV-1157
+
+©AGE Desenvolvimento de Sistemas LTDA, 2023
+Sensível
+
+Página 26
+
+

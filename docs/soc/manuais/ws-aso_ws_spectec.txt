@@ -1,0 +1,1604 @@
+Web Service de Resultado de Exame - ASO
+Especificação Técnica
+Versão <1.6.2>
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+03/06/2015
+
+1.0
+
+Elaboração documentação
+
+Valdilanio Cruz
+
+27/07/2017
+
+1.1
+
+Atualização da documentação para
+
+Roseane Alves
+
+atender as modificações no endpoint.
+Formatação da documentação.
+27/03/2019
+
+1.1.1
+
+Retirada a propriedade “homologacao”
+
+Marcos Santiago
+
+da documentação do serviço.
+08/06/2020
+
+1.2
+
+Inclusão da propriedade pareceres
+
+Gustavo Matos
+
+26/02/2021
+
+1.3
+
+Inclusão da propriedade
+
+Marcos Santiago
+
+desconsideraAsoEsocial
+30/08/2021
+
+1.3.1
+
+Adicionada mensagem de retorno no
+
+Marcos Santiago
+
+tópico Falhas de Acesso
+15/07/2022
+
+1.4
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.5
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+01/06/2023
+
+1.5.1
+
+Atualizada a observação do campo
+
+Marcos Santiago
+
+tipoeExame
+23/10/2023
+
+1.6
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+04/12/2023
+
+1.6.1
+
+Alterado o tamanho do campo
+
+Marcos Santiago
+
+nomeMedicoEmissorAso
+28/06/2024
+
+1.6.2
+
+Adicionadas as considerações 7, 8, 9 e
+
+Marcos Santiago
+
+10 referentes às tags dos pareceres
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 2
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+Índice
+1.
+
+2.
+
+Introdução
+
+4
+
+1.1
+1.2
+1.3
+
+4
+4
+4
+
+Objetivo
+Funcionamento
+Considerações
+
+Parâmetros de Segurança para Acesso Ao Serviço
+
+5
+
+2.1
+2.2
+2.3
+
+5
+6
+8
+9
+
+2.4
+
+Configuração Padrão
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+Considerações para as Propriedades da tag wsse security
+Configurações adicionais para a tag wsse security
+
+3.
+
+Entradas
+3.1 Mensagem SOAP request Porta incluiDadosAso
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Tag identificacaoWsVo
+3.1.3 Tag listaRiscosWsVo
+3.1.4 Tag pareceres
+3.1.5 Considerações para as propriedades
+
+10
+10
+12
+14
+15
+15
+16
+
+4.
+
+Saídas
+4.1 Mensagem SOAP response Porta incluiDadosAso
+4.1.1 Tabela de Propriedades da Saída
+4.1.2 Considerações para as propriedades
+
+19
+19
+19
+19
+
+5.
+
+Lista de falhas
+5.1 Falhas na requisição
+5.1.1 Username e password inválidos.
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.1.4 Empresa sem acesso
+5.2 Falhas de Acesso
+5.3 Falhas de Consistência
+
+20
+20
+20
+20
+21
+22
+23
+23
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 3
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Possibilitar a inclusão de ASO no sistema SOC.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados para inclusão ou atualização desejados pelo cliente a partir de sua origem;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando
+sucesso na criação ou atualização dos dados, bem como possíveis irregularidades nos
+dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir / atualizar 1 (um) ASO por vez que é invocado;
+3. Propriedades não enviadas serão desconsideradas, se enviada em branco será
+considerado;
+4. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente;
+5. O acesso ao serviço deve constar nas configurações de integração do usuário;
+6. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+7. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 4
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG Header
+com itens de segurança conforme política, segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 5
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 6
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 7
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+O valor inserido na tag define o tempo de vida do timestamp e,
+consequentemente, da mensagem. Mensagens enviadas com timestamp
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 8
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+expirado devem ser rejeitadas pelo Web Service que as estão consumindo.
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+É um valor randômico que o cliente do serviço deverá criar para cada requisição
+
+Nonce
+
+que enviar.
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 9
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request Porta incluiDadosAso
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluiDadosAso>
+<aso>
+<codigoEmpresa> </codigoEmpresa>
+<codigoFuncionario> </codigoFuncionario>
+<codigoPessoaEmissorAso> </codigoPessoaEmissorAso>
+<codigoSequencialFichaclinica> </codigoSequencialFichaclinica>
+<comentarioAso> </comentarioAso>
+<conselhoClasse> </conselhoClasse>
+<dataEmissaoAso> </dataEmissaoAso>
+<dataFicha> </dataFicha>
+<especialidade> </especialidade>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 10
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+<imprimeAsoComExamesNaoPertencentesaFicha>
+</imprimeAsoComExamesNaoPertencentesaFicha>
+<inativaFunconarioExameDemissional> </inativaFunconarioExameDemissional>
+<listaRiscosWsVo>
+<listaCodigoRiscos> </listaCodigoRiscos>
+<tipoBuscaRiscos> </tipoBuscaRiscos>
+</listaRiscosWsVo>
+<medicoAsoEResponsavelPelaFicha> </medicoAsoEResponsavelPelaFicha>
+<nomeMedicoEmissorAso> </nomeMedicoEmissorAso>
+<parecerAso> </parecerAso>
+<parecerTrabalhoEmAltura> </parecerTrabalhoEmAltura>
+<parecerTrabalhoEspacoConfinado> </parecerTrabalhoEspacoConfinado>
+<telefoneResponsavelAso> </telefoneResponsavelAso>
+<textoLivreValidade> </textoLivreValidade>
+<tipoeExame> </tipoeExame>
+<UFConselho> </UFConselho>
+<pareceres>
+<parecer>
+<codigo></codigo>
+<valor></valor>
+</parecer>
+</pareceres>
+<desconsideraAsoEsocial></desconsideraAsoEsocial>
+</aso>
+</ser:incluiDadosAso>
+</soapenv:Body>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 11
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+</soapenv:Envelope
+3.1.1
+
+Tabela de Propriedades da entrada
+Aso
+Propriedade
+
+codigoEmpresa
+
+Tamanho
+6
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+Código da empresa
+onde o ASO será
+incluído
+
+codigoFuncionario
+
+20
+
+Numérico
+
+Sim²
+
+Código de
+identificação SOC do
+funcionário
+
+codigoPessoaEmissorAso
+
+6
+
+Numérico
+
+Não
+
+Código do emissor do
+ASO
+
+codigoSequencialFichaclinica
+
+6
+
+Numérico
+
+Sim³
+
+Código sequencial de
+identificação da ficha
+clínica
+
+comentarioAso
+
+200
+
+Alfanumérico
+
+Não
+
+Comentários
+referentes ao ASO
+
+conselhoClasse
+
+20
+
+Alfanumérico
+
+Não
+
+Conselho de classe
+
+dataEmissaoAso
+
+-
+
+Data (dd/MM/aaaa)
+
+Não
+
+Data de emissão
+
+dataFicha
+
+-
+
+Data (dd/MM/aaaa)
+
+Não²
+
+Data da ficha clínica
+
+especialidade
+
+20
+
+Alfanumérico
+
+Não
+
+Nome da
+especialidade
+
+identificacaoWsVo
+
+-
+
+identificacaoWsVo
+
+Sim
+
+Tag de identificação;
+verificar item 3.1.2
+
+imprimeAsoComExamesNaoPe
+
+-
+
+Booleano
+
+Não
+
+rtencentesaFicha
+
+Indica se o Aso deverá
+ser impresso junto
+com os exames que
+não pertencem à ficha
+em questão
+
+inativaFunconarioExameDemis
+
+-
+
+Booleano
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Indica se é para
+Página 12
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+sional
+
+inativar funcionário
+que consta em exame
+demissional
+
+listaRiscosWsVo
+
+-
+
+listaRiscosWsVo
+
+Não
+
+Tag de lista de riscos
+do ASO; verificar item
+3.1.3
+
+medicoAsoEResponsavelPelaFi
+
+-
+
+Booleano
+
+Não
+
+cha
+
+Indica se o médico no
+ASO também é
+responsável pela ficha
+médica
+
+nomeMedicoEmissorAso
+
+70
+
+Alfanumérico
+
+Não
+
+Nome do médico que
+emitiu o ASO
+
+parecerAso
+
+20
+
+Enum
+
+Sim
+
+no ASO
+
+Valores possíveis:
+•
+
+BRANCO
+
+•
+
+APTO
+
+•
+
+APTO_COM_REST
+
+Parecer a ser colocado
+
+RICOES
+•
+parecerTrabalhoEmAltura
+
+20
+
+INAPTO
+
+Enum
+
+Não4, 7, 8
+
+Trabalho em altura
+
+Valores possíveis:
+•
+
+BRANCO
+
+•
+
+APTO
+
+•
+
+APTO_COM_REST
+
+Parecer referente à
+
+RICOES
+•
+parecerTrabalhoEspacoConfina
+do
+
+20
+
+INAPTO
+
+Enum
+
+Não4, 7, 8
+
+Valores possíveis:
+•
+
+BRANCO
+
+•
+
+APTO
+
+•
+
+APTO_COM_REST
+
+Parecer referente à
+Trabalho em espaço
+confinado
+
+RICOES
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 13
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+•
+telefoneResponsavelAso
+
+15
+
+INAPTO
+
+Alfanumérico
+
+Não
+
+Telefone do
+responsável pelo Aso
+
+textoLivreValidade
+
+200
+
+Alfanumérico
+
+Não
+
+Texto livre sobre a
+validade do Aso
+
+tipoeExame
+
+2
+
+Numérico
+
+Não2, 6
+
+Identificação do tipo
+de exame
+
+UFConselho
+
+2
+
+Alfanumérico
+
+Não
+
+UF do conselho
+
+pareceres
+
+-
+
+pareceres
+
+Não9, 10
+
+Tag de lista de
+pareceres do ASO;
+verificar item 3.1.4
+
+desconsideraAsoEsocial
+
+-
+
+Booleano
+
+Não
+
+Indica se o ASO deve
+ser desconsiderado
+para o eSocial.
+
+3.1.2
+
+Tag identificacaoWsVo
+identificacaoWsVo
+
+Propriedade
+chaveAcesso
+
+Tamanho
+10
+
+Tipo
+Alfanumérico
+
+Obrigatório
+Sim¹
+
+Observação
+Senha utilizada para acessar o serviço. A
+informação pode ser consultada nas
+configurações de integração no cadastro
+de Empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim¹
+
+Código da empresa principal da empresa
+que está solicitando o serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim¹
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+homologação
+
+-
+
+Boolean
+
+Não
+
+Indica se utiliza homologação
+
+codigoUsuario
+
+10
+
+Numérico
+
+Sim¹
+
+Código do usuário responsável pela ação
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 14
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+3.1.3
+
+Tag listaRiscosWsVo
+listaRiscosWsVo
+
+Propriedade
+
+Tamanho
+
+listaCodigoRiscos
+
+-
+
+Tipo
+
+Obrigatório
+
+Numérico
+
+Sim
+
+Observação
+Código do risco a ser associado ao
+ASO do funcionário. Em caso de
+múltiplos riscos, a propriedade
+deve ser repetida para cada
+ocorrência de risco no ASO.
+
+tipoBuscaRiscos
+
+-
+
+Enum
+
+Sim
+
+Tipo de busca a ser utilizado para
+
+Valores possíveis:
+
+localização do(s) risco(s)
+
+CODIGO_SOC
+
+informados na propriedade
+listacodigoRiscos.
+
+CODIGO_RH
+
+3.1.4
+
+Tag pareceres
+pareceres
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+parecer
+
+-
+
+parecer
+
+Não5
+
+Tag de lista responsável pela informação
+dos pareceres dos ASO. A propriedade
+
+parecer deve ser informada para cada
+parecer existente.
+
+3.1.4.1 Tag parecer
+parecer
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigo
+
+-
+
+Numérico
+
+Não
+
+Código do parecer
+
+Valores possíveis:
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 15
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+1 - Trabalho em Altura
+2 - Trabalho em Espaço Confinado
+3 - Trabalho com Eletricidade
+4 - Trabalho em Operação de
+Máquinas e Equipamentos
+valor
+
+-
+
+Enum
+
+Não
+
+Valor para o parecer
+
+Valores possíveis:
+•
+•
+
+código.
+
+APTO_COM_RESTRICOES
+•
+
+3.1.5
+
+APTO
+
+informado na tag
+
+INAPTO
+
+Considerações para as propriedades
+1. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+2. Obrigatório quando o sequencial da ficha não for informado;
+3. Obrigatório quando as propriedades de referência 2 não forem informadas;
+4. As propriedades parecerTrabalhoEmAltura e parecerTrabalhoEspacoConfinado serão
+desconsideradas caso informado algum parecer, com os códigos 1 ou 2, na propriedade
+
+pareceres, respectivamente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 16
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+5. Em caso de múltiplos pareceres especiais no ASO, a propriedade parecer deve ser
+informada para cada parecer.
+Exemplo:
+<parecer>
+<codigo>1</codigo>
+<valor>INAPTO</valor>
+</parecer>
+<parecer>
+<codigo>2</codigo>
+<valor>INAPTO</valor>
+</parecer>
+6. Os tipos de exames aceitos são:
+1 – Admissional;
+2 – Periódico;
+3 – Retorno ao Trabalho;
+4 – Mudança de Função;
+5 – Demissional;
+6 – Especial;
+10 – Consulta;
+11 – Retorno Consulta;
+12 – Acidente;
+13 – Licença Médica;
+14 – Enfermagem;
+20 – Terceiros;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 17
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+7. Caso essa tag seja informada em branco e, a tag pareceres não seja enviada então o
+parecer será removido do ASO.
+8. Caso essa tag seja preenchida com um valor válido então o parecer deve ser adicionado
+ao ASO, mesmo que a tag pareceres não seja enviada.
+9. Somente os pareceres especiais informados nessa tag permanecerão no ASO, e os que
+não forem enviados serão removidos.
+10. Se essa tag for informada vazia todos os pareceres especiais serão removidos do ASO;
+Se a tag não for mencionada na requisição não será efetuada nenhuma alteração nos
+pareceres que já estão no ASO.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 18
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response Porta incluiDadosAso
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluiDadosAsoResponse xmlns:ns2="http://services.soc.age.com/">
+<ResultadoRetorno>
+<erro>false</erro>
+</ResultadoRetorno>
+</ns2:incluiDadosAsoResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+erro¹
+
+4.1.2
+
+Tipo
+boolean
+
+Considerações para as propriedades
+1. Em caso de falha devolverá false e a exceção ocorrido na requisição
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 19
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 20
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+Ajustar horário do computador;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 21
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+5.1.4
+
+Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração Empresa/Cliente (337) no SOC e adicionar o serviço à lista de webservices da empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 22
+
+Web Service ASO
+
+Versão:
+
+Especificação Técnica
+
+Date: 28/06/2024
+
+<1.6.2>
+
+Desenvolvimento M-DEV-1922
+
+5.2
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+5.3
+
+
+
+Identificação Inválida;
+
+
+
+Empresa Invalida;
+
+
+
+Usuário Sem Acesso;
+
+
+
+Login não Localizado;
+
+
+
+Usuário não pode ser o responsável pela empresa;
+
+
+
+O campo codigoUsuario deve conter apenas numeros.
+
+Falhas de Consistência
+Poderão ocorrer falhas durante a execução do serviço, falhas que serão lançadas como exceções
+referentes à consistência de dados, tais como:
+
+
+Ficha clínica não encontrada: Mensagem retornada quando o
+codigoSequencialFichaclinica enviado não pertence à empresa informada na tag
+“codigoEmpresa”;
+
+
+
+Código emissor de ASO Não encontrado;
+
+
+
+Não é permitido gravar o ASO do(a) Funcionário(a): – com Parecer, pois a Ficha Clínica
+possui Resultado de Exames sem data;
+
+
+
+O campo nomeMedicoEmissorAso deve ter no máximo 70 digitos: Mensagem retornada
+quando o campo nomeMedicoEmissorAso é preenchido com mais de 70 caracteres;
+
+
+
+Parecer inválido: Mensagem retornada referente à tag parecer quando forem enviados
+códigos inválidos, códigos inexistentes no ASO ou a tag “código” for enviada sem
+preenchimento.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 23
+
+

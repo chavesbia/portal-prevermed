@@ -1,0 +1,8545 @@
+Web Service de Resultado de Exames
+Especificação Técnica
+Versão <2.5.3>
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+20/10/2014
+
+draft
+
+Início da documentação do serviço
+
+Valdilanio Cruz
+
+31/10/2014
+
+1.0
+
+Fechamento da primeira versão inicial do
+
+Valdilanio Cruz
+
+documento
+06/11/2014
+
+1.1
+
+Itens de segurança
+
+André Pinheiro
+
+25/01/2017
+
+1.2
+
+Adicionada lista de falhas na requisição
+
+Roseane Alves
+
+17/04/2017
+
+1.3
+
+Refatoração da documentação para
+
+Roseane Alves
+
+corresponder ao serviço de Resultado de
+Exame
+10/07/2018
+
+1.4
+
+Inclusão dos campos do eSocial
+
+Guilherme Luizato
+
+27/03/2019
+
+1.4.1
+
+Retirada a propriedade “homologacao” da
+
+Marcos Santiago
+
+documentação do serviço.
+25/05/2019
+
+1.4.2
+
+Inclusão do campo “ordemExameEsocial”
+
+Igor Matos de Andrade
+
+05/07/2019
+
+1.5
+
+Inclusão do endpoint
+
+Gustavo Matos
+
+excluirPedidoExamePorFuncionarioFicha
+22/07/2019
+
+1.5.1
+
+Ajuste nos cálculos dos campos do
+
+André Pinheiro
+
+Hemograma.
+16/09/2019
+
+1.5.2
+
+Atualizada a descrição do campo “rdw”
+
+Gustavo Matos
+
+26/09/2019
+
+1.5.3
+
+Incluída a propriedade
+
+Gustavo Matos
+
+“excluirFichaSemExames” no endpoint
+“excluirPedidoExamePorFuncionarioFicha”
+09/10/2019
+
+1.5.4
+
+Ajuste na propriedade “tipoExame” no
+
+André Pinheiro
+
+endpoint
+“excluirPedidoExamePorFuncionarioFicha”
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+23/01/2020
+
+1.5.5
+
+Atualização da observação de
+
+Gustavo Matos
+
+obrigatoriedade da propriedade
+codigoExame no endpoint
+resultadoExamesPorFuncionarioFicha
+30/03/2020
+
+1.5.6
+
+Atualização das considerações e
+
+Gustavo Matos
+
+observações do Web Service
+22/06/2020
+
+1.6
+
+Inclusão das regras de validação e
+
+Gustavo Matos
+
+inclusão no Lote de Prestadores
+24/06/2020
+
+1.6.1
+
+Atualização das mensagens de retorno do
+
+Gustavo Matos
+
+serviço
+09/07/2020
+
+1.6.2
+
+Corrigida a descrição da propriedade
+
+Gustavo Matos
+
+resultado
+11/02/2021
+
+1.6.3
+
+Propriedades cnpjLaboratorio e
+
+Marcos Santiago
+
+codigoExameLaboratorial desativadas.
+15/09/2021
+
+1.6.4
+
+Incluído o item SOC-311 na lista de falhas
+
+Marcos Santiago
+
+na ação
+excluirPedidoExamePorFuncionarioFicha
+28/10/2021
+
+1.6.5
+
+Incluída observação para a propriedade
+
+Marcos Santiago
+
+ordemExameEsocial
+27/01/2022
+
+1.6.6
+
+Incluída observação para a propriedade
+
+Marcos Santiago
+
+codigoAparelhoAudiometrico
+30/03/2022
+
+1.6.7
+
+Adicionada observação para a propriedade
+
+Marcos Santiago
+
+codigoPrestador
+15/07/2022
+
+2.0
+
+Incluída consideração sobre certificado de
+
+Marcos Santiago
+
+conexão HTTPS
+15/07/2022
+
+2.0
+
+Inclusão das propriedades
+
+Marcos Santiago
+
+dataAgendamento e horaAgendamento
+15/07/2022
+
+2.0
+
+Incluído o item SOC-312 na lista de falhas
+
+Marcos Santiago
+
+na ação
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+excluirPedidoExamePorFuncionarioFicha
+29/07/2022
+
+2.1
+
+Incluída nova mensagem de falha nos
+
+Marcos Santiago
+
+endpoints
+resultadoExamePorCodigoSequencial e
+resultadoExamePorFuncionarioFicha
+26/08/2022
+
+2.1.1
+
+Incluída nova mensagem de falha nos
+
+Marcos Santiago
+
+endpoints
+resultadoExamePorCodigoSequencial e
+resultadoExamePorFuncionarioFicha
+09/09/2022
+
+2.2
+
+Inclusão do campo
+
+Marcos Santiago
+
+excluirProntuarioVinculadoEventoExcluidoE
+social
+19/01/2023
+
+2.3
+
+Incluída consideração sobre o paralelismo
+
+Marcos Santiago
+
+de requisições
+01/02/2023
+
+2.3.1
+
+Incluída nova mensagem de falha nos
+
+Marcos Santiago
+
+endpoints
+resultadoExamePorCodigoSequencial e
+resultadoExamePorFuncionarioFicha
+28/07/2023
+
+2.3.2
+
+Incluída nova mensagem de falha nos
+
+Marcos Santiago
+
+endpoints
+resultadoExamePorCodigoSequencial e
+resultadoExamePorFuncionarioFicha
+24/08/2023
+
+2.4
+
+Inclusão de tipoeExame por ficha
+
+Marcos Santiago
+
+personalizada
+23/10/2023
+
+2.5
+
+Removidas as considerações referentes à
+
+Marcos Santiago
+
+autenticação por empresa principal e
+cliente.
+12/08/2024
+
+2.5.1
+
+Propriedades cnpjLaboratorio e
+
+Marcos Santiago
+
+codigoExameLaboratorial reativadas.
+16/09/2024
+
+2.5.2
+
+Alterado para 5 o tamanho do campo
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Marcos Santiago
+Página 4
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+“peso”
+29/11/2024
+
+2.5.3
+
+Inseridas observações e mensagens de
+
+Marcos Santiago
+
+erro para a tag
+“identificarExameAlteradoAutomaticament
+e” e o controle de validações
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+7
+7
+7
+7
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+2.1 Configuração Padrão
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.3 Considerações para as Propriedades da tag wsse security
+2.4 Configurações adicionais para a tag wsse security
+
+8
+8
+9
+11
+12
+
+3.
+
+Entradas
+3.1 Mensagem SOAP request resultadoExamesPorCodigoSequencial
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+3.2 Mensagem SOAP request resultadoExamesPorFuncionarioFicha
+3.2.1 Tabela de Propriedade da Entrada
+3.2.2 Considerações para as propriedades
+3.3 Mensagem SOAP request excluirPedidoExamePorFuncionarioFicha
+3.3.1 Tabela de Propriedades da entrada
+3.3.2 Considerações para as propriedades
+
+13
+13
+19
+43
+44
+51
+76
+78
+78
+81
+
+4.
+
+Saídas
+
+82
+
+4.1
+
+Mensagem SOAP response para operação resultadoExamesPorCodigoSequencial
+4.1.1 Tabela de Propriedades da Saída
+4.1.2 Considerações para as propriedades
+4.2 Mensagem SOAP response para resultadoExamesPorFuncionarioFicha
+4.2.1 Tabela de Propriedades da Saída
+4.2.2 Considerações para as propriedades
+4.3 Mensagem SOAP response para operação excluirPedidoExamePorFuncionarioFicha
+4.3.1 Tabela de Propriedades da Saída
+4.3.2 Considerações para as propriedades
+
+82
+82
+82
+83
+83
+83
+83
+84
+85
+
+Lista de falhas
+5.1 Falhas na requisição
+5.1.1 Username e password inválidos.
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.1.4 Empresa sem acesso
+5.2 Falhas de Acesso
+5.3 Campos Obrigatórios não preenchidos
+5.4 Falhas na ação resultadoExamesPorCodigoSequencial
+5.5 Falhas na ação excluirPedidoExamePorFuncionarioFicha
+
+86
+86
+86
+86
+87
+88
+89
+89
+90
+91
+
+5.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Permitir ao cliente incluir e alterar Resultados de Exames, facilitando o processo de comunicação
+entre sistemas do cliente e o Sistema SOC. Além disso, também permite a exclusão de exames
+de pedidos de exames existentes.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados do resultado que será manipulado pelo cliente a partir de sua origem;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os
+dados do resultado manipulado, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O cliente poderá utilizar a ferramenta “Exporta Dados”, pela qual será possível obter os
+códigos sequenciais da “Ficha” (Pedido de Exame) e do Resultado, necessários para a
+manipulação dos mesmos;
+3. O acesso ao serviço deve constar nas configurações de integração do usuário;
+4. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+5. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG Header
+com itens de segurança conforme política, segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+O valor inserido na tag define o tempo de vida do timestamp e,
+consequentemente, da mensagem. Mensagens enviadas com timestamp
+expirado devem ser rejeitadas pelo Web Service que as estão consumindo.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request resultadoExamesPorCodigoSequencial
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:resultadoExamesPorCodigoSequencial>
+<resultadoExame>
+<examesIdentificacaoPorIdWsVo>
+<codigoIdFicha> </codigoIdFicha>
+<codigoIdResultadoExame> </codigoIdResultadoExame>
+</examesIdentificacaoPorIdWsVo>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<resultadoExamesDadosWsVo>
+<alteraFichaClinica> </alteraFichaClinica>
+<audiomatria>
+<codigoAparelhoAudiometrico> </codigoAparelhoAudiometrico>
+<comentariosOD> </comentariosOD>
+<comentariosOE> </comentariosOE>
+<dataCalibracao> </dataCalibracao>
+<irfOD> </irfOD>
+<irfOE> </irfOE>
+<lafOD> </lafOD>
+<lafOE> </lafOE>
+<meatoscopiaOD> </meatoscopiaOD>
+<meatoscopiaOE> </meatoscopiaOE>
+<repousoAuditivo> </repousoAuditivo>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<srtOD> </srtOD>
+<srtOE> </srtOE>
+<tipoMascaramento> </tipoMascaramento>
+<viaAereaOD1000> </viaAereaOD1000>
+<viaAereaOD1000Mascaramento> </viaAereaOD1000Mascaramento>
+<viaAereaOD2000> </viaAereaOD2000>
+<viaAereaOD2000Mascaramento> </viaAereaOD2000Mascaramento>
+<viaAereaOD250> </viaAereaOD250>
+<viaAereaOD250Mascaramento> </viaAereaOD250Mascaramento>
+<viaAereaOD3000> </viaAereaOD3000>
+<viaAereaOD3000Mascaramento> </viaAereaOD3000Mascaramento>
+<viaAereaOD4000> </viaAereaOD4000>
+<viaAereaOD4000Mascaramento> </viaAereaOD4000Mascaramento>
+<viaAereaOD500> </viaAereaOD500>
+<viaAereaOD500Mascaramento> </viaAereaOD500Mascaramento>
+<viaAereaOD6000> </viaAereaOD6000>
+<viaAereaOD6000Mascaramento> </viaAereaOD6000Mascaramento>
+<viaAereaOD8000> </viaAereaOD8000>
+<viaAereaOD8000Mascaramento> </viaAereaOD8000Mascaramento>
+<viaAereaOE1000> </viaAereaOE1000>
+<viaAereaOE1000Mascaramento> </viaAereaOE1000Mascaramento>
+<viaAereaOE2000> </viaAereaOE2000>
+<viaAereaOE2000Mascaramento> </viaAereaOE2000Mascaramento>
+<viaAereaOE250> </viaAereaOE250>
+<viaAereaOE250Mascaramento> </viaAereaOE250Mascaramento>
+<viaAereaOE3000> </viaAereaOE3000>
+<viaAereaOE3000Mascaramento> </viaAereaOE3000Mascaramento>
+<viaAereaOE4000> </viaAereaOE4000>
+<viaAereaOE4000Mascaramento> </viaAereaOE4000Mascaramento>
+<viaAereaOE500> </viaAereaOE500>
+<viaAereaOE500Mascaramento> </viaAereaOE500Mascaramento>
+<viaAereaOE6000> </viaAereaOE6000>
+<viaAereaOE6000Mascaramento> </viaAereaOE6000Mascaramento>
+<viaAereaOE8000> </viaAereaOE8000>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<viaAereaOE8000Mascaramento> </viaAereaOE8000Mascaramento>
+<viaOssesOD1000> </viaOssesOD1000>
+<viaOssesOD1000Mascaramento> </viaOssesOD1000Mascaramento>
+<viaOssesOD2000> </viaOssesOD2000>
+<viaOssesOD2000Mascaramento> </viaOssesOD2000Mascaramento>
+<viaOssesOD3000> </viaOssesOD3000>
+<viaOssesOD3000Mascaramento> </viaOssesOD3000Mascaramento>
+<viaOssesOD4000> </viaOssesOD4000>
+<viaOssesOD4000Mascaramento> </viaOssesOD4000Mascaramento>
+<viaOssesOD500> </viaOssesOD500>
+<viaOssesOD500Mascaramento> </viaOssesOD500Mascaramento>
+<viaOssesOE1000> </viaOssesOE1000>
+<viaOssesOE1000Mascaramento> </viaOssesOE1000Mascaramento>
+<viaOssesOE2000> </viaOssesOE2000>
+<viaOssesOE2000Mascaramento> </viaOssesOE2000Mascaramento>
+<viaOssesOE3000> </viaOssesOE3000>
+<viaOssesOE3000Mascaramento> </viaOssesOE3000Mascaramento>
+<viaOssesOE4000> </viaOssesOE4000>
+<viaOssesOE4000Mascaramento> </viaOssesOE4000Mascaramento>
+<viaOssesOE500> </viaOssesOE500>
+<viaOssesOE500Mascaramento> </viaOssesOE500Mascaramento>
+</audiomatria>
+<codigoExame> </codigoExame>
+<codigoExaminador> </codigoExaminador>
+<codigoExaminador2> </codigoExaminador2>
+<codigoPrestador> </codigoPrestador>
+<comentario> </comentario>
+<criaExame> </criaExame>
+<criaFichaClinica> </criaFichaClinica>
+<dataResultadoExame> </dataResultadoExame>
+<espirometria>
+<cvfMedido> </cvfMedido>
+<cvfMelhoria> </cvfMelhoria>
+<cvfPorcentagem> </cvfPorcentagem>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<cvfPos> </cvfPos>
+<cvfPrevisto> </cvfPrevisto>
+<pfeMedido> </pfeMedido>
+<pfeMelhoria> </pfeMelhoria>
+<pfePorcentagem> </pfePorcentagem>
+<pfePos> </pfePos>
+<pfePrevisto> </pfePrevisto>
+<vcMedido> </vcMedido>
+<vcPos> </vcPos>
+<vefMedido> </vefMedido>
+<vefMelhoria> </vefMelhoria>
+<vefPorcentagem> </vefPorcentagem>
+<vefPos> </vefPos>
+<vefPrevisto> </vefPrevisto>
+</espirometria>
+<fichaClinicaWsVo>
+<altura> </altura>
+<biotipo> </biotipo>
+<codigoMedicoFichaClinica> </codigoMedicoFichaClinica>
+<frequenciaPulso> </frequenciaPulso>
+<frequenciaRespiratoria> </frequenciaRespiratoria>
+<perimetroCintura> </perimetroCintura>
+<perimetroQualdril> </perimetroQualdril>
+<peso> </peso>
+<pressaoMaxima> </pressaoMaxima>
+<pressaoMinima> </pressaoMinima>
+<temperatura> </temperatura>
+<textoLivreSinaisVitais> </textoLivreSinaisVitais>
+</fichaClinicaWsVo>
+<hemograma>
+<altMorfoEritrograma> </altMorfoEritrograma>
+<altMorfoLeucocito> </altMorfoLeucocito>
+<altMorfoPlaquetas> </altMorfoPlaquetas>
+<atipicos> </atipicos>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<atipicosPorcentagem> </atipicosPorcentagem>
+<basofilos> </basofilos>
+<basofilosPorcentagem> </basofilosPorcentagem>
+<bastonetes> </bastonetes>
+<bastonetesPorcentagem> </bastonetesPorcentagem>
+<chcm> </chcm>
+<eosinofilos> </eosinofilos>
+<eosinofilosPorcentagem> </eosinofilosPorcentagem>
+<hcm> </hcm>
+<hemacias> </hemacias>
+<hematocrito> </hematocrito>
+<hemoglobina> </hemoglobina>
+<leucocitos> </leucocitos>
+<metamielocitos> </metamielocitos>
+<metamielocitosPorcentagem> </metamielocitosPorcentagem>
+<monocitos> </monocitos>
+<monocitosPorcentagem> </monocitosPorcentagem>
+<neutrofilos> </neutrofilos>
+<neutrofilosPorcentagem> </neutrofilosPorcentagem>
+<observacaoEritrograma> </observacaoEritrograma>
+<observacaoLeucocito> </observacaoLeucocito>
+<observacaoPlaquetas> </observacaoPlaquetas>
+<plaquetas> </plaquetas>
+<segmentados> </segmentados>
+<segmentadosPorcentagem> </segmentadosPorcentagem>
+<tipicos> </tipicos>
+<tipicosPorcentagem> </tipicosPorcentagem>
+<vcm> </vcm>
+<rdw> </rdw>
+</hemograma>
+<identificarExameAlteradoAutomaticamente>
+</identificarExameAlteradoAutomaticamente>
+<metodo> </metodo>
+<nomeExame> </nomeExame>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<nomeExaminador3> </nomeExaminador3>
+<nomeImagem> </nomeImagem>
+<notaFiscal> </notaFiscal>
+<resultado> </resultado>
+<resultadoAlterado> </resultadoAlterado>
+<resultadoAlteradoAgravamento> </resultadoAlteradoAgravamento>
+<resultadoAlteradoEmAnalise> </resultadoAlteradoEmAnalise>
+<resultadoAlteradoOcupacional> </resultadoAlteradoOcupacional>
+<resultadoReferencialSequencial> </resultadoReferencialSequencial>
+<sobrepoeResultadoExistente> </sobrepoeResultadoExistente>
+<urina>
+<aspecto> </aspecto>
+<bacterias> </bacterias>
+<bilirrubina> </bilirrubina>
+<celulas> </celulas>
+<cetonicos> </cetonicos>
+<cilindros> </cilindros>
+<cor> </cor>
+<cristais> </cristais>
+<densidade> </densidade>
+<descricaoReacao> </descricaoReacao>
+<eritrocitario> </eritrocitario>
+<filaMuco> </filaMuco>
+<floraBacteriana> </floraBacteriana>
+<glicose> </glicose>
+<hemacias> </hemacias>
+<hemoglobina> </hemoglobina>
+<leucocitos> </leucocitos>
+<leveduras> </leveduras>
+<outros> </outros>
+<ph> </ph>
+<proteina> </proteina>
+<protozoarios> </protozoarios>
+<reacao> </reacao>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+<urobilinogenio> </urobilinogenio>
+<volume> </volume>
+</urina>
+<cnpjLaboratorio></cnpjLaboratorio>
+<codigoExameLaboratorial></codigoExameLaboratorial>
+<ordemExameEsocial> </ordemExameEsocial>
+<dataAgendamento></dataAgendamento>
+<horaAgendamento></horaAgendamento>
+</resultadoExamesDadosWsVo>
+<resultadoExamesIdentificacaoFuncionarioWsVo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoFuncionario> </codigoFuncionario>
+<dataFicha> </dataFicha>
+<tipoeExame> </tipoeExame>
+</resultadoExamesIdentificacaoFuncionarioWsVo>
+</resultadoExame>
+</ser:resultadoExamesPorCodigoSequencial>
+</soapenv:Body>
+</soapenv:Envelope>
+3.1.1
+
+Tabela de Propriedades da entrada
+resultadoExame
+Propriedade
+
+Obrigatório
+
+ExamesIdentificacaoPorIdWsVo
+
+Sim
+
+Observação
+Código de identificação da ficha e do
+resultado de exame
+
+identificacaoWsVo
+
+Sim
+
+Identificação de acesso ao serviço de
+Resultado de Exame
+
+resultadoExamesDadosWsVo
+
+Sim
+
+Dados do resultado de exame
+
+resultadoExamesIdentificacaoFuncionarioWsVo
+
+Sim
+
+Identificação do funcionário
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+3.1.1.1 Tag ExamesIdentificacaoPorIdWsVo
+ExamesIdentificacaoPorIdWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigoIdFicha
+
+Numérico
+
+Sim³
+
+Código SOC de identificação da Ficha
+
+codigoIdResultadoExame
+
+Numérico
+
+Sim³
+
+Código SOC de identificação do Resultado de
+Exame
+
+3.1.1.2 Tag identificacaoWsVo
+identificacaoWsVo
+Propriedade
+chaveAcesso
+
+Tamanho
+10
+
+Tipo
+
+Obrigatório
+
+Alfanumérico
+
+Observação
+
+Sim¹
+
+Senha utilizada para acessar o
+serviço. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim¹
+
+Código da empresa principal da
+empresa que está solicitando o
+serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim²
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário responsável pela
+ação
+
+3.1.1.3 Tag resultadoExamesDadosWsVo
+resultadoExamesDadosWsVo
+Propriedade
+alteraFichaClinica
+
+Tamanho
+-
+
+Tipo
+Booleano
+
+Obrigatório
+Não
+
+4
+
+Observação
+Indica se a ficha deverá
+ser atualizada
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+audiomatria
+
+-
+
+Tag audiomatria
+
+Não
+
+cnpjLaboratorio
+
+-
+
+Numérico
+
+Não
+
+9
+
+Verificar item 3.1.1.4
+Respectivo ao campo
+“CNPJ laboratório” da tela
+de resultado de exame.
+Deve ser preenchido com
+máscara.
+
+codigoExame
+
+Alfanumérico
+
+Não
+
+Código de identificação
+SOC do exame
+
+codigoExameLaborator
+
+11
+
+Alfanumérico
+
+Não
+
+Respectivo ao campo
+
+ial
+
+“Código sequencial do
+exame” da tela de
+resultado de exame.
+
+codigoExaminador
+
+Numérico
+
+Código de identificação do
+examinador. (Código de
+uma pessoa no SOC
+classificada como
+examinadora)
+
+codigoExaminador2
+
+Numérico
+
+Código de identificação do
+segundo examinador.
+(Código de uma pessoa
+no SOC classificada como
+examinadora)
+
+codigoPrestador
+
+Numérico
+
+Não
+
+5, 13
+
+Código de identificação
+SOC do prestador
+
+comentario
+
+Alfanumérico
+
+Comentário quanto ao
+resultado
+
+criaExame
+
+-
+
+Booleano
+
+Não
+
+6
+
+Indica se o exame deverá
+ser criado, de acordo com
+os dados enviados na
+requisição, caso o exame
+não seja encontrado no
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+sistema
+criaFichaClinica
+
+-
+
+Booleano
+
+Não
+
+6
+
+Indica se a ficha clínica
+deverá ser criada, de
+acordo com os dados
+enviados na requisição,
+caso a ficha não seja
+encontrada no sistema
+
+dataResultadoExame
+
+Data (dd/MM/aaaa)
+
+Não
+
+Data do resultado do
+exame
+9
+
+Verificar item 3.1.1.5
+
+8
+
+Verificar item 3.1.1.6
+
+9
+
+Verificar item 3.1.1.7
+
+espirometria
+
+-
+
+Tag espirometria
+
+Não
+
+fichaClinicaWsVo
+
+-
+
+Tag fichaClinica
+
+Não
+
+hemograma
+
+-
+
+Tag hemograma
+
+Não
+
+identificarExameAltera
+
+-
+
+Booleano
+
+Não14
+
+doAutomaticamente
+
+Indica se exames
+alterados
+automaticamente devem
+ser identificados
+
+metodo
+
+Alfanumérico
+
+Não
+
+Descrição do método
+utilizado
+
+nomeExame
+
+Alfanumérico
+
+Não
+
+Nome do exame
+
+nomeExaminador3
+
+Alfanumérico
+
+Não
+
+Nome do examinador
+
+nomeImagem
+
+Alfanumérico
+
+Não
+
+Nome da imagem a ser
+utilizada
+
+notaFiscal
+
+Alfanumérico
+
+Não
+
+Identificação da nota
+fiscal
+
+resultado
+resultadoAlterado
+
+-
+
+Alfanumérico
+
+Não
+
+Resultado do exame
+
+Booleano
+
+Não
+
+Indica se o resultado
+alterado deve ser
+identificado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+resultadoAlteradoAgra
+
+-
+
+Booleano
+
+Não
+
+Indica se o resultado de
+
+vamento
+
+agravamento alterado
+deve ser identificado
+
+resultadoAlteradoEmA
+
+-
+
+Booleano
+
+Não
+
+Indica se o resultado
+
+nalise
+
+alterado em análise deve
+ser identificado
+
+resultadoAlteradoOcup
+
+-
+
+Booleano
+
+Não
+
+Indica se o resultado
+
+acional
+
+alterado ocupacional deve
+ser identificado
+
+resultadoReferencialSe
+
+-
+
+quencial
+
+Enum
+
+Não
+
+Resultado do exame. Os
+únicos valores possíveis
+
+Valores possíveis:
+
+são os que estão listados
+
+sobrepoeResultadoExi
+
+-
+
+•
+
+SEQUENCIAL
+
+•
+
+REFERENCIAL
+
+•
+
+NAO_APLICA
+
+Booleano
+
+na coluna “Tipo” ao lado.
+
+Não
+
+7
+
+stente
+
+Indica se alterações
+podem ser feitas,
+sobrepondo dados já
+cadastrados pelos novos
+dados enviados
+
+urina
+
+-
+
+Tag urina
+
+Não
+
+9
+
+Verificar item 3.1.1.8
+
+ordemExameEsocial
+
+-
+
+Enum
+
+Não11
+
+Indica se o exame é
+‘Inicial’ ou ‘Sequencial’
+
+Valores possíveis:
+
+dataAgendamento
+
+-
+
+•
+
+INICIAL
+
+•
+
+SEQUENCIAL
+
+Data (dd/MM/aaaa)
+
+Não
+
+Respectivo ao campo
+“Data Agendamento” da
+tela de Pedido de exames.
+
+horaAgendamento
+
+-
+
+Hora(hh:mm)
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Respectivo ao campo
+
+Página 23
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+“Hora Agendamento” da
+tela de Pedido de exames.
+3.1.1.4 Tag Audiomatria
+Audiomatria
+Propriedade
+
+Tamanho
+
+Tipo
+
+codigoAparelhoAudiometrico
+
+Obrigatório
+Não12
+
+Observação
+Código de
+identificação do
+aparelho
+audiométrico
+
+comentariosOD
+
+200
+
+Alfanumérico
+
+Não
+
+Observações
+sobre o Ouvido
+Direito
+
+comentariosOE
+
+200
+
+Alfanumérico
+
+Não
+
+Observações
+sobre o Ouvido
+Esquerdo
+
+dataCalibracao
+
+-
+
+Date (dd/mm/aaaa)
+
+Não
+
+Data de
+calibração do
+aparelho
+utilizado
+
+irfOD
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Índice de
+Reconhecimento
+de Fala do
+ouvido direito
+
+irfOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Índice de
+Reconhecimento
+de Fala do
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 24
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+ouvido esquerdo
+lafOD
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Limiar de
+Atenção para
+fala do Ouvido
+direito. Campo
+Logoaudiometria
+- LAF(OD) dBNA
+tela de resultado
+de exames
+
+lafOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Limiar de
+Atenção para
+fala do Ouvido
+esquerdo.
+Campo Logoaudi
+ometria LAF(OE) dBNA
+tela de resultado
+de exames
+
+meatoscopiaOD
+
+-
+
+Enum
+
+Não
+
+meatoscopia no
+
+Valores possíveis:
+•
+
+SEM_OBSTRUCAO
+
+•
+
+COM_OBSTRUCAO
+
+Resultado da
+ouvido direito
+
+_PARCIAL
+•
+
+COM_OBSTRUCAO
+_TOTAL
+
+meatoscopiaOE
+
+-
+
+Enum
+Valores possíveis:
+
+Não
+
+Resultado da
+meatoscopia no
+ouvido esquerdo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+•
+
+SEM_OBSTRUCAO
+
+•
+
+COM_OBSTRUCAO
+_PARCIAL
+
+•
+
+COM_OBSTRUCAO
+_TOTAL
+
+repousoAuditivo
+
+29
+
+Alfanumérico
+
+Não
+
+Campo para
+“repouso
+auditivo”
+referente ao
+campo “repouso
+auditivo” da tela
+de resultado de
+exame
+
+srtOD
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+campo
+Meatoscopia SRT(OD) dBNA
+da tela de
+resultado de
+exame
+
+srtOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+campo
+Meatoscopia SRT(OE) dBNA
+da tela de
+resultado de
+exame
+
+tipoMascaramento
+
+-
+
+Enum
+Valores possíveis:
+•
+
+NARROW_BAND
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+
+Indica qual o tipo
+de
+mascaramento é
+Página 26
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+•
+
+PINK_NOISE
+
+utilizado, os
+
+•
+
+SPEACH_NOISE
+
+únicos valores
+
+•
+
+WHITE_NOISE
+
+possíveis estão
+indicados na
+coluna “Tipo”,
+caso o valor
+inserido não
+esteja dentre as
+opções, o valor
+nulo será
+enviado.
+
+viaAereaOD1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 1
+kHz
+
+viaAereaOD1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 2
+kHz
+
+viaAereaOD2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD250
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de
+0,25 kHz
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 27
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+viaAereaOD250Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 3
+kHz
+
+viaAereaOD3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 4
+kHz
+
+viaAereaOD4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de
+0,5 kHz
+
+viaAereaOD500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD6000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 6
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 28
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+kHz
+viaAereaOD6000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD8000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 8
+kHz
+
+viaAereaOD8000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 1
+kHz
+
+viaAereaOE1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 2
+kHz
+
+viaAereaOE2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE250
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 29
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+frequência de
+0,25 kHz
+viaAereaOE250Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 3
+kHz
+
+viaAereaOE3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 4
+kHz
+
+viaAereaOE4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de
+0,5 kHz
+
+viaAereaOE500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE6000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 30
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+Esquerdo para a
+frequência de 6
+kHz
+viaAereaOE6000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE8000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 8
+kHz
+
+viaAereaOE8000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 1
+kHz
+
+viaOssesOD1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 2
+kHz
+
+viaOssesOD2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD3000
+
+3
+
+Numérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+
+Medição da Via
+Página 31
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+Óssea No Ouvido
+Direito para a
+frequência de 3
+kHz
+viaOssesOD3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 4
+kHz
+
+viaOssesOD4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de
+0,5 kHz
+
+viaOssesOD500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 1
+kHz
+
+viaOssesOE1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 32
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+viaOssesOE2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 2
+kHz
+
+viaOssesOE2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 3
+kHz
+
+viaOssesOE3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 4
+kHz
+
+viaOssesOE4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de
+0,5 kHz
+
+viaOssesOE500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 33
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+ou não
+3.1.1.5 Tag Espirometria
+Espirometria
+Propriedade
+cvfMedido
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+6
+
+Numérico
+
+Não
+
+Valor medido da
+capacidade vital
+forçada
+
+cvfMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria da
+capacidade vital
+forçada
+
+cvfPorcentagem
+
+5
+
+Numérico
+
+Não
+
+Valor da
+porcentagem da
+capacidade vital
+forçada
+
+cvfPos
+
+6
+
+Numérico
+
+Não
+
+Valor da capacidade
+vital forçada após
+
+cvfPrevisto
+
+6
+
+Numérico
+
+Não
+
+Valor da capacidade
+vital forçada previsto
+
+pfeMedido
+
+6
+
+Numérico
+
+Não
+
+Pico de fluxo
+expiratório medido
+
+pfeMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria do
+pico de fluxo
+expiratório
+
+pfePorcentagem
+
+6
+
+Numérico
+
+Não
+
+Porcentagem medida
+no pico de fluxo
+expiratório
+
+pfePos
+
+6
+
+Numérico
+
+Não
+
+Pico de fluxo
+expiratório após
+
+pfePrevisto
+
+6
+
+Numérico
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Pico de fluxo
+Página 34
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+expiratório previsto
+vcMedido
+
+6
+
+Numérico
+
+Não
+
+Volume corrente
+medido
+
+vcPos
+
+6
+
+Numérico
+
+Não
+
+Volume corrente após
+
+vefMedido
+
+6
+
+Numérico
+
+Não
+
+Volume expiratório
+forçado medido
+
+vefMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria do
+volume expiratório
+forçado
+
+vefPorcentagem
+
+5
+
+Numérico
+
+Não
+
+Porcentagem de
+volume expiratório
+forçado
+
+vefPos
+
+6
+
+Numérico
+
+Não
+
+Volume expiratório
+forçado após
+
+vefPrevisto
+
+6
+
+Numérico
+
+Não
+
+Valor do volume
+expiratório forçado
+previsto
+
+3.1.1.6 Tag fichaClinica
+fichaClinica
+Propriedade
+altura
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+4
+
+Numérico
+
+Não
+
+Indica a altura da
+pessoa
+
+biotipo
+
+1
+
+Numérico
+
+Não
+
+Biotipo da pessoa
+
+codigoMedicoFichaClinica
+
+6
+
+Numérico
+
+Não
+
+Código (SOC) do
+usuário médico
+utilizado na ficha
+
+frequenciaPulso
+
+2
+
+Numérico
+
+Não
+
+Medição da
+frequência do
+pulso
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 35
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+frequenciaRespiratoria
+
+2
+
+Numérico
+
+Não
+
+Medição da
+frequência
+respiratória
+
+perimetroCintura
+
+3
+
+Numérico
+
+Não
+
+Medida do
+perímetro da
+cintura
+
+perimetroQualdril
+
+3
+
+Numérico
+
+Não
+
+Medida do
+perímetro do
+quadril
+
+peso
+
+5
+
+Numérico
+
+Não
+
+Peso da pessoa
+relacionada à
+ficha
+
+pressaoMaxima
+
+3
+
+Numérico
+
+Não
+
+Medida da
+pressão máxima
+
+pressaoMinima
+
+3
+
+Numérico
+
+Não
+
+Medida da
+pressão mínima
+
+temperatura
+
+4
+
+Numérico
+
+Não
+
+Medida da
+temperatura
+
+textoLivreSinaisVitais
+
+200
+
+Alfanumérico
+
+Não
+
+Texto Livre
+quanto ao sinais
+vitais
+
+3.1.1.7 Tag hemograma
+hemograma
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+altMorfoEritrograma
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+morfologia do
+eritrograma
+
+altMorfoLeucocito
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 36
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+morfologia dos
+leucócitos
+altMorfoPlaquetas
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+morfologia das
+plaquetas
+
+atipicos
+
+8
+
+Numérico
+
+Não10
+
+Atípicos no
+sangue
+
+atipicosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+atípicos no
+sangue
+
+basofilos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+basófilos
+presentes no
+sangue
+
+basofilosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+basófilos
+presentes no
+sangue
+
+bastonetes
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+bastonetes
+presentes
+
+bastonetesPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+bastonetes
+presentes
+
+chcm
+
+6
+
+Numérico
+
+Não
+
+Concentração de
+hemoglobina
+corpuscular
+média
+
+eosinofilos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+eosinófilos
+presentes no
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 37
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+sangue
+eosinofilosPorcentagem
+
+6
+
+Numérico
+
+Não10
+
+Porcentagem de
+eosinófilos
+presentes no
+sangue
+
+hcm
+
+6
+
+Numérico
+
+Não
+
+Peso da
+hemoglobina
+corpuscular
+média
+
+hemacias
+
+4
+
+Numérico
+
+Não
+
+Quantidade de
+hemácias
+presente no
+sangue
+
+hematocrito
+
+5
+
+Numérico
+
+Não
+
+É a porcentagem
+da massa de
+hemácia em
+relação ao
+volume
+sanguíneo
+
+hemoglobina
+
+5
+
+Numérico
+
+Não
+
+Quantidade de
+proteína
+(hemoglobina)
+presente nas
+hemácias
+
+leucocitos
+
+8
+
+Numérico
+
+Não
+
+Valor total de
+leucócitos no
+sangue
+
+metamielocitos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+metamielocitos
+presentes no
+sangue
+
+metamielocitosPorcentagem
+
+5
+
+Numérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não10
+
+Porcentagem de
+Página 38
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+metamielocitos
+presentes no
+sangue
+monocitos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+monócitos
+presentes no
+sangue
+
+monocitosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+monócitos
+presentes no
+sangue
+
+neutrofilos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+neutrófilos
+presentes no
+sangue
+
+neutrofilosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+neutrófilos
+presentes no
+sangue
+
+observacaoEritrograma
+
+200
+
+Alfanumérico
+
+Não
+
+Observação
+quanto ao
+eritograma
+
+observacaoLeucocito
+
+60
+
+Alfanumérico
+
+Não
+
+Observação
+quanto aos
+leucócitos
+
+observacaoPlaquetas
+
+60
+
+Alfanumérico
+
+Não
+
+Observação
+quanto às
+plaquetas
+
+plaquetas
+
+10
+
+Numérico
+
+Não
+
+Quantidade de
+plaquetas
+presente no
+sangue
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 39
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+segmentados
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+células de defesa
+produzidas na
+série branca do
+sangue
+
+segmentadosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+células de defesa
+produzidas na
+série branca do
+sangue
+
+tipicos
+
+8
+
+Numérico
+
+Não10
+
+Quantidade de
+típicos presentes
+no sangue
+
+tipicosPorcentagem
+
+5
+
+Numérico
+
+Não10
+
+Porcentagem de
+típicos presentes
+no sangue
+
+vcm
+
+6
+
+Numérico
+
+Não
+
+Volume
+corpuscular
+médio
+
+rdw
+
+5
+
+Numérico
+
+Não
+
+Amplitude de
+Distribuição dos
+Glóbulos
+Vermelhos
+
+3.1.1.8 Tag urina
+urina
+Propriedade
+aspecto
+
+Tamanho
+20
+
+Tipo
+Alfanumérico
+
+Obrigatório
+Não
+
+Observação
+Descrição do
+aspecto da
+amostra de urina
+
+bacterias
+
+15
+
+Alfanumérico
+
+Não
+
+Resultado da
+verificação de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 40
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+bactérias da
+amostra de urina
+bilirrubina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se dá
+a presença de
+bilirrubina na
+amostra de urina
+
+celulas
+
+15
+
+Alfanumérico
+
+Não
+
+Indica a presença
+de células na
+amostra de urina
+
+cetonicos
+
+15
+
+Alfanumérico
+
+Não
+
+Indica a presença
+de cetonicos na
+amostragem
+
+cilindros
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+cilindros na
+amostragem
+
+cor
+
+20
+
+Alfanumérico
+
+Não
+
+Cor da urina
+utilizada como
+amostra
+
+cristais
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+cristais na
+amostragem
+
+densidade
+
+5
+
+Numérico
+
+Não
+
+Densidade da
+urina
+
+descricaoReacao
+
+30
+
+Alfanumérico
+
+Não
+
+Descrição da
+reação ocorrida
+
+eritrocitario
+
+15
+
+Alfanumérico
+
+Não
+
+Indica o resultado
+para dismorfismo
+eritrocitário
+
+filaMuco
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a fila de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 41
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+muco na
+amostragem
+floraBacteriana
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam a
+flora bacteriana
+na amostragem
+
+glicose
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+glicose na
+amostragem
+
+hemacias
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam as
+hemácias na
+amostragem
+
+hemoglobina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+hemoglobina na
+amostragem
+
+leucocitos
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+leucócitos na
+amostragem
+
+leveduras
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam as
+leveduras na
+amostragem
+
+outros
+
+30
+
+Alfanumérico
+
+Não
+
+Outros resultados
+a serem colocados
+
+ph
+
+5
+
+Numérico
+
+Não
+
+Ph verificado na
+urina
+
+proteina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 42
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+proteína na
+amostragem
+protozoarios
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+protozoarios na
+amostragem
+
+reacao
+
+-
+
+Enum
+
+Não
+
+obtida; os únicos
+
+Valores possíveis:
+
+urobilinogenio
+
+15
+
+Indica reação
+valores possíveis
+
+•
+
+ACIDO
+
+•
+
+NEUTRO
+
+•
+
+ALCALINO
+
+são os listados na
+coluna “Tipo”
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+urobilinogenios na
+amostragem
+
+volume
+3.1.2
+
+5
+
+Numérico
+
+Não
+
+Volume de urina
+
+Considerações para as propriedades
+1. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+2. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+3. Os códigos sequenciais correspondentes devem ser obtidos por meio dos Relatórios
+Exporta Dados;
+4. Ao setar está opção para true, torna possível alteração de dados da ficha clínica
+conforme as propriedades disponíveis para a tag “fichaClinicaWsVo”;
+5. Informa o prestador do resultado;
+6. Ambas
+
+as
+
+propriedades
+
+não
+
+são
+
+consideradas
+
+para
+
+a
+
+“Porta
+
+resultadoExamePorSequencial”;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 43
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+7. Para que as alterações nos dados dos resultados sejam realizadas, a mesma deve está
+setada como “true”;
+8. Ao setar a propriedade “alteraFichaClinica”, informar nessa tag as propriedades da ficha
+que devem ser alteradas;
+9. Estas tags caracterizam os exames especiais, tais como o nome das mesmas, sendo
+necessário as informar apenas quando a requisição for realizar alterações nesses tipos de
+exames, e informar apenas ao do determinado tipo (ex: Exame especial “Urina”, informar
+a tag “urina”).
+10. O valor desse campo pode ser calculado. O valor total e porcentagem são calculados com
+base no valor informado no campo leucócitos, o cálculo da prioridade para o valor
+informado no campo porcentagem, ou seja, caso seja informado a porcentagem e o
+total, o valor total será substituído pelo cálculo baseado na porcentagem.
+11. Se o campo for preenchido, será considerado o valor informado na requisição. Se não
+informado será utilizada a regra do parâmetro geral de empresa "Sugerir exames
+Referencial / Sequencial no Resultado de Exames" para validar se o exame é referencial
+ou sequencial.
+12. No envio de um resultado de exame de audiometria para empresa SOCNET, o código do
+aparelho audiometrico informado será procurado na empresa principal da empresa
+autenticada. No envio para uma empresa da própria base, o aparelho será procurado na
+empresa cliente, caso não seja encontrado será procurado na empresa principal.
+13. Por regra, o WebService não permite a remoção do prestador. Só é permitido informar
+ou trocar o prestador.
+14. Para habilitar esse campo, o exame enviado deve usar controle de validação de valores,
+conforme descrito no manual de procedimentos do SOC 10 - Controlar Validações de
+Exames.
+
+3.2
+
+Mensagem SOAP request resultadoExamesPorFuncionarioFicha
+A mensagem recebe a estrutura “resultadoExames” conforme a request
+
+resultadoExamesPorCodigoSequencial, e todas suas propriedades.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 44
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:resultadoExamesPorFuncionarioFicha>
+<resultadoExame>
+<examesIdentificacaoPorIdWsVo>
+<codigoIdFicha></codigoIdFicha>
+<codigoIdResultadoExame></codigoIdResultadoExame>
+</examesIdentificacaoPorIdWsVo
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<resultadoExamesDadosWsVo>
+<alteraFichaClinica></alteraFichaClinica>
+<audiomatria>
+<codigoAparelhoAudiometrico></codigoAparelhoAudiometrico>
+<comentariosOD></comentariosOD>
+<comentariosOE></comentariosOE>
+<dataCalibracao></dataCalibracao>
+<irfOD></irfOD>
+<irfOE></irfOE>
+<lafOD></lafOD>
+<lafOE></lafOE>
+<meatoscopiaOD></meatoscopiaOD>
+<meatoscopiaOE></meatoscopiaOE>
+<repousoAuditivo></repousoAuditivo>
+<srtOD></srtOD>
+<srtOE></srtOE>
+<tipoMascaramento></tipoMascaramento>
+<viaAereaOD1000></viaAereaOD1000>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 45
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<viaAereaOD1000Mascaramento></viaAereaOD1000Mascaramento>
+<viaAereaOD2000></viaAereaOD2000>
+<viaAereaOD2000Mascaramento></viaAereaOD2000Mascaramento>
+<viaAereaOD250></viaAereaOD250>
+<viaAereaOD250Mascaramento></viaAereaOD250Mascaramento>
+<viaAereaOD3000></viaAereaOD3000>
+<viaAereaOD3000Mascaramento></viaAereaOD3000Mascaramento>
+<viaAereaOD4000></viaAereaOD4000>
+<viaAereaOD4000Mascaramento></viaAereaOD4000Mascaramento>
+<viaAereaOD500></viaAereaOD500>
+<viaAereaOD500Mascaramento></viaAereaOD500Mascaramento>
+<viaAereaOD6000></viaAereaOD6000>
+<viaAereaOD6000Mascaramento></viaAereaOD6000Mascaramento>
+<viaAereaOD8000></viaAereaOD8000>
+<viaAereaOD8000Mascaramento></viaAereaOD8000Mascaramento>
+<viaAereaOE1000></viaAereaOE1000>
+<viaAereaOE1000Mascaramento></viaAereaOE1000Mascaramento>
+<viaAereaOE2000></viaAereaOE2000>
+<viaAereaOE2000Mascaramento></viaAereaOE2000Mascaramento>
+<viaAereaOE250></viaAereaOE250>
+<viaAereaOE250Mascaramento></viaAereaOE250Mascaramento>
+<viaAereaOE3000></viaAereaOE3000>
+<viaAereaOE3000Mascaramento></viaAereaOE3000Mascaramento>
+<viaAereaOE4000></viaAereaOE4000>
+<viaAereaOE4000Mascaramento></viaAereaOE4000Mascaramento>
+<viaAereaOE500></viaAereaOE500>
+<viaAereaOE500Mascaramento></viaAereaOE500Mascaramento>
+<viaAereaOE6000></viaAereaOE6000>
+<viaAereaOE6000Mascaramento></viaAereaOE6000Mascaramento>
+<viaAereaOE8000></viaAereaOE8000>
+<viaAereaOE8000Mascaramento></viaAereaOE8000Mascaramento>
+<viaOssesOD1000></viaOssesOD1000>
+<viaOssesOD1000Mascaramento></viaOssesOD1000Mascaramento>
+<viaOssesOD2000></viaOssesOD2000>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 46
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<viaOssesOD2000Mascaramento></viaOssesOD2000Mascaramento>
+<viaOssesOD3000></viaOssesOD3000>
+<viaOssesOD3000Mascaramento></viaOssesOD3000Mascaramento>
+<viaOssesOD4000></viaOssesOD4000>
+<viaOssesOD4000Mascaramento></viaOssesOD4000Mascaramento>
+<viaOssesOD500></viaOssesOD500>
+<viaOssesOD500Mascaramento></viaOssesOD500Mascaramento>
+<viaOssesOE1000></viaOssesOE1000>
+<viaOssesOE1000Mascaramento></viaOssesOE1000Mascaramento>
+<viaOssesOE2000></viaOssesOE2000>
+<viaOssesOE2000Mascaramento></viaOssesOE2000Mascaramento>
+<viaOssesOE3000></viaOssesOE3000>
+<viaOssesOE3000Mascaramento></viaOssesOE3000Mascaramento>
+<viaOssesOE4000></viaOssesOE4000>
+<viaOssesOE4000Mascaramento></viaOssesOE4000Mascaramento>
+<viaOssesOE500></viaOssesOE500>
+<viaOssesOE500Mascaramento></viaOssesOE500Mascaramento>
+</audiomatria>
+<codigoExame> </codigoExame>
+<codigoExaminador></codigoExaminador>
+<codigoExaminador2></codigoExaminador2>
+<codigoPrestador></codigoPrestador>
+<comentario></comentario>
+<criaExame></criaExame>
+<criaFichaClinica></criaFichaClinica>
+<dataResultadoExame></dataResultadoExame>
+<espirometria>
+<cvfMedido></cvfMedido>
+<cvfMelhoria></cvfMelhoria>
+<cvfPorcentagem></cvfPorcentagem>
+<cvfPos></cvfPos>
+<cvfPrevisto></cvfPrevisto>
+<pfeMedido></pfeMedido>
+<pfeMelhoria></pfeMelhoria>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 47
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<pfePorcentagem></pfePorcentagem>
+<pfePos></pfePos>
+<pfePrevisto></pfePrevisto>
+<vcMedido></vcMedido>
+<vcPos></vcPos>
+<vefMedido></vefMedido>
+<vefMelhoria></vefMelhoria>
+<vefPorcentagem></vefPorcentagem>
+<vefPos></vefPos>
+<vefPrevisto></vefPrevisto>
+</espirometria>
+<fichaClinicaWsVo>
+<altura></altura>
+<biotipo></biotipo>
+<codigoMedicoFichaClinica></codigoMedicoFichaClinica>
+<frequenciaPulso></frequenciaPulso>
+<frequenciaRespiratoria></frequenciaRespiratoria>
+<perimetroCintura></perimetroCintura>
+<perimetroQualdril></perimetroQualdril>
+<peso></peso>
+<pressaoMaxima></pressaoMaxima>
+<pressaoMinima></pressaoMinima>
+<temperatura></temperatura>
+<textoLivreSinaisVitais></textoLivreSinaisVitais>
+</fichaClinicaWsVo>
+<hemograma>
+<altMorfoEritrograma></altMorfoEritrograma>
+<altMorfoLeucocito></altMorfoLeucocito>
+<altMorfoPlaquetas></altMorfoPlaquetas>
+<atipicos></atipicos>
+<atipicosPorcentagem></atipicosPorcentagem>
+<basofilos></basofilos>
+<basofilosPorcentagem></basofilosPorcentagem>
+<bastonetes></bastonetes>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 48
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<bastonetesPorcentagem></bastonetesPorcentagem>
+<chcm></chcm>
+<eosinofilos></eosinofilos>
+<eosinofilosPorcentagem></eosinofilosPorcentagem>
+<hcm></hcm>
+<hemacias></hemacias>
+<hematocrito></hematocrito>
+<hemoglobina></hemoglobina>
+<leucocitos></leucocitos>
+<metamielocitos></metamielocitos>
+<metamielocitosPorcentagem></metamielocitosPorcentagem>
+<monocitos></monocitos>
+<monocitosPorcentagem></monocitosPorcentagem>
+<neutrofilos></neutrofilos>
+<neutrofilosPorcentagem></neutrofilosPorcentagem>
+<observacaoEritrograma></observacaoEritrograma>
+<observacaoLeucocito></observacaoLeucocito>
+<observacaoPlaquetas></observacaoPlaquetas>
+<plaquetas></plaquetas>
+<segmentados></segmentados>
+<segmentadosPorcentagem></segmentadosPorcentagem>
+<tipicos></tipicos>
+<tipicosPorcentagem></tipicosPorcentagem>
+<vcm></vcm>
+</hemograma>
+<identificarExameAlteradoAutomaticamente></identificarExameAlteradoAutomaticamente>
+<metodo></metodo>
+<nomeExame></nomeExame>
+<nomeExaminador3></nomeExaminador3>
+<nomeImagem></nomeImagem>
+<notaFiscal></notaFiscal>
+<resultado></resultado>
+<resultadoAlterado></resultadoAlterado>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 49
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<resultadoAlteradoAgravamento></resultadoAlteradoAgravamento>
+<resultadoAlteradoEmAnalise></resultadoAlteradoEmAnalise>
+<resultadoAlteradoOcupacional></resultadoAlteradoOcupacional>
+<resultadoReferencialSequencial></resultadoReferencialSequencial>
+<sobrepoeResultadoExistente></sobrepoeResultadoExistente>
+<urina>
+<aspecto></aspecto>
+<bacterias></bacterias>
+<bilirrubina></bilirrubina>
+<celulas></celulas>
+<cetonicos></cetonicos>
+<cilindros></cilindros>
+<cor></cor>
+<cristais></cristais>
+<densidade></densidade>
+<descricaoReacao></descricaoReacao>
+<eritrocitario></eritrocitario>
+<filaMuco></filaMuco>
+<floraBacteriana></floraBacteriana>
+<glicose></glicose>
+<hemacias></hemacias>
+<hemoglobina></hemoglobina>
+<leucocitos></leucocitos>
+<leveduras></leveduras>
+<outros></outros>
+<ph></ph>
+<proteina></proteina>
+<protozoarios></protozoarios>
+<reacao></reacao>
+<urobilinogenio></urobilinogenio>
+<volume></volume>
+</urina>
+<cnpjLaboratorio></cnpjLaboratorio>
+<codigoExameLaboratorial></codigoExameLaboratorial>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 50
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+<ordemExameEsocial></ordemExameEsocial>
+<dataAgendamento></dataAgendamento>
+<horaAgendamento></horaAgendamento>
+</resultadoExamesDadosWsVo>
+<resultadoExamesIdentificacaoFuncionarioWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigoFuncionario></codigoFuncionario>
+<dataFicha></dataFicha>
+<tipoeExame></tipoeExame>
+</resultadoExamesIdentificacaoFuncionarioWsVo>
+</resultadoExame>
+</ser:resultadoExamesPorFuncionarioFicha>
+</soapenv:Body>
+</soapenv:Envelope>
+3.2.1
+
+Tabela de Propriedade da Entrada
+resultadoExame
+Propriedade
+
+Obrigatório
+
+ExamesIdentificacaoPorIdWsVo
+
+Sim
+
+Observação
+Código de identificação da ficha e
+do resultado de exame
+
+identificacaoWsVo
+
+Sim
+
+Identificação de acesso ao serviço
+de Resultado de Exame
+
+resultadoExamesDadosWsVo
+
+Sim
+
+Dados do resultado de exame
+
+resultadoExamesIdentificacaoFuncionarioWsVo
+
+Sim
+
+Identificação do funcionário
+
+3.2.1.1 Tag ExamesIdentificacaoPorIdWsVo
+ExamesIdentificacaoPorIdWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigoIdFicha
+
+Numérico
+
+Sim³
+
+Código SOC de identificação da Ficha
+
+codigoIdResultadoExame
+
+Numérico
+
+Sim³
+
+Código SOC de identificação do Resultado de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 51
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+Exame
+3.2.1.2 Tag identificacaoWsVo
+identificacaoWsVo
+Propriedade
+chaveAcesso
+
+Tamanho
+10
+
+Tipo
+
+Obrigatório
+
+Alfanumérico
+
+Observação
+
+Sim¹
+
+Senha utilizada para acessar o
+serviço. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim¹
+
+Código da empresa principal da
+empresa que está solicitando o
+serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim²
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário responsável pela
+ação
+
+3.2.1.3 Tag resultadoExamesDadosWsVo
+resultadoExamesDadosWsVo
+Propriedade
+alteraFichaClinica
+
+Tamanho
+-
+
+Tipo
+Booleano
+
+Obrigatório
+Não
+
+5
+
+Observação
+Indica se a ficha deverá
+ser atualizada
+
+audiomatria
+
+-
+
+Tag audiomatria
+
+Não
+
+cnpjLaboratorio
+
+-
+
+Numérico
+
+Não
+
+10
+
+Verificar item 3.1.1.4
+Respectivo ao campo
+“CNPJ laboratório” da
+tela de resultado de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 52
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+exame. Deve ser
+preenchido com
+máscara.
+codigoExame
+
+11
+
+Alfanumérico
+
+Sim
+
+Código de identificação
+SOC do exame
+
+codigoExameLaborator
+
+11
+
+Alfanumérico
+
+Não
+
+Respectivo ao campo
+
+ial
+
+“Código sequencial do
+exame” da tela de
+resultado de exame.
+
+codigoExaminador
+
+Numérico
+
+Código de identificação
+do examinador. (Código
+de uma pessoa no SOC
+classificada como
+examinadora)
+
+codigoExaminador2
+
+Numérico
+
+Código de identificação
+do segundo
+examinador. (Código de
+uma pessoa no SOC
+classificada como
+examinadora)
+
+codigoPrestador
+
+Numérico
+
+Não
+
+6, 14
+
+Código de identificação
+SOC do prestador
+
+comentario
+
+Alfanumérico
+
+Comentário quanto ao
+resultado
+
+criaExame
+
+-
+
+Booleano
+
+Não
+
+7
+
+Indica se o exame
+deverá ser criado, de
+acordo com os dados
+enviados na requisição,
+caso o exame não seja
+encontrado no sistema
+
+criaFichaClinica
+
+-
+
+Booleano
+
+Não
+
+7
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Indica se a ficha clínica
+Página 53
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+deverá ser criada, de
+acordo com os dados
+enviados na requisição,
+caso a ficha não seja
+encontrada no sistema
+dataResultadoExame
+
+Data (dd/MM/aaaa)
+
+Não
+
+Data do resultado do
+exame
+10
+
+Verificar item 3.1.1.5
+
+10
+
+Verificar item 3.1.1.6
+
+10
+
+Verificar item 3.1.1.7
+
+espirometria
+
+-
+
+Tag espirometria
+
+Não
+
+fichaClinicaWsVo
+
+-
+
+Tag fichaClinica
+
+Não
+
+hemograma
+
+-
+
+Tag hemograma
+
+Não
+
+identificarExameAltera
+
+-
+
+Booleano
+
+Não15
+
+doAutomaticamente
+
+Indica se exames
+alterados
+automaticamente
+devem ser identificados
+
+metodo
+
+Alfanumérico
+
+Não
+
+Descrição do método
+utilizado
+
+nomeExame
+
+76
+
+Alfanumérico
+
+Não
+
+Nome do exame
+
+nomeExaminador3
+
+Alfanumérico
+
+Não
+
+Nome do examinador
+
+nomeImagem
+
+Alfanumérico
+
+Não
+
+Nome da imagem a ser
+utilizada
+
+notaFiscal
+
+14
+
+Alfanumérico
+
+Não
+
+Identificação da nota
+fiscal
+
+resultado
+resultadoAlterado
+
+-
+
+Alfanumérico
+
+Não
+
+Resultado do exame
+
+Booleano
+
+Não
+
+Indica se o resultado
+alterado deve ser
+identificado
+
+resultadoAlteradoAgra
+
+-
+
+Booleano
+
+Não
+
+vamento
+
+Indica se o resultado de
+agravamento alterado
+deve ser identificado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 54
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+resultadoAlteradoEmA
+
+-
+
+Booleano
+
+Não
+
+Indica se o resultado
+
+nalise
+
+alterado em análise
+deve ser identificado
+
+resultadoAlteradoOcup
+
+-
+
+Booleano
+
+Não
+
+Indica se o resultado
+
+acional
+
+alterado ocupacional
+deve ser identificado
+
+resultadoReferencialSe
+
+-
+
+quencial
+
+Enum
+
+Não
+
+Resultado do exame. Os
+únicos valores possíveis
+
+Valores possíveis:
+
+são os que estão
+
+sobrepoeResultadoExi
+
+-
+
+•
+
+SEQUENCIAL
+
+•
+
+REFERENCIAL
+
+•
+
+NAO_APLICA
+
+Booleano
+
+listados na coluna
+“Tipo” ao lado.
+
+Não
+
+8
+
+stente
+
+Indica se alterações
+podem ser feitas,
+sobrepondo dados já
+cadastrados pelos novos
+dados enviados
+
+urina
+
+-
+
+Tag urina
+
+Não
+
+10
+
+Verificar item 3.1.1.8
+
+ordemExameEsocial
+
+-
+
+Enum
+
+Não12
+
+Indica se o exame é
+‘Inicial’ ou ‘Sequencial’
+
+Valores possíveis:
+
+dataAgendamento
+
+-
+
+•
+
+INICIAL
+
+•
+
+SEQUENCIAL
+
+Data (dd/MM/aaaa)
+
+Não
+
+Respectivo ao campo
+“Data Agendamento” da
+tela de Pedido de
+exames.
+
+horaAgendamento
+
+-
+
+Hora (hh:mm)
+
+Não
+
+Respectivo ao campo
+“Hora Agendamento” da
+tela de Pedido de
+exames.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 55
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+3.2.1.4 Tag Audiomatria
+Audiomatria
+Propriedade
+codigoAparelhoAudiometrico
+
+Tamanho
+-
+
+Tipo
+Numérico
+
+Obrigatório
+Não13
+
+Observação
+Código de
+identificação do
+aparelho
+audiométrico
+
+comentariosOD
+
+200
+
+Alfanumérico
+
+Não
+
+Observações
+sobre o Ouvido
+Direito
+
+comentariosOE
+
+200
+
+Alfanumérico
+
+Não
+
+Observações
+sobre o Ouvido
+Esquerdo
+
+dataCalibracao
+
+-
+
+Date (dd/mm/aaaa)
+
+Não
+
+Data de
+calibração do
+aparelho
+utilizado
+
+irfOD
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Índice de
+Reconhecimento
+de Fala do
+ouvido direito
+
+irfOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Índice de
+Reconhecimento
+de Fala do
+ouvido esquerdo
+
+lafOD
+
+5
+
+Numérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+
+Medição
+
+Página 56
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+referente ao
+Limiar de
+Atenção para
+fala do Ouvido
+direito. Campo
+Logoaudiometria
+- LAF(OD) dBNA
+tela de resultado
+de exames
+lafOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+Limiar de
+Atenção para
+fala do Ouvido
+esquerdo.
+Campo Logoaudi
+ometria LAF(OE) dBNA
+tela de resultado
+de exames
+
+meatoscopiaOD
+
+-
+
+Enum
+
+Não
+
+meatoscopia no
+
+Valores possíveis:
+•
+
+SEM_OBSTRUCAO
+
+•
+
+COM_OBSTRUCAO
+
+Resultado da
+ouvido direito
+
+_PARCIAL
+•
+
+COM_OBSTRUCAO
+_TOTAL
+
+meatoscopiaOE
+
+-
+
+Enum
+Valores possíveis:
+•
+
+SEM_OBSTRUCAO
+
+•
+
+COM_OBSTRUCAO
+
+Não
+
+Resultado da
+meatoscopia no
+ouvido esquerdo
+
+_PARCIAL
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 57
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+•
+
+COM_OBSTRUCAO
+_TOTAL
+
+repousoAuditivo
+
+29
+
+Alfanumérico
+
+Não
+
+Campo para
+“repouso
+auditivo”
+referente ao
+campo “repouso
+auditivo” da tela
+de resultado de
+exame
+
+srtOD
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+campo
+Meatoscopia SRT(OD) dBNA
+da tela de
+resultado de
+exame
+
+srtOE
+
+5
+
+Numérico
+
+Não
+
+Medição
+referente ao
+campo
+Meatoscopia SRT(OE) dBNA
+da tela de
+resultado de
+exame
+
+tipoMascaramento
+
+-
+
+Enum
+Valores possíveis:
+•
+
+NARROW_BAND
+
+•
+
+PINK_NOISE
+
+•
+
+SPEACH_NOISE
+
+•
+
+WHITE_NOISE
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+
+Indica qual o tipo
+de
+mascaramento é
+utilizado, os
+únicos valores
+possíveis estão
+Página 58
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+indicados na
+coluna “Tipo”,
+caso o valor
+inserido não
+esteja dentre as
+opções, o valor
+nulo será
+enviado.
+viaAereaOD1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 1
+kHz
+
+viaAereaOD1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 2
+kHz
+
+viaAereaOD2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD250
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de
+0,25 kHz
+
+viaAereaOD250Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 59
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+viaAereaOD3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 3
+kHz
+
+viaAereaOD3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 4
+kHz
+
+viaAereaOD4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de
+0,5 kHz
+
+viaAereaOD500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOD6000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 6
+kHz
+
+viaAereaOD6000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 60
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+ou não
+viaAereaOD8000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Direito para a
+frequência de 8
+kHz
+
+viaAereaOD8000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 1
+kHz
+
+viaAereaOE1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 2
+kHz
+
+viaAereaOE2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE250
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de
+0,25 kHz
+
+viaAereaOE250Mascaramento
+
+-
+
+Booleano
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+
+Indica se utiliza
+Página 61
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+mascaramento
+ou não
+viaAereaOE3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 3
+kHz
+
+viaAereaOE3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 4
+kHz
+
+viaAereaOE4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de
+0,5 kHz
+
+viaAereaOE500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE6000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 6
+kHz
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 62
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+viaAereaOE6000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaAereaOE8000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Aérea No Ouvido
+Esquerdo para a
+frequência de 8
+kHz
+
+viaAereaOE8000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 1
+kHz
+
+viaOssesOD1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 2
+kHz
+
+viaOssesOD2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 3
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 63
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+kHz
+viaOssesOD3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de 4
+kHz
+
+viaOssesOD4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOD500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Direito para a
+frequência de
+0,5 kHz
+
+viaOssesOD500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE1000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 1
+kHz
+
+viaOssesOE1000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE2000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 64
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+frequência de 2
+kHz
+viaOssesOE2000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE3000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 3
+kHz
+
+viaOssesOE3000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE4000
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de 4
+kHz
+
+viaOssesOE4000Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+viaOssesOE500
+
+3
+
+Numérico
+
+Não
+
+Medição da Via
+Óssea No Ouvido
+Esquerdo para a
+frequência de
+0,5 kHz
+
+viaOssesOE500Mascaramento
+
+-
+
+Booleano
+
+Não
+
+Indica se utiliza
+mascaramento
+ou não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 65
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+3.2.1.5 Tag Espirometria
+Espirometria
+Propriedade
+cvfMedido
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+6
+
+Numérico
+
+Não
+
+Valor medido da
+capacidade vital
+forçada
+
+cvfMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria da
+capacidade vital
+forçada
+
+cvfPorcentagem
+
+5
+
+Numérico
+
+Não
+
+Valor da
+porcentagem da
+capacidade vital
+forçada
+
+cvfPos
+
+6
+
+Numérico
+
+Não
+
+Valor da capacidade
+vital forçada após
+
+cvfPrevisto
+
+6
+
+Numérico
+
+Não
+
+Valor da capacidade
+vital forçada previsto
+
+pfeMedido
+
+6
+
+Numérico
+
+Não
+
+Pico de fluxo
+expiratório medido
+
+pfeMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria do
+pico de fluxo
+expiratório
+
+pfePorcentagem
+
+6
+
+Numérico
+
+Não
+
+Porcentagem medida
+no pico de fluxo
+expiratório
+
+pfePos
+
+6
+
+Numérico
+
+Não
+
+Pico de fluxo
+expiratório após
+
+pfePrevisto
+
+6
+
+Numérico
+
+Não
+
+Pico de fluxo
+expiratório previsto
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 66
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+vcMedido
+
+6
+
+Numérico
+
+Não
+
+Volume corrente
+medido
+
+vcPos
+
+6
+
+Numérico
+
+Não
+
+Volume corrente após
+
+vefMedido
+
+6
+
+Numérico
+
+Não
+
+Volume expiratório
+forçado medido
+
+vefMelhoria
+
+6
+
+Numérico
+
+Não
+
+Valor de melhoria do
+volume expiratório
+forçado
+
+vefPorcentagem
+
+5
+
+Numérico
+
+Não
+
+Porcentagem de
+volume expiratório
+forçado
+
+vefPos
+
+6
+
+Numérico
+
+Não
+
+Volume expiratório
+forçado após
+
+vefPrevisto
+
+6
+
+Numérico
+
+Não
+
+Valor do volume
+expiratório forçado
+previsto
+
+3.2.1.6 Tag fichaClinica
+fichaClinica
+Propriedade
+altura
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+4
+
+Numérico
+
+Não
+
+Indica a altura da
+pessoa
+
+biotipo
+
+1
+
+Numérico
+
+Não
+
+Biotipo da pessoa
+
+codigoMedicoFichaClinica
+
+6
+
+Numérico
+
+Não
+
+Código (SOC) do
+usuário médico
+no SOC utilizado
+na ficha
+
+frequenciaPulso
+
+2
+
+Numérico
+
+Não
+
+Medição da
+frequência do
+pulso
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 67
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+frequenciaRespiratoria
+
+2
+
+Numérico
+
+Não
+
+Medição da
+frequência
+respiratória
+
+perimetroCintura
+
+3
+
+Numérico
+
+Não
+
+Medida do
+perímetro da
+cintura
+
+perimetroQualdril
+
+3
+
+Numérico
+
+Não
+
+Medida do
+perímetro do
+quadril
+
+peso
+
+5
+
+Numérico
+
+Não
+
+Peso da pessoa
+relacionada à
+ficha
+
+pressaoMaxima
+
+3
+
+Numérico
+
+Não
+
+Medida da
+pressão máxima
+
+pressaoMinima
+
+3
+
+Numérico
+
+Não
+
+Medida da
+pressão mínima
+
+temperatura
+
+4
+
+Numérico
+
+Não
+
+Medida da
+temperatura
+
+textoLivreSinaisVitais
+
+200
+
+Alfanumérico
+
+Não
+
+Texto Livre
+quanto ao sinais
+vitais
+
+3.2.1.7 Tag hemograma
+hemograma
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+altMorfoEritrograma
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+morfologia do
+eritrograma
+
+altMorfoLeucocito
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 68
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+morfologia dos
+leucócitos
+altMorfoPlaquetas
+
+60
+
+Alfanumérico
+
+Não
+
+Indica se houve
+alteração na
+morfologia das
+plaquetas
+
+atipicos
+
+8
+
+Numérico
+
+Não11
+
+Atípicos no
+sangue
+
+atipicosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+atípicos no
+sangue
+
+basofilos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+basófilos
+presentes no
+sangue
+
+basofilosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+basófilos
+presentes no
+sangue
+
+bastonetes
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+bastonetes
+presentes
+
+bastonetesPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+bastonetes
+presentes
+
+chcm
+
+6
+
+Numérico
+
+Não
+
+Concentração de
+hemoglobina
+corpuscular
+média
+
+eosinofilos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+eosinófilos
+presentes no
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 69
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+sangue
+eosinofilosPorcentagem
+
+6
+
+Numérico
+
+Não11
+
+Porcentagem de
+eosinófilos
+presentes no
+sangue
+
+hcm
+
+6
+
+Numérico
+
+Não
+
+Peso da
+hemoglobina
+corpuscular
+média
+
+hemacias
+
+4
+
+Numérico
+
+Não
+
+Quantidade de
+hemácias
+presente no
+sangue
+
+hematocrito
+
+5
+
+Numérico
+
+Não
+
+É a porcentagem
+da massa de
+hemácia em
+relação ao
+volume
+sanguíneo
+
+hemoglobina
+
+5
+
+Numérico
+
+Não
+
+Quantidade de
+proteína
+(hemoglobina)
+presente nas
+hemácias
+
+leucocitos
+
+8
+
+Numérico
+
+Não
+
+Valor total de
+leucócitos no
+sangue
+
+metamielocitos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+metamielocitos
+presentes no
+sangue
+
+metamielocitosPorcentagem
+
+5
+
+Numérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não11
+
+Porcentagem de
+Página 70
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+metamielocitos
+presentes no
+sangue
+monocitos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+monócitos
+presentes no
+sangue
+
+monocitosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+monócitos
+presentes no
+sangue
+
+neutrofilos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+neutrófilos
+presentes no
+sangue
+
+neutrofilosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+neutrófilos
+presentes no
+sangue
+
+observacaoEritrograma
+
+200
+
+Alfanumérico
+
+Não
+
+Observação
+quanto ao
+eritograma
+
+observacaoLeucocito
+
+60
+
+Alfanumérico
+
+Não
+
+Observação
+quanto aos
+leucócitos
+
+observacaoPlaquetas
+
+60
+
+Alfanumérico
+
+Não
+
+Observação
+quanto às
+plaquetas
+
+plaquetas
+
+10
+
+Numérico
+
+Não
+
+Quantidade de
+plaquetas
+presente no
+sangue
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 71
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+segmentados
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+células de defesa
+produzidas na
+série branca do
+sangue
+
+segmentadosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+células de defesa
+produzidas na
+série branca do
+sangue
+
+tipicos
+
+8
+
+Numérico
+
+Não11
+
+Quantidade de
+típicos presentes
+no sangue
+
+tipicosPorcentagem
+
+5
+
+Numérico
+
+Não11
+
+Porcentagem de
+típicos presentes
+no sangue
+
+vcm
+
+6
+
+Numérico
+
+Não
+
+Volume
+corpuscular
+médio
+
+3.2.1.8 Tag urina
+urina
+Propriedade
+aspecto
+
+Tamanho
+20
+
+Tipo
+Alfanumérico
+
+Obrigatório
+Não
+
+Observação
+Descrição do
+aspecto da
+amostra de urina
+
+bacterias
+
+15
+
+Alfanumérico
+
+Não
+
+Resultado da
+verificação de
+bactérias da
+amostra de urina
+
+bilirrubina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se dá
+a presença de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 72
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+bilirrubina na
+amostra de urina
+celulas
+
+15
+
+Alfanumérico
+
+Não
+
+Indica a presença
+de células na
+amostra de urina
+
+cetonicos
+
+15
+
+Alfanumérico
+
+Não
+
+Indica a presença
+de cetonicos na
+amostragem
+
+cilindros
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+cilindros na
+amostragem
+
+cor
+
+20
+
+Alfanumérico
+
+Não
+
+Cor da urina
+utilizada como
+amostra
+
+cristais
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+cristais na
+amostragem
+
+densidade
+
+5
+
+Numérico
+
+Não
+
+Densidade da
+urina
+
+descricaoReacao
+
+30
+
+Alfanumérico
+
+Não
+
+Descrição da
+reação ocorrida
+
+eritrocitario
+
+15
+
+Alfanumérico
+
+Não
+
+Indica o resultado
+para dismorfismo
+eritrocitário
+
+filaMuco
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a fila de
+muco na
+amostragem
+
+floraBacteriana
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 73
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+flora bacteriana
+na amostragem
+glicose
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+glicose na
+amostragem
+
+hemacias
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam as
+hemácias na
+amostragem
+
+hemoglobina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+hemoglobina na
+amostragem
+
+leucocitos
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+leucócitos na
+amostragem
+
+leveduras
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam as
+leveduras na
+amostragem
+
+outros
+
+30
+
+Alfanumérico
+
+Não
+
+Outros resultados
+a serem colocados
+
+ph
+
+5
+
+Numérico
+
+Não
+
+Ph verificado na
+urina
+
+proteina
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresenta a
+proteína na
+amostragem
+
+protozoarios
+
+15
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 74
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+protozoarios na
+amostragem
+reacao
+
+-
+
+Enum
+
+Não
+
+Indica reação
+obtida; os únicos
+
+Valores possíveis:
+
+urobilinogenio
+
+15
+
+valores possíveis
+
+•
+
+ACIDO
+
+•
+
+NEUTRO
+
+•
+
+ALCALINO
+
+são os listados na
+coluna “Tipo”
+
+Alfanumérico
+
+Não
+
+Indica como se
+apresentam os
+urobilinogenios na
+amostragem
+
+volume
+
+5
+
+Numérico
+
+Não
+
+Volume de urina
+
+3.2.1.9 Tag resultadoExamesIdentificacaoFuncionarioWsVo
+resultadoExamesIdentificacaoFuncionarioWsVo
+Propriedade
+codigoEmpresa
+
+Tamanho
+-
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+Código da empresa que o
+funcionário trabalha
+
+codigoFuncionario
+
+-
+
+Numérico
+
+Sim
+
+Código do funcionário
+requerendo resultado de
+exame
+
+dataFicha
+
+-
+
+Data (dd/MM/aaaa)
+
+Sim
+
+Data da ficha associada ao
+funcionário
+
+tipoeExame
+
+-
+
+Numérico
+
+Sim
+
+4
+
+Identificação do tipo de
+exame. Quando informado
+um código válido entre 900
+e 999 será buscada a Ficha
+Personalizada de código
+correspondente para
+inclusão do resultado do
+exame.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 75
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+3.2.2
+
+Considerações para as propriedades
+
+
+A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+
+
+
+A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+
+
+
+Compõe a identificação da ficha a ser criada, ou já criada.
+
+
+
+Os tipos de exames aceitos são:
+1 – Admissional;
+2 – Periódico;
+3 – Retorno ao Trabalho;
+4 – Mudança de Função;
+5 – Demissional;
+6 – Especial;
+10 – Consulta;
+11 – Retorno Consulta;
+12 – Acidente;
+13 – Licença Médica;
+14 – Enfermagem;
+20 – Terceiros;
+900 a 999 – Fichas Personalizadas.
+
+
+
+Ao definir esta opção como true, torna-se possível realizar alterações de dados da ficha
+clínica conforme as propriedades disponíveis para a tag “fichaClinicaWsVo”;
+
+
+
+Informa o prestador do resultado; Caso o mesmo possua a funcionalidade Lote de
+Prestadores ativada, na inclusão de exame, o mesmo ficará disponível para que seja
+iniciada análise na tela Lote de Prestadores.
+
+
+
+Ao informá-las como true, será criada a ficha, caso não exista ficha cadastrada com a
+identificação informada, e criará o resultado;
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 76
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+
+
+Para que as alterações nos dados dos resultados sejam realizadas, a mesma deve estar
+especificada como “true”;
+
+
+
+Ao setar a propriedade “alteraFichaClinica” / “criaFichaClinica”, informar nessa tag as
+propriedades da ficha que serão cadastradas/alteradas;
+
+ Estas tags caracterizam os exames especiais, tais como o nome das mesmas, sendo
+necessário as informar apenas quando a requisição for realizar alterações nesses tipos de
+exames, e informar apenas ao do determinado tipo (ex: Exame especial “Urina”, informar
+a tag “urina”).
+ O valor desse campo pode ser calculado. O valor total e porcentagem são calculados com
+base no valor informado no campo leucócitos, o cálculo da prioridade para o valor
+informado no campo porcentagem, ou seja, caso seja informado a porcentagem e o
+total, o valor total será substituído pelo cálculo baseado na porcentagem.
+ Se o campo for preenchido, será considerado o valor informado na requisição. Se não
+informado será utilizada a regra do parâmetro geral de empresa "Sugerir exames
+Referencial / Sequencial no Resultado de Exames" para validar se o exame é referencial
+ou sequencial.
+ No envio de um resultado de exame de audiometria para empresa SOCNET, o código do
+aparelho audiometrico informado será procurado na empresa principal da empresa
+autenticada. No envio para uma empresa da própria base, o aparelho será procurado na
+empresa cliente, caso não seja encontrado será procurado na empresa principal.
+ Por regra, o WebService não permite a remoção do prestador. Só é permitido informar
+ou trocar o prestador.
+ Para habilitar esse campo, o exame enviado deve usar controle de validação de valores,
+conforme descrito no manual de procedimentos do SOC 10 - Controlar Validações de
+Exames.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 77
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+3.3
+
+Mensagem SOAP request excluirPedidoExamePorFuncionarioFicha
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:excluirPedidoExamePorFuncionarioFicha>
+<ExcluirExameWsVo>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<homologacao></homologacao>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<tipoBuscaFuncionario></tipoBuscaFuncionario>
+<codigoEmpresa></codigoEmpresa>
+<codigoFuncionario></codigoFuncionario>
+<dataFicha></dataFicha>
+<tipoExame></tipoExame>
+<codigoExame></codigoExame>
+<excluirFichaSemExames></excluirFichaSemExames>
+<excluirProntuarioVinculadoEventoExcluidoEsocial></excluirProntuarioVinculadoEventoE
+xcluidoEsocial>
+</ExcluirExameWsVo>
+</ser:excluirPedidoExamePorFuncionarioFicha>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.3.1
+
+Tabela de Propriedades da entrada
+pedidoExame
+Propriedade
+
+ExcluirExameWsVo
+
+Obrigatório
+Sim
+
+Observação
+Identificação da origem e do exame
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 78
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+a ser excluído.
+identificacaoWsVo
+
+Sim
+
+Identificação de acesso ao serviço de
+Resultado de Exame
+
+3.3.1.1 Tag ExcluirExameWsVo
+ExcluirExameWsVo
+Propriedade
+tipoBuscaEmpresa
+
+Tipo
+Enum
+
+Obrigatório
+Sim
+
+Observação
+Indica como será feita a busca
+
+Valores possíveis
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+pelo cadastro da empresa do
+funcionário. O valor inserido
+no campo “codigoEmpresa”
+deve corresponder ao tipo
+definido.
+
+tipoBuscaFuncionario
+
+Enum
+
+Sim
+
+Indica como será feita a busca
+pelo registro do funcionário; o
+
+Valores possíveis:
+
+valor inserido em
+
+• CODIGO_SOC
+
+“codigoFuncionario” deve
+
+• MATRICULA
+
+corresponder ao tipo de busca
+escolhido.
+
+codigoEmpresa
+
+Numérico
+
+Sim
+
+Código da empresa na qual o
+pedido de exames está
+inserido.
+
+codigoFuncionario
+
+Numérico
+
+Sim
+
+Código do funcionário ao qual
+está vinculado o pedido de
+exames.
+
+dataFicha
+
+Data (dd/mm/aaaa)
+
+Sim
+
+Data da ficha
+
+tipoExame
+
+Numérico
+
+Sim1
+
+Identificação do tipo de
+exame. Quando informado um
+código válido entre 900 e 999
+será buscada a Ficha
+Personalizada de código
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 79
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+correspondente para exclusão
+do exame informado.
+codigoExame
+
+Alfanumérico
+
+Sim
+
+Código do exame a ser
+excluído do pedido de exames.
+
+excluirFichaSemExames
+
+Booleano
+
+Não
+
+Indica se, no momento da
+exclusão do único exame do
+pedido, deve também ser
+realizada a exclusão da ficha
+clínica. Caso o pedido possua
+mais do que um exame, não
+ocorrerá a exclusão da ficha.
+
+excluirProntuarioVincula
+
+Booleano
+
+Não
+
+doEventoExcluidoEsocial
+
+A ficha será excluída somente
+se o topo do grupo do evento
+estiver com o status “Excluído
+com Recibo” na tela Portal
+eSocial.
+
+3.3.1.2 Tag identificacaoWsVo
+identificacaoWsVo
+Propriedade
+chaveAcesso
+
+Tamanho
+10
+
+Tipo
+Alfanumérico
+
+Obrigatório
+Sim¹
+
+Observação
+Senha utilizada para acessar o
+serviço. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim¹
+
+Código da empresa principal da
+empresa que está solicitando o
+serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim²
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 80
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+integração no cadastro de Empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário responsável pela
+ação
+
+3.3.2
+
+Considerações para as propriedades
+Os tipos de exames aceitos são:
+1 – Admissional;
+2 – Periódico;
+3 – Retorno ao Trabalho;
+4 – Mudança de Função;
+5 – Demissional;
+6 – Especial;
+10 – Consulta;
+11 – Retorno Consulta;
+12 – Acidente;
+13, 21 ou 22 – Licença Médica, é possível inserir até 3 licenças médicas por dia;
+14 – Enfermagem;
+20 – Terceiros;
+30 – Consulta Assistencial;
+900 a 999 – Fichas Personalizadas.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 81
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response para operação resultadoExamesPorCodigoSequencial
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:resultadoExamesPorCodigoSequencialResponse
+xmlns:ns2="http://services.soc.age.com/">
+<ResultadoRetorno>
+<erro>false</erro>
+<codigoSequencialFichaClinica>########</codigoSequencialFichaClinica>
+<codigoSequencialResultadoExame>########</codigoSequencialResultadoExame>
+</ResultadoRetorno>
+</ns2:resultadoExamesPorCodigoSequencialResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+erro
+
+Boolean¹
+
+codigoSequencialFichaClinica
+
+Numérico
+
+codigoSequencialResultadoExame
+
+Numérico
+
+4.1.2
+
+Considerações para as propriedades
+1 - Se o valor de retorno da propriedade “erro” for false, significa que a operação foi executada
+com sucesso, não ocorrendo erros durante sua execução.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 82
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+4.2
+
+Mensagem SOAP response para resultadoExamesPorFuncionarioFicha
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:resultadoExamesPorFuncionarioFichaResponse
+xmlns:ns2="http://services.soc.age.com/">
+<ResultadoRetorno>
+<erro>false</erro>
+<codigoSequencialFichaClinica>########</codigoSequencialFichaClinica>
+<codigoSequencialResultadoExame>########</codigoSequencialResultadoExame>
+</ResultadoRetorno>
+</ns2:resultadoExamesPorFuncionarioFichaResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+erro
+
+Boolean¹
+
+codigoSequencialFichaClinica
+
+Numérico
+
+codigoSequencialResultadoExame
+
+Numérico
+
+4.2.2
+
+Considerações para as propriedades
+1. Se o valor de retorno da propriedade “erro” for false, significa que a operação foi
+executada com sucesso, não ocorrendo erros durante sua execução.
+
+4.3
+
+Mensagem SOAP response para operação excluirPedidoExamePorFuncionarioFicha
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 83
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+<soap:Body>
+<ns2:excluirPedidoExamePorFuncionarioFichaResponse
+xmlns:ns2="http://services.soc.age.com/">
+<ExameRetorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-210</codigo>
+<mensagem>ExcluirPedidoExameWsVo.tipoExame não pode ser nulo</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+<exclusaoFichaClinica></exclusaoFichaClinica>
+</ExameRetorno>
+</ns2:excluirPedidoExamePorFuncionarioFichaResponse>
+</soap:Body>
+</soap:Envelope>
+4.3.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+codigoMensagem
+
+Texto1
+
+mensagem
+
+Texto2
+
+numeroErros
+
+Numérico3
+
+mensagemOperacaoDetalheList.codigo
+
+Texto4
+
+mensagemOperacaoDetalheList.mensagem
+
+Texto5
+
+exclusaoFichaClinica
+
+Texto6
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 84
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+4.3.2
+
+Considerações para as propriedades
+1.
+2.
+3.
+4.
+
+Retorna o código da mensagem referente ao sucesso da requisição.
+Mensagem referente ao sucesso da requisição.
+Indica a quantidade de erros encontrados na requisição, se houver.
+Código do erro detalhado encontrado no preenchimento da requisição, se
+houver.
+5. Descrição detalhada do erro encontrado no preenchimento da requisição, se
+houver.
+6. Indica se foi realizada a exclusão da ficha clínica do pedido manipulado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 85
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 86
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+Ajustar horário do computador;
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 87
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+5.1.4
+
+Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração Empresa/Cliente (337) no SOC e adicionar o serviço à lista de webservices da empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 88
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+5.2
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+5.3
+
+
+
+Identificação Inválida!
+
+
+
+Empresa Invalida
+
+
+
+Usuário Sem Acesso.
+
+
+
+Login não Localizado
+
+Campos Obrigatórios não preenchidos
+Quando campos obrigatórios não são preenchidos, o serviço lança uma falha, notificando o
+campo que deveria ter sido informado.
+Ex: Uma requisição que não informou o “codigoIdFicha”, devolverá a seguinte mensagem SOAP:
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<soap:Fault>
+<faultcode>soap:Server</faultcode>
+<faultstring>O campo
+com.age.soc.vo.services.ResultadoExamesIdentificacaoPorIdWsVo.codigoIdFicha deve estar
+preenchido!</faultstring>
+<detail>
+<ns1:WSException xmlns:ns1="http://services.soc.age.com/"/>
+</detail>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 89
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+5.4
+
+Falhas na ação resultadoExamesPorCodigoSequencial
+Ao realizar uma operação de alteração de resultado de exames, podem ocorrer as seguintes
+falhas:
+
+
+Ficha/Resultado de exame não encontrado: Mensagem retornada quando os
+códigos da tag “examesIdentificacaoPorIdWsVo” são preenchidos com sequenciais
+inexistentes.
+
+
+
+Prestador não cadastrado: Mensagem retornada caso não haja prestador cadastrado
+com o código informado.
+
+
+
+Não é possível realizar esta ação porque um ou mais exames se encontram em
+lote com análise já iniciada: Mensagem retornada quando um ou mais exames foram
+informados na requisição com prestador diferente do prestador ao qual está vinculado na
+análise já iniciada no módulo Lotes de Prestadores.
+
+
+
+Violação nos limites máximos aceitos para preenchimento dos campos;
+
+
+
+Violações nos tipos de dados informados.
+
+
+
+dataResultadoExame não pode ser maior que a data atual: Mensagem retornada
+quando o parâmetro geral de empresa “Permite incluir Data do Resultado de Exame
+maior que a data atual” está desabilitado e a data do resultado do exame informada é
+maior que a data atual.
+
+
+
+O campo metodo não tem entre 0 e 70 caracteres: Mensagem retornada quando o
+conteúdo do campo excede 70 caracteres.
+
+
+
+Exame já foi atendido. Em caso de erro no atendimento, entre em contato com
+o prestador SOCNET: Mensagem retornada quando o exame foi encaminhado para um
+prestador SOCNET onde ele tenha vinculado um prestador da base dele. Isso caracteriza
+que o exame foi atendido.
+
+
+
+Código médico é inválido: Mensagem retornada quando a tag
+codigoMedicoFichaClinica é preenchida com um código de usuário que não é do tipo
+médico.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 90
+
+Web Service de Resultado de Exames
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1157
+
+ Tipo Da ficha clinica personalizada Inválido!: Mensagem retornada quando a tag
+tipoeExame é preenchida com um código de ficha personalizada que não existe no
+sistema.
+ O campo cnpjLaboratorio não é um CNPJ válido: Mensagem retornada quando o
+campo cnpjLaboratorio não é preenchida com um valor válido.
+ O campo codigoExameLaboratorial não é um sequencial válido: Mensagem
+retornada quando o campo codigoExameLaboratorial não é preenchido com um valor
+válido, por exemplo, se o preenchimento ultrapassa o tamanho do campo.
+ Resultado do exame não pode contrer letras: Mensagem retornada quando o
+exame controla validação, ou seja, quando o cadastro do exame foi copiado da empresa
+principal com limites mínimos e máximos estabelecidos e com o campo “Controla
+Validações” habilitado.
+ Resultado do exame fora dos limites estabelecidos nos parametros de
+validação do Soc.: Mensagem retornada quando o valor inserido na tag “resultado” é
+menor que o limite mínimo ou maior que o limite máximo estabelecido para a validação
+de resultado do exame enviado.
+ Não é possivel identificar se o exame está alterado ou não por falta de
+parametrização do Soc: Mensagem retornada quando a tag
+“identificarExameAlteradoAutomaticamente” é enviada como “true” e o cadastro do
+exame na empresa principal não tem o campo “Controla Validações” habilitado e não há
+valores configurados na aba “Validações do resultado do exame”.
+
+5.5
+
+Falhas na ação excluirPedidoExamePorFuncionarioFicha
+
+Código
+SOC-301
+
+Descrição
+Exame não encontrado
+
+Observação
+Mensagem retornada quando não é
+possível localizar o cadastro do exame
+informado na propriedade codigoExame
+
+SOC-302
+
+Funcionario não encontrado
+
+Mensagem retornada quando não é
+possível localizar o cadastro do
+funcionário informado na propriedade
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 91
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+codigoFuncionario.
+SOC-303
+
+Falha ao excluir o exame, exame possui resultado Mensagem retornada quando o exame o
+qual a exclusão foi solicitada já possui
+data de resultado, impedindo a exclusão
+do exame.
+
+SOC-304
+
+Falha ao excluir o exame, exame valorizado
+
+Mensagem retornada quando o exame o
+qual a exclusão foi solicitada já possui
+valorização gerada, impedindo a
+exclusão do exame.
+
+SOC-305
+
+Falha ao excluir o exame, exame com análise
+
+Mensagem retornada quando o exame o
+
+iniciada
+
+qual a exclusão foi solicitada possui
+análise iniciada, impedindo a exclusão
+do exame.
+
+SOC-306
+
+Falha ao excluir a ficha clínica, ficha clínica com
+
+Mensagem retornada quando o exame o
+
+auditoria realizada
+
+qual a exclusão foi solicitada possui
+auditoria realizada, impedindo a
+exclusão do exame.
+
+SOC-307
+
+Falha ao excluir a ficha clínica, ficha clínica com
+
+Mensagem retornada quando o exame o
+
+digitalização
+
+qual a exclusão foi solicitada possui
+digitalização realizada, impedindo a
+exclusão do exame.
+
+SOC-308
+
+Falha ao excluir a ficha clínica, ficha clínica
+
+Mensagem retornada quando a ficha a
+
+associada a uma ficha com periodicidade
+
+qual foi solicitada a exclusão possui
+
+diferente após admissional
+
+vínculo de periodicidade diferente após
+admissional com outra ficha, impedindo
+a exclusão da ficha.
+
+SOC-309
+
+Falha ao excluir a ficha clínica, ficha clínica possui Mensagem retornada quando a ficha a
+licença vinculada a um afastamento
+
+qual foi solicitada a exclusão está
+associada a uma licença médica
+vinculada a afastamento, impedindo a
+exclusão da ficha.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 92
+
+Web Service de Resultado de Exames
+Especificação Técnica
+
+Versão:
+<2.5.3>
+Date: <29/11/2024>
+
+Desenvolvimento – M-DEV-1157
+
+SOC-310
+
+Falha ao excluir o exame, exame em lote com
+
+Mensagem retornada quando o exame o
+
+análise iniciada nos Lotes de Prestadores.
+
+qual foi solicitada a exclusão já possui
+lote com análise iniciada no módulo de
+Lotes de Prestadores, impedindo a
+exclusão do exame.
+
+SOC-311
+
+Falha ao excluir o exame, não é possível remover Mensagem retornada quando o exame
+exames que foram atendidos via SocNet.
+
+foi encaminhado para um prestador
+SOCNET onde ele tenha vinculado um
+prestador da base dele. Isso caracteriza
+que o exame foi atendido.
+
+SOC-312
+
+Falha ao excluir a ficha clínica, esta ficha está
+
+Mensagem retornada quando a ficha
+
+associada a um evento do portal eSocial e não
+
+clínica a qual a exclusão foi solicitada
+
+pode ser deletada.
+
+possui vínculo com evento do eSocial,
+impedindo a exclusão da ficha clínica.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 93
+
+

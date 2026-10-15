@@ -1,0 +1,2774 @@
+WebService Cargo
+Especificação Técnica
+Versão <2.2.1>
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+04/06/2014
+
+draft
+
+Documentação do WebService Cargo
+
+André Pinheiro
+
+18/06/2014
+
+1.0
+
+Padronização e Versionamento de
+
+Valdilanio Cruz
+
+Documento
+05/11/2014
+
+1.1
+
+Itens de segurança
+
+André Pinheiro
+
+25/01/2017
+
+1.2
+
+Adicionado lista de falhas na requisição
+
+Roseane Alves
+
+25/05/2019
+
+1.3
+
+Inclusão da propriedade
+
+Igor Matos de Andrade
+
+“atividadesPerigosasWsVo”
+28/11/2019
+
+1.4
+
+Atualizada a lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+05/12/2019
+
+1.5
+
+Adicionada observação de inclusão de
+
+Gustavo Matos
+
+cargo com código 0
+28/09/2020
+
+1.5.1
+
+Atualização da observação do campo
+
+Gustavo Matos
+
+código
+18/01/2021
+
+1.6
+
+Inclusão de regra de limitação de
+
+Gustavo Matos
+
+tamanho do campo descricaoDetalhada
+26/02/2021
+
+1.6.1
+
+Propriedade desativada:
+
+Marcos Santiago
+
+codigoAtividadePerigosa
+13/08/2021
+
+1.6.2
+
+Atualização das possíveis mensagens
+
+Marcos Santiago
+
+de retorno
+30/12/2021
+
+1.6.3
+
+Retirada a obrigatoriedade da
+
+Marcos Santiago
+
+propriedade tipoBuscaEmpresa
+23/03/2022
+
+1.7
+
+Inclusão dos endpoins incluirLote e
+
+Marcos Santiago
+
+alterarLote
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+18/07/2022
+
+1.8
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.9
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+23/10/2023
+
+2.0
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+25/07/2024
+
+2.1
+
+Alterado o tamanho da tag nomeLegal
+
+Marcos Santiago
+
+de 40 para 120 caracteres
+15/08/2024
+
+2.2
+
+Incluída a tag “criarHistoricoDescricao”
+
+Marcos Santiago
+
+03/09/2024
+
+2.2.1
+
+Alterado o tamanho da tag funcao de
+
+Marcos Santiago
+
+70 para 200 caracteres
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WebService Cargo
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+5
+5
+5
+5
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+2.1 Configuração Padrão
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.3 Considerações para as Propriedades da tag wsse security
+2.4 Configurações adicionais para a tag wsse security
+
+6
+6
+7
+10
+10
+
+3.
+
+Entradas
+3.1 Mensagem SOAP Request Porta incluirCargo/alterarCargo
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Tag atividadesPerigosasWsVo
+3.1.3 Considerações para as propriedades
+3.2 Mensagem SOAP Request Porta consultarCargo
+3.2.1 Tabela de Propriedades da Entrada
+3.2.2 Considerações para as propriedades
+3.3 Mensagem SOAP Request Porta excluirCargo
+3.3.1 Tabela de Propriedades da Entrada
+3.4 Mensagem SOAP Request Porta incluirLote/alterarLote
+3.4.1 Tabela de Propriedades da Entrada
+3.4.2 Considerações para as propriedades
+
+11
+11
+12
+16
+17
+17
+18
+19
+19
+20
+21
+23
+26
+
+4.
+
+Saídas
+4.1 Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar)
+4.2 Mensagem SOAP Response (Para a operação excluir)
+4.2.1 Tabela de Propriedades da Saída
+4.2.2 Considerações para as propriedades
+4.3 Mensagem SOAP Response (Para as operações incluirLote/alterarLote)
+4.3.1 Tabela de Propriedades da Saída
+
+27
+27
+28
+28
+28
+29
+30
+
+5.
+
+Lista de falhas
+
+31
+
+5.1
+
+31
+31
+31
+32
+33
+33
+34
+35
+35
+35
+
+5.2
+5.3
+5.4
+5.5
+5.6
+
+Falhas na requisição
+5.1.1 Username e password inválidos
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+Falhas de Acesso
+5.2.1 Empresa sem acesso
+Falhas nas ações Inserir/Alterar
+Falha nas ações Alterar/Excluir
+Falhas na ação de Excluir
+Falhas nas ações incluirLote/alterarLote
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+Especificação Técnica
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Permitir ao cliente a possibilidade de criar, alterar, consultar e excluir cargos, a partir do consumo
+de WebService.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os dados do
+cargo que será manipulado pelo cliente a partir de sua origem.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os dados do
+cargo manipulado, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do cliente;
+2. O WebService foi projetado para atualizar/incluir/excluir um cargo por vez que é invocado, exceto
+a porta de consulta, que devolve uma lista de cargos;
+3. O arquivo WSDL a ser usado será enviado com as configurações de acordo com o ambiente que
+for definido com o cliente.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. Propriedades não enviadas serão desconsideradas, se enviada em branco será considerado.
+6. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente, de forma
+automática e antecipadamente à data de expiração.
+7. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem ser
+enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique a
+performance do SOC, a integração será desligada sem aviso prévio.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header
+com itens de segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken
+wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-username-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-soap-message-security1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+Considerações para as Propriedades da tag wsse security
+
+2.3
+
+Propriedade
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição. Recomendamos o uso de um minuto.
+Requisições com timestamp superior a dois minutos serão negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguro enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP Request Porta incluirCargo/alterarCargo
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirCargo>
+<cargo>
+<ativo></ativo>
+<atualizaDescricaoRequisitosCargoPeloCbo></atualizaDescricaoRequisitosCargoPeloCbo>
+<cbo></cbo>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<codigoRh></codigoRh>
+<descricaoDetalhada></descricaoDetalhada>
+<descricaoLocal></descricaoLocal>
+<educacao></educacao>
+<experiencia></experiencia>
+<funcao></funcao>
+<gfip></gfip>
+<habilidades></habilidades>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<localTrabalho></localTrabalho>
+<materialUtilizado></materialUtilizado>
+<mobiliarioUtilizado></mobiliarioUtilizado>
+<nome></nome>
+<nomeLegal></nomeLegal>
+<orientacaoAso></orientacaoAso>
+<requisitosFuncao></requisitosFuncao>
+<tipoBusca></tipoBusca>
+<treinamento></treinamento>
+<criarHistoricoDescricao></criarHistoricoDescricao>
+</cargo>
+</ser:incluirCargo>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Segue a especificação das propriedades de entrada do WebService:
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+ativo
+
+true/false
+
+Boolean (padrão =
+
+Não
+
+Indica se o
+
+true)
+
+cargo está ativo
+ou não
+
+atualizaDescricaoRequisit
+osCargoPeloCbo
+
+true/false
+
+Boolean (padrão =
+false)
+
+Não
+
+Indica se
+atualiza a
+descrição
+detalhada pelo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+cbo informado.
+cbo
+
+10
+
+Alfanumérico
+
+Não
+
+Código da
+Classificação
+Brasileira de
+Ocupações
+
+codigo
+
+9
+
+Alfanumérico
+
+Sim 1,4
+
+Código que
+identificará o
+Cargo no SOC
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da
+empresa na qual
+o cargo será
+adicionado
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Não
+
+Código utilizado
+para esse cargo
+fora do SOC
+(código de
+integração)
+
+descricaoDetalhada
+
+-
+
+Alfanumérico
+
+Não
+
+5
+
+Descrição
+detalhada do
+cargo
+
+descricaoLocal
+
+2400
+
+Alfanumérico
+
+Não
+
+Descrição do
+local onde quem
+atua no cargo
+trabalha
+
+educacao
+
+-
+
+Alfanumérico
+
+Não
+
+Descrição da
+escolaridade de
+funcionários que
+atuam nesse
+cargo
+
+experiencia
+
+500
+
+Alfanumérico
+
+Não
+
+Experiência
+profissional
+necessária para
+quem atuará no
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+cargo
+funcao
+
+200
+
+Alfanumérico
+
+Não
+
+Nome da função
+de quem atua
+nesse cargo
+
+gfip
+
+2
+
+Numérico
+
+Não
+
+Código GFIP do
+cargo
+
+habilidades
+
+790
+
+Alfanumérico
+
+Não
+
+Descrição das
+habilidades de
+quem atua no
+cargo
+
+Disponível nas
+
+chaveAcesso
+10
+
+configurações de
+
+Chave de
+Sim
+
+Acesso utilizada
+
+integração no cadastro
+
+pela empresa
+
+de empresa
+
+para acessar os
+serviços
+
+codigoEmpresaPrincipal
+
+10
+
+Disponível nas
+configurações de
+
+codigoResponsavel
+10
+
+codigoUsuario
+
+10
+
+Código de
+Sim
+
+identificação da
+
+integração no cadastro
+
+empresa
+
+de empresa
+
+principal
+
+Disponível nas
+
+Código do
+
+configurações de
+
+Sim
+
+usuário
+
+integração no cadastro
+
+responsável pela
+
+de empresa
+
+empresa
+
+Numérico
+
+Sim
+
+Código de
+identificação do
+usuário que está
+enviando a
+requisição
+
+localTrabalho
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do
+local de trabalho
+de quem atua
+no cargo em
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+questão
+materialUtilizado
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do
+material
+utilizado por
+quem atua no
+cargo em
+questão
+
+mobiliarioUtilizado
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do
+mobiliário
+utilizado por
+quem atua no
+cargo em
+questão
+
+nome
+
+120
+
+Alfanumérico
+
+Sim²
+
+Nome do cargo
+
+nomeLegal
+
+120
+
+Alfanumérico
+
+Não
+
+Nome que será
+impresso no
+PPP. Deixar em
+branco caso seja
+igual ao nome
+
+orientacaoAso
+
+-
+
+Alfanumérico
+
+Não
+
+Orientações a
+serem colocadas
+no ASO
+
+requisitosFuncao
+
+3000
+
+Alfanumérico
+
+Não
+
+Referente ao
+campo
+“Requisitos da
+Função” do
+cadastro de
+cargos
+
+tipoBusca
+
+-
+
+Enum:
+
+Sim³
+
+•
+
+CODIGO
+
+•
+
+CODIGO_RH
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Define o tipo de
+busca para fazer
+a alteração ou
+consulta do
+Página 15
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+cargo.
+treinamento
+
+500
+
+Alfanumérico
+
+Não
+
+Referente ao
+campo
+“Treinamento”
+do cadastro de
+cargos
+
+tipoBuscaEmpresa
+
+-
+
+Enum:
+
+Não
+
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIE
+
+Define o tipo de
+busca para
+localizar a
+empresa onde o
+
+NTE
+
+cargo está
+vinculado. Valor
+padrão:
+CODIGO_SOC
+
+atividadesPerigosasWsVo
+
+-
+
+atividadesPerigosasWs
+
+Não
+
+Tag desativada.
+
+Não
+
+Indica se deve
+
+Vo
+criarHistoricoDescricao
+
+true/false
+
+Boolean (padrão =
+false)
+
+criar histórico de
+descrições
+detalhadas do
+cargo
+
+3.1.2
+
+Tag atividadesPerigosasWsVo
+atividadesPerigosasWsVo
+codigoAtividadePerigosa
+
+-
+
+Alfanumérico
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Campo desativado.
+
+Página 16
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+3.1.3
+
+Considerações para as propriedades
+
+
+O campo “codigo” é obrigatório apenas na alteração. O campo deve ser informado de
+acordo com o valor definido no campo tipoBusca. Quando o tipoBusca for CODIGO, deve
+receber o Código SOC do cargo. Quando o tipoBusca for CODIGO_RH, deve receber o
+Código RH do cargo.
+
+
+
+O campo “nome” é obrigatório apenas na inclusão.
+
+
+
+Na alteração e na consulta, quando o tipoBusca selecionado for CODIGO_RH, é
+obrigatória a busca pelo campo CODIGO para informar o código RH do cargo.
+
+
+
+Na inclusão de cargo, quando não informado um código ou quando informado o valor 0,
+será realizada a geração automática do código do cargo. O valor inicial para geração do
+código pode ser configurado nos parâmetros gerais da empresa.
+
+
+
+Quando o parâmetro “Obriga campos específicos deste leiaute?” do layout S-2240 nos
+parâmetros eSocial da empresa estiver habilitado, o campo será limitado a 999
+caracteres.
+
+3.2
+
+Mensagem SOAP Request Porta consultarCargo
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser: consultarCargo>
+<cargo>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<codigoRh></codigoRh>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<nome></nome>
+<tipoBusca></tipoBusca>
+</cargo>
+</ser: consultarCargo>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.2.1
+
+Tabela de Propriedades da Entrada
+Segue a especificação das propriedades de entrada do WebService:
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigo
+
+9
+
+Alfanumérico
+
+Sim¹
+
+Identificação do Cargo a ser
+consultado
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa onde o
+cargo está cadastrado
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim²
+
+Código utilizado para
+identificar o Cargo fora do
+SOC
+
+chaveAcesso
+
+10
+
+Numérico
+
+Sim
+
+Disponível nas configurações
+de integração no cadastro de
+empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim
+
+Disponível nas configurações
+de integração no cadastro de
+empresa
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Disponível nas configurações
+
+Página 18
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+de integração no cadastro de
+empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário que está
+fazendo a requisição
+
+3.2.2
+
+3.3
+
+nome
+
+130
+
+tipoBusca
+
+-
+
+Alfanumérico
+ENUM:
+•
+
+CODIGO
+
+•
+
+CODIGO_RH
+
+•
+
+NOME
+
+Sim³
+
+Nome do cargo
+
+Sim4
+
+Define o tipo de busca para
+localizar o cargo a ser
+consultado.
+
+Considerações para as propriedades
+
+
+O campo “codigo” é obrigatório quando “tipoBusca” for “CODIGO”.
+
+
+
+O campo “codigoRh” é obrigatório quando “tipoBusca” for “CODIGO_RH”.
+
+
+
+O campo “nome” é obrigatório quando “tipoBusca” for “NOME”.
+
+
+
+O tipoBusca “NOME” será considerado somente no endpoint consultarCargo.
+
+Mensagem SOAP Request Porta excluirCargo
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser: excluirCargo>
+<cargo>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<identificacaoWsVo>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+</cargo>
+</ser: excluirCargo>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.3.1
+
+Tabela de Propriedades da Entrada
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigo
+
+9
+
+Alfanumérico
+
+Sim
+
+Código do Cargo a ser excluído
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa onde o cargo
+foi cadastrado
+
+chaveAcesso
+
+10
+
+Numérico
+
+Sim
+
+Disponível nas configurações de
+integração no cadastro de
+empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim
+
+Disponível nas configurações de
+integração no cadastro de
+empresa
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim
+
+Disponível nas configurações de
+integração no cadastro de
+empresa
+
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código do usuário que está
+enviando a requisição
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+3.4
+
+Mensagem SOAP Request Porta incluirLote/alterarLote
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirLote>
+<lote>
+<identificacao>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<homologacao></homologacao>
+<codigoUsuario></codigoUsuario>
+</identificacao>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<cargos>
+<cargo>
+<ativo></ativo>
+<atualizaDescricaoRequisitosCargoPeloCbo></atualizaDescricaoRequisitosCargoPelo
+Cbo>
+<cbo></cbo>
+<codigo></codigo>
+<codigoRh></codigoRh>
+<descricaoDetalhada></descricaoDetalhada>
+<descricaoLocal></descricaoLocal>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<educacao></educacao>
+<experiencia></experiencia>
+<funcao></funcao>
+<gfip></gfip>
+<habilidades></habilidades>
+<localTrabalho></localTrabalho>
+<materialUtilizado></materialUtilizado>
+<mobiliarioUtilizado></mobiliarioUtilizado>
+<nome></nome>
+<nomeLegal></nomeLegal>
+<orientacaoAso></orientacaoAso>
+<requisitosFuncao></requisitosFuncao>
+<treinamento></treinamento>
+</cargo>
+</cargos>
+</lote>
+</ser:incluirLote>
+</soapenv:Body>
+</soapenv:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+3.4.1
+
+Tabela de Propriedades da Entrada
+Tag lote
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa na
+qual o cargo será
+adicionado
+
+tipoBuscaEmpresa
+
+-
+
+Enum:
+•
+
+Não
+
+para localizar a empresa
+
+CODIGO_S
+
+onde o cargo está
+
+OC
+•
+
+vinculado. Valor padrão:
+
+CODIGO_C
+
+CODIGO_SOC
+
+LIENTE
+Cargos
+
+-
+
+List <String> cargo
+
+Define o tipo de busca
+
+Sim
+
+Lista de cargos limitada
+a 100 registros por
+requisição. A tag deve
+ser repetida de acordo
+com a quantidade de
+cargos que serão
+informados.
+
+Tag cargo
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+ativo
+
+true/false
+
+Boolean (padrão =
+
+Não
+
+Indica se o cargo está
+
+true)
+cbo
+
+10
+
+Alfanumérico
+
+ativo ou não
+Não
+
+Código da Classificação
+Brasileira de Ocupações
+
+codigo
+
+9
+
+Alfanumérico
+
+Sim1,4
+
+Código que identificará
+o Cargo no SOC
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Não3
+
+Código utilizado para
+esse cargo fora do SOC
+(código de integração)
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 23
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+descricaoDetalhada
+
+-
+
+Alfanumérico
+
+Não5
+
+Descrição detalhada do
+cargo
+
+descricaoLocal
+
+2400
+
+Alfanumérico
+
+Não
+
+Descrição do local onde
+quem atua no cargo
+trabalha
+
+educacao
+
+-
+
+Alfanumérico
+
+Não
+
+Descrição da
+escolaridade de
+funcionários que atuam
+nesse cargo
+
+experiencia
+
+500
+
+Alfanumérico
+
+Não
+
+Experiência profissional
+necessária para quem
+atuará no cargo
+
+funcao
+
+200
+
+Alfanumérico
+
+Não
+
+Nome da função de
+quem atua nesse cargo
+
+gfip
+
+2
+
+Numérico
+
+Não
+
+Código GFIP do cargo
+
+habilidades
+
+790
+
+Alfanumérico
+
+Não
+
+Descrição das
+habilidades de quem
+atua no cargo
+
+Disponível nas
+
+chaveAcesso
+10
+
+configurações de
+
+Chave de Acesso
+Sim
+
+integração no
+
+utilizada pela empresa
+para acessar os serviços
+
+cadastro de
+empresa
+codigoEmpresaPrinci
+
+10
+
+Disponível nas
+configurações de
+
+pal
+
+Código de identificação
+Sim
+
+da empresa principal
+
+integração no
+cadastro de
+empresa
+Disponível nas
+
+codigoResponsavel
+10
+
+configurações de
+
+Código do usuário
+Sim
+
+integração no
+
+responsável pela
+empresa
+
+cadastro de
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 24
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+Código de identificação
+do usuário que está
+enviando a requisição
+
+localTrabalho
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do local de
+trabalho de quem atua
+no cargo em questão
+
+materialUtilizado
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do material
+utilizado por quem atua
+no cargo em questão
+
+mobiliarioUtilizado
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do mobiliário
+utilizado por quem atua
+no cargo em questão
+
+nome
+
+120
+
+Alfanumérico
+
+Sim2
+
+Nome do cargo
+
+nomeLegal
+
+120
+
+Alfanumérico
+
+Não
+
+Nome que será impresso
+no PPP. Deixar em
+branco caso seja igual
+ao nome
+
+orientacaoAso
+
+-
+
+Alfanumérico
+
+Não
+
+Orientações a serem
+colocadas no ASO
+
+requisitosFuncao
+
+3000
+
+Alfanumérico
+
+Não
+
+Referente ao campo
+“Requisitos da Função”
+do cadastro de cargos
+
+tipoBusca
+
+-
+
+Enum:
+
+Sim3
+
+•
+
+CODIGO
+
+•
+
+CODIGO_R
+
+Define o tipo de busca
+para fazer a alteração
+ou consulta do cargo.
+
+H
+treinamento
+
+500
+
+Alfanumérico
+
+Não
+
+Referente ao campo
+“Treinamento” do
+cadastro de cargos
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+3.4.2
+
+Considerações para as propriedades
+
+
+O campo “codigo” é obrigatório apenas na alteração. O campo deve ser informado de
+acordo com o valor definido no campo tipoBusca. Quando o tipoBusca for CODIGO, deve
+receber o Código SOC do cargo. Quando o tipoBusca for CODIGO_RH, deve receber o
+Código RH do cargo.
+
+
+
+O campo “nome” é obrigatório apenas na inclusão.
+
+
+
+Na alteração, quando o tipoBusca selecionado for CODIGO_RH, é obrigatória a busca
+pelo campo CODIGO para informar o código RH do cargo.
+
+
+
+Na inclusão de cargo, quando não informado um código ou quando informado o valor 0,
+será realizada a geração automática do código do cargo. O valor inicial para geração do
+código pode ser configurado nos parâmetros gerais da empresa.
+
+
+
+Quando o parâmetro “Obriga campos específicos deste leiaute?” do layout S-2240 nos
+parâmetros eSocial da empresa estiver habilitado, o campo será limitado a 999
+caracteres.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 26
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:consultarCargoResponse xmlns:ns2="http://services.soc.age.com/">
+< CargoRetorno >
+<ativo></ativo>
+<cbo></cbo>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<codigoRh></codigoRh>
+<descricaoDetalhada></descricaoDetalhada>
+<descricaoLocal></descricaoLocal>
+<educacao></educacao>
+<experiencia></experiencia>
+<funcao></funcao>
+<gfip></gfip>
+<habilidades></habilidades>
+<localTrabalho></localTrabalho>
+<materialUtilizado></materialUtilizado>
+<mobiliarioUtilizado></mobiliarioUtilizado>
+<nome></nome>
+<nomeLegal></nomeLegal>
+<orientacaoAso></orientacaoAso>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 27
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<requisitosFuncao></requisitosFuncao>
+<tipoBusca></tipoBusca>
+<treinamento></treinamento>
+</ CargoRetorno >
+</ns2:consultarCargoResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2
+
+Mensagem SOAP Response (Para a operação excluir)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:excluirCargoResponse xmlns:ns2="http://services.soc.age.com/">
+<CargoRetorno>true</CargoRetorno>
+</ns2:excluirCargoResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2.1
+
+4.2.2
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+CargoRetorno
+
+Boolean
+
+Considerações para as propriedades
+Será atribuído o valor “true” quando a exclusão for realizada com sucesso.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 28
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+4.3
+
+Mensagem SOAP Response (Para as operações incluirLote/alterarLote)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:incluirLoteResponse xmlns:ns2="http://services.soc.age.com/">
+<cargos>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<numeroErros></numeroErros>
+</informacaoGeral>
+<cargo>
+<codigo></codigo>
+<codigoRh></codigoRh>
+<nome></nome>
+<informacao>
+<codigo></codigo>
+<mensagem></mensagem>
+</informacao>
+</cargo>
+</cargos>
+</ns2:incluirLoteResponse>
+</soap:Body>
+</soap:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 29
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+4.3.1
+
+Tabela de Propriedades da Saída
+cargosRetorno
+Propriedade
+
+Tipo
+
+informacaoGeral
+
+Observação
+
+informacaoGeral
+
+Tag responsável pelo retorno das
+informações gerais do resultado
+da requisição
+
+cargo
+
+cargo
+
+Tag responsável pelo retorno dos
+dados do cargo incluído
+informacaoGeral
+
+Propriedade
+
+Tipo
+
+Observação
+
+codigoMensagem
+
+Texto
+
+Código da mensagem de retorno
+
+mensagem
+
+Texto
+
+Descrição da mensagem de retorno
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag responsável pelo retorno
+detalhado do resultado da
+requisição
+
+numeroErros
+
+Número
+
+Quantidade de erros identificados
+na requisição
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Texto
+
+Retorna o código da mensagem
+
+mensagem
+
+Texto
+
+Retorna a descrição da mensagem
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 30
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+5.
+
+Lista de falhas
+Seguem as principais falhas que podem ocorrer ao utilizar o WebService de Cargo.
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 31
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorrerá quando a tag header for preenchida incorretamente.
+Verificar item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 32
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+Portanto, um item a verificar para resolver essa falha é:
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+
+falhas:
+
+5.2.1
+
+
+
+Identificação Inválida!
+
+
+
+Empresa Inválida.
+
+
+
+Usuário Sem Acesso.
+
+
+
+Login não Localizado.
+
+Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 33
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração Empresa/Cliente (337) no SOC e adicionar o serviço à lista de webservices da empresa.
+
+5.3
+
+Falhas nas ações Inserir/Alterar
+Ao inserir/alterar um cargo, caso os dados não estejam de acordo, poderá ocorrer as seguintes
+falhas:
+
+
+Existe um cargo com o nome informado: Mensagem retornada quando está se
+tentando gravar (incluir ou alterar) o cadastro de um cargo com o mesmo nome de um
+cargo já existente na empresa informada.
+
+
+
+Existe um cargo com o código RH informado: Mensagem retornada quando está se
+tentando gravar (incluir ou alterar) o cadastro de um cargo com o mesmo Código RH de
+um cargo já existente na empresa informada.
+
+
+
+Código do cargo inválido: Mensagem retornada quando o valor informado na
+propriedade codigo não é um código de cargo válido.
+
+
+
+Código RH do Cargo é obrigatório.: Mensagem retornada na inclusão quando o
+campo codigoRh não é informado na requisição e o parâmetro geral "Obriga preencher
+Código do RH do Cargo" está habilitado na empresa da requisição. Na alteração a
+mensagem irá retornar quando o campo codigoRh não for informado na requisição, o
+parâmetro estiver habilitado na empresa e o cargo informado na requisição não tem
+Código do Rh preenchido no SOC.
+
+
+
+CargoWsVo.funcao não tem entre 0 e 200 caracteres: Mensagem retornada
+quando o valor enviado no campo “funcao” ultrapassa o tamanho máximo permitido de
+200 caracteres.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 34
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+5.4
+
+Falha nas ações Alterar/Excluir
+Ao tentar Alterar/Excluir um cargo, poderá obter a falha:
+
+
+Cargo não encontrado: Mensagem retornada quando não é possível localizar o cargo a
+ser alterado/excluído com base nos dados informados na requisição.
+
+5.5
+
+Falhas na ação de Excluir
+Ao tentar efetuar a exclusão de um cargo poderão ocorrer as seguintes falhas:
+
+
+Existe funcionário com histórico nesse cargo: Mensagem retornada quando o cargo
+o qual está sendo realizada a tentativa de exclusão consta no histórico de ao menos um
+funcionário da empresa informada, impedindo a exclusão.
+
+
+
+Existe um GHE aplicado para este cargo: Mensagem retornada quando o cargo o
+qual está sendo realizada a tentativa de exclusão possui ao menos um GHE aplicado,
+impedindo a exclusão.
+
+
+
+Cargo sendo Usado: Mensagem retornada quando o cargo o qual está sendo realizada
+a tentativa de exclusão está sendo utilizado na empresa informada, impedindo a
+exclusão.
+
+5.6
+
+Falhas nas ações incluirLote/alterarLote
+Código
+
+Descrição
+
+Observação
+
+SOC-101
+
+Processado com aviso
+
+Mensagem retornada quando ao menos um
+registro gerou falha.
+
+SOC-301
+
+Existe um cargo com o nome
+
+Mensagem retornada quando está se tentando
+
+informado.
+
+gravar (incluir ou alterar) o cadastro de um
+cargo com o mesmo nome de um cargo já
+existente na empresa informada.
+
+SOC-302
+
+Existe um cargo com o código rh
+
+Mensagem retornada quando está se tentando
+
+informado.
+
+gravar (incluir ou alterar) o cadastro de um
+cargo com o mesmo Código RH de um cargo já
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 35
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+existente na empresa informada.
+SOC-303
+
+Existe um cargo com o código
+
+Mensagem retornada quando está se tentando
+
+informado.
+
+gravar (incluir ou alterar) o cadastro de um
+cargo com o mesmo Código de um cargo já
+existente na empresa informada.
+
+SOC-304
+
+Código do cargo inválido.
+
+Mensagem retornada quando o valor informado
+na propriedade codigo não é um código de
+cargo válido.
+
+SOC-305
+
+Preenchimento do campo CBO é
+
+Mensagem retornada quando a empresa possui
+
+obrigatório.
+
+a obrigatoriedade de preenchimento do CBO
+habilitada nos parâmetros gerais E não
+informado o CBO na propriedade
+cargoWsVo.cbo
+
+SOC-306
+
+Código RH do Cargo é
+
+Mensagem retornada na inclusão quando o
+
+obrigatório.
+
+campo codigoRh não é informado na requisição
+e o parâmetro geral "Obriga preencher Código
+do RH do Cargo" está habilitado na empresa da
+requisição. Na alteração a mensagem irá
+retornar quando o campo codigoRh não for
+informado na requisição, o parâmetro estiver
+habilitado na empresa e o cargo informado na
+requisição não tem Código do Rh preenchido no
+SOC.
+
+SOC-307
+
+SOC-308
+
+Quantidade máxima de 100
+
+Por regra, o WebService processa até 100
+
+cargos por lote excedida.
+
+cargos por requisição.
+
+Campo descricaoDetalhada deve
+
+Quando habilitado o parâmetro “Obriga campos
+
+possuir no máximo 999
+
+específicos deste leiaute?” do layout S2240 nos
+
+caracteres quando parametrizada
+
+parâmetros eSocial da empresa, o campo
+
+a obrigatoriedade dos campos do
+
+descricaoDetalhada será limitado a 999
+
+layout S-2240, nos Parâmetros
+
+caracteres.
+
+eSocial.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 36
+
+WebService Cargo
+
+Versão:
+<2.2.1>
+Date: 03/09/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-860
+
+SOC-309
+
+SOC-310
+
+Código GFIP digitado não
+
+Mensagem retornada quando o código
+
+existente no parâmetros do PPP
+
+informado na propriedade gfip não está
+
+da empresa.
+
+cadastrado nos parâmetros de PPP da empresa.
+
+Cargo não encontrado.
+
+Mensagem retornada quando não é possível
+localizar o cargo a ser alterado com base nos
+dados informados na requisição.
+
+SOC-311
+
+Não é possivel inativar o cargo,
+
+Mensagem retornada quando o cargo que está
+
+existe funcionario ativo neste
+
+tentando inativar tem vínculo com funcionário
+
+cargo.
+
+ativo.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 37
+
+

@@ -1,0 +1,3030 @@
+WebService Unidade
+Especificação Técnica
+Versão <2.8>
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+04/06/2014
+
+draft
+
+Criação da documentação do Serviço
+
+André Pinheiro
+
+20/06/2014
+
+1.0
+
+Padronização e Versionamento
+
+Valdilanio Cruz
+
+05/11/2014
+
+1.1
+
+Itens de segurança
+
+André Pinheiro
+
+27/01/2017
+
+1.2
+
+Adicionado lista de falhas na requisição e
+
+Roseane Alves
+
+opções de configuração de segurança
+18/09/2018
+
+1.3
+
+Adição de campos nas requisições de Inclusão
+
+Roseane Alves
+
+e Alteração
+31/01/2019
+
+1.4
+
+Adição de campos eSocial nas requisições de
+
+Guilherme Luizato
+
+Inclusão e Alteração
+18/02/2019
+
+1.5
+
+Mudar regra de obrigatoriedade da tag
+
+Roseane Alves
+
+“codigo” nas requisições de alteração e
+exclusão.
+10/04/2019
+
+1.6
+
+Adição de campo eSocial nas requisições de
+
+Guilherme Luizato
+
+Inclusão e Alteração
+06/11/2019
+
+1.7
+
+Inclusão dos campos “codigoCpf” e
+
+Gustavo Matos
+
+“codigoCaepf”
+28/11/2019
+
+1.8
+
+Atualizada a lista de possíveis inconsistências
+
+Gustavo Matos
+
+06/12/2019
+
+1.9
+
+Adicionada observação de inclusão de unidade
+
+Gustavo Matos
+
+com código 0
+09/07/2020
+
+1.9.1
+
+Incluída observação para as propriedades
+
+Gustavo Matos
+
+codigoCnae e telefoneCat
+06/11/2020
+
+2.0
+
+Descontinuação das propriedades
+
+Gustavo Matos
+
+tipoEmpresa, possuiSesmtProprio e tipoCliente
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+11/02/2021
+
+2.0.1
+
+Inclusão do campo
+
+Marcos Santiago
+
+caracterizacaoProcessosAmbientesTrabalho
+29/03/2021
+
+2.1
+
+Inativação de propriedades da tag
+
+Gustavo Matos
+
+unidadeEsocialWsVo
+13/08/2021
+
+2.2
+
+Atualização das possíveis mensagens de
+
+Marcos Santiago
+
+retorno
+13/09/2021
+
+2.3
+
+Inclusão da propriedade codigoCno
+
+Marcos Santiago
+
+30/12/2021
+
+2.3.1
+
+Retirada a obrigatoriedade da propriedade
+
+Marcos Santiago
+
+tipoBuscaEmpresa
+21/03/2022
+
+2.4
+
+Inclusão dos endpoint’s incluirLote e
+
+Marcos Santiago
+
+alterarLote
+18/07/2022
+
+2.5
+
+Incluída consideração sobre certificado de
+
+Marcos Santiago
+
+conexão HTTPS
+19/01/2023
+
+2.6
+
+Incluída consideração sobre o paralelismo de
+
+Marcos Santiago
+
+requisições
+23/10/2023
+
+2.7
+
+Removidas as considerações referentes à
+
+Marcos Santiago
+
+autenticação por empresa principal e cliente.
+09/02/2024
+
+2.7.1
+
+Adicionada observação sobre o campo
+
+Marcos Santiago
+
+codigoCpf e mensagens de erro referentes ao
+campo tipoEmpresa
+26/05/2026
+
+2.8
+
+Adicionado o CNPJ Alfanumérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Marcos Santiago
+
+Página 3
+
+WebService Unidade
+Especificação Técnica
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Desenvolvimento – M-DEV-862
+
+Índice
+1. Introdução ...................................................................................................................................................................5
+1.1 Objetivo ............................................................................................................................................................5
+1.2 Funcionamento .................................................................................................................................................5
+1.3 Considerações ...................................................................................................................................................5
+2. Parâmetros de Segurança para Acesso Ao Serviço .....................................................................................................5
+2.1 Configuração Padrão ........................................................................................................................................6
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço ..............................................6
+2.3 Considerações para as Propriedades da tag wsse security ................................................................................9
+2.4 Configurações adicionais para a tag wsse security.........................................................................................10
+3. Entradas .....................................................................................................................................................................10
+3.1 Mensagem SOAP Request Porta IncluirUnidade/alterarUnidade ..................................................................11
+3.1.1 Tabela de Propriedades da entrada .....................................................................................................14
+3.1.1.1 Tag unidadeEsocialWsVo .....................................................................................................................16
+3.1.2 Considerações para as propriedades ...................................................................................................17
+3.2 Mensagem SOAP Request Porta consultarUnidade .......................................................................................18
+3.2.1 Tabela de Propriedade da Entrada ...............................................................................................................19
+3.2.2 Considerações para as Propriedades ...................................................................................................20
+3.3 Mensagem SOAP Request Porta excluirUnidade ..........................................................................................20
+3.3.1 Tabela de Propriedades da Entrada .....................................................................................................21
+3.3.2 Considerações para as Propriedades ...................................................................................................22
+3.4 Mensagem SOAP Request Porta incluirLote/alterarLote ...............................................................................22
+3.4.1 Tabela de Propriedades da Entrada .....................................................................................................25
+3.4.2 Considerações para as Propriedades ...................................................................................................28
+4. Saídas ........................................................................................................................................................................28
+4.1 Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar) ..................................................29
+4.2 Mensagem SOAP Response (Para a operação excluir) ..................................................................................31
+4.2.1 Tabela de Propriedades para a Saída ..................................................................................................32
+4.4.2 Considerações para as propriedades ...................................................................................................32
+4.3 Mensagem SOAP Response (Para a operação incluirLote/alterarLote) .........................................................32
+4.3.1 Tabela de Propriedades para a Saída ..................................................................................................33
+5. Lista de falhas ...........................................................................................................................................................34
+5.1 Falhas na requisição .......................................................................................................................................34
+5.1.1 Username e password inválidos..........................................................................................................34
+5.1.2 Tag Header preenchida incorretamente ..............................................................................................35
+5.1.3 Requisição expirada ............................................................................................................................35
+5.2 Falhas de Acesso ............................................................................................................................................36
+5.3 Falhas nas ações Inserir/Alterar ......................................................................................................................36
+5.4 Falha nas ações Alterar/Excluir ......................................................................................................................39
+5.5 Falhas na ação de Excluir ...............................................................................................................................39
+5.6 Falhas nas ações de incluirLote/alterarLote ...................................................................................................40
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+Especificação Técnica
+1. Introdução
+
+1.1 Objetivo
+Permitir ao cliente a possibilidade de criar, alterar, consultar e excluir unidades, a partir do consumo
+de WebService.
+
+1.2 Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os dados
+da unidade que será manipulada pelo cliente a partir de sua origem.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os
+dados da unidade manipulada, bem como possíveis irregularidades nos dados enviados.
+
+1.3 Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para atualizar/incluir/excluir uma unidade por vez que é
+invocado, exceto a porta de consulta, que devolve uma lista de unidade;
+3. O arquivo WSDL a ser usado será enviado com as configurações de acordo com o ambiente
+que for definido com o cliente.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+6. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique
+a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+2. Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar as
+políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header com
+itens de segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1 Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3 Considerações para as Propriedades da tag wsse security
+Propriedade
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição. Recomendamos o uso de um
+minuto. Requisições com timestamp superior a dois minutos serão
+negadas.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra
+U (disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de
+integração). Contudo o cliente deverá informar o mesmo com o Tipo
+
+“PasswordDigest”.
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma
+requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4 Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da versão
+com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+3. Entradas
+
+3.1 Mensagem SOAP Request Porta IncluirUnidade/alterarUnidade
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<ser:incluirUnidade>
+<unidade>
+<ativo></ativo>
+<bairro></bairro>
+<bairroCobranca></bairroCobranca>
+<cep></cep>
+<cepCobranca></cepCobranca>
+<cidade></cidade>
+<cidadeCobranca></cidadeCobranca>
+<cnpj_cei></cnpj_cei>
+<codigo></codigo>
+<codigoArquivo></codigoArquivo>
+<codigoCnae></codigoCnae>
+<codigoCnpjCei></codigoCnpjCei>
+<codigoEmpresa></codigoEmpresa>
+<codigoMunicipio></codigoMunicipio>
+<codigoMunicipioCobranca></codigoMunicipioCobranca>
+<codigoRh></codigoRh>
+<complemento></complemento>
+<complementoCobranca></complementoCobranca>
+<dataAssinaturaContrato></dataAssinaturaContrato>
+<descricaoCnae></descricaoCnae>
+<endereco></endereco>
+<enderecoCobranca></enderecoCobranca>
+<estado></estado>
+<estadoCobranca></estadoCobranca>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<grauRisco></grauRisco>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<inscricaoEstadual></inscricaoEstadual>
+<inscricaoMunicipal></inscricaoMunicipal>
+<nome></nome>
+<numero></numero>
+<numeroCobranca></numeroCobranca>
+<observacaoASO></observacaoASO>
+<observacaoContrato></observacaoContrato>
+<observacaoPPP></observacaoPPP>
+<percentualCalculoBrigada></percentualCalculoBrigada>
+<razaoSocial></razaoSocial>
+<telefoneCat></telefoneCat>
+<tipoBusca></tipoBusca>
+<tipoCnae></tipoCnae>
+<tipoCnae> </tipoCnae>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+<unidadeContratante> </unidadeContratante>
+<campoString01> </campoString01>
+<tipoEmpresa> </tipoEmpresa>
+<possuiSesmtProprio> </possuiSesmtProprio>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<tipoCliente> </tipoCliente>
+<cnaesSecundarios>
+<codigoCnaeSecundario> </codigoCnaeSecundario>
+</cnaesSecundarios>
+<avisosServico>
+<aviso> </aviso>
+</avisosServico>
+<unidadeEsocialWsVo>
+<esocial> </esocial>
+<nomeAmbienteTrabalho> </nomeAmbienteTrabalho>
+<descricaoLocal> </descricaoLocal>
+<localAmbiente> </localAmbiente>
+<tipoInscricao></tipoInscricao>
+<numeroInscricao></numeroInscricao>
+<dataInicio> </dataInicio>
+<dataFim></dataFim>
+<codigoAmbienteTrabalho></codigoAmbienteTrabalho>
+<codigoLotacaoTributaria> </codigoLotacaoTributaria>
+<considerarEsocial> </considerarEsocial>
+</unidadeEsocialWsVo>
+<codigoCpf> </codigoCpf>
+<codigoCaepf> </codigoCaepf>
+<caracterizacaoProcessosAmbientesTrabalho></caracterizacaoProcessosAmbientesTraba
+lho>
+<codigoCno></codigoCno>
+</unidade>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+</ser:incluirUnidade>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1 Tabela de Propriedades da entrada
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+ativo
+
+True / False
+
+Padrão = true
+
+Não
+
+bairro
+
+80
+
+Alfanumérico
+
+Não
+
+bairroCobranca
+
+80
+
+Alfanumérico
+
+Não
+
+cep
+
+8
+
+Numérico
+
+Não
+
+cepCobranca
+
+8
+
+Numérico
+
+Não
+
+cidade
+
+50
+
+Alfanumérico
+
+Não
+
+cidadeCobranca
+
+50
+
+Alfanumérico
+
+Não
+
+cnpj_cei
+
+Enum
+
+CNPJ / CEI / CPF / CAEPF / CNO
+
+Não
+
+codigo
+
+20
+
+Alfanumérico
+
+Sim¹
+
+codigoArquivo
+
+28
+
+Alfanumérico
+
+Não
+
+codigoCnae
+
+20
+
+Alfanumérico
+
+Não10
+
+codigoCnpjCei
+
+20
+
+Alfanumérico
+
+Não8, 13
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+codigoMunicipio
+
+16
+
+Numérico
+
+Não
+
+codigoMunicipioCobranc
+
+16
+
+Numérico
+
+Não
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim2
+
+complemento
+
+300
+
+Alfanumérico
+
+Não
+
+complementoCobranca
+
+300
+
+Alfanumérico
+
+Não
+
+dataAssinaturaContrato
+
+10
+
+dd/mm/aaaa
+
+Não
+
+descricaoCnae
+
+80
+
+Alfanumérico
+
+Não
+
+endereco
+
+110
+
+Alfanumérico
+
+Não
+
+a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+enderecoCobranca
+
+110
+
+Alfanumérico
+
+Não
+
+estado
+
+2
+
+Alfanumérico
+
+Não
+
+estadoCobranca
+
+2
+
+Alfanumérico
+
+Não
+
+grauRisco
+
+1
+
+Numérico
+
+Não
+
+chaveAcesso
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoEmpresaPrincipal
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoResponsavel
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+inscricaoEstadual
+
+14
+
+Numérico
+
+Não
+
+inscricaoMunicipal
+
+20
+
+Alfanumérico
+
+Não
+
+nome
+
+130
+
+Alfanumérico
+
+Sim3
+
+numero
+
+14
+
+Alfanumérico
+
+Não
+
+numeroCobranca
+
+14
+
+Alfanumérico
+
+Não
+
+observacaoASO
+
+3000
+
+Alfanumérico
+
+Não
+
+observacaoContrato
+
+3000
+
+Alfanumérico
+
+Não
+
+observacaoPPP
+
+1500
+
+Alfanumérico
+
+Não
+
+percentualCalculBrigada
+
+10
+
+Numérico
+
+Não
+
+razaoSocial
+
+130
+
+Alfanumérico
+
+Não
+
+telefoneCat
+
+10
+
+Numérico
+
+Não13
+
+tipoBusca
+
+Enum
+
+CODIGO / CODIGO_RH
+
+Não4
+
+tipoCnae
+
+Enum
+
+CNAE/ CNAE_2/ CNAE_7/ CNAE_LIVRE
+
+Não
+
+tipoBuscaEmpresa
+
+Enum
+
+CODIGO_SOC / CODIGO_CLIENTE
+
+Não
+
+Valor padrão: CODIGO_SOC
+unidadeContratante
+
+-
+
+Booleano
+
+Não
+
+campoString01
+
+-
+
+Alfanumérico
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+tipoEmpresa
+
+Enum
+
+BRANCO / JURIDICA / OBRA /
+
+Não
+
+PF_COM_CEI
+possuiSesmtProprio
+
+-
+
+Booleano
+
+Não
+
+tipoCliente
+
+Enum
+
+BRANCO / INDUSTRIA / NAO_INDUSTRIA
+
+Não
+
+/ CONTRIBUINTE / NAO_CONTRIBUINTE
+/ SINDICALIZADO
+cnaesSecundarios
+
+-
+
+CnaeSecundarioWsVo
+
+Não
+
+- Set<String> codigoCnaeSecundario
+avisosServico
+
+-
+
+AvisoWsVo
+
+Não5
+
+- List<String> aviso
+unidadeEsocialWsVo
+
+-
+
+Tag destinada a seção “eSocial” do
+
+Não
+
+Cadastro de Unidade.
+codigoCpf
+
+11
+
+Numérico
+
+Não9,12
+
+codigoCaepf
+
+14
+
+Numérico
+
+Não11
+
+caracterizacaoProcessos
+
+3000
+
+Alfanumérico
+
+Não
+
+12
+
+Numérico
+
+Não7
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+esocial
+
+-
+
+Booleano
+
+Não
+
+nomeAmbienteTrabalho
+
+100
+
+Alfanumérico
+
+Não6
+
+descricaoLocal
+
+8000
+
+Alfanumérico
+
+Não
+
+localAmbiente
+
+Enum
+
+Valores Possíveis:
+
+Não6
+
+AmbientesTrabalho
+codigoCno
+3.1.1.1 Tag unidadeEsocialWsVo
+
+• ESTABELECIMENTO_PROPRIO_EMPRE
+GADOR
+• ESTABELECIMENTO_TERCEIROS
+• PRESTACAO_SERVICO_EM_INSTALAC
+OES_DE_TERCEIROS_NAO_CONSIDER
+ADAS_LOTACOES
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+tipoInscricao
+
+Enum
+
+Valores Possíveis:
+
+Não6
+
+• CNPJ
+• CAEPF
+• CNO
+
+numeroIncricao
+
+15
+
+Numérico
+
+Não6
+
+dataInicio
+
+-
+
+Data (dd/MM/aaaa)
+
+Não6
+
+dataFim
+
+-
+
+Data (dd/MM/aaaa)
+
+Não6
+
+codigoAmbienteTrabalho
+
+30
+
+Alfanumérico
+
+Não6
+
+codigoLotacaoTributaria
+
+30
+
+Alfanumérico
+
+Não6
+
+considerarEsocial
+
+Enum
+
+Valores Possíveis:
+
+Não6
+
+• NAO
+• SIM
+• EXCLUSAO
+
+3.1.2 Considerações para as propriedades
+1. O campo “codigo” é obrigatório apenas na alteração, quando o valor informado no
+campo “tipoBusca” for “CODIGO” ou quando “tipoBusca” não for informado. Na inclusão
+de unidade, caso o código informado seja 0, o valor será desconsiderado e realizada a
+geração automática do mesmo.
+2. O campo “codigoRh” é obrigatório na inclusão e na alteração quando o parâmetro geral
+"Obriga preencher Código do RH da Unidade" estiver habilitado na empresa da
+requisição. Será obrigatório também na alteração quando o valor informado no campo
+“tipoBusca” for “CODIGO_RH” ou quando “tipoBusca” não for informado.
+3. O campo “nome” é obrigatório apenas na inclusão.
+4. Alteração só pode ser feita informando tipoBusca “CODIGO” ou “CODIGO_RH”.
+5. A lista de avisos não é utilizada na requisição, ela é apenas utilizada para retornar
+possíveis avisos após o processamento da requisição.
+6. Campo descontinuado. Os valores enviados não serão exibidos em tela.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+7. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’.
+8. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’ e o campo ‘codigoCpf’
+não seja informado.
+9. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’ e o campo
+‘codigoCnpjCei’ não seja informado.
+10. Deve ser informado com máscara.
+11. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CAEPF’.
+12. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CEI’.
+13. Informar com letra minúscula é equivalente à tag enviada em branco. Para ser importado
+corretamente, o CNPJ Alfanumérico deve ser informado sem máscara e, conter apenas
+números e letras maiúsculas.
+
+3.2 Mensagem SOAP Request Porta consultarUnidade
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser: consultarUnidade >
+<unidade>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<codigoRh></codigoRh>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+</identificacaoWsVo>
+<nome></nome>
+<razaoSocial></razaoSocial>
+<tipoBusca></tipoBusca>
+</unidade>
+</ser: consultarUnidade >
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.2.1 Tabela de Propriedade da Entrada
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+codigo
+
+20
+
+Alfanumérico
+
+Sim¹
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim²
+
+chaveAcesso
+
+10
+
+Disponível nas configurações do usuário
+
+Sim
+
+Webservice
+codigoEmpresaPrincip
+
+10
+
+Sim
+
+no cadastro de empresa
+
+al
+codigoResponsavel
+
+Disponível nas configurações de integração
+
+10
+
+Disponível nas configurações de integração
+
+Sim
+
+no cadastro de empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+nome
+
+130
+
+Alfanumérico
+
+Sim³
+
+razaoSocial
+
+130
+
+Alfanumérico
+
+Sim4
+
+tipoBusca
+
+Enum
+
+CODIGO / CODIGO_RH / NOME /
+
+Sim
+
+RAZAO_SOCIAL
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+3.2.2 Considerações para as Propriedades
+1. O campo “codigo” é obrigatório quando “tipoBusca” for ” CODIGO”.
+2. Na consulta, o campo “codigoRh” só será obrigatório quando “tipoBusca” for ”
+CODIGO_RH”.
+3. O campo “nome” é obrigatório quando “tipoBusca” for ”NOME”.
+4. O campo “razaoSocial” é obrigatório quando “tipoBusca” for ” RAZAO_SOCIAL”.
+
+3.3 Mensagem SOAP Request Porta excluirUnidade
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser: excluirUnidade>
+<unidade>
+<codigo></codigo>
+<codigoEmpresa></codigoEmpresa>
+<codigoRh></codigoRh>
+<identificacaoWsVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<tipoBusca></tipoBusca>
+</unidade>
+</ser: excluirUnidade >
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.3.1 Tabela de Propriedades da Entrada
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+codigo
+
+20
+
+Alfanumérico
+
+Sim1
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim2
+
+chaveAcesso
+
+10
+
+Disponível nas configurações do usuário
+
+Sim
+
+Webservice
+codigoEmpresaPrincipal
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoResponsavel
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+tipoBusca
+
+Enum
+
+CODIGO / CODIGO_RH
+
+Não
+
+3.3.2 Considerações para as Propriedades
+1. O campo “codigo” só será obrigatório quando o valor informado no campo “tipoBusca”
+for “CODIGO” ou quando o campo “tipoBusca” não for informado.
+2. Na exclusão, o campo “codigoRh” só será obrigatório quando o valor informado no
+campo tipoBusca for “CODIGO_RH”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+3.4 Mensagem SOAP Request Porta incluirLote/alterarLote
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirLote>
+<lote>
+<identificacao>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<homologacao></homologacao>
+<codigoUsuario></codigoUsuario>
+</identificacao>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<unidades>
+<unidade>
+<ativo></ativo>
+<bairro></bairro>
+<bairroCobranca></bairroCobranca>
+<cep></cep>
+<cepCobranca></cepCobranca>
+<cidade></cidade>
+<cidadeCobranca></cidadeCobranca>
+<cnpj_cei></cnpj_cei>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<codigo></codigo>
+<codigoArquivo></codigoArquivo>
+<codigoCnae></codigoCnae>
+<codigoCnpjCei></codigoCnpjCei>
+<codigoMunicipio></codigoMunicipio>
+<codigoMunicipioCobranca></codigoMunicipioCobranca>
+<codigoRh></codigoRh>
+<complemento></complemento>
+<complementoCobranca></complementoCobranca>
+<dataAssinaturaContrato></dataAssinaturaContrato>
+<descricaoCnae></descricaoCnae>
+<endereco></endereco>
+<enderecoCobranca></enderecoCobranca>
+<estado></estado>
+<estadoCobranca></estadoCobranca>
+<grauRisco></grauRisco>
+<inscricaoEstadual></inscricaoEstadual>
+<inscricaoMunicipal></inscricaoMunicipal>
+<nome></nome>
+<numero></numero>
+<numeroCobranca></numeroCobranca>
+<observacaoASO></observacaoASO>
+<observacaoContrato></observacaoContrato>
+<observacaoPPP></observacaoPPP>
+<percentualCalculoBrigada></percentualCalculoBrigada>
+<razaoSocial></razaoSocial>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 23
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<telefoneCat></telefoneCat>
+<tipoCnae></tipoCnae>
+<unidadeContratante></unidadeContratante>
+<campoString01></campoString01>
+<tipoEmpresa></tipoEmpresa>
+<possuiSesmtProprio></possuiSesmtProprio>
+<tipoCliente></tipoCliente>
+<cnaesSecundarios>
+<codigoCnaeSecundario></codigoCnaeSecundario>
+</cnaesSecundarios>
+<codigoCpf></codigoCpf>
+<codigoCaepf></codigoCaepf>
+<caracterizacaoProcessosAmbientesTrabalho></caracterizacaoProcessosAmbientesT
+rabalho>
+<codigoCno></codigoCno>
+</unidade>
+</unidades>
+</lote>
+</ser:incluirLote>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.4.1 Tabela de Propriedades da Entrada
+Tag lote
+Propriedade
+
+Tamanho
+
+Tipo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Obrigatório
+
+Página 24
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+tipoBuscaEmpresa
+
+Enum
+
+CODIGO_SOC / CODIGO_CLIENTE
+
+Não
+
+Valor padrão: CODIGO_SOC
+unidades
+
+List <String> unidade
+
+Sim1
+
+Tag unidade
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+ativo
+
+True / False
+
+Padrão = true
+
+Não
+
+bairro
+
+80
+
+Alfanumérico
+
+Não
+
+bairroCobranca
+
+80
+
+Alfanumérico
+
+Não
+
+cep
+
+8
+
+Numérico
+
+Não
+
+cepCobranca
+
+8
+
+Numérico
+
+Não
+
+cidade
+
+50
+
+Alfanumérico
+
+Não
+
+cidadeCobranca
+
+50
+
+Alfanumérico
+
+Não
+
+cnpj_cei
+
+Enum
+
+CNPJ / CEI / CPF / CAEPF / CNO
+
+Não
+
+codigo
+
+20
+
+Alfanumérico
+
+Sim2
+
+codigoArquivo
+
+28
+
+Alfanumérico
+
+Não
+
+codigoCnae
+
+20
+
+Alfanumérico
+
+Não11
+
+codigoCnpjCei
+
+20
+
+Alfanumérico
+
+Não8
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+codigoMunicipio
+
+16
+
+Numérico
+
+Não
+
+codigoMunicipioCobran
+
+16
+
+Numérico
+
+Não
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim3
+
+complemento
+
+300
+
+Alfanumérico
+
+Não
+
+complementoCobranca
+
+300
+
+Alfanumérico
+
+Não
+
+dataAssinaturaContrato
+
+10
+
+dd/mm/aaaa
+
+Não
+
+descricaoCnae
+
+80
+
+Alfanumérico
+
+Não
+
+ca
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+endereco
+
+110
+
+Alfanumérico
+
+Não
+
+enderecoCobranca
+
+110
+
+Alfanumérico
+
+Não
+
+estado
+
+2
+
+Alfanumérico
+
+Não
+
+estadoCobranca
+
+2
+
+Alfanumérico
+
+Não
+
+grauRisco
+
+1
+
+Numérico
+
+Não
+
+chaveAcesso
+
+10
+
+Disponível nas configurações do usuário
+
+Sim
+
+Webservice
+codigoEmpresaPrincipal
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoResponsavel
+
+10
+
+Disponível nas configurações de
+
+Sim
+
+integração no cadastro de empresa
+codigoUsuario
+
+10
+
+Numérico
+
+Sim
+
+inscricaoEstadual
+
+14
+
+Numérico
+
+Não
+
+inscricaoMunicipal
+
+20
+
+Alfanumérico
+
+Não
+
+nome
+
+130
+
+Alfanumérico
+
+Sim4
+
+numero
+
+14
+
+Alfanumérico
+
+Não
+
+numeroCobranca
+
+14
+
+Alfanumérico
+
+Não
+
+observacaoASO
+
+3000
+
+Alfanumérico
+
+Não
+
+observacaoContrato
+
+3000
+
+Alfanumérico
+
+Não
+
+observacaoPPP
+
+1500
+
+Alfanumérico
+
+Não
+
+percentualCalculBrigad
+
+10
+
+Numérico
+
+Não
+
+razaoSocial
+
+130
+
+Alfanumérico
+
+Não
+
+telefoneCat
+
+10
+
+Numérico
+
+Não
+
+tipoBusca
+
+Enum
+
+CODIGO / CODIGO_RH
+
+Não5
+
+tipoCnae
+
+Enum
+
+CNAE/ CNAE_2/ CNAE_7/ CNAE_LIVRE
+
+Não
+
+tipoBuscaEmpresa
+
+Enum
+
+CODIGO_SOC / CODIGO_CLIENTE
+
+Não
+
+a
+
+Valor padrão: CODIGO_SOC
+unidadeContratante
+
+-
+
+Booleano
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Não
+Página 26
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+campoString01
+
+-
+
+Alfanumérico
+
+Não
+
+tipoEmpresa
+
+Enum
+
+BRANCO / JURIDICA / OBRA /
+
+Não
+
+PF_COM_CEI
+possuiSesmtProprio
+
+-
+
+Booleano
+
+Não
+
+tipoCliente
+
+Enum
+
+BRANCO / INDUSTRIA / NAO_INDUSTRIA
+
+Não
+
+/ CONTRIBUINTE / NAO_CONTRIBUINTE
+/ SINDICALIZADO
+cnaesSecundarios
+
+-
+
+CnaeSecundarioWsVo
+
+Não
+
+- Set<String> codigoCnaeSecundario
+avisosServico
+
+-
+
+AvisoWsVo
+
+Não6
+
+- List<String> aviso
+unidadeEsocialWsVo
+
+-
+
+Tag destinada a seção “eSocial” do
+
+Não
+
+Cadastro de Unidade.
+codigoCpf
+
+11
+
+Numérico
+
+Não9,12
+
+codigoCaepf
+
+14
+
+Numérico
+
+Não11
+
+caracterizacaoProcesso
+
+3000
+
+Alfanumérico
+
+Não
+
+12
+
+Numérico
+
+Não7
+
+sAmbientesTrabalho
+codigoCno
+
+3.4.2 Considerações para as Propriedades
+1. Lista de unidades limitada a 100 registros por requisição. A tag <unidade> deve ser
+repetida de acordo com a quantidade de unidades que serão informadas.
+2. O campo “codigo” é obrigatório apenas na alteração, quando o valor informado no campo
+“tipoBusca” for “CODIGO” ou quando “tipoBusca” não for informado. Na inclusão de
+unidade, caso o código informado seja 0, o valor será desconsiderado e realizada a
+geração automática do mesmo.
+3. O campo “codigoRh” é obrigatório na inclusão e na alteração quando o parâmetro geral
+"Obriga preencher Código do RH da Unidade" estiver habilitado na empresa da
+requisição. Será obrigatório também na alteração quando o valor informado no campo
+“tipoBusca” for “CODIGO_RH” ou quando “tipoBusca” não for informado.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 27
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+4. O campo “nome” é obrigatório apenas na inclusão.
+5. Alteração só pode ser feita informando tipoBusca “CODIGO” ou “CODIGO_RH”.
+6. A lista de avisos não é utilizada na requisição, ela é apenas utilizada para retornar
+possíveis avisos após o processamento da requisição.
+7. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’.
+8. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’ e o campo ‘codigoCpf’
+não seja informado.
+9. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CNO’ e o campo
+‘codigoCnpjCei’ não seja informado.
+10. Deve ser informado com máscara.
+11. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CAEPF’.
+12. Obrigatório caso o campo ‘cnpj_cei’ esteja definido como ‘CEI’.
+
+4. Saídas
+
+4.1 Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:consultarUnidadeResponse xmlns:ns2="http://services.soc.age.com/">
+<UnidadeRetorno>
+<ativo></ativo>
+<bairro></bairro>
+<bairroCobranca></bairroCobranca>
+<cep></cep>
+<cepCobranca></cepCobranca>
+<cidade></cidade>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 28
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<cidadeCobranca></cidadeCobranca>
+<cnpj_cei></cnpj_cei>
+<codigo></codigo>
+<codigoArquivo></codigoArquivo>
+<codigoCnae></codigoCnae>
+<codigoCnpjCei></codigoCnpjCei>
+<codigoEmpresa></codigoEmpresa>
+<codigoMunicipio></codigoMunicipio>
+<codigoMunicipioCobranca></codigoMunicipioCobranca>
+<codigoRh></codigoRh>
+<complemento></complemento>
+<complementoCobranca></complementoCobranca>
+<dataAssinaturaContrato></dataAssinaturaContrato>
+<descricaoCnae></descricaoCnae>
+<endereco></endereco>
+<enderecoCobranca></enderecoCobranca>
+<estado></estado>
+<estadoCobranca></estadoCobranca>
+<grauRisco></grauRisco>
+<inscricaoEstadual></inscricaoEstadual>
+<inscricaoMunicipal></inscricaoMunicipal>
+<nome></nome>
+<numero></numero>
+<numeroCobranca></numeroCobranca>
+<observacaoASO></observacaoASO>
+<observacaoContrato></observacaoContrato>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 29
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<observacaoPPP></observacaoPPP>
+<percentualCalculoBrigada></percentualCalculoBrigada>
+<razaoSocial></razaoSocial>
+<telefoneCat></telefoneCat>
+<tipoCnae></tipoCnae>
+<unidadeContratante> </unidadeContratante>
+<campoString01></campoString01>
+<tipoEmpresa> </tipoEmpresa>
+<possuiSesmtProprio> </possuiSesmtProprio>
+<tipoCliente> </tipoCliente>
+<cnaesSecundarios>
+<codigoCnaeSecundario></codigoCnaeSecundario>
+</cnaesSecundarios>
+<avisosServico/>
+<unidadeEsocialWsVo>
+<esocial>true</esocial>
+<nomeAmbienteTrabalho> </nomeAmbienteTrabalho>
+<descricaoLocal> </descricaoLocal>
+<localAmbiente> </localAmbiente>
+<numeroInscricao/>
+<dataInicio></dataInicio>
+<dataFim/>
+<codigoAmbienteTrabalho/>
+<codigoLotacaoTributaria> </codigoLotacaoTributaria>
+</unidadeEsocialWsVo>
+<codigoCpf> </codigoCpf>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 30
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+<codigoCaepf> <codigoCaepf>
+<caracterizacaoProcessosAmbientesTrabalho</caracterizacaoProcessosAmbientesTrabalh
+o>
+<codigoCno></codigoCno>
+</UnidadeRetorno>
+</ns2:consultarUnidadeResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2 Mensagem SOAP Response (Para a operação excluir)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:excluirUnidadeResponse xmlns:ns2="http://services.soc.age.com/">
+<UnidadeRetorno>true</UnidadeRetorno>
+</ns2:excluirUnidadeResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2.1 Tabela de Propriedades para a Saída
+Propriedade
+
+Tipo
+
+UnidadeRetorno
+
+Boolean
+
+4.4.2 Considerações para as propriedades
+Será atribuído o valor “true” quando a exclusão for realizada com sucesso.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 31
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+4.3 Mensagem SOAP Response (Para a operação incluirLote/alterarLote)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:incluirLoteResponse xmlns:ns2="http://services.soc.age.com/">
+<unidades>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<numeroErros></numeroErros>
+</informacaoGeral>
+<unidade>
+<codigo></codigo>
+<codigoRh></codigoRh>
+<nome></nome>
+<informacao>
+<codigo></codigo>
+<mensagem></mensagem>
+</informacao>
+</unidade>
+</unidades>
+</ns2:incluirLoteResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.3.1 Tabela de Propriedades para a Saída
+unidadesRetorno
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 32
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+Propriedade
+
+Tipo
+
+informacaoGeral
+
+Observação
+
+informacaoGeral
+
+Tag responsável pelo retorno das
+informações gerais do resultado
+da requisição
+
+unidade
+
+unidade
+
+Tag responsável pelo retorno dos
+dados da unidade incluída
+informacaoGeral
+
+Propriedade
+
+Tipo
+
+Observação
+
+codigoMensagem
+
+Texto
+
+Código da mensagem de retorno
+
+mensagem
+
+Texto
+
+Descrição da mensagem de retorno
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag responsável pelo retorno
+detalhado do resultado da
+requisição
+
+numeroErros
+
+Número
+
+Quantidade de erros identificados
+na requisição
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Texto
+
+Retorna o código da mensagem
+
+mensagem
+
+Texto
+
+Retorna a descrição da mensagem
+
+5. Lista de falhas
+Seguem as principais falhas que podem ocorrer ao utilizar o WebService de Unidade.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 33
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+5.1 Falhas na requisição
+
+5.1.1 Username e password inválidos
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+
+5.1.2 Tag Header preenchida incorretamente
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 34
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3 Requisição expirada
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp verifica
+a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+Ajustar horário do computador;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 35
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+5.2 Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+1. Identificação Inválida: Mensagem retornada quando os dados informados na tag
+identificacaoWsVo não configuram uma credencial válida de acesso aos Web Services.
+2. Empresa Invalida: Mensagem retornada quando a empresa informada na propriedade
+codigoEmpresa não é válida.
+3. Usuário Sem Acesso: Mensagem retornada quando o usuário informado na
+propriedade codigoUsuario não possui acesso para realizar a ação solicitada. Os acessos
+necessários estão descritos no cadastro do serviço, nas configurações de integração da
+empresa.
+4. Login não Localizado: Mensagem retornada quando não é possível localizar o usuário
+informado na propriedade codigoUsuario.
+5.3 Falhas nas ações Inserir/Alterar
+Ao inserir/alterar uma unidade, caso os dados não estejam de acordo, poderá ocorrer as
+seguintes falhas:
+1. Existe uma unidade com o nome informado: Mensagem retornada quando está se
+tentando gravar (incluir ou alterar) o cadastro de uma unidade com o mesmo nome de
+uma unidade já existente na empresa informada.
+2. Existe uma unidade com o código RH informado: Mensagem retornada quando
+está se tentando gravar (incluir ou alterar) o cadastro de uma unidade com o mesmo
+Código RH de uma unidade já existente na empresa informada.
+3. Código de unidade inválido: Mensagem retornada quando o valor informado na tag
+código não é um código válido de unidade
+4. unidadeEsocialWsVo.nomeAmbienteTrabalho não pode ser vazio: Necessário o
+preenchimento da propriedade nomeAmbienteTrabalho, referente aos dados de eSocial
+da unidade.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 36
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+5. unidadeEsocialWsVo.descricaoLocal não pode ser vazio: Necessário o
+preenchimento da propriedade descricaoLocal, referente aos dados de eSocial da
+unidade.
+6. unidadeEsocialWsVo.codigoAmbienteTrabalho não pode ser vazio: Necessário o
+preenchimento da propriedade codigoAmbienteTrabalho, referente aos dados de eSocial
+da unidade.
+7. unidadeEsocialWsVo.dataInicio não pode ser vazio: Necessário o preenchimento
+da propriedade dataInicio, referente aos dados de eSocial da unidade.
+8. unidadeEsocialWsVo.dataInicio não pode ser vazio se dataFim estiver
+preenchida: Necessário o preenchimento da propriedade dataInicio, referente aos
+dados de eSocial da unidade.
+9. unidadeEsocialWsVo.dataFim não pode ser menor que a dataInicio: Mensagem
+retornada quando o valor informado para a propriedade dataFim é maior do que o
+informado na propriedade dataInicio, referentes aos dados de eSocial da unidade.
+10. unidadeEsocialWsVo.localAmbiente não pode ser vazio ou está inválido:
+Necessário o preenchimento válido da propriedade localAmbiente, referente aos dados de
+eSocial da unidade.
+11. unidadeEsocialWsVo.codigoLotacaoTributaria é obrigatório: Necessário o
+preenchimento da propriedade codigoLotacaoTributaria, referente aos dados de eSocial
+da unidade.
+12. unidadeEsocialWsVo.tipoInscricao não pode ser vazio ou está inválido:
+Necessário o preenchimento válido da propriedade tipoInscricao, referente aos dados de
+eSocial da unidade.
+13. unidadeEsocialWsVo.numeroInscricao não pode ser vazio: Necessário o
+preenchimento da propriedade numeroInscricao, referente aos dados de eSocial da
+unidade.
+14. codigoCaepf preenchimento obrigatório: Necessário o preenchimento do CAEPF
+(Cadastro de Atividade Econômica de Pessoa Física) da unidade na propriedade
+codigoCaepf.
+15. codigoCpf preenchimento obrigatório: Necessário o preenchimento do CPF
+(Cadastro de Pessoa Física) da unidade na propriedade codigoCpf.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 37
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+16. UnidadeWsVo.caracterizacaoProcessosAmbientesTrabalho não tem entre 0 e
+3000 caracteres: Mensagem retornada quando o conteúdo do campo informado
+excede os 3000 caracteres.
+17. Código RH da Unidade é obrigatório.: Mensagem retornada na inclusão quando o
+campo codigoRh não é informado na requisição e o parâmetro geral "Obriga preencher
+Código do RH da Unidade" está habilitado na empresa da requisição. Na alteração a
+mensagem irá retornar quando o campo codigoRh não for informado na requisição, o
+parâmetro estiver habilitado na empresa e a unidade informada na requisição não tem
+Código do Rh preenchido no SOC.
+18. O campo unidade.codigoCno deve conter apenas números.: Mensagem retornada
+quando o campo codigoCno não é válido.
+19. Quando informado o tipo CNO na propriedade cnpj_cei, deve ser preenchida a
+propriedade codigoCnpjCei ou codigoCpf.: Mensagem retornada quando a
+propriedade CNPJ_CEI é definida como ‘CNO’ e a propriedade codigoCnpjCei ou
+codigoCpf não está preenchida.
+20. O campo unidade.codigoCno deve ter no máximo 12 caracteres.: Mensagem
+retornada quando o codigoCno informado ultrapassa 12 caracteres.
+21. Para empresa com CEI, tipoEmpresa só pode ser PF com CEI (PF_COM_CEI):
+Mensagem retornada quando o campo cnpj_cei é definido como ‘CEI’ e o campo
+tipoEmpresa é enviado com um valor diferente de ‘PF_COM_CEI’.
+22. Para empresas com CNPJ, tipoEmpresa não pode ser PF com CEI
+(PF_COM_CEI): Mensagem retornada quando o campo cnpj_cei é definido como ‘CNPJ’
+e o tipoEmpresa é enviado com o valor ‘PF_COM_CEI’.
+23. UnidadeWsVo.codigoCnpjCei is not between 0 and 20 characters long:
+Mensagem retornada quando o CNPJ informado contém mais que 20 caracteres.
+5.4 Falha nas ações Alterar/Excluir
+Ao tentar Alterar/Excluir uma unidade, poderá obter a falha:
+1. Unidade não encontrada: Mensagem retornada quando não é possível localizar a
+unidade a ser alterada/excluída com base nos dados informados na requisição.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 38
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+5.5 Falhas na ação de Excluir
+Ao tentar efetuar a exclusão de uma unidade, poderão ocorrer as seguintes falhas:
+1. Existe funcionário com histórico nessa unidade: Mensagem retornada quando a
+unidade a qual está sendo realizada a tentativa de exclusão consta no histórico de ao
+menos um funcionário da empresa informada, impedindo a exclusão.
+2. Existe um GHE aplicado para esta unidade: Mensagem retornada quando a unidade
+a qual está sendo realizada a tentativa de exclusão possui ao menos um GHE aplicado,
+impedindo a exclusão.
+3. Unidade sendo Usada: Mensagem retornada quando a unidade a qual está sendo
+realizada a tentativa de exclusão está sendo utilizada na empresa informada, impedindo
+a exclusão.
+4. Este Ambiente de Trabalho está associado a um lote do portal eSocial e não
+pode ser deletado: Mensagem retornada quando a unidade a qual está sendo realizada
+a tentativa de exclusão está associada a um lote gerado no Portal eSocial, impedindo a
+exclusão.
+5.6 Falhas nas ações de incluirLote/alterarLote
+Código
+SOC-101
+
+Descrição
+Processado com aviso
+
+SOC-301
+
+Já existe uma unidade com o
+nome informado.
+
+SOC-302
+
+Já existe uma unidade com o
+codigo RH informado.
+
+SOC-303
+
+Já Existe uma unidade com o
+codigo informado.
+
+SOC-304
+
+Código da Unidade inválido.
+
+Observação
+Mensagem retornada quando ao menos um registro
+gerou falha.
+Mensagem retornada quando está se tentando gravar
+(incluir ou alterar) o cadastro de uma unidade com o
+mesmo nome de uma unidade já existente na empresa
+informada.
+Mensagem retornada quando está se tentando gravar
+(incluir ou alterar) o cadastro de uma unidade com o
+mesmo Código RH de uma unidade já existente na
+empresa informada.
+Mensagem retornada quando está se tentando gravar
+(incluir ou alterar) o cadastro de uma unidade com o
+mesmo Código de uma unidade já existente na empresa
+informada.
+Mensagem retornada quando o valor informado na tag
+código não é um código válido de unidade.
+
+SOC-307
+
+Quantidade máxima de 100
+unidades por lote excedida.
+
+Por regra, o WebService processa até 100 unidades por
+requisição.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 39
+
+WebService Unidade
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento – M-DEV-862
+
+SOC-308
+
+Quantidade máxima de 10
+unidades por lote excedida
+Quando informado o tipo CNO na
+propriedade cnpj_cei, deve ser
+preenchida a propriedade
+codigoCno.
+
+Mensagem retornada quando são informadas mais de 10
+unidades quando utilizada a integração SOC x Maestro.
+Mensagem retornada quando a propriedade CNPJ_CEI é
+definida como ‘CNO’ e a propriedade codigoCno não é
+preenchida.
+
+SOC-310
+
+Quando informado o tipo CNO na
+propriedade cnpj_cei, deve ser
+preenchida a propriedade
+codigoCnpjCei ou codigoCpf.
+
+Mensagem retornada quando a propriedade CNPJ_CEI é
+definida como ‘CNO’ e a propriedade codigoCno não é
+preenchida.
+
+SOC-311
+
+Quando informado o tipo CNO na
+propriedade cnpj_cei, apenas uma
+das propriedades codigoCnpjCei
+ou codigoCpf deve ser
+preenchida.
+CNAE7 preenchimento
+obrigatório.
+
+Mensagem retornada quando a propriedade CNPJ_CEI é
+definida como ‘CNO’ e a propriedade codigoCnpjCei ou
+codigoCpf não está preenchida.
+
+SOC-309
+
+SOC-312
+
+Mensagem retornada quando nos parâmetros gerais da
+empresa está parametrizado para obrigar o
+preenchimento de CNAE7.
+Mensagem retornada na inclusão quando o campo
+codigoRh não é informado na requisição e o parâmetro
+geral "Obriga preencher Código do RH da Unidade" está
+habilitado na empresa da requisição. Na alteração a
+mensagem irá retornar quando o campo codigoRh não
+for informado na requisição, o parâmetro estiver
+habilitado na empresa e a unidade informada na
+requisição não tem Código do Rh preenchido no SOC.
+
+SOC-313
+
+Código RH da Unidade é
+obrigatório.
+
+SOC-314
+
+codigoCnpjCei preenchimento
+obrigatório.
+codigoCpf preenchimento
+obrigatório.
+
+Necessário o preenchimento quando a propriedade
+CNPJ_CEI é definida como CNPJ ou CEI.
+Necessário o preenchimento do CPF (Cadastro de
+Pessoa Física) da unidade na propriedade codigoCpf.
+
+SOC-316
+
+codigoCaepf preenchimento
+obrigatório.
+
+Necessário o preenchimento do CAEPF (Cadastro de
+Atividade Econômica de Pessoa Física) da unidade na
+propriedade codigoCaepf.
+
+SOC-320
+
+Erro na integração com maestro.
+
+SOC-321
+
+Unidade não encontrada.
+
+SOC-324
+
+Não é possivel inativar essa
+unidade, existe funcionario ativo
+nessa unidade.
+Não é permitido alterar CNPJ.
+
+Mensagem retornada quando há falha na integração
+SOC x Maestro.
+Mensagem retornada quando não é possível localizar a
+unidade a ser alterada com base nos dados informados
+na requisição.
+Mensagem retornada quando tenta-se inativar uma
+unidade que possui vínculo com funcionários ativos.
+
+SOC-315
+
+SOC-325
+
+Mensagem retornada quando nos parâmetros de
+empresa principal o parâmetro “Permite alterar CNPJ”
+estiver como “Não”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 40
+
+WebService Unidade
+Especificação Técnica
+
+Versão:
+<2.8>
+Date: 26/05/2026
+
+Desenvolvimento – M-DEV-862
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 41
+
+

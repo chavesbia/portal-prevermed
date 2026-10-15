@@ -1,0 +1,778 @@
+Solicitação de Token
+Especificação Técnica
+Versão <1.5>
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+Histórico de Revisão
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+23/03/2015
+
+1.0
+
+Elaboração documento
+
+Valdilanio Cruz
+
+11/01/2017
+
+1.1
+
+Adição campo “parametros”
+
+Andre Pinheiro
+
+27/01/2017
+
+1.2
+
+Adicionado lista de falhas na requisição
+
+Roseane Alves
+
+21/01/2020
+
+1.3
+
+Atualizada a lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+19/01/2023
+
+1.4
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.5
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+Índice
+1.
+
+2.
+
+3.
+
+4.
+
+Introdução
+
+4
+
+1.1
+
+Objetivo
+
+4
+
+1.2
+
+Funcionamento
+
+4
+
+1.3
+
+Considerações
+
+4
+
+Parâmetros de Segurança para Acesso Ao Serviço
+
+5
+
+2.1
+
+Configuração Padrão.
+
+5
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+
+6
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+
+8
+
+2.4
+
+Configurações adicionais para a tag wsse security
+
+9
+
+Entradas
+
+10
+
+3.1
+
+Mensagem SOAP request solicitarTokens
+
+10
+
+3.1.1 Tabela de Propriedades da entrada
+
+10
+
+3.1.2 Considerações para as propriedades
+
+11
+
+Saídas
+4.1
+
+5.
+
+12
+Mensagem SOAP response solicitarTokens
+
+12
+
+4.1.1 Tabela de Propriedades da Saída
+
+12
+
+4.1.2 Considerações para as propriedades
+
+12
+
+Lista de falhas
+
+13
+
+5.1
+
+Falhas na requisição
+
+13
+
+5.1.1 Username e password inválidos
+
+13
+
+5.1.2 Tag Header preenchida incorretamente
+
+13
+
+5.1.3 Requisição expirada
+
+14
+
+5.2
+
+Falhas de Acesso
+
+15
+
+5.3
+
+Falha de Token
+
+15
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Possibilitar ao cliente a solicitação de token para realizar login automático no sistema SOC.
+
+1.2
+
+Funcionamento
+1.
+
+As propriedades a serem enviadas para o SOC são populadas no WebService pelo
+cliente a partir de sua origem.
+
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os
+tokens do usuário, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para solicitar o token de apenas um usuário por vez que é
+invocado;
+3. O arquivo WSDL a ser usado será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+6. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header
+com itens de segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão.
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição. Recomendamos o uso de um minuto.
+Requisições com timestamp superior a dois minutos serão negadas.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada requisição
+que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request solicitarTokens
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Body>
+<ser:solicitarTokens>
+<token>
+<identificacaoVo>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+</identificacaoVo>
+<tokenR></tokenR>
+<parametros></parametros>
+</token>
+</ser:solicitarTokens>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+chaveAcesso
+
+Alfanumérico
+
+Sim
+
+codigoEmpresaPrincipal
+
+Numérico
+
+Sim
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+tokenR
+
+Alfanumérico
+
+Sim
+
+parametros
+
+Json
+
+Não¹
+
+3.1.2
+
+Considerações para as propriedades
+1. Deve ser enviada uma string no formato Json, serão aceitos os seguintes parâmetros;
+“empresa” código da empresa para login
+“programa” código do programa para a tela inicial.
+
+Exemplo {“empresa”:”1234”,”programa”:”232”}
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response solicitarTokens
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:solicitarTokensResponse xmlns:ns2="http://services.soc.age.com/">
+<return>
+<token>?</token>
+<tokenR>?</tokenR>
+</return>
+</ns2:solicitarTokensResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+Token
+
+Alfanumérico¹
+
+tokenR
+
+Alfanumérico²
+
+4.1.2
+
+Considerações para as propriedades
+1. Token que será utilizado para efetuar o login, uma vez que utilizado, o mesmo será
+invalidado;
+2. Token de requisição, o mesmo deverá, para utilização em uma próxima requisição.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+5.
+
+Lista de falhas
+Segue as principais falhas que podem ocorrer ao utilizar o WebService.
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha
+(username e password, respectivamente) estão incorretos.
+
+5.1.2
+
+Tag Header preenchida incorretamente
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento
+em que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 14
+
+Solicitação de Token
+
+Versão:
+<1.5>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1706
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+
+Identificação Inválida: Mensagem retornada quando os dados informados na tag
+identificacaoWsVo não configuram uma credencial válida de acesso aos Web Services.
+
+
+
+Empresa Invalida: Mensagem retornada quando o valor informado como código de
+empresa na requisição não representa uma empresa válida.
+
+5.3
+
+Falha de Token
+A tag token, caso o preenchimento não esteja de acordo, poderá prover as seguintes falhas:
+1. Token inválido: Mensagem retornada quando o token informado na requisição não é
+válido para os parâmetros informados.
+2. Token não existe: Mensagem retornada quando o token informado na requisição não
+existe.
+3. Acesso inválido ao sistema: Mensagem retornada quando a solicitação não
+representa uma tentativa válida de acesso ao sistema.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+
