@@ -16,6 +16,13 @@ const Body = z.discriminatedUnion('acao', [
   z.object({ acao: z.literal('funcionario'), ...Pessoa }),
   z.object({ acao: z.literal('exames'), ...Pessoa }),
   z.object({ acao: z.literal('hierarquia'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode }),
+  // SOCNET: consulta guias/fichas (Exporta 222211) por número sequencial e/ou período
+  z.object({
+    acao: z.literal('guias'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode,
+    sequencial: z.string().regex(/^\d{1,15}$/).optional(),
+    dataInicio: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/).optional(),
+    dataFim: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/).optional(),
+  }),
   z.object({
     acao: z.literal('cadastrar'), ...Pessoa,
     nome: z.string().trim().min(3).max(120),
@@ -124,6 +131,30 @@ Deno.serve(async (req) => {
     const emp = empresas?.find((e) => e.soc_code === b.socCode);
     if (!emp) return json({ error: 'Empresa inválida' }, 400);
     const livre = podeCriar(emp.subgrupo);
+
+    if (b.acao === 'guias') {
+      const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+      const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_GUIAS');
+      const chave = Deno.env.get('SOC_CHAVE_EXPORTA_GUIAS');
+      if (!empresa || !codigo || !chave) return json({ guias: [], indisponivel: true });
+      const hoje = new Date();
+      const fmt = (d: Date) => `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`;
+      const rows = await exporta({
+        empresa, codigo, chave, empresaTrabalho: b.socCode,
+        codigoSequencial: b.sequencial ?? '',
+        dataInicio: b.dataInicio ?? (b.sequencial ? '' : fmt(new Date(hoje.getTime() - 30 * 864e5))),
+        dataFim: b.dataFim ?? (b.sequencial ? '' : fmt(new Date(hoje.getTime() + 60 * 864e5))),
+      });
+      if (!rows) return json({ guias: [], indisponivel: true });
+      if (rows[0]) console.log('SOC guias campos', Object.keys(rows[0]).join(','), 'linhas', rows.length);
+      const guias = rows.map((r) => ({
+        empresaPrincipal: pick(r, ['CDEMPRESAPRINCIPAL']),
+        codigo: pick(r, ['COD']),
+        sequencial: pick(r, ['SEQ']),
+        executora: pick(r, ['CDEMPRESAPRINCIPALEXECUTORA']),
+      })).filter((g) => g.sequencial);
+      return json({ guias, socnet: guias.some((g) => g.executora && g.executora !== empresa) });
+    }
 
     if (b.acao === 'hierarquia') {
       const h = await hierarquia(b.socCode, livre);
