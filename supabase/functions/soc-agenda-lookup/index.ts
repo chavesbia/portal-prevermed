@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
     const livre = podeCriar(emp.subgrupo);
 
     if (b.acao === 'guias') {
+      const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5); return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`; };
       const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
       const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_GUIAS');
       const chave = Deno.env.get('SOC_CHAVE_EXPORTA_GUIAS');
@@ -140,8 +141,8 @@ Deno.serve(async (req) => {
       const rows = await exporta({
         empresa, codigo, chave, empresaTrabalho: b.socCode,
         codigoSequencial: b.sequencial,
-        dataInicio: b.dataInicio ?? '',
-        dataFim: b.dataFim ?? '',
+        dataInicio: b.dataInicio ?? fmtBR(-365),
+        dataFim: b.dataFim ?? fmtBR(90),
       });
       if (!rows) return json({ guias: [], indisponivel: true });
       if (rows[0]) console.log('SOC guias campos', Object.keys(rows[0]).join(','), 'linhas', rows.length);
