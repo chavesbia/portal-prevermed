@@ -585,7 +585,7 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               <Textarea rows={3} value={ckObservacao} onChange={e => setCkObservacao(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Checklist / fotos / arquivos <span className="text-destructive">*</span></Label>
+              <Label>Checklist / fotos / arquivos <span className="text-xs text-muted-foreground">(opcional)</span></Label>
               <Input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => { const novos = Array.from(e.target.files || []); setCkArquivos(prev => [...prev, ...novos]); e.target.value = ''; }} />
               {ckArquivos.length > 0 && (
                 <ul className="text-xs space-y-1">
@@ -603,16 +603,15 @@ export function OSAgendaView({ ordens, canEdit }: OSAgendaViewProps) {
               const faltas = [
                 ckCategorias.length === 0 && 'marcar ao menos um item que o cliente precisa',
                 !ckOportunidades.trim() && 'descrever as oportunidades para o Comercial',
-                ckArquivos.length === 0 && 'anexar o checklist',
               ].filter(Boolean);
               return faltas.length > 0 ? <div className="text-xs text-destructive">Para confirmar: {faltas.join('; ')}.</div> : null;
             })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setToRealizar(null)}>Cancelar</Button>
-            <Button disabled={ckSaving || ckCategorias.length === 0 || !ckOportunidades.trim() || ckArquivos.length === 0} onClick={async () => {
+            <Button disabled={ckSaving || ckCategorias.length === 0 || !ckOportunidades.trim()} onClick={async () => {
               if (!toRealizar) return;
-              if (ckCategorias.length === 0 || !ckOportunidades.trim() || ckArquivos.length === 0) return;
+              if (ckCategorias.length === 0 || !ckOportunidades.trim()) return;
               setCkSaving(true);
               try {
                 const enviados: { file: File; path: string }[] = [];
