@@ -1,0 +1,941 @@
+Web Service Solicitação de Processamento
+Assíncrono
+Especificação Técnica
+Versão <1.5>
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+11/09/2019
+
+1.0
+
+Elaboração da documentação.
+
+Gustavo Matos
+
+22/10/2019
+
+1.1
+
+Atualizadas as observações dos
+
+Gustavo Matos
+
+parâmetros de entrada.
+19/12/2019
+
+1.2
+
+Alterado o retorno da propriedade
+
+Gustavo Matos
+
+codigoSolicitacao.
+19/01/2023
+
+1.3
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.4
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+23/10/2023
+
+1.5
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WebService Exporta Dados
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Desenvolvimento – M-DEV-13239
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+4
+4
+4
+4
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+2.1 Configuração utilizando a opção ‘Utiliza autenticação’ no cadastro do Serviço
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.3 Considerações para as Propriedades da tag wsse security
+
+5
+5
+6
+9
+
+3.
+
+Entradas
+3.1 Mensagem SOAP request Porta incluirSolicitacao
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+
+10
+10
+10
+11
+
+4.
+
+Saídas
+4.1 Mensagem SOAP Response Porta incluirSolicitacaoResponse
+4.1.1 Tabela de Propriedades da Saída
+4.1.2 Considerações para as propriedades:
+
+12
+12
+12
+13
+
+5.
+
+Lista de falhas
+
+14
+
+5.1
+
+14
+14
+14
+15
+16
+
+Falhas na requisição
+5.1.1 Username e password inválidos
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.2 Falhas na solicitação do processamento
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Este Web Service permite a inclusão de solicitação de processamento da funcionalidade
+“Processamento Assíncrono”. Para mais detalhes sobre a funcionalidade, pode ser consultado o
+tópico “Processamento Assíncrono”, disponível no Manual.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no Web Service com os
+dados de um tipo de processamento existente, o qual será realizada a solicitação de
+processamento;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando o
+ocorrido com a requisição.
+3. O WebService foi projetado para incluir uma solicitação de processamento por vez que é
+invocado.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente.
+3. O acesso ao serviço deve constar nas configurações de integração do usuário.
+4. A solicitação de processamento deve ser referente a um tipo de processamento existente
+e válido. Os parâmetros devem ser informados de acordo com o tipo desejado.
+5. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+6. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, adota as políticas de
+segurança fornecidas pela especificação WS-Security, utilizando a TAG Header com itens de
+segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração utilizando a opção ‘Utiliza autenticação’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição.
+Recomendamos o uso de um minuto. Requisições
+com timestamp superior a dois minutos serão
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido
+obrigatoriamente pela letra U (disponível nas
+configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas
+configurações de integração). Contudo o cliente
+deverá informar o mesmo com o Tipo
+“PasswordDigest”
+
+Nonce
+
+É um valor randômico que o cliente do serviço
+deverá criar para cada requisição que enviar.
+
+Signature
+
+Deve ser assinado com o certificado que a AGE
+fornecerá.
+
+EncryptedKey
+
+Deve ser criptografado com o certificado que a
+AGE fornecerá.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request Porta incluirSolicitacao
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirSolicitacao>
+<ProcessamentoAssincronoWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<tipoProcessamento></tipoProcessamento>
+<parametros></parametros>
+</ProcessamentoAssincronoWsVo>
+</ser:incluirSolicitacao>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Tag incluirSolicitacao
+Propriedade
+
+identificacaoWsVo
+
+Tipo
+identificacaoWsVo
+
+Obrigatório
+Sim
+
+Observação
+Tag utilizada para
+identificar a empresa
+que está enviando a
+requisição
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+codigoEmpresa
+
+Sim1
+
+Numérico
+
+Código da empresa da
+solicitação do
+processamento
+
+tipoProcessamento
+
+Numérico
+
+Sim2
+
+Código do tipo de
+processamento a ser
+solicitado.
+
+parametros
+
+JSON
+
+Sim3
+
+Parâmetros a serem
+utilizados para
+realização do
+processamento
+
+3.1.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+Código de identificação
+da empresa principal
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+Código do usuário
+responsável pela
+empresa
+
+codigoUsuario
+
+Alfanumérico
+
+Sim
+
+Código de identificação
+do usuário responsável
+pela ação
+
+3.1.2
+
+Considerações para as propriedades
+1. Caso informado um campo ‘codigoEmpresa’ nos parâmetros da solicitação, será
+considerado o valor informado no campo ‘codigoEmpresa’ da requisição.
+2. Deve ser o código de um tipo de processamento existente, listado no tópico “Tipos de
+Processamento Assíncrono Disponíveis” do Manual.
+3. Os parâmetros devem ser informados de acordo com o formato descrito na
+documentação do tipo de processamento solicitado.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP Response Porta incluirSolicitacaoResponse
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirSolicitacaoResponse xmlns:ns2="http://services.soc.age.com/">
+<ProcessamentoAssincronoRetorno>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<mensagemOperacaoDetalheList>
+<codigo></codigo>
+<mensagem></mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros></numeroErros>
+</informacaoGeral>
+<codigoSolicitacao></codigoSolicitacao>
+</ProcessamentoAssincronoRetorno>
+</ns2:incluirSolicitacaoResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+ProcessamentoAssincronoRetorno
+Propriedade
+
+informacaoGeral
+
+Tipo
+informacaoGeral
+
+Observação
+Tag responsável pelo retorno das
+informações gerais do resultado
+da requisição
+
+codigoSolicitacao
+
+Numérico1
+
+Propriedade responsável pelo
+retorno do código do pedido de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+processamento incluído.
+informacaoGeral
+Propriedade
+
+Tipo
+
+Observação
+
+codigoMensagem
+
+Texto
+
+Código da mensagem de retorno
+
+mensagem
+
+Texto
+
+Descrição da mensagem de retorno
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag responsável pelo retorno
+detalhado do resultado da
+requisição
+
+numeroErros
+
+Número
+
+Quantidade de erros identificados
+na requisição
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Texto
+
+Retorna o código da mensagem
+
+mensagem
+
+Texto
+
+Retorna a descrição da mensagem
+
+4.1.2
+
+Considerações para as propriedades:
+1. A situação e demais detalhes do pedido de processamento incluído poderão ser consultados
+pelo usuário responsável da empresa, acessando Menu > Administração > Pedido de
+Processamento.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 15
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+Portanto, um item a verificar para resolver essa falha é:
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas na solicitação do processamento
+O serviço poderá retornar as seguintes falhas:
+Código
+SOC-200
+
+Descrição
+ERRO. Operação não realizada.
+
+Observação
+Mensagem retornada quando não
+realizada a operação solicitada. Na
+tag mensagemOperacaoDetalheList
+podem ser visualizados os detalhes.
+
+SOC-201
+
+SOC-202
+
+ERRO DESCONHECIDO. Por favor, contate o
+
+Necessário o contato com o Suporte
+
+suporte SOC.
+
+SOC.
+
+ERRO. Código Empresa inválida.
+
+Mensagem retornada quando o
+valor informado na propriedade
+codigoEmpresa não representa uma
+empresa válida.
+
+SOC-204
+
+ERRO. codigoUsuario Inválido.
+
+Mensagem retornada quando o
+valor informado na propriedade
+codigoUsuario não representa um
+usuário válido.
+
+SOC-205
+
+ERRO. Identificação Invalida.
+
+Mensagem informada quando os
+valores informados na tag
+identificacaoWsVo não configuram
+uma identificação válida de acesso
+aos Web Services.
+
+SOC-206
+
+ERRO. Empresa sem Acesso ao Webservice.
+
+Mensagem retornada quando a
+empresa que está realizando a
+requisição não possui o Web Service
+selecionado nas Configurações de
+Integração.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+WebService Exporta Dados
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-13239
+
+SOC-301
+
+Processamento já solicitado.
+
+Mensagem retornada quando já
+existe um processamento do
+mesmo tipo solicitado na empresa e
+ainda não processado.
+
+SOC-302
+
+Parâmetros inválidos.
+
+Mensagem retornada quando os
+argumentos informados na
+propriedade “parametros” não são
+válidos. Os parâmetros devem ser
+informados conforme a
+documentação do tipo solicitado.
+
+SOC-303
+
+Tipo de processamento inválido.
+
+Mensagem retornada quando o tipo
+informado na propriedade
+“tipoProcessamento” não é válido.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+

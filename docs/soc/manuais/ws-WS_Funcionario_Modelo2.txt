@@ -1,0 +1,7933 @@
+WebService Funcionário Modelo 2
+Especificação Técnica
+Versão <3.8>
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+22/01/2015
+
+draft
+
+Criação da documentação do Serviço
+
+André Pinheiro
+
+30/01/2015
+
+<1.1>
+
+Alteração do tamanho de caracteres da
+
+Peter Nery
+
+propriedade “nomeMae”
+22/07/2015
+
+<1.2>
+
+Inclusão da propriedade
+
+André Pinheiro
+
+“observacaoFuncionario”
+06/11/2015
+
+<1.3>
+
+Alteração do tamanho de caracteres da
+
+Bruno Cury
+
+propriedade “codigo” pertencente a tag
+“funcionarioCentroCustoWsVo”
+25/01/2017
+
+<1.4>
+
+Adicionada lista de falhas na requisição e
+
+Roseane Alves
+
+opções de configuração de segurança
+06/04/2017
+
+<1.5>
+
+Adicionada coluna de observações e lista de
+
+Roseane Alves
+
+falhas de acesso atualizada
+05/05/2017
+
+<1.6>
+
+Atualização da tabela de propriedades: valores
+
+Roseane Alves
+
+possíveis para o estado civil
+25/07/2017
+
+<1.7>
+
+Inclusão da propriedade
+
+Roseane Alves
+
+“codigoPaisNascimento”
+14/05/2018
+
+<1.8>
+
+Inclusão da propriedade “matriculaRh”
+
+Ricardo Henrique
+
+17/10/2018
+
+<1.9>
+
+Inclusão das propriedades “gênero”,
+
+Celso Rodrigues
+
+“nomeSocial”, “tipoVinculo”, “tipoAdmissao” e
+“nomePai”
+27/03/2019
+
+<1.9.1>
+
+Inclusão de observação do campo e tipo do
+
+Marcos Santiago
+
+campo na propriedade
+“codigoCategoriaeSocial”
+17/04/2019
+
+<1.9.2>
+
+Adequação de campos de observação
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Marcos Santiago
+Página 2
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+10/05/2019
+
+<1.9.3>
+
+Atualizada observação da propriedade
+
+Marcos Santiago
+
+“codigoPaisNascimento”; atualização do
+tamanho das propriedades matricula e
+matriculaRh
+25/05/2019
+
+<1.9.4>
+
+Inclusão da propriedade
+
+Igor Matos de Andrade
+
+“atividadesPerigosasWsVo”
+03/06/2019
+
+<1.9.5>
+
+Atualizada observação da propriedade
+
+Gustavo Matos
+
+“codigoCnpjCei”.
+17/07/2019
+
+<1.9.6>
+
+Adicionado o valor EM_BRANCO no
+
+Gustavo Matos
+
+campo “gênero” da documentação.
+12/09/2019
+
+<1.9.7>
+
+Incluída a chave de procura de funcionário por
+
+Gustavo Matos
+
+Matrícula RH
+21/10/2019
+
+<1.9.8>
+
+Atualizados os valores possíveis dos campos
+
+Gustavo Matos
+
+tipoVinculo, escolaridade, classificacao e
+origemDeficiencia. Incluídos os campos
+tipoSanguineo, corDosOlhos, grauInstrucao e
+cns.
+08/11/2019
+
+<1.9.9>
+
+Incluídas as propriedades codigoCpf e
+
+Gustavo Matos
+
+codigoCaepf nas tags de unidade
+19/11/2019
+
+<2.0.0>
+
+Atualização da lista de inconsistências
+
+Gustavo Matos
+
+06/12/2019
+
+<2.0.1>
+
+Adicionadas observações de inclusão de
+
+Gustavo Matos
+
+unidade, setor e cargo com código 0
+16/03/2020
+
+<2.0.2>
+
+Adicionada a opção UNIAO_ESTAVEL na
+
+Gustavo Matos
+
+propriedade estadoCivil
+19/05/2020
+
+<2.0.3>
+
+Adequadas as observações dos campos
+
+Gustavo Matos
+
+codigoCnae e telefoneCat da propriedade
+unidadeWsVo/unidadeContratanteWsVo
+22/06/2020
+
+<2.1>
+
+Inclusão da propriedade e tipo de busca
+
+Gustavo Matos
+
+Código RH na tag turnoWsVo
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 3
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+09/07/2020
+
+2.1.1
+
+Atualização das considerações de
+
+Gustavo Matos
+
+obrigatoriedade das propriedades
+14/08/2020
+
+2.1.2
+
+Atualização da observação do campo
+
+Gustavo Matos
+
+dataUltimaMovimentacao
+18/11/2020
+
+2.1.3
+
+Atualização das possíveis mensagens de
+
+Gustavo Matos
+
+retorno
+18/01/2021
+
+2.2
+
+Inclusão de regra de limitação do tamanho das
+
+Gustavo Matos
+
+propriedades descricaoDetalhada e
+descricaoAtividade
+28/01/2021
+
+2.2.1
+
+Atualização das observações das propriedades
+
+Gustavo Matos
+
+10/02/2021
+
+2.3
+
+Inclusão das propriedades
+
+Marcos Santiago
+
+dataInicioPeriodoAquisitivo,
+dataFimPeriodoAquisitivo e
+caracterizacaoProcessosAmbientesTrabalho
+26/02/2021
+
+2.3.1
+
+Propriedade desativada:
+
+Marcos Santiago
+
+codigoAtividadePerigosa
+12/04/2021
+
+2.4
+
+Inclusão das propriedades
+
+Gustavo Matos
+
+funcionario.codigoRh, transferirFuncionario e
+transferencia
+26/05/2021
+
+2.4.1
+
+Atualização das possíveis mensagens de
+
+Gustavo Matos
+
+retorno
+25/06/2021
+
+2.4.2
+
+Atualização das possíveis mensagens de
+
+Gustavo Matos
+
+retorno
+13/08/2021
+
+2.4.3
+
+Atualização das possíveis mensagens de
+
+Marcos Santiago
+
+retorno
+13/09/2021
+
+2.5
+
+Inclusão da propriedade
+
+Marcos Santiago
+
+unidadeWsVo.codigoCno
+14/01/2022
+
+2.5.1
+
+Inclusão de observação para a propriedade
+
+Marcos Santiago
+
+utilizarDescricaoRequisitoCargo
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 4
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+27/04/2022
+
+2.5.2
+
+Inclusão de observação para a propriedade
+
+Marcos Santiago
+
+criarHistorico
+04/05/2022
+
+2.5.3
+
+Inclusão da propriedade desconsiderarEsocial
+
+Marcos Santiago
+
+na tag funcionarioWsVo
+30/06/2022
+
+2.5.4
+
+Incluída observação sobre a tag especial
+
+Marcos Santiago
+
+13/07/2022
+
+2.6
+
+Incluída consideração sobre certificado de
+
+Marcos Santiago
+
+conexão HTTPS
+26/08/2022
+
+2.7
+
+Incluída mensagem de falha e revisão do
+tamanho dos campos carteiraNacionalSaude e
+observacaoPPP
+
+Marcos Santiago
+
+03/10/2022
+
+2.8
+
+Inclusão do campo dataReabilitacao
+
+Marcos Santiago
+
+22/12/2022
+
+2.8.1
+
+Revisão das mensagens de falha na
+consistência de dados
+
+Marcos Santiago
+
+19/01/2023
+
+2.9
+
+Incluída consideração sobre o paralelismo de
+requisições
+
+Marcos Santiago
+
+09/02/2023
+
+3.0
+
+Inclusão dos campos codigoGenero e
+dataValidadeRg
+
+Marcos Santiago
+
+05/05/2023
+
+3.1
+
+Atualizada a observação da tag
+atualizouFuncionario
+
+Marcos Santiago
+
+05/07/2023
+
+3.2
+
+Inclusão da tag naoPossuiMatriculaRh
+
+Marcos Santiago
+
+14/07/2023
+
+3.2.1
+
+Atualizada a observação da tag
+atualizouFuncionario
+
+Marcos Santiago
+
+25/08/2023
+
+3.3
+
+Incluída a opção de remover o motivo licença
+do funcionário
+
+Marcos Santiago
+
+23/10/2023
+
+3.4
+
+Removidas as considerações referentes à
+autenticação por empresa principal e cliente.
+
+Marcos Santiago
+
+04/12/2023
+
+3.5
+
+Inclusão das tags copiaCadastroMedico e
+copiaHistoricoVacinas
+
+Marcos Santiago
+
+16/04/2024
+
+3.6
+
+Inclusão da tag criarHistoricoDescricao
+
+Jefferson Oliveira
+
+25/07/2024
+
+3.6.1
+
+Alterado o tamanho da tag nomeLegal de 40
+para 120 caracteres
+
+Marcos Santiago
+
+03/09/2024
+
+3.6.2
+
+Alterado o tamanho da tag funcao de 70 para
+200 caracteres
+
+Marcos Santiago
+
+17/10/2024
+
+3.6.3
+
+Atualizada a observação da tag
+remuneracaoMensal
+
+Marcos Santiago
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 5
+
+WebService Funcionário Modelo 2
+Especificação Técnica
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Desenvolvimento - M-DEV-1512
+
+08/11/2024
+
+3.7
+
+Adicionadas mensagens de falha com status
+http 500
+
+Marcos Santiago
+
+31/01/2025
+
+3.7.1
+
+Incluída uma nova descrição de erro para a
+tag classificacaoDeficiencia
+
+Marcos Santiago
+
+08/07/2025
+
+3.7.2
+
+Atualizada a observação e incluída mensagem
+de erro para a tag codigoGenero
+
+Marcos Santiago
+
+02/04/2026
+
+3.7.3
+
+Adicionadas as mensagens de falhas 112 e 113
+nas mensagens com status http 500
+
+Marcos Santiago
+
+26/05/2026
+
+3.8
+
+Adicionado o CNPJ Alfanumérico
+
+Marcos Santiago
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 6
+
+WebService Funcionário Modelo 2
+Especificação Técnica
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Desenvolvimento - M-DEV-1512
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+8
+8
+8
+8
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+2.1 Configuração padrão
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.3 Considerações para as Propriedades da tag wsse security
+2.4 Configurações adicionais para a tag wsse security
+
+10
+10
+11
+13
+14
+
+3.
+
+Entradas
+
+15
+
+3.1
+
+15
+30
+70
+
+Mensagem SOAP Request Porta importacaoFuncionario
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+
+Saídas
+3.2
+4.
+
+75
+Mesagem SOAP response porta importacaoFuncionario
+3.2.1 Tabela de Propriedades da Saída
+
+75
+76
+
+Lista de falhas
+
+79
+
+4.1
+
+79
+79
+79
+80
+81
+81
+82
+82
+91
+
+Falhas na requisição
+4.1.1 Username e password inválidos
+4.1.2 Tag Header preenchida incorretamente
+4.1.3 Requisição expirada
+4.2 Falhas de Acesso
+4.2.1 Empresa sem acesso
+4.3 Falhas na Consistência de Dados
+4.3.1 Status http 200
+4.3.2 Status http 500
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 7
+
+WebService Funcionário Modelo 2
+Especificação Técnica
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Desenvolvimento - M-DEV-1512
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Permitir que o cliente crie ou atualize funcionários e seus dados no SOC, a partir do consumo de
+WebService.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados para inclusão ou atualização desejados pelo cliente a partir de sua origem;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando
+sucesso na criação ou atualização dos dados, bem como possíveis irregularidades nos
+dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir / atualizar 1 (um) funcionário por vez que é
+invocado;
+3. O WebService pode incluir / atualizar o cadastro de unidade, unidade contratante, setor,
+cargo, centro de custo, motivo de licença, turno e deficiência.
+4. Propriedades não enviadas serão desconsideradas, se enviada em branco será
+considerado.
+5. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente;
+6. Em caso de customização para necessidade do cliente, este documento será fornecido com
+um anexo, documentando tais customizações.
+7. O acesso ao serviço deve constar nas configurações de integração do usuário.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 8
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+8. As propriedades sinalizadas como obrigatórias são somente obrigatórias na inclusão de
+funcionário,
+
+com
+
+exceção
+
+das
+
+propriedades
+
+tipoBusca,
+
+tipoBuscaEmpresa
+
+e
+
+chaveProcuraFuncionario, que são obrigatórias também na atualização de funcionário.
+9. A transferência de funcionário somente poderá ser realizada caso utilizada a autenticação
+por usuário de integração.
+10. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+11. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 9
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar as
+políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header com
+itens de segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 10
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 11
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 12
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Detalhes
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 13
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Timestamp
+
+É o tempo de validade da requisição.
+Recomendamos o uso de um minuto. Requisições
+com timestamp superior a dois minutos serão
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido
+obrigatoriamente pela letra U (disponível nas
+configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas
+configurações de integração). Contudo o cliente
+deverá informar o mesmo com o Tipo
+
+“PasswordDigest”.
+Nonce
+
+É um valor randômico que o cliente do serviço
+deverá criar para cada requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados
+trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros
+enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da versão
+com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 14
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP Request Porta importacaoFuncionario
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:importacaoFuncionario>
+<Funcionario>
+<atualizarCargo> </atualizarCargo>
+<atualizarCentroCusto> </atualizarCentroCusto>
+<atualizarFuncionario> </atualizarFuncionario>
+<atualizarMotivoLicenca> </atualizarMotivoLicenca>
+<atualizarSetor> </atualizarSetor>
+<atualizarTurno> </atualizarTurno>
+<atualizarUnidade> </atualizarUnidade>
+<cargoWsVo>
+<atualizaDescricaoRequisitosCargoPeloCbo> </atualizaDescricaoRequisitosCargoPeloCbo>
+<cbo> </cbo>
+<codigo> </codigo>
+<codigoRh> </codigoRh>
+<descricaoDetalhada> </descricaoDetalhada>
+<descricaoLocal> </descricaoLocal>
+<educacao> </educacao>
+<experiencia> </experiencia>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 15
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<funcao> </funcao>
+<gfip> </gfip>
+<habilidades> </habilidades>
+<localTrabalho> </localTrabalho>
+<materialUtilizado> </materialUtilizado>
+<mobiliarioUtilizado> </mobiliarioUtilizado>
+<nome> </nome>
+<nomeLegal> </nomeLegal>
+<orientacaoAso> </orientacaoAso>
+<requisitosFuncao> </requisitosFuncao>
+<status> </status>
+<tipoBusca> </tipoBusca>
+<treinamento> </treinamento>
+<criarHistoricoDescricao></criarHistoricoDescricao>
+</cargoWsVo>
+<centroCustoWsVo>
+<codigo> </codigo>
+<codigoRh> </codigoRh>
+<nome> </nome>
+<tipoBusca> </tipoBusca>
+</centroCustoWsVo>
+<criarCargo> </criarCargo>
+<criarCentroCusto> </criarCentroCusto>
+<criarFuncionario> </criarFuncionario>
+<criarHistorico> </criarHistorico>
+<criarMotivoLicenca> </criarMotivoLicenca>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 16
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<criarSetor> </criarSetor>
+<criarTurno> </criarTurno>
+<criarUnidade> </criarUnidade>
+<criarUnidadeContratante> </criarUnidadeContratante>
+<deficienciaWsVo>
+<!--Zero or more repetitions:-->
+<cids> </cids>
+<!--Zero or more repetitions:-->
+<classificacaoDeficiencia>
+<classificacao> </classificacao>
+<codigo> </codigo>
+<nome> </nome>
+<tipoBusca> </tipoBusca>
+</classificacaoDeficiencia>
+<codigoLegislacaoReferencia> </codigoLegislacaoReferencia>
+<codigoMedico> </codigoMedico>
+<dataEmissaoLaudo> </dataEmissaoLaudo>
+<deficiencia> </deficiencia>
+<deficiente> </deficiente>
+<gravarHistorico> </gravarHistorico>
+<nomeLegislacaoReferencia> </nomeLegislacaoReferencia>
+<observacao> </observacao>
+<origemDeficiencia> </origemDeficiencia>
+<parecerLaudo> </parecerLaudo>
+<reabilitado> </reabilitado>
+<tipoBuscaLegislacaoReferencia> </tipoBuscaLegislacaoReferencia>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 17
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<dataReabilitacao> </dataReabilitacao>
+</deficienciaWsVo>
+<destravarFuncionarioBloqueado> </destravarFuncionarioBloqueado>
+<funcionarioWsVo>
+<autorizadoMensagemSms> </autorizadoMensagemSms>
+<bairro> </bairro>
+<campoInteiro01> </campoInteiro01>
+<campoInteiro02> </campoInteiro02>
+<campoInteiro03> </campoInteiro03>
+<campoInteiro04> </campoInteiro04>
+<campoInteiro05> </campoInteiro05>
+<campoInteiro06> </campoInteiro06>
+<campoInteiro07> </campoInteiro07>
+<campoInteiro08> </campoInteiro08>
+<campoInteiro09> </campoInteiro09>
+<campoInteiro10> </campoInteiro10>
+<campoString01> </campoString01>
+<campoString02> </campoString02>
+<campoString03> </campoString03>
+<campoString04> </campoString04>
+<campoString05> </campoString05>
+<campoString06> </campoString06>
+<campoString07> </campoString07>
+<campoString08> </campoString08>
+<campoString09> </campoString09>
+<campoString10> </campoString10>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 18
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<campoString11> </campoString11>
+<campoString12> </campoString12>
+<campoString13> </campoString13>
+<campoString14> </campoString14>
+<campoString15> </campoString15>
+<campoString16> </campoString16>
+<campoString17> </campoString17>
+<campoString18> </campoString18>
+<campoString19> </campoString19>
+<campoString20> </campoString20>
+<campoString21> </campoString21>
+<campoString22> </campoString22>
+<campoString23> </campoString23>
+<campoString24> </campoString24>
+<campoString25> </campoString25>
+<campoString26> </campoString26>
+<campoString27> </campoString27>
+<campoString28> </campoString28>
+<campoString29> </campoString29>
+<campoString30> </campoString30>
+<carteiraNacionalSaude> </carteiraNacionalSaude>
+<categoria> </categoria>
+<cep> </cep>
+<chaveProcuraFuncionario> </chaveProcuraFuncionario>
+<cidade> </cidade>
+<cipa> </cipa>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 19
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<cipaDataFimMandato> </cipaDataFimMandato>
+<cipaDataInicioMandato> </cipaDataInicioMandato>
+<cnpjEmpresaFuncionario> </cnpjEmpresaFuncionario>
+<codigo> </codigo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoMunicipio> </codigoMunicipio>
+<complementoEndereco> </complementoEndereco>
+<contatoEmergencia> </contatoEmergencia>
+<cor> </cor>
+<cpf> </cpf>
+<dataAdmissao> </dataAdmissao>
+<dataAfastamento> </dataAfastamento>
+<dataDemissao> </dataDemissao>
+<dataDemissionalCarta> </dataDemissionalCarta>
+<dataEmissaoCtps> </dataEmissaoCtps>
+<dataFinalEstabilidade> </dataFinalEstabilidade>
+<dataNascimento> </dataNascimento>
+<dataUltimaMovimentacao> </dataUltimaMovimentacao>
+<desabilitarRisco> </desabilitarRisco>
+<descricaoAtividade> </descricaoAtividade>
+<email> </email>
+<endereco> </endereco>
+<enderecoEmergencia> </enderecoEmergencia>
+<escolaridade> </escolaridade>
+<estado> </estado>
+<estadoCivil> </estadoCivil>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 20
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<funcao> </funcao>
+<funcaoBrigadaIncendio> </funcaoBrigadaIncendio>
+<gfip> </gfip>
+<historicoPPP> </historicoPPP>
+<matricula> </matricula>
+<naoPossuiCpf> </naoPossuiCpf>
+<naoPossuiCtps> </naoPossuiCtps>
+<naoPossuiMatricula> </naoPossuiMatricula>
+<naoPossuiMatriculaRh> </naoPossuiMatriculaRh>
+<naoPossuiPis> </naoPossuiPis>
+<naturalidade> </naturalidade>
+<nomeCooperativa> </nomeCooperativa>
+<nomeFuncionario> </nomeFuncionario>
+<nomeMae> </nomeMae>
+<nrCtps> </nrCtps>
+<numeroEndereco> </numeroEndereco>
+<observacaoAso> </observacaoAso>
+<observacaoEstabilidade> </observacaoEstabilidade>
+<observacaoPpp> </observacaoPpp>
+<parentescoContatoEmergencia> </parentescoContatoEmergencia>
+<pis> </pis>
+<ramal> </ramal>
+<ramalTelefoneEmergencia> </ramalTelefoneEmergencia>
+<razaoSocialEmpresaFuncionario> </razaoSocialEmpresaFuncionario>
+<regimeRevezamento> </regimeRevezamento>
+<regimeTrabalho> </regimeTrabalho>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 21
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<remuneracaoMensal> </remuneracaoMensal>
+<requisitosFuncao> </requisitosFuncao>
+<rg> </rg>
+<rgDataEmissao> </rgDataEmissao>
+<rgOrgaoEmissor> </rgOrgaoEmissor>
+<rgUf> </rgUf>
+<serieCtps> </serieCtps>
+<sexo> </sexo>
+<situacao> </situacao>
+<telefoneCelular> </telefoneCelular>
+<telefoneComercial> </telefoneComercial>
+<telefoneEmergencia> </telefoneEmergencia>
+<telefoneResidencial> </telefoneResidencial>
+<telefoneSms> </telefoneSms>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+<tipoContratacao> </tipoContratacao>
+<ufCtps> </ufCtps>
+<utilizarDescricaoRequisitoCargo> </utilizarDescricaoRequisitoCargo>
+<observacaoFuncionario> </observacaoFuncionario>
+<codigoPaisNascimento> </codigoPaisNascimento>
+<emailPessoal> </emailPessoal>
+<matriculaRh> </matriculaRh>
+<codigoCategoriaESocial> </codigoCategoriaESocial>
+<genero></genero>
+<nomeSocial></nomeSocial>
+<tipoVinculo></tipoVinculo>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 22
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<tipoAdmissao></tipoAdmissao>
+<nomePai></nomePai>
+<tipoSanguineo> </tipoSanguineo>
+<corDosOlhos></corDosOlhos>
+<grauInstrucao></grauInstrucao>
+<cns><cns>
+<dataInicioPeriodoAquisitivo></dataInicioPeriodoAquisitivo>
+<dataFimPeriodoAquisitivo></dataFimPeriodoAquisitivo>
+<codigoRh><codigoRh>
+<desconsiderarEsocial></desconsiderarEsocial>
+<codigoGenero></codigoGenero>
+<dataValidadeRg></dataValidadeRg>
+</funcionarioWsVo>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<motivoLicencaWsVo>
+<codigo> </codigo>
+<codigoDeIntegracao> </codigoDeIntegracao>
+<nome> </nome>
+<tipoBusca> </tipoBusca>
+</motivoLicencaWsVo>
+<naoImportarFuncionarioSemHierarquia> </naoImportarFuncionarioSemHierarquia>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 23
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<setorWsVo>
+<codigo> </codigo>
+<codigoRh> </codigoRh>
+<descricao> </descricao>
+<nome> </nome>
+<observacaoAso> </observacaoAso>
+<status> </status>
+<tipoBusca> </tipoBusca>
+<criarHistoricoDescricao></criarHistoricoDescricao>
+</setorWsVo>
+<turnoWsVo>
+<codigo> </codigo>
+<nome> </nome>
+<tipoBusca> </tipoBusca>
+<codigoRh> </codigoRh>
+</turnoWsVo>
+<unidadeContratanteWsVo>
+<bairro> </bairro>
+<bairroCobranca> </bairroCobranca>
+<cep> </cep>
+<cepCobranca> </cepCobranca>
+<cidade> </cidade>
+<cidadeCobranca> </cidadeCobranca>
+<cnpj_cei> </cnpj_cei>
+<codigo> </codigo>
+<codigoArquivo> </codigoArquivo>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 24
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<codigoCnae> </codigoCnae>
+<codigoCnpjCei> </codigoCnpjCei>
+<codigoMunicipio> </codigoMunicipio>
+<codigoMunicipioCobranca> </codigoMunicipioCobranca>
+<codigoRh> </codigoRh>
+<complemento> </complemento>
+<complementoCobranca> </complementoCobranca>
+<dataAssinaturaContrato> </dataAssinaturaContrato>
+<descricaoCnae> </descricaoCnae>
+<endereco> </endereco>
+<enderecoCobranca> </enderecoCobranca>
+<estado> </estado>
+<estadoCobranca> </estadoCobranca>
+<grauRisco> </grauRisco>
+<inscricaoEstadual> </inscricaoEstadual>
+<inscricaoMunicipal> </inscricaoMunicipal>
+<nome> </nome>
+<numero> </numero>
+<numeroCobranca> </numeroCobranca>
+<observacaoASO> </observacaoASO>
+<observacaoContrato> </observacaoContrato>
+<observacaoPPP> </observacaoPPP>
+<percentualCalculoBrigada> </percentualCalculoBrigada>
+<razaoSocial> </razaoSocial>
+<status> </status>
+<telefoneCat> </telefoneCat>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 25
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<tipoBusca> </tipoBusca>
+<tipoCnae> </tipoCnae>
+<unidadeContratante> </unidadeContratante>
+<codigoCpf></codigoCpf>
+<codigoCaepf></codigoCaepf>
+<caracterizacaoProcessosAmbientesTrabalho></caracterizacaoProcessosAmbientesTrabalho>
+<codigoCno></codigoCno>
+
+</unidadeContratanteWsVo>
+<unidadeWsVo>
+<bairro> </bairro>
+<bairroCobranca> </bairroCobranca>
+<cep> </cep>
+<cepCobranca> </cepCobranca>
+<cidade> </cidade>
+<cidadeCobranca> </cidadeCobranca>
+<cnpj_cei> </cnpj_cei>
+<codigo> </codigo>
+<codigoArquivo> </codigoArquivo>
+<codigoCnae> </codigoCnae>
+<codigoCnpjCei> </codigoCnpjCei>
+<codigoMunicipio> </codigoMunicipio>
+<codigoMunicipioCobranca> </codigoMunicipioCobranca>
+<codigoRh> </codigoRh>
+<complemento> </complemento>
+<complementoCobranca> </complementoCobranca>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 26
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<dataAssinaturaContrato> </dataAssinaturaContrato>
+<descricaoCnae> </descricaoCnae>
+<endereco> </endereco>
+<enderecoCobranca> </enderecoCobranca>
+<estado> </estado>
+<estadoCobranca> </estadoCobranca>
+<grauRisco> </grauRisco>
+<inscricaoEstadual> </inscricaoEstadual>
+<inscricaoMunicipal> </inscricaoMunicipal>
+<nome> </nome>
+<numero> </numero>
+<numeroCobranca> </numeroCobranca>
+<observacaoASO> </observacaoASO>
+<observacaoContrato> </observacaoContrato>
+<observacaoPPP> </observacaoPPP>
+<percentualCalculoBrigada> </percentualCalculoBrigada>
+<razaoSocial> </razaoSocial>
+<status> </status>
+<telefoneCat> </telefoneCat>
+<tipoBusca> </tipoBusca>
+<tipoCnae> </tipoCnae>
+<unidadeContratante> </ unidadeContratante>
+<codigoCpf></codigoCpf>
+<codigoCaepf></codigoCaepf>
+<caracterizacaoProcessosAmbientesTrabalho></caracterizacaoProcessosAmbientesTrabalho>
+<codigoCno></codigoCno>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 27
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+</unidadeWsVo>
+<transferirFuncionario> </transferirFuncionario>
+<transferencia>
+<copiaFichaClinica> </copiaFichaClinica>
+<tipoFichaCopia>
+<acidente> </acidente>
+<admissional> </admissional>
+<avaliacaoFisica> </avaliacaoFisica>
+<checkup> </checkup>
+<consulta> </consulta>
+<consultaAssist> </consultaAssist>
+<demissional> </demissional>
+<enfermagem> </enfermagem>
+<especial> </especial>
+<licencaMedica> </licencaMedica>
+<mudancaFuncao> </mudancaFuncao>
+<periodico> </periodico>
+<qualidadeVida> </qualidadeVida>
+<retornoConsulta> </retornoConsulta>
+<retornoTrabalho> </retornoTrabalho>
+<terceiros> </terceiros>
+</tipoFichaCopia>
+<copiaSocGed> </copiaSocGed>
+<valorizarExamesNaoCobradoNoDestino> </valorizarExamesNaoCobradoNoDestino>
+<dataTransferencia> </dataTransferencia>
+<copiaHistoricoLaboral> </copiaHistoricoLaboral>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 28
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<esocial> </esocial>
+<copiaCadastroMedico> </copiaCadastroMedico>
+<copiaHistoricoVacinas> </copiaHistoricoVacinas>
+</transferencia>
+</Funcionario>
+</ser:importacaoFuncionario>
+</soapenv:Body>
+</soapenv:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 29
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigat
+
+Observação
+
+ório
+Tag Funcionario
+atualizarCargo
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do cargo
+(caso seja
+encontrado no
+SOC) deverá ser
+atualizado com os
+dados, referentes
+ao Cargo,
+enviados na
+requisição
+
+atualizarCentroCusto
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do
+centro de custo
+(caso seja
+encontrado)
+deverá ser
+atualizado com os
+dados, referentes
+ao Centro de
+Custo, enviados
+na requisição
+
+atualizarFuncionario
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do
+funcionário (caso
+seja encontrado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 30
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+no SOC) deverá
+ser atualizado
+com os dados,
+referentes ao
+Funcionário,
+enviados na
+requisição
+atualizarMotivoLicenca
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do
+motivo da licença
+(caso seja
+encontrado no
+SOC) deverá ser
+atualizado com os
+dados, referentes
+ao Motivo da
+Licença, enviados
+na requisição
+
+atualizarSetor
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do setor
+(caso seja
+encontrado no
+SOC) deverá ser
+atualizado com os
+dados, referentes
+ao Setor,
+enviados na
+requisição
+
+atualizarTurno
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro do turno
+deverá ser
+atualizado com os
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 31
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+dados, referentes
+ao Turno,
+enviados na
+requisição
+atualizarUnidade
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+cadastro da
+unidade deverá
+ser atualizada
+com os dados,
+referentes à
+unidade, enviados
+na requisição
+
+criarCargo
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o cargo
+deverá ser criado
+caso não seja
+encontrado no
+SOC
+
+criarCentroCusto
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o centro
+de custo deverá
+ser criado caso
+não seja
+encontrado no
+SOC
+
+criarFuncionario
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o
+funcionário deverá
+ser criado caso
+não seja
+encontrado no
+SOC
+
+criarHistorico
+
+true / false
+
+Booleano
+
+Não45
+
+Indica se o
+histórico deverá
+ser criado caso
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 32
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+não seja
+encontrado no
+SOC
+criarMotivoLicenca
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o motivo
+da licença deverá
+ser criado caso
+não seja
+encontrado no
+SOC
+
+criarSetor
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o setor
+deverá ser criado
+caso não seja
+encontrado no
+SOC
+
+criarTurno
+
+true / false
+
+Booleano
+
+Não
+
+Indica se o turno
+deverá ser criado
+caso não seja
+encontrado no
+SOC
+
+criarUnidade
+
+true / false
+
+Booleano
+
+Não
+
+Indica se a
+unidade deverá
+ser criada caso
+não seja
+encontrada no
+SOC
+
+criarUnidadeContratante
+
+true / false
+
+Booleano
+
+Não
+
+Indica se a
+unidade
+contratante
+deverá ser criada
+caso não seja
+encontrada no
+SOC
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 33
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+destravarFuncionarioBloquead
+
+true / false
+
+Booleano
+
+Não
+
+o
+
+Indica se é para
+destravar o
+funcionário caso
+esteja bloqueado
+
+naoImportarFuncionarioSemHi
+
+true / false
+
+Booleano
+
+Não7, 37
+
+erarquia
+
+Indica se o
+funcionário não
+deve ser
+importado caso
+não seja
+encontrada a
+hierarquia
+informada na
+requisição.
+
+transferirFuncionario
+
+true/false
+
+Booleano
+
+Não40
+
+Indica se deve ser
+realizada a
+transferência do
+funcionário. As
+propriedades da
+transferência
+devem ser
+informadas na
+propriedade
+transferencia.
+
+cargoWsVo
+atualizaDescricaoRequisitosCa
+
+true /
+
+rgoPeloCbo
+
+false
+
+Booleano
+
+Não
+
+Indica se é para
+atualizar a
+descrição do
+cargo de acordo
+com a descrição
+dada pela CBO
+
+cbo
+
+10
+
+Alfanumérico
+
+Não
+
+Identificação
+numérica de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 34
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+acordo com a
+Classificação
+Brasileira de
+Ocupações
+codigo
+
+9
+
+Alfanumérico
+
+Sim1
+
+Código do cargo
+no SOC
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim24
+
+Código utilizado
+pela empresa
+para o cargo
+
+descricaoDetalhada
+
+-
+
+Alfanumérico
+
+Não35
+
+Descrição
+detalhada do
+Cargo
+
+descricaoLocal
+
+2400
+
+Alfanumérico
+
+Não
+
+Descrição do local
+de trabalho onde
+quem tem esse
+cargo atua
+
+educacao
+
+-
+
+Alfanumérico
+
+Não
+
+Educação
+necessária para
+ser qualificado ao
+cargo
+
+experiencia
+
+500
+
+Alfanumérico
+
+Não
+
+Experiência
+necessária para
+ser qualificado ao
+cargo
+
+funcao
+
+200
+
+Alfanumérico
+
+Não
+
+Descrição da
+função de quem
+exerce o cargo
+
+gfip
+
+Inteiro de -1 até 26
+
+Não
+
+Código da Guia de
+Recolhimento do
+FGTS e de
+Informações à
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 35
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Previdência Social
+habilidades
+
+750
+
+Alfanumérico
+
+Não
+
+Habilidades
+necessárias para
+exercer o cargo
+
+localTrabalho
+
+3500
+
+Alfanumérico
+
+Não
+
+Descrição do local
+de trabalho de
+quem exerce a
+função
+
+materialUtilizado
+
+3500
+
+Alfanumérico
+
+Não
+
+Material utilizado
+por quem exerce
+o cargo
+
+mobiliarioUtilizado
+
+3500
+
+Alfanumérico
+
+Não
+
+Mobiliário utilizado
+por quem exerce
+o cargo
+
+nome
+
+130
+
+Alfanumérico
+
+Sim3
+
+Nome do cargo
+
+nomeLegal
+
+120
+
+Alfanumérico
+
+Não
+
+Nome legal do
+cargo
+
+orientacaoAso
+
+-
+
+Alfanumérico
+
+Não
+
+requisitosFuncao
+
+-
+
+Alfanumérico
+
+Não
+
+Descrição dos
+requisitos da
+função de quem
+exerce o cargo
+
+status
+
+tipoBusca
+
+treinamento
+
+-
+
+-
+
+500
+
+Enum
+•
+
+ATIVO
+
+•
+
+INATIVO
+
+Enum27
+
+Não4
+
+Status do cargo
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO
+
+usada para
+
+•
+
+CODIGO_RH
+
+localizar o Cargo
+
+•
+
+NOME
+
+Alfanumérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Descrição do
+Página 36
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+treinamento
+necessário para o
+cargo
+criarHistoricoDescricao
+
+true /
+
+Boleano
+
+Não
+
+false
+
+Criar histórico de
+alteração na
+descrição
+detalhada do
+cargo
+
+cargoWsVo. atividadesPerigosasWsVo
+codigoAtividadePerigosa
+
+-
+
+Alfanumérico
+
+Não
+
+Campo
+desativado.
+
+centroCustoWsVo
+codigo
+
+20
+
+Sim1
+
+Código SOC do
+Centro de Custo
+
+codigoRh
+
+80
+
+Sim2
+
+Código dado pela
+empresa ao
+Centro de Custo
+
+nome
+
+130
+
+Sim3
+
+Nome do Centro
+de Custo
+
+tipoBusca
+
+-
+
+Enum27
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO
+
+usada para
+
+•
+
+CODIGO_RH
+
+localizar o Centro
+
+•
+
+NOME
+
+de Custo
+
+deficienciaWsVo
+cids
+
+-
+
+Lista de Alfanuméricos
+
+Não
+
+Códigos
+referentes ao
+Cadastro
+Internacional de
+Doenças
+
+codigoMedico
+
+10
+
+Numérico Positivo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Código do
+Página 37
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+cadastro do
+médico
+dataEmissaoLaudo
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data de emissão
+do laudo médico
+
+deficiencia
+
+800
+
+Alfanumérico
+
+Não
+
+Nome (ou
+descrição) da
+deficiência
+
+deficiente
+
+true /
+
+Booleano
+
+Não
+
+false
+
+Indica se o
+funcionário é
+deficiente ou não
+
+gravarHistorico
+
+true /
+
+Booleano
+
+Não
+
+false
+
+Indica se é para
+gravar o histórico
+ou não
+
+codigoLegislacaoReferencia
+
+10
+
+Numérico Positivo
+
+Sim5
+
+Código da
+legislação de
+referência à
+deficiência
+
+nomeLegislacaoReferencia
+
+100
+
+Alfanumérico
+
+Sim6
+
+Nome da
+legislação de
+referência à
+deficiência
+
+tipoBuscaLegislacaoReferencia
+
+-
+
+Enum27
+
+Não
+
+Tipo de busca
+
+•
+
+CODIGO
+
+utilizado para
+
+•
+
+NOME
+
+procurar a
+legislação de
+referência
+
+observacao
+
+3900
+
+Alfanumérico
+
+Não
+
+Observações
+quanto a
+deficiência
+
+origemDeficiencia
+
+-
+
+Enum
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Origem da
+
+Página 38
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+•
+
+EM_BRANCO
+
+deficiência do
+
+•
+
+ACIDENTE_DE_TRABALHO
+
+funcionário
+
+•
+
+CONGENITA
+
+•
+
+ACIDENTE_COMUM
+
+•
+
+DOENCA
+
+•
+
+ADQUIRIDA_EM_POS_OPE
+RATORIO
+
+parecerLaudo
+
+reabilitado
+
+-
+
+•
+
+DESCONHECIDA
+
+•
+
+OUTRAS
+
+Enum
+
+Não
+
+Situação atual
+
+•
+
+EM_BRANCO
+
+indicada no laudo
+
+•
+
+APTO_PARA_FUNCAO
+
+médico
+
+•
+
+INAPTO_PARA_FUNCAO
+
+true /
+
+Não47
+
+false
+
+Indica se o
+funcionário está
+reabilitado para
+trabalhar
+
+dataReabilitacao
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Correspondente
+ao campo “Data
+da Reabilitação”
+da tela de
+deficiência do
+cadastro de
+funcionário.
+
+deficienciaWsVo.classificacaoDeficiencia
+classificacao
+
+-
+
+Enum
+
+Sim
+
+•
+
+DEFICIENCIA_FISICA
+
+•
+
+DEFICIENCIA_AUDITIVA
+
+•
+
+DEFICIENCIA_VISUAL
+
+•
+
+DEFICIENCIA_MENTAL
+
+•
+
+DEFICIENCIA_MULTIPLA
+
+•
+
+REABILITACAO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Classificação da
+deficiência
+
+Página 39
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+•
+
+DEFICIENCIA_INTELECTUA
+L
+
+codigo
+
+10
+
+Numérico Positivo
+
+Sim8
+
+Código referente
+à classificação da
+deficiência
+
+nome
+
+400
+
+Alfanumérico
+
+Sim9
+
+Nome da
+classificação da
+deficiência
+
+tipoBusca
+
+-
+
+Enum27
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+NOME
+
+encontrar a
+classificação da
+deficiência
+
+funcionarioWsVo
+autorizadoMensagemSms
+
+true / false Booleano
+
+Não
+
+Indica se o envio
+de mensagens
+sms está
+autorizado ou não
+
+bairro
+
+80
+
+Alfanumérico
+
+Não
+
+Bairro onde habita
+o funcionário
+
+carteiraNacionalSaude
+
+30
+
+Numérico Positivo
+
+Número
+identificador da
+Carteira Nacional
+de Saúde
+
+categoria
+
+-
+
+Enum
+
+Não
+
+Categoria onde o
+
+•
+
+EM_BRANCO
+
+funcionário está
+
+•
+
+CONTRIB_INDIVIDUAL_A
+
+classificado
+
+UTONOMO_CONTRATADO
+_EMPRESAS_GERAL
+•
+
+CONTRIB_INDIVIDUAL_A
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 40
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+UTONOMO_CONTRATADO
+_CONTRIB_INDIVIDUAL_
+PESSOA_FISICA_OU_MIS
+SAO_DIPLOMATICA_E_RE
+PARTICAO_CONSULAR_E
+STRANGEIRAS
+•
+
+CONTRIB_INDIVIDUAL_A
+UTONOMO_CONTRATADO
+_ENTIDADE_BENEFICENT
+E_ISENTA_COTA_PATRO
+NAL
+
+•
+
+EXCLUIDO
+
+•
+
+CONTRIB_INDIVIDUAL_T
+RANSPORTADOR_AUTON
+OMO_CONTRATADO_EMP
+RESAS_GERAL
+
+•
+
+CONTRIB_INDIVIDUAL_T
+RANSPORTADOR_AUTON
+OMO_CONTRATADO_CON
+TRIB_INDIVIDUAL_PESSO
+A_FISICA_OU_MISSAO_D
+IPLOMATICA_E_REPARTI
+CAO_CONSULAR_ESTRAN
+GEIRAS
+
+•
+
+CONTRIB_INDIVIDUAL_T
+RANSPORTADOR_AUTON
+OMO_CONTRATADO_ENT
+IDADE_BENEFICENTE_ISE
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 41
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+NTA_COTA_PATRONAL
+cep
+
+8
+
+Numérico Positivo
+
+Não
+
+CEP do lugar onde
+habita o
+funcionário
+
+chaveProcuraFuncionario
+
+-
+
+Enum
+
+Sim31
+
+Chave de busca
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+MATRICULA
+
+procurar pelo
+
+•
+
+MATRICULA_RH
+
+funcionário
+
+•
+
+CPF
+
+•
+
+DATA_NASCIMENTO
+
+•
+
+CPF_PENDENTE
+
+•
+
+CPF_ATIVO
+
+•
+
+CPF_DATA_ADMISSAO
+
+•
+
+CPF_DATA_ADMISSAO_P
+ERIODO
+
+•
+cidade
+
+50
+
+CODIGO_RH
+
+Alfanumérico
+
+Não
+
+Nome da Cidade
+onde habita o
+funcionário
+
+cipa
+
+cipaDataFimMandato
+
+-
+
+10
+
+Enum
+
+Não
+
+Indica qual a
+
+•
+
+EM_BRANCO
+
+situação atual do
+
+•
+
+EFETIVO
+
+funcionário com
+
+•
+
+SUPLENTE
+
+relação à CIPA
+
+•
+
+RESPONSAVEL
+
+dd/mm/aaaa
+
+Não
+
+Data indicando o
+fim do mandato
+do funcionário
+como parte da
+CIPA
+
+cipaDataInicioMandato
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data indicando o
+início do mandato
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 42
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+do funcionário
+como parte da
+CIPA
+cnpjEmpresaFuncionario
+
+20
+
+Alfanumérico
+
+Não
+
+CNPJ da empresa
+onde o
+funcionário
+trabalha.
+
+codigo
+
+10
+
+Numérico Positivo
+
+Sim10
+
+Código do
+funcionário
+
+codigoEmpresa
+
+Alfanumérico
+
+Sim
+
+Código da
+empresa onde
+trabalha o
+funcionário
+
+codigoMunicipio
+
+7
+
+Numérico Positivo
+
+Não
+
+Código do
+município onde
+habita o
+funcionário
+
+complementoEndereco
+
+300
+
+Alfanumérico
+
+Não
+
+Complemento do
+endereço onde
+habita o
+funcionário
+
+contatoEmergencia
+
+40
+
+Alfanumérico
+
+Não
+
+Nome do contato
+de emergência
+
+cor
+
+-
+
+Enum
+
+Não
+
+•
+
+EM_BRANCO
+
+•
+
+BRANCO
+
+•
+
+NEGRO
+
+•
+
+AMARELO
+
+•
+
+PARDO
+
+•
+
+INDIGENA
+
+•
+
+MULATO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Cor do funcionário
+
+Página 43
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+cpf
+
+15
+
+Numérico Positivo
+
+Sim11
+
+CPF do
+funcionário
+
+dataAdmissao
+
+10
+
+dd/mm/aaaa
+
+Sim
+
+Data de admissão
+do funcionário
+
+dataAfastamento
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data de
+afastamento do
+funcionário
+
+dataDemissao
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data de demissão
+do funcionário
+
+dataDemissionalCarta
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data na qual foi
+emitida a cartas
+de demissão do
+funcionário
+
+dataEmissaoCtps
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data da emissão
+da Carteira de
+Trabalho e
+Previdência
+Nacional
+
+dataFinalEstabilidade
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data final do
+período de
+estabilidade do
+funcionário
+
+dataNascimento
+
+10
+
+dd/mm/aaaa
+
+Sim
+
+Data de
+nascimento do
+funcionário
+
+dataUltimaMovimentacao
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data da última
+movimentação do
+funcionário.
+Respectivo ao
+campo “Posição
+desde” do
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 44
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+cadastro de
+funcionário.
+desabilitarRisco
+
+true / false
+
+Não
+
+Indica se é para
+desabilitar a
+visualização dos
+riscos do
+funcionário
+independente da
+aplicação de
+hierarquia
+
+descricaoAtividade
+
+-
+
+Alfanumérico
+
+Não36
+
+Descrição das
+atividades
+desenvolvidas
+pelo funcionário
+
+email
+
+400
+
+Alfanumérico
+
+Não
+
+Correspondente
+ao campo "E-mail
+Corporativo" da
+tela de cadastro
+de funcionário.
+
+endereco
+
+110
+
+Alfanumérico
+
+Não
+
+Endereço do
+funcionário
+
+enderecoEmergencia
+
+40
+
+Alfanumérico
+
+Não
+
+Endereço do
+contato de
+emergência
+
+escolaridade
+
+-
+
+Enum
+
+Não
+
+•
+
+EM_BRANCO
+
+•
+
+ENSINO_FUNDAMENTAL_
+
+Escolaridade do
+funcionário
+
+INCOMPLETO
+•
+
+ENSINO_FUNDAMENTAL_
+COMPLETO
+
+•
+
+ENSINO_MEDIO_INCOMP
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 45
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+LETO
+•
+
+ENSINO_MEDIO_COMPLE
+TO
+
+•
+
+ENSINO_SUPERIOR_INCO
+MPLETO
+
+•
+
+ENSINO_SUPERIOR_COM
+PLETO
+
+•
+
+PROFISSIONALIZANTE
+
+•
+
+TECNICO_INCOMPLETO
+
+•
+
+TECNICO_COMPLETO
+
+•
+
+TECNOLOGO_INCOMPLET
+O
+
+•
+
+TECNOLOGO_COMPLETO
+
+•
+
+POS_GRADUACAO_INCO
+MPLETA
+
+•
+
+POS_GRADUACAO_COMP
+LETA
+
+•
+
+MESTRADO_INCOMPLETO
+
+•
+
+MESTRADO_COMPLETO
+
+•
+
+DOUTORADO_INCOMPLE
+TO
+
+estado
+
+-
+
+•
+
+DOUTORADO_COMPLETO
+
+•
+
+PHD_INCOMPLETO
+
+•
+
+PHD_COMPLETO
+
+•
+
+NAO_INFORMADO
+
+•
+
+ANALFABETO
+
+Enum
+
+Não
+
+Estado onde
+
+•
+
+AC
+
+habita o
+
+•
+
+AL
+
+funcionário
+
+•
+
+AM
+
+•
+
+AP
+
+•
+
+BA
+
+•
+
+CE
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 46
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+estadoCivil
+
+funcao
+
+-
+
+200
+
+•
+
+DF
+
+•
+
+ES
+
+•
+
+GO
+
+•
+
+MA
+
+•
+
+MG
+
+•
+
+MS
+
+•
+
+MT
+
+•
+
+PA
+
+•
+
+PB
+
+•
+
+PE
+
+•
+
+PI
+
+•
+
+PR
+
+•
+
+RJ
+
+•
+
+RN
+
+•
+
+RO
+
+•
+
+RR
+
+•
+
+RS
+
+•
+
+SC
+
+•
+
+SE
+
+•
+
+SP
+
+•
+
+TO
+
+Enum
+
+Sim
+
+•
+
+SOLTEIRO
+
+•
+
+CASADO
+
+•
+
+SEPARADO
+
+•
+
+DIVORCIADO
+
+•
+
+VIUVO
+
+•
+
+OUTROS
+
+•
+
+DESQUITADO
+
+•
+
+UNIAO_ESTAVEL
+
+Alfanumérico
+
+Estado civil do
+funcionário
+
+Não
+
+Função exercida
+pelo funcionário
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 47
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+funcaoBrigadaIncendio
+
+gfip
+
+-
+
+-
+
+Enum
+
+Não
+
+Função do
+funcionário na
+
+•
+
+EM_BRANCO
+
+•
+
+COORDENADOR_GERAL
+
+brigada de
+
+•
+
+LIDER
+
+incêndio
+
+•
+
+CHEFE_DE_BRIGADA
+
+•
+
+BRIGADISTA
+
+Inteiro de -1 até 26
+
+Não26
+
+Código da Guia de
+Recolhimento do
+FGTS e de
+Informações à
+Previdência Social
+
+historicoPPP
+
+-
+
+Enum
+
+Não
+
+Indica se é para
+
+•
+
+EXIBIR
+
+exibir ou não o
+
+•
+
+NAO_EXIBIR
+
+histórico
+relacionado ao
+PPP
+
+matricula
+
+30
+
+Alfanumérico
+
+Sim12, 34
+
+Matrícula do
+funcionário
+
+naoPossuiCpf
+
+true / false Booleano
+
+Não
+
+Indica se o
+funcionário possui
+ou não CPF
+
+naoPossuiCtps
+
+true / false Booleano
+
+Não
+
+Indica se o
+funcionário possui
+ou não CTPS
+
+naoPossuiMatricula
+
+true / false Booleano
+
+Não
+
+Indica se o
+funcionário possui
+ou não Matrícula
+
+naoPossuiMatriculaRh
+
+true / false Booleano
+
+Não
+
+Indica se o
+funcionário possui
+ou não Matrícula
+RH
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 48
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+naoPossuiPis
+
+true / false Booleano
+
+Não
+
+Indica se o
+funcionário possui
+ou não Pis
+
+naturalidade
+
+50
+
+Alfanumérico
+
+Não
+
+Naturalidade do
+funcionário
+
+nomeCooperativa
+
+40
+
+Alfanumérico
+
+Não
+
+Nome da
+cooperativa que o
+funcionário faz
+parte
+
+nomeFuncionario
+
+120
+
+Alfanumérico
+
+Sim13
+
+Nome do
+funcionário
+
+nomeMae
+
+120
+
+Alfanumérico
+
+Não
+
+Nome da mãe do
+funcionário
+
+nrCtps
+
+30
+
+Alfanumérico
+
+Não
+
+Número da
+Carteira de
+Trabalho e
+Previdência Social
+
+numeroEndereco
+
+10
+
+Alfanumérico
+
+Não
+
+Número do
+endereço onde
+habita o
+funcionário
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observações
+quanto ao ASO
+
+observacaoEstabilidade
+
+200
+
+Alfanumérico
+
+Não
+
+Observações
+quanto ao período
+de Estabilidade do
+funcionário
+
+observacaoPpp
+
+2800
+
+Alfanumérico
+
+Não
+
+Observações
+quanto ao PPP
+
+parentescoContatoEmergencia
+
+10
+
+Alfanumérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Indica o grau de
+Página 49
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+parentesco do
+funcionário com o
+contato de
+emergência
+pis
+
+20
+
+Numérico Positivo
+
+Não
+
+Número
+identificando o
+PIS
+
+ramal
+
+10
+
+Numérico Positivo
+
+Não
+
+Ramal do telefone
+comercial do
+funcionário
+
+ramalTelefoneEmergencia
+
+10
+
+Numérico Positivo
+
+Não
+
+Ramal do telefone
+do contato de
+emergência do
+funcionário
+
+razaoSocialEmpresaFuncionari
+
+200
+
+Alfanumérico
+
+Não
+
+o
+
+Razão Social da
+empresa que o
+funcionário
+trabalha
+
+regimeRevezamento
+
+45
+
+Alfanumérico
+
+Não
+
+Regime de
+revezamento no
+qual o funcionário
+trabalha
+
+regimeTrabalho
+
+-
+
+Enum
+
+Sim
+
+Regime de
+
+•
+
+NORMAL
+
+trabalho no qual o
+
+•
+
+TURNO
+
+funcionário
+trabalha
+
+remuneracaoMensal
+
+Numérico Positivo
+
+Não
+
+Remuneração
+mensal recebida
+pelo funcionário.
+Valor decimal
+deve ser separado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 50
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+por ponto. Por
+exemplo: 1000.50
+requisitosFuncao
+
+4000
+
+Alfanumérico
+
+Não
+
+Requisitos da
+função exercida
+pelo funcionário
+
+rg
+
+17
+
+Alfanumérico
+
+Não
+
+Registro Geral
+(RG) do
+funcionário
+
+rgDataEmissao
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data de emissão
+do RG
+
+rgOrgaoEmissor
+
+15
+
+Alfanumérico
+
+Não
+
+Órgão emissor do
+RG do funcionário
+
+rgUf
+
+-
+
+Enum
+
+Não
+
+•
+
+AC
+
+•
+
+AL
+
+•
+
+AM
+
+•
+
+AP
+
+•
+
+BA
+
+•
+
+CE
+
+•
+
+DF
+
+•
+
+ES
+
+•
+
+GO
+
+•
+
+MA
+
+•
+
+MG
+
+•
+
+MS
+
+•
+
+MT
+
+•
+
+PA
+
+•
+
+PB
+
+•
+
+PE
+
+•
+
+PI
+
+•
+
+PR
+
+•
+
+RJ
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+UF do RG
+
+Página 51
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+serieCtps
+
+10
+
+•
+
+RN
+
+•
+
+RO
+
+•
+
+RR
+
+•
+
+RS
+
+•
+
+SC
+
+•
+
+SE
+
+•
+
+SP
+
+•
+
+TO
+
+Alfanumérico
+
+Não
+
+Identificação da
+série da CTPS
+
+sexo
+
+situacao
+
+telefoneCelular
+
+-
+
+-
+
+15
+
+Enum
+
+Sim
+
+•
+
+MASCULINO
+
+•
+
+FEMININO
+
+Enum
+
+Indicador do sexo
+do funcionário
+
+Sim
+
+Indicador da
+
+•
+
+ATIVO
+
+situação atual do
+
+•
+
+AFASTADO
+
+funcionário
+
+•
+
+PENDENTE
+
+•
+
+FERIAS
+
+•
+
+INATIVO
+
+Numérico Positivo
+
+Não
+
+Telefone celular
+do funcionário
+
+telefoneComercial
+
+15
+
+Numérico Positivo
+
+Não
+
+Telefone
+comercial do
+funcionário
+
+telefoneEmergencia
+
+15
+
+Numérico Positivo
+
+Não
+
+Telefone do
+contato de
+emergência
+
+telefoneResidencial
+
+15
+
+Numérico Positivo
+
+Não
+
+Telefone
+residencial do
+funcionário
+
+telefoneSms
+
+15
+
+Numérico Positivo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Telefone ao qual
+Página 52
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+serão enviados
+SMSs
+tipoBuscaEmpresa
+
+-
+
+Enum27
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO_SOC
+
+utilizada para
+
+•
+
+CODIGO_CLIENTE
+
+localizar a
+empresa do
+funcionário
+
+tipoContratacao
+
+-
+
+Enum
+
+Sim
+
+Tipo de
+
+•
+
+CLT
+
+contratação na
+
+•
+
+COOPERADO
+
+qual o funcionário
+
+•
+
+TERCERIZADO
+
+está classificado
+
+•
+
+AUTONOMO
+
+•
+
+TEMPORARIO
+
+•
+
+PESSOA_JURIDICA
+
+•
+
+ESTAGIARIO
+
+•
+
+MENOR_APRENDIZ
+
+•
+
+ESTATUTARIO
+
+•
+
+COMISSIONADO_INTERN
+O
+
+•
+
+COMISSIONADO_EXTERN
+O
+
+•
+
+APOSENTADO
+
+•
+
+APOSENTADO_INATIVO_
+PREFEITURA
+
+•
+
+PENSIONISTA
+
+•
+
+SERVIDOR_PUBLICO_EFE
+TIVO
+
+•
+
+EXTRANUMERARIO
+
+•
+
+AUTARQUICO
+
+•
+
+INATIVO
+
+•
+
+TITULO_PRECARIO
+
+•
+
+SERVIDOR_ADM_CENTRA
+LIZADA_OU_DESCENTRAL
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 53
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+IZADA
+ufCtps
+
+-
+
+Enum
+
+Não
+
+•
+
+AC
+
+•
+
+AL
+
+•
+
+AM
+
+•
+
+AP
+
+•
+
+BA
+
+•
+
+CE
+
+•
+
+DF
+
+•
+
+ES
+
+•
+
+GO
+
+•
+
+MA
+
+•
+
+MG
+
+•
+
+MS
+
+•
+
+MT
+
+•
+
+PA
+
+•
+
+PB
+
+•
+
+PE
+
+•
+
+PI
+
+•
+
+PR
+
+•
+
+RJ
+
+•
+
+RN
+
+•
+
+RO
+
+•
+
+RR
+
+•
+
+RS
+
+•
+
+SC
+
+•
+
+SE
+
+•
+
+SP
+
+•
+
+TO
+
+utilizarDescricaoRequisitoCarg true / false Booleano
+o
+
+UF da CTPS do
+funcionário
+
+Não44
+
+Indica se devem
+ser utilizados os
+dados de
+Atividades,
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 54
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Requisitos da
+Função e Função
+preenchidos no
+Cadastro do
+Cargo.
+observacaoFuncionario
+
+3000
+
+Alfanumérico
+
+Não
+
+Observações
+quanto ao
+funcionário
+
+codigoPaisNascimento
+
+8
+
+Numérico
+
+Não
+
+Código do país de
+nascimento do
+funcionário
+conforme a tabela
+06 – Países do
+eSocial.
+
+emailPessoal
+
+400
+
+Alfanumérico
+
+Não
+
+Correspondente
+ao campo "E-mail
+Pessoal" da tela
+de cadastro de
+funcionário.
+
+matriculaRh
+
+30
+
+Alfanumérico
+
+Não30
+
+Matrícula RH do
+funcionário.
+
+codigoCategoriaESocial
+
+8
+
+Numérico
+
+Não29
+
+Correspondente
+ao campo
+“Categoria
+(eSocial)” da tela
+de cadastro de
+funcionário.
+
+genero
+
+-
+
+Enum
+
+Não
+
+Correspondente
+
+•
+
+EM_BRANCO
+
+ao campo
+
+•
+
+TRAVESTI
+
+“Gênero” da tela
+
+•
+
+TRANSEXUAL
+
+de cadastro de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 55
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+funcionário.
+nomeSocial
+
+120
+
+Alfanumérico
+
+Sim
+
+Correspondente
+ao campo “Nome
+Social” da tela de
+cadastro de
+funcionário.
+
+tipoVinculo
+
+-
+
+Enum
+
+Não
+
+Correspondente
+
+•
+
+EM_BRANCO
+
+ao campo “Tipo
+
+•
+
+EMPREGATICIO
+
+de Vínculo” da
+
+•
+
+ASSOCIATIVO
+
+tela de cadastro
+de funcionário.
+
+tipoAdmissao
+
+-
+
+Enum
+
+Sim28
+
+Correspondente
+
+•
+
+ADMISSAO
+
+ao campo “Tipo
+
+•
+
+TRANSFERENCIA_EMPRES
+
+de Admissão” da
+
+A_MESMO_GRUPO
+
+tela de cadastro
+
+TRANSFERENCIA_EMPRES
+
+de funcionário.
+
+A_CONSORCIADA
+
+Obrigatório caso
+
+TRANSFERENCIA_MOTIV
+
+“tipo de vínculo”
+
+O_SUCESSAO
+
+seja igual a
+
+•
+•
+
+“EMPREGATICIO”.
+nomePai
+
+120
+
+Alfanumérico
+
+Correspondente
+ao campo “Nome
+do Pai” da tela de
+cadastro de
+funcionário.
+
+codigoRh
+
+-
+
+Alfanumérico
+
+Não40
+
+Código RH do
+funcionário.
+
+desconsiderarEsocial
+
+true/false Booleano
+
+Não
+
+Correspondente
+ao campo
+“Desconsiderar
+para o eSocial” da
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 56
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+tela de cadastro
+de funcionário.
+codigoGenero
+
+1
+
+Numérico
+
+Não
+
+Correspondente
+ao campo
+“Código” da tela
+de cadastro de
+gênero. Esse
+campo tem
+precedência sobre
+o campo
+“genero”, exceto
+quando “genero”
+preenchido com
+EM_BRANCO.
+
+dataValidadeRg
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Correspondente
+ao campo “Data
+de Validade RG”
+da tela de
+cadastro de
+funcionário.
+
+campoString01 a
+campoString30
+
+Reservado Personalizados
+
+campoInteiro01 a
+
+Reservado Personalizados
+
+campoInteiro10
+
+Não14
+
+s
+
+Campos
+reservados
+
+Não14
+
+s
+
+Campos
+reservados
+
+funcionarioWsVo. atividadesPerigosasWsVo
+codigoAtividadePerigosa
+
+-
+
+Alfanumérico
+
+Não
+
+Campo
+desativado.
+
+tipoSanguineo
+
+-
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+NENHUM
+
+•
+
+A_POSITIVO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Indica o tipo
+Sanguíneo do
+funcionário.
+
+Página 57
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+corDosOlhos
+
+-
+
+•
+
+A_NEGATIVO
+
+•
+
+B_POSITIVO
+
+•
+
+B_NEGATIVO
+
+•
+
+AB_POSITIVO
+
+•
+
+AB_NEGATIVO
+
+•
+
+O_POSITIVO
+
+•
+
+O_NEGATIVO
+
+Enum
+
+Não
+
+Valores possíveis:
+
+grauInstrucao
+
+•
+
+EM_BRANCO
+
+•
+
+AZUL
+
+•
+
+AZUL_ESVERDEADO
+
+•
+
+CASTANHO
+
+•
+
+CINZA
+
+•
+
+VERDE
+
+•
+
+AVELA
+
+•
+
+AMBAR
+
+•
+
+VERMELHO
+
+•
+
+VIOLETA
+
+Enum
+
+olhos do
+Funcionário
+
+Não
+
+Valores possíveis:
+•
+
+EM_BRANCO
+
+•
+
+ANALFABETO
+
+•
+
+QUINTO_INCOMPLETO
+
+•
+
+QUINTO_COMPLETO
+
+•
+
+FUNDAMENTAL_INCOMPL
+
+Indica a cor dos
+
+Grau de instrução
+do funcionário.
+
+ETO
+•
+
+FUNDAMENTAL_COMPLET
+O
+
+•
+
+MEDIO_INCOMPLETO
+
+•
+
+MEDIO_COMPLETO
+
+•
+
+SUPERIOR_INCOMPLETO
+
+•
+
+SUPERIOR_COMPLETO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 58
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+•
+
+POS_GRADUACAO_COMP
+LETA
+
+cns
+
+30
+
+•
+
+MESTRADO_COMPLETO
+
+•
+
+DOUTORADO_COMPLETO
+
+Numérico
+
+Não
+
+Carteira Nacional
+de Saúde do
+funcionário.
+
+dataInicioPeriodoAquisitivo
+
+10
+
+dd/mm/aaaa
+
+Sim38
+
+Respectivo ao
+campo "Dt. Inicio
+Periodo
+Aquisitivo" da tela
+de cadastro de
+funcionário.
+
+dataFimPeriodoAquisitivo
+
+10
+
+dd/mm/aaaa
+
+Sim39
+
+Respectivo ao
+campo "Dt. Fim
+Periodo
+Aquisitivo" da tela
+de cadastro de
+funcionário.
+
+identificacaoWsVo
+chaveAcesso
+
+-
+
+A informação pode ser consultada
+
+Sim
+
+nas configurações de integração no
+cadastro de Empresa
+codigoEmpresaPrincipal
+
+A informação pode ser consultada
+
+Sim
+
+nas configurações de integração no
+cadastro de Empresa
+codigoResponsavel
+
+A informação pode ser consultada
+
+Sim
+
+nas configurações de integração no
+cadastro de Empresa
+codigoUsuario
+
+Código do Usuário responsável pela Sim
+ação
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 59
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+motivoLicencaWsVo
+codigo
+
+10
+
+Numérico
+
+Sim15
+
+Código do motivo da
+licença no SOC. Se
+informado -1 o valor
+preenchido no campo
+“Motivo Licença” do
+cadastro do
+funcionário será
+removido.
+
+codigoDeIntegracao
+
+10
+
+Numérico Positivo
+
+Sim16
+
+Código do motivo da
+licença na empresa
+cliente
+
+nome
+
+100
+
+Alfanumérico
+
+Sim17
+
+Nome do motivo da
+licença
+
+tipoBusca
+
+-
+
+Enum27
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+CODIGO_INTEGRACAO
+
+localizar o Motivo da
+
+•
+
+NOME
+
+Licença
+
+setorWsVo
+codigo
+
+8
+
+Alfanumérico
+
+Sim18
+
+Código do setor no
+SOC
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim19
+
+Código do setor
+utilizado pela
+empresa
+
+descricao
+
+-
+
+Alfanumérico
+
+Não
+
+Descrição do Setor
+
+nome
+
+130
+
+Alfanumérico
+
+Sim20
+
+Nome do setor
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação quanto
+ao ASO
+
+status
+
+-
+
+Enum
+•
+
+Não4
+ATIVO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Define se o setor
+está ativo ou inativo
+Página 60
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+•
+tipoBusca
+
+criarHistoricoDescricao
+
+-
+
+INATIVO
+
+Enum27
+
+true /
+
+Sim
+
+Tipo de busca
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+CODIGO_RH
+
+localizar o Setor
+
+•
+
+NOME
+
+Boleano
+
+Não
+
+false
+
+Criar histórico de
+alteração do Setor
+
+turnoWsVo
+codigo
+
+10
+
+Numérico Positivo
+
+Sim21
+
+Código do turno
+no SOC
+
+nome
+
+100
+
+Alfanumérico
+
+Sim22
+
+Nome do turno
+
+tipoBusca
+
+-
+
+Enum27
+
+Sim
+
+Tipo de Busca
+
+codigoRh
+
+100
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+NOME
+
+localizar o turno
+
+•
+
+CODIGO_RH
+
+Alfanumérico
+
+Não
+
+Código do turno
+utilizado na
+empresa
+
+unidadeContratanteWsVo / unidadeWsVo
+bairro
+
+80
+
+Alfanumérico
+
+Não
+
+Bairro do
+endereço da
+unidade
+
+bairroCobranca
+
+80
+
+Alfanumérico
+
+Não
+
+Bairro do
+endereço de
+cobrança da
+unidade
+
+cep
+
+8
+
+Alfanumérico
+
+Não
+
+CEP do endereço
+da unidade
+
+cepCobranca
+
+8
+
+Alfanumérico
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+CEP do endereço
+Página 61
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+de cobrança da
+unidade
+cidade
+
+50
+
+Alfanumérico
+
+Não
+
+Nome da cidade
+onde está
+localizada a
+unidade
+
+cidadeCobranca
+
+50
+
+Alfanumérico
+
+Não
+
+Nome da cidade
+do endereço de
+cobrança
+
+cnpj_cei
+
+-
+
+Enum
+
+Não
+
+Indica se CNPJ,
+
+CNPJ
+
+CEI, CPF, CAEPF
+
+CEI
+
+ou CNO será
+
+CPF
+
+utilizado.
+
+CAEPF
+CNO
+codigo
+
+20
+
+Alfanumérico
+
+Sim21
+
+Código da
+unidade no SOC
+
+codigoArquivo
+
+28
+
+Alfanumérico
+
+Não
+
+Código do arquivo
+
+codigoCnae
+
+9
+
+Alfanumérico
+
+Não
+
+Código do cnae
+da unidade. Deve
+ser preenchido
+com máscara.
+
+codigoCnpjCei
+
+20
+
+Alfanumérico
+
+Não43, 49
+
+Valor
+representando
+CNPJ ou CEI.
+
+codigoMunicipio
+
+7
+
+Numérico Positivo
+
+Não
+
+Código do
+município onde
+está localizada a
+unidade
+
+codigoMunicipioCobranca
+
+7
+
+Numérico Positivo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Código do
+Página 62
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+município do
+endereço de
+cobrança
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim24
+
+Código da
+unidade utilizado
+na empresa
+
+complemento
+
+300
+
+Alfanumérico
+
+Não
+
+Complemento do
+endereço da
+unidade
+
+complementoCobranca
+
+300
+
+Alfanumérico
+
+Não
+
+Complemento do
+endereço de
+cobrança da
+unidade
+
+dataAssinaturaContrato
+
+10
+
+dd/mm/aaaa
+
+Não
+
+Data de
+assinatura do
+contrato
+
+descricaoCnae
+
+200
+
+Alfanumérico
+
+Não
+
+Descrição do
+CNAE
+
+endereço
+
+110
+
+Alfanumérico
+
+Não
+
+Endereço da
+unidade
+
+enderecoCobranca
+
+110
+
+Alfanumérico
+
+Não
+
+Endereço de
+cobrança da
+unidade
+
+estado
+
+2
+
+Alfanumérico
+
+Não
+
+Estado do
+endereço da
+unidade
+
+estadoCobranca
+
+2
+
+Alfanumérico
+
+Não
+
+Estado do
+endereço de
+cobrança
+
+grauRisco
+
+1
+
+Numérico Positivo 0 - 4
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Número indicando
+Página 63
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+o grau de risco da
+unidade
+inscricaoEstadual
+
+30
+
+Numérico Positivo
+
+Não
+
+Inscrição estadual
+da unidade
+
+inscricaoMunicipal
+
+40
+
+Alfanumérico
+
+Não
+
+Inscrição
+municipal da
+unidade
+
+nome
+
+130
+
+Alfanumérico
+
+Sim23
+
+Nome da unidade
+
+numero
+
+60
+
+Alfanumérico
+
+Não
+
+Número do
+endereço da
+unidade
+
+numeroCobranca
+
+50
+
+Alfanumérico
+
+Não
+
+Número do
+endereço de
+cobrança da
+unidade
+
+observacaoASO
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação
+referente ao ASO
+
+observacaoContrato
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação
+referente ao
+contrato
+
+observacaoPPP
+
+2800
+
+Alfanumérico
+
+Não
+
+Observação
+referente ao PPP
+
+percentualCalculoBrigada
+
+Numérico Positivo
+
+Não
+
+Percentual
+utilizado no
+cálculo da brigada
+
+razaoSocial
+
+130
+
+Alfanumérico
+
+Não
+
+Razão social da
+unidade
+
+status
+
+-
+
+Enum
+
+Não
+
+Define se a
+
+•
+
+ATIVO
+
+unidade está ativa
+
+•
+
+INATIVO
+
+ou inativa
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 64
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+telefoneCat
+
+30
+
+Alfanumérico
+
+Não
+
+Telefone do
+Centro de Apoio
+ao Trabalhador.
+Deve ser
+preenchido com
+máscara.
+
+tipoBusca
+
+tipoCnae
+
+-
+
+-
+
+Enum27
+
+Sim
+
+Tipo de Busca
+
+•
+
+CODIGO
+
+utilizada para
+
+•
+
+CODIGO_RH
+
+localizar o registro
+
+•
+
+NOME
+
+da Unidade
+
+Enum
+•
+
+CNAE
+
+•
+
+CNAE_2
+
+•
+
+CNAE_7
+
+•
+
+CNAE_LIVRE
+
+Não
+
+Define qual o tipo
+do CNAE que está
+sendo utilizado
+
+unidadeContratante
+
+-
+
+Boolean
+
+Não
+
+Indica se é a
+unidade
+contratante.
+
+codigoCpf
+
+11
+
+Numérico
+
+Não32
+
+CPF da unidade
+
+codigoCaepf
+
+14
+
+Numérico
+
+Não33
+
+CAEPF da unidade
+
+caracterizacaoProcessosAmbie
+
+3000
+
+Alfanumérico
+
+Não
+
+Respectivo ao
+
+ntesTrabalho
+
+campo
+“Caracterização
+dos processos e
+ambientes de
+trabalho” da tela
+de cadastro de
+unidade.
+
+codigoCno
+
+12
+
+Numérico
+
+Não42
+
+Respectivo ao
+campo “CNO” da
+tela de cadastro
+de unidade.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 65
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+transferencia
+copiaFichaClinica
+
+-
+
+Boolean
+
+Não
+
+Indica se devem
+ser copiadas as
+fichas do
+funcionário. Na
+tag tipoFichaCopia
+podem ser
+especificados os
+tipos a serem
+considerados.
+
+tipoFichaCopia
+
+-
+
+tipoFichaCopia
+
+Não
+
+Tag destinada à
+especificação dos
+tipos de ficha a
+serem copiados,
+quando a
+propriedade
+copiaFichaClinica
+for true.
+
+copiaSocGed
+
+-
+
+Boolean
+
+Não
+
+Quando true, irá
+copiar para a
+nova empresa do
+funcionário, os
+seus arquivos
+
+valorizarExamesNaoCobradoN
+
+-
+
+Boolean
+
+oDestino
+
+Não
+
+Quando true, as
+fichas que não
+foram valorizadas
+ficarão disponíveis
+para serem
+cobradas na
+próxima
+valorização da
+Empresa Destino.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 66
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Somente será
+considerada caso
+a propriedade
+copiaFichaClinica
+for informada
+como true.
+dataTransferencia
+
+10
+
+Data (dd/mm/aaaa)
+
+Não
+
+Indica a data em
+que foi realizada a
+transferência do
+funcionário. Caso
+não informada a
+propriedade, a
+data do dia da
+requisição será
+considerada como
+a Data da
+Transferência.
+
+copiaHistoricoLaboral
+
+-
+
+Boolean
+
+Não
+
+Indica se deve ser
+copiado o
+histórico do
+funcionário.
+
+eSocial
+
+-
+
+Boolean
+
+Não48
+
+Define se a
+transferência de
+funcionário deve
+ser considerada
+como gatilho do
+Leiaute S-2240
+para a empresa
+destino.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 67
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+copiaCadastroMedico
+
+-
+
+Boolean
+
+Não
+
+Quando
+habilitado, os
+campos padrões
+da tela “239 Cadastro Médico”
+serão transferidos
+para o funcionário
+destino. O sistema
+somente irá
+transferir os itens
+de personalização
+cadastros na
+empresa principal.
+
+copiaHistoricoVacinas
+
+-
+
+Boolean
+
+Não
+
+Se informado
+“true”, as vacinas
+do funcionário
+serão transferidas
+para o destino,
+inclusive vacinas
+realizadas via
+campanha que
+serão
+transportadas
+para o destino
+como se fossem
+individuais.
+
+tipoFichaCopia
+acidente
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Acidente
+devem ser
+copiadas
+
+admissional
+
+-
+
+Boolean
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Não
+
+Indica se as fichas
+Página 68
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+do tipo
+Admissional
+devem ser
+copiadas
+avaliacaoFisica
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Avaliação
+Física devem ser
+copiadas
+
+checkup
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo
+Checkupdevem
+ser copiadas
+
+consulta
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Consulta
+devem ser
+copiadas
+
+consultaAssist
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Consulta
+Assistencial
+devem ser
+copiadas
+
+demissional
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo
+Demissional
+devem ser
+copiadas
+
+enfermagem
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo
+Enfermagem
+devem ser
+copiadas
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 69
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+especial
+
+-
+
+Boolean
+
+Não46
+
+Indica se as fichas
+do tipo Especial
+devem ser
+copiadas
+
+licencaMedica
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Licença
+Médica devem ser
+copiadas
+
+mudancaFuncao
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Mudança
+Função devem ser
+copiadas
+
+periódico
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Periódico
+devem ser
+copiadas
+
+qualidadeVida
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Qualidade
+de Vida devem
+ser copiadas
+
+retornoConsulta
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Retorno
+Consulta devem
+ser copiadas
+
+retornoTrabalho
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Retorno
+Trabalho devem
+ser copiadas
+
+terceiros
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Terceiros
+devem ser
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 70
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+copiadas
+retornoTrabalho
+
+-
+
+Boolean
+
+Não
+
+Indica se as fichas
+do tipo Retorno
+Trabalho devem
+ser copiadas
+
+3.1.2
+
+Considerações para as propriedades
+1. Obrigatório quando o campo “tipoBusca” for CODIGO. Na inclusão de cargo, caso o
+código informado seja 0, o valor será desconsiderado e realizada a geração automática
+do mesmo.
+2. Obrigatório quando o campo “tipoBusca” for CODIGO_RH.
+3. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão do Cargo.
+4. Valor default na inclusão “ATIVO”
+5. Obrigatório quando o campo “tipoBuscaLegislacaoReferencia” for CODIGO.
+6. Obrigatório quando o campo “tipoBuscaLegislacaoReferencia” for NOME.
+7. Quando a propriedade criarFuncionario for informada como “true” e a situação do
+mesmo como “INATIVO”, o funcionário será importado mesmo quando a hierarquia
+informada não existir.
+8. Obrigatório quando o campo “tipoBusca” for CODIGO.
+9. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão da classificação de
+Deficiência.
+10. Obrigatório quando o campo “chaveProcuraFuncionario” for CODIGO.
+11. Obrigatório quando o campo “chaveProcuraFuncionario” for CPF.
+12. Obrigatório quando o campo “chaveProcuraFuncionario” for MATRICULA.
+13. Obrigatório quando o campo “chaveProcuraFuncionario” for DATA_NASCIMENTO e na
+inclusão do funcionário.
+14. Os campos para uso personalizados podem ser preenchidos de acordo com regras
+específicas para adequar a necessidade de uso do cliente.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 71
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+15. Obrigatório quando o campo “tipoBusca” for CODIGO.
+16. Obrigatório quando o campo “tipoBusca” for CODIGO_INTEGRACAO.
+17. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão do motivo de licença
+médica.
+18. Obrigatório quando o campo “tipoBusca” for CODIGO. Na inclusão de setor, caso o
+código informado seja 0, o valor será desconsiderado e realizada a geração automática
+do mesmo.
+19. Obrigatório quando o campo “tipoBusca” for CODIGO_RH ou se o parâmetro “Obriga
+preencher Código do RH do Setor” estiver habilitado nos parâmetros gerais da empresa
+da requisição.
+20. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão do Setor.
+21. Obrigatório quando o campo “tipoBusca” for CODIGO. Na inclusão de unidade, caso o
+código informado seja 0, o valor será desconsiderado e realizada a geração automática
+do mesmo.
+22. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão do turno.
+23. Obrigatório quando o campo “tipoBusca” for CODIGO.
+24. Obrigatório quando o campo “tipoBusca” for CODIGO_RH, e no caso de unidade, setor e
+cargo será obrigatório se o parâmetro de empresa que obriga preencher o código do RH
+estiver habilitado.
+25. Obrigatório quando o campo “tipoBusca” for NOME e na inclusão da Unidade.
+26. O valor -1 corresponde a “Em branco”.
+27. Os campos TipoBusca presentes na documentação tem a funcionalidade de especificar
+qual valor será utilizado para localizar um registro. Por exemplo: No caso de um Setor,
+se o tipo de busca for CODIGO, o valor utilizado para localizar o Setor será o que for
+informado na tag setorWsVo.codigo; caso o tipo de busca seja CODIGO_RH, o valor
+utilizado para localizar o setor será o que for informado na tag setorWsVo.codigoRh;
+caso o tipo de busca seja NOME, o valor utilizado para localizar o Setor será o que for
+informado na tag setorWsVo.nome. Os possíveis tipos de busca estão listados na coluna
+destinada aos valores possíveis.
+28. Obrigatório caso o campo “tipoVinculo” seja EMPREGATICIO.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 72
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+29. Obrigatório caso o parâmetro eSocial “Obriga Categoria (eSocial) do Funcionário” esteja
+ativo.
+30. Obrigatório quando o campo “chaveProcuraFuncionario” for MATRICULA_RH.
+31. Descrição das chaves de procura de funcionário:
+CODIGO: Busca o funcionário pelo campo 'codigo', referente ao campo 'Código' do cadastro
+de funcionários.
+MATRICULA: Busca o funcionário pelo campo 'matricula', referente ao campo 'Matrícula'
+do cadastro de funcionários.
+MATRICULA_RH: Busca o funcionário pelo 'matriculaRh', referente ao campo 'Matrícula RH'
+do cadastro de funcionários.
+CPF: Busca o funcionário pelo campo 'cpf', referente ao campo 'CPF' do cadastro de
+funcionários.
+DATA_NASCIMENTO: Busca o funcionário pelos campos 'dataNascimento' e 'nome',
+referentes aos campos 'Data de Nascimento' e 'Nome' do cadastro de funcionário,
+respectivamente.
+CPF_PENDENTE: Busca o funcionário pelo campo 'cpf', referente ao campo 'CPF' do
+cadastro de funcionários, desde que a situação do funcionário seja PENDENTE. Esta opção
+não localizará funcionários que estejam nas situações ATIVO, INATIVO, AFASTADO ou
+FÉRIAS.
+CPF_ATIVO: Busca o funcionário pelo campo 'cpf', referente ao campo 'CPF' do cadastro
+de funcionários, desde que a situação do funcionário seja ATIVO, PENDENTE, AFASTADO
+ou FÉRIAS. Esta opção não localizará funcionários que estejam na situação INATIVO.
+CPF_DATA_ADMISSAO: Busca o funcionário pelos campos 'cpf' e 'dataAdmissao',
+referentes aos campos 'CPF' e 'Data de Admissão' do cadastro de funcionário,
+respectivamente.
+CPF_DATA_ADMISSAO_PERIODO:
+
+Busca
+
+o
+
+funcionário
+
+pelos
+
+campos
+
+'cpf'
+
+e
+
+'dataAdmissao', referentes aos campos 'CPF' e 'Data de Admissão' do cadastro de
+funcionário, respectivamente. Esta opção somente localizará funcionários os quais a data
+de admissão do cadastro esteja dentro de um intervalo de 30 dias antes ou depois da data
+de admissão informada na requisição.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 73
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+32. Obrigatório caso a propriedade “cnpj_cei” esteja definida como “CEI” ou “CAEPF”; Ou caso
+a propriedade “cnpj_cei” for definida como CNO e a propriedade “codigoCnpjCei” não seja
+informada.
+33. Obrigatório caso a propriedade “cnpj_cei” esteja definida como “CAEPF”.
+34. Obrigatório quando o parâmetro “Matrícula do funcionário”, dos “Campos obrigatórios” da
+tela Parâmetros eSocial estiver definido como “Sim” ou “Parcial”. Quando “Parcial”, a
+Matrícula deixará de ser obrigatória caso: o funcionário possua a situação “Pendente” ou
+possua um dos seguintes códigos de Categoria eSocial: 201, 202, 305, 308, 401, 410, 721,
+722, 723, 731, 734, 738, 761, 771, 901 e 902.
+35. Quando habilitado o parâmetro “Obriga campos específicos deste leiaute?” do layout S2240 nos parâmetros eSocial da empresa, o campo será limitado a 999 caracteres.
+36. Quando habilitado o parâmetro “Obriga campos específicos deste leiaute?” do layout S2240 nos parâmetros eSocial da empresa e o parâmetro “Cadastro de Cargo” do cadastro
+de funcionário estiver habilitado, o campo será limitado a 999 caracteres.
+37. Quando “true”, funcionários ativos somente serão importados em hierarquias ativas.
+Quando “false”, funcionários ativos importados em hierarquias inativas irão ativar a
+hierarquia no SOC.
+38. Obrigatório somente se dataFimPeriodoAquisitivo for preenchido.
+39. Obrigatório somente se dataInicioPeriodoAquisitivo for preenchido.
+40. A transferência de funcionários somente pode ser realizada caso realizada a autenticação
+por usuário de integração, cadastrado por meio da tela “Usuários de Integração” das
+Configurações de Integração da empresa. Para realizar a transferência, a propriedade
+chaveProcuraFuncionario deve ser CODIGO_RH e o usuário deve ter acesso a um
+agrupamento que contemple as empresas origem e destino da transferência. A
+transferência somente ocorrerá quando não encontrado um funcionário com o
+CODIGO_RH informado na empresa informada, nesse momento será realizada a busca
+pelo Código RH do funcionário entre as empresas do agrupamento, caso encontrado e a
+propriedade transferirFuncionario estiver como true, será realizada a transferência do
+funcionário.
+41. O Código RH somente pode ser informado caso a empresa conste em um agrupamento
+de empresas. Deve ser um código único entre as empresas do agrupamento.
+42. Obrigatório caso a propriedade unidadeWsVo.cnpj_cei esteja definida como “CNO”.
+43. Obrigatório caso a propriedade unidadeWsVo.cnpj_cei esteja definida como “CNPJ” ou
+“CEI”, ou caso esteja definida como “CNO” e a propriedade “codigoCpf” não seja
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 74
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+informada.
+44. Caso não informado, na inclusão de funcionário o valor setado será “true” permanecendo
+o campo “Origem” da tela de cadastro de funcionário como “CA” e na alteração será
+respeitado o valor já cadastrado no campo.
+45. Para que o histórico seja criado, o mesmo deve ser posterior ao último histórico do
+funcionário que está no sistema.
+46. A tag especial se refere a ficha do tipo Monitoração Pontual.
+47. Quando esse campo é informado como “false” será apagado o valor do campo “Data da
+Reabilitação” da tela de Deficiência, no cadastro do Funcionário.
+48. Se habilitado, esse campo faz com que a transferência de funcionário seja considerada
+como gatilho do Leiaute S-2240 para a empresa destino. Além disso, a data informada
+no campo dataTransferencia será considerada como a data início condição do gatilho.
+49. Informar com letra minúscula é equivalente à tag enviada em branco. Para ser importado
+corretamente, o CNPJ Alfanumérico deve conter apenas números e letras maiúsculas.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 75
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Saídas
+
+3.2
+
+Mesagem SOAP response porta importacaoFuncionario
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:importacaoFuncionarioResponse xmlns:ns2="http://services.soc.age.com/">
+<FuncionarioRetorno>
+<atualizouCargo></atualizouCargo>
+<atualizouCentroCusto></atualizouCentroCusto>
+<atualizouFuncionario></atualizouFuncionario>
+<atualizouRegistro></atualizouRegistro>
+<atualizouSetor></atualizouSetor>
+<atualizouUnidade></atualizouUnidade>
+<descricaoErro></descricaoErro>
+<encontrouCargo></encontrouCargo>
+<encontrouCentroCusto></encontrouCentroCusto>
+<encontrouErro>true</encontrouErro>
+<encontrouFuncionario></encontrouFuncionario>
+<encontrouRegistro></encontrouRegistro>
+<encontrouSetor></encontrouSetor>
+<encontrouUnidade></encontrouUnidade>
+<incluiuCargo></incluiuCargo>
+<incluiuCentroCusto></incluiuCentroCusto>
+<incluiuFuncionario></incluiuFuncionario>
+<incluiuRegistro></incluiuRegistro>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 76
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+<incluiuSetor></incluiuSetor>
+<incluiuUnidade></incluiuUnidade>
+<atualizouMotivoLicenca></atualizouMotivoLicenca>
+<atualizouTurno></atualizouTurno>
+<encontrouUnidadeContratante></encontrouUnidadeContratante>
+<encontrouMotivoLicenca></encontrouMotivoLicenca>
+<encontrouTurno></encontrouTurno>
+<incluiuUnidadeContratante></incluiuUnidadeContratante>
+<incluiuMotivoLicenca></incluiuMotivoLicenca>
+<incluiuTurno></incluiuTurno>
+<transferiuFuncionario> <transferiuFuncionario>
+</FuncionarioRetorno>
+</ns2:importacaoFuncionarioResponse>
+</soap:Body>
+</soap:Envelope>
+
+3.2.1
+
+Tabela de Propriedades da Saída
+O serviço devolve propriedades do tipo boolean, conforme exibido na mensagem SOAP acima,
+atentar-se para as seguintes propriedades:
+Propriedade
+
+Tipo
+
+Observação
+Tag utilizada para retornar informações gerais
+
+funcionarioRetorno
+
+Tag pai
+
+da execução da solicitação.
+Indica se foi realizada atualização de cadastro
+
+atualizouCargo
+
+Booleano
+
+de Cargo.
+Indica se foi realizada atualização de cadastro
+
+atualizouCentroCusto
+
+Booleano
+
+de Centro de Custo.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 77
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Indica se foi realizada atualização de cadastro
+de Funcionário. Este campo retornará o valor
+false caso os dados enviados no funcionário, a
+sua hierarquia organizacional ou os dados da
+deficiência sejam os mesmos cadastrados no
+SOC.
+Este campo retornará o valor true e o
+funcionário será gravado caso a tag
+<atualizarFuncionario> seja enviada como
+true e os dados enviados no funcionário, a
+sua hierarquia organizacional ou os dados da
+deficiência sejam diferentes dos dados
+atualizouFuncionario
+
+Booleano
+
+cadastrados no SOC.
+Indica se foi realizada atualização de cadastro
+
+atualizouSetor
+
+Booleano
+
+de Setor.
+Indica se foi realizada atualização de cadastro
+
+atualizouUnidade
+
+Booleano
+
+de Unidade.
+
+descricaoErro
+
+Texto
+
+Retorna a descrição em caso de erro.
+
+encontrouCargo
+
+Booleano
+
+Indica se foi localizado o Cargo informado.
+Indica se foi localizado o Centro de Custo
+
+encontrouCentroCusto
+
+Booleano
+
+informado.
+
+encontrouErro
+
+Booleano
+
+Indica se foi encontrado erro na requisição.
+Indica se foi localizado o Funcionário
+
+encontrouFuncionario
+
+Booleano
+
+informado.
+
+encontrouSetor
+
+Booleano
+
+Indica se foi localizado o Setor informado.
+
+encontrouUnidade
+
+Booleano
+
+Indica se foi localizada a Unidade informada.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuCargo
+
+Booleano
+
+Cargo.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 78
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Indica se foi realizada inclusão de cadastro de
+incluiuCentroCusto
+
+Booleano
+
+Centro de Custo.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuFuncionario
+
+Booleano
+
+Funcionário.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuSetor
+
+Booleano
+
+Setor.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuUnidade
+
+Booleano
+
+Unidade.
+Indica se foi realizada atualização do cadastro
+
+atualizouMotivoLicenca
+
+Booleano
+
+de Motivo Licença.
+Indica se foi realizada atualização do cadastro
+
+atualizouTurno
+
+Booleano
+
+de Turno.
+Indica se foi localizada a Unidade Contratante
+
+encontrouUnidadeContratante
+
+Booleano
+
+Informada.
+Indica se foi localizado o Motivo Licença
+
+encontrouMotivoLicenca
+
+Booleano
+
+informado.
+
+encontrouTurno
+
+Booleano
+
+Indica se foi localizado o Turno informado.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuUnidadeContratante
+
+Booleano
+
+Unidade Contratante.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuMotivoLicenca
+
+Booleano
+
+Motivo Licença.
+Indica se foi realizada inclusão de cadastro de
+
+incluiuTurno
+
+Booleano
+
+Turno.
+Indica se foi realizada transferência de
+
+transferiuFuncionario
+
+Booleano
+
+funcionário.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 79
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+4.
+
+Lista de falhas
+
+4.1
+
+Falhas na requisição
+
+4.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+4.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 80
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+4.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp verifica
+a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 81
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Portanto, um item a verificar para resolver essa falha é:
+•
+
+4.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+1. Identificação Inválida;
+2. Empresa Invalida;
+1. Usuário sem os acessos necessários.
+
+4.2.1
+
+Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 82
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração - Empresa/Cliente
+(337) no SOC e adicionar o serviço à lista de webservices da empresa.
+
+4.3
+
+Falhas na Consistência de Dados
+As inconsistências podem ser oriundas de violações do preenchimento de informações, ou não
+preenchimento de campos obrigatórios, tais como:
+
+4.3.1
+
+Status http 200
+1. Exceder o tamanho aceito para o campo: quando houver essa falha, a mesma
+informa qual o campo que foi excedido seu tamanho máximo;
+2. Empresa Inválida: Mensagem retornada quando a empresa informada na propriedade
+
+codigoempresa não é válida.
+3. Cpf pertence a outro funcionario: Mensagem retornada quando o parâmetro geral de
+empresa “Impede o cadastro com o mesmo CPF” está habilitado e tenta-se criar ou
+atualizar o funcionário com o CPF enviado, mas existe outro cadastro de funcionário que
+não está inativo com o mesmo CPF dentro da mesma empresa, ainda que outro cadastro
+existente seja do próprio funcionário enviado, situação que ocorre quando não é possível
+localizar o funcionário no sistema pelos parâmetros de busca enviados na requisição e, a
+tag criarFuncionario é enviada como true.
+4. Já existe unidade com o nome informado: Mensagem retornada quando está se
+tentando gravar (alterar ou incluir) o cadastro de uma unidade (tags unidadeWsVo e
+
+unidadeContratanteWsVo) com o nome de uma unidade já existente na empresa
+informada.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 83
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+5. Já existe setor com o nome informado: Mensagem retornada quando está se
+tentando gravar (alterar ou incluir) o cadastro de um setor (tag setorWsVo) com o nome
+de um setor já existente na empresa informada.
+6. Já existe cargo com o nome informado: Mensagem retornada quando está se
+tentando gravar (alterar ou incluir) o cadastro de um cargo (tag cargoWsVo) com o
+nome de um cargo já existente na empresa informada.
+7. Já existe um centro de custo com o nome informado: Mensagem retornada
+quando está se tentando gravar (alterar ou incluir) o cadastro de um centro de custo
+(tag centroCustoWsVo) com o nome de um centro de custo já existente na empresa
+informada.
+8. Rg do funcionário deve ser informado: Mensagem retornada quando a empresa
+informada possui obrigatoriedade de preenchimento de RG configurada e o campo
+funcionarioWsVo.rg não foi preenchido.
+9. Unidade não encontrada: Mensagem retornada quando não é possível encontrar, na
+empresa informada, uma unidade com os dados informados na tag unidadeWsVo.
+10. Setor não encontrado: Mensagem retornada quando não é possível encontrar, na
+empresa informada, um setor com os dados informados na tag setorWsVo.
+11. Cargo não encontrado: Mensagem retornada quando não é possível encontrar, na
+empresa informada, um cargo com os dados informados na tag cargoWsVo.
+12. Centro de Custo não encontrado: Mensagem retornada quando não é possível
+encontrar, na empresa informada, um centro de custo com os dados informados na tag
+
+centroCustoWsVo.
+13. Código PIS possui preenchimento obrigatório, exceto se o código de categoria
+eSocial do trabalhador for igual a [901, 903, 904]: Mensagem retornada quando
+necessário o preenchimento da propriedade funcionarioWsVo.pis.
+14. Obrigatório o preenchimento do Nome do Funcionário: Mensagem retornada
+quando não preenchida a propriedade funcionarioWsVo.nome, obrigatória para o
+cadastro de funcionário.
+15. Obrigatório o preenchimento da Data de Nascimento: Mensagem retornada
+quando não preenchida a propriedade funcionarioWsVo.dataNascimento, obrigatória para
+o cadastro de funcionário.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 84
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+16. unidadeWsVo obrigatório: Mensagem retornada quando não informada a tag
+
+unidadeWsVo, obrigatória para o cadastro de funcionário.
+17. setorWsVo obrigatório: Mensagem retornada quando não informada a tag setorWsVo,
+obrigatória para o cadastro de funcionário.
+18. cargoWsVo obrigatório: Mensagem retornada quando não informada a tag
+
+cargoWsVo, obrigatória para o cadastro de funcionário.
+19. nome cargo deve ser informado quando tipo de busca for 'NOME': Quando a
+chave de procura do cargo (cargoWsVo.tipobusca) definida for NOME, se faz necessário
+o preenchimento da propriedade cargoWsVo.nome para localização do cargo.
+20. codigo rh unidade deve ser informado quando tipo de busca for 'CODIGO_RH':
+Quando a chave de procura da unidade (unidadeWsVo.tipobusca) definida for
+CODIGO_RH, se faz necessário o preenchimento da propriedade cargoWsVo.codigoRh
+para localização da unidade.
+21. nome unidade deve ser informado quando tipo de busca for 'NOME': Quando a
+chave de procura da unidade (unidadeWsVo.tipobusca) definida for NOME, se faz
+necessário o preenchimento da propriedade unidadeWsVo.nome para localização da
+unidade.
+22. Existe uma unidade com o codigo rh informado: Mensagem retornada quando está
+se tentando gravar (alterar ou incluir) o cadastro de uma unidade em que já exista uma
+unidade com o mesmo Código RH na empresa informada.
+23. O campo com.age.soc.vo.services.FuncionarioTurnoWsVo.tipoBusca deve estar
+preenchido!: Necessário o preenchimento do tipoBusca para localização do turno.
+24. Erro de integração com o maestro: Mensagem retornada quando ocorrida alguma
+falha na integração com o Maestro BPM. Necessário contato com o Suporte SOC.
+25. Codigo turno deve ser informado quando tipo de busca for 'CODIGO': Quando a
+chave de procura do turno (turnoWsVo.tipobusca) definida for CODIGO, se faz
+necessário o preenchimento da propriedade turnoWsVo.codigo para localização do turno.
+26. Nome turno deve ser informado quando tipo de busca for 'NOME': Quando a
+chave de procura do turno (turnoWsVo.tipobusca) definida for NOME, se faz necessário o
+preenchimento da propriedade turnoWsVo.nome para localização do turno.
+27. Turno não encontrado: Mensagem retornada quando não é possível localizar o
+cadastro do turno com base no tipoBusca e valores informados.
+28. O campo com.age.soc.vo.services.FuncionarioMotivoLicencaWsVo.tipoBusca
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 85
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+deve estar preenchido: Necessário o preenchimento do tipoBusca para localização do
+motivo licença.
+29. Codigo motivo licenca deve ser informado quando tipo de busca for 'CODIGO':
+Quando a chave de procura do motivo licença (motivoLicencaWsVo.tipobusca) definida
+for CODIGO, se faz necessário o preenchimento da propriedade
+motivoLicencaWsVo.codigo para localização do motivo licença.
+30. Codigo de integracao do motivo licenca deve ser informado quando tipo de
+busca for 'CODIGO_INTEGRACAO': Quando a chave de procura do motivo licença
+(motivoLicencaWsVo.tipobusca) definida for CODIGO_INTEGRACAO, se faz necessário o
+preenchimento da propriedade motivoLicencaWsVo.codigoDeIntegracao para localização
+do motivo licença.
+31. Nome motivo licenca deve ser informado quando tipo de busca for 'NOME':
+Quando a chave de procura do motivo licença (motivoLicencaWsVo.tipobusca) definida
+for NOME, se faz necessário o preenchimento da propriedade motivoLicencaWsVo.nome
+para localização do motivo licença.
+32. O campo com.age.soc.vo.services.FuncionarioCentroCustoWsVo.tipoBusca
+deve estar preenchido!: Necessário o preenchimento do tipoBusca para localização do
+Centro de Custo.
+33. Codigo centro custo deve ser informado quando tipo de busca for 'CODIGO':
+Quando a chave de procura do centro de custo (centroCustoWsVo.tipobusca) definida for
+CODIGO, se faz necessário o preenchimento da propriedade centroCustoWsVo.codigo
+para localização do centro de custo.
+34. Nome centro custo deve ser informado quando tipo de busca for 'NOME':
+Quando a chave de procura do centro de custo (centroCustoWsVo.tipobusca) definida for
+NOME, se faz necessário o preenchimento da propriedade centroCusto.nome para
+localização do centro de custo.
+35. Codigo rh centro custo deve ser informado quando tipo de busca for
+'CODIGO_RH': Quando a chave de procura do centro de custo
+(centroCustoWsVo.tipobusca) definida for CODIGO_RH, se faz necessário o
+preenchimento da propriedade centroCusto.codigoRh para localização do centro de
+custo.
+36. O campo com.age.soc.vo.services.FuncionarioUnidadeWsVo.tipoBusca deve
+estar preenchido!: Necessário o preenchimento do tipoBusca para localização da
+unidade do funcionário.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 86
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+37. Tipo de busca do Setor não pode ser NOME quando a empresa permite nomes
+iguais: Quando habilitado o parâmetro “Permite Criação de Setor Com Mesmo Nome”,
+nos Parâmetros de Empresa Principal, não é possível utilizar o tipoBusca NOME na
+propriedade setorWsVo.tipoBusca
+38. Tipo de busca da Unidade não pode ser NOME quando a empresa permite
+nomes iguais: Quando habilitado o parâmetro “Permite Criação de Unidade Com
+Mesmo Nome”, nos Parâmetros de Empresa Principal, não é possível utilizar o tipoBusca
+NOME na propriedade unidadeWsVo.tipoBusca
+39. Tipo de busca do Cargo não pode ser NOME quando a empresa permite nomes
+iguais: Quando habilitado o parâmetro “Permite Criação de Cargo Com Mesmo Nome”,
+nos Parâmetros de Empresa Principal, não é possível utilizar o tipoBusca NOME na
+propriedade cargoWsVo.tipoBusca
+40. Tipo de busca do Centro de Custo não pode ser NOME quando a empresa
+permite nomes iguais: Quando habilitado o parâmetro “Permite Criação de Centro de
+Custo com mesmo Nome”, nos Parâmetros de Empresa Principal, não é possível utilizar o
+
+tipoBusca NOME na propriedade centroCustoWsVo.tipoBusca
+41. codigoLegislacaoReferencia ou nomeLegislacaoReferencia necessários quando
+preenchido tipoBuscaLegislacaoReferencia: Necessário o preenchimento das
+propriedades deficienciaWsVo.codigoLegislacaoReferencia e
+
+deficienciaWsVo.nomeLegislacaoReferencia conforme preenchimento da propriedade
+tipoBuscaLegislacaoReferencia.
+42. codigo deve ser informado quando tipoBusca da classificacaoDeficiencia for
+'CODIGO': Quando a chave de procura da classificação de deficiência
+(classificacaoDeficiencia.tipobusca) definida for CODIGO, se faz necessário o
+preenchimento da propriedade classificacaoDeficiencia.codigo para localização da
+classificação de deficiência.
+43. nome deve ser informado quando tipoBusca da classificacaoDeficiencia for
+'NOME': Quando a chave de procura da classificação de deficiência
+(classificacaoDeficiencia.tipobusca) definida for NOME, se faz necessário o
+preenchimento da propriedade classificacaoDeficiencia.nome para localização da
+classificação de deficiência.
+44. Código GFIP não digitado nos parâmetros de PPP da empresa: Mensagem
+retornada quando o código GFIP informado não consta na lista de GFIPs selecionados
+nos Parâmetros PPP da empresa.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 87
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+45. Empresa sem Acesso ao Webservice: Mensagem retornada quando a empresa não
+possui o Web Service selecionado nas Configurações de Integração da empresa.
+46. Empresa informada não é de homologação: Mensagem retornada quando
+especificado na requisição que a empresa é de homologação e a empresa informada não
+é de homologação.
+47. Hierarquia não encontrada: Mensagem retornada quando a propriedade
+naoImportarFuncionarioSemHierarquia for informada como true e a hierarquia não for
+encontrada com base nos dados informados na requisição.
+48. Situação do funcionário não pode ser alterada, pois sua hierarquia está
+inativa: Mensagem retornada quando solicitada a alteração de situação do funcionário,
+porém a hierarquia dele encontra-se inativa. Por regra, não é possível alterar a situação
+de funcionários que estejam em hierarquia inativa.
+49. Não é possível importar funcionário, unidade informada inativa: Mensagem
+retornada quando a unidade informada para o funcionário está inativa. Por regra, não é
+possível importar funcionários em unidades inativas.
+50. Não é possível importar funcionário, setor informado inativo: Mensagem
+retornada quando o setor informado para o funcionário está inativo. Por regra, não é
+possível importar funcionários em setores inativos.
+51. Não é possível importar funcionário, cargo informado inativo: Mensagem
+retornada quando o cargo informado para o funcionário está inativo. Por regra, não é
+possível importar funcionários em cargos inativos.
+52. Preenchimento do campo CBO é obrigatório: Mensagem retornada quando a
+empresa possui a obrigatoriedade de preenchimento do CBO habilitada nos parâmetros
+gerais E não informado o CBO na propriedade cargoWsVo.cbo
+53. Não é possível criar motivo licença, nome do motivo da licença deve estar
+preenchido: Mensagem retornada quando o motivo licença médica informado na
+requisição não está cadastrado no sistema e não foi informado o campo
+motivoLicencaWsVo.nome na requisição.
+54. Motivo Licença não encontrado: Mensagem retornada quando o motivo licença
+médica da requisição não está cadastrado no sistema e a tag criarMotivoLicenca é
+enviada com o valor false ou não é enviada na requisição.
+55. Não é possível criar turno, nome do turno deve estar preenchido: Mensagem
+retornada quando o turno informado na requisição não está cadastrado no sistema e não
+informado o campo turnoWsVo.nome na requisição.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 88
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+56. O campo com.age.soc.vo.services.FuncionarioDeficienciaWsVo.codigoMedico
+deve conter apenas números e ser maior que ZERO: Mensagem retornada quando
+a propriedade codigoMedico é preenchida com valores diferentes de números ou
+menores que zero.
+57. O campo
+com.age.soc.vo.services.FuncionarioClassificacaoDeficienciaWsVo.classificaca
+o deve estar preenchido: Mensagem que ocorre se for informada a tag
+"deficienciaWsVo" e o campo classificacao não for informado ou for informado com um
+valor inválido (não consta no enum).
+58. O campo
+com.age.soc.vo.services.FuncionarioClassificacaoDeficienciaWsVo.tipoBusca
+deve estar preenchido: Mensagem que ocorre se for informada a tag
+"deficienciaWsVo" e o campo classificacao não for informado ou for informado com um
+valor inválido (não consta no enum).
+59. Codigo Medico inválido: Mensagem que ocorre quando o campo
+"FuncionarioDeficienciaWsVo.codigoMedico" é informado com um valor inválido.
+60. CID de codigo '' da deficienciaWsVo inválido: Mensagem que ocorre quando o valor
+informado no campo deficienciaWsVo.cids é inválido. Entre aspas simples ('') será
+preenchido o valor que o sistema de origem informar no campo.
+61. dataInicioPeriodoAquisitivo obrigatório: Mensagem que ocorre quando o campo
+dataFimPeriodoAquisitivo é preenchido na requisição.
+62. dataFimPeriodoAquisitivo obrigatório: Mensagem que ocorre quando o campo
+dataInicioPeriodoAquisitivo é preenchido na requisição.
+
+63. dataInicioPeriodoAquisitivo nao pode ser menor que dataAdmissao: Mensagem
+retornada quando dataInicioPeriodoAquisitivo informado for menor que a data de
+admissão do funcionário (Campo “Admissão” da tela de cadastro de funcionário).
+64. com.age.soc.vo.services.FuncionarioUnidadeWsVo.caracterizacaoProcessosAm
+bientesTrabalho não tem entre 0 e 3000 caracteres: Mensagem retornada quando
+o conteúdo do campo informado excede os 3000 caracteres.
+65. Já existe funcionário com o Código RH informado entre as empresas do
+agrupamento: Mensagem retornada quando é enviado <transferirFuncionario> como
+
+true e entre as empresas do agrupamento do funcionário, já existe um outro funcionário
+com o mesmo Código RH, impedindo a gravação.
+66. Username autenticado não possui acesso necessários para transferência é uma
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 89
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+mensagem que pode ser retornada em duas situações:
+1. Quando a tag transferirFuncionario for true e a request é autenticada por
+empresa cliente;
+2. Quando a tag transferirFuncionario for true e o usuário da autenticação
+(Username) não possui os acessos necessários para realizar transferência de
+funcionário.
+67. Usuário não possui acesso ao agrupamento da empresa: Mensagem retornada
+quando o usuário de integração informado não possui acesso ao agrupamento.
+68. Para transferência é necessário que a chave de busca do funcionário seja
+Código RH: Para utilizar a transferência de funcionário é necessário que seja utilizada a
+chave de procura CODIGO_RH na propriedade chaveProcuraFuncionario.
+69. Empresa não pertence a um agrupamento: Mensagem retornada quando a
+propriedade transferirFuncionario for true e a empresa informada na propriedade
+codigoEmpresa não pertencer a um agrupamento de empresas.
+70. O campo unidadeWsVo.codigoRh não pode ser vazio!: Mensagem retornada
+quando não é informada a propriedade unidadeWsVo.codigoRh e a empresa da
+requisição possui o parâmetro “Obriga preencher Código do RH da Unidade” habilitado e
+criarUnidade na requisição for “true”, ou quando atualizarUnidade for “true” e a empresa
+da requisição possui o parâmetro habilitado e a unidade cadastrada no SOC não tem
+Código do Rh preenchido.
+71. O campo setorWsVo.codigoRh não pode ser vazio!: Mensagem retornada quando
+não é informada a propriedade setorWsVo.codigoRh e a empresa da requisição possui o
+parâmetro “Obriga preencher Código do RH do setor” habilitado e criarSetor na
+requisição for “true”, ou quando atualizarSetor for “true” e a empresa da requisição
+possui o parâmetro habilitado e o setor cadastrado no SOC não tem Código do Rh
+preenchido.
+72. O campo cargoWsVo.codigoRh não pode ser vazio!: Mensagem retornada quando
+não é informada a propriedade cargoWsVo.codigoRh e a empresa da requisição possui o
+parâmetro “Obriga preencher Código do RH do cargo” habilitado e criarCargo na
+requisição for “true”, ou quando atualizarCargo for “true” e a empresa da requisição
+possui o parâmetro habilitado e o cargo cadastrado no SOC não tem Código do Rh
+preenchido.
+73. Obrigatório o preenchimento do codigoCno e do codigoCnpjCei ou codigoCpf.:
+Mensagem retornada quando a propriedade unidadeWsVo.cnpj_cei é definida como
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 90
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+“CNO” e a propriedade unidadeWsVo.codigoCno não é informada.
+74. Quando informado o tipo CNO na propriedade cnpj_cei, deve ser preenchida a
+propriedade codigoCnpjCei ou codigoCpf.: Mensagem retornada quando a
+propriedade unidadeWsVo.cnpj_cei é definida como “CNO” e a propriedade
+unidadeWsVo.codigoCnpjCei ou unidadeWsVo.codigoCpf não é informada.
+75. O usuário não tem acesso a Reativar Funcionários: Mensagem retornada quando
+tenta-se reativar um funcionário pelo WebService e o codigoUsuario informado no XML
+não tem liberado o acesso Reativar Funcionários.
+76. O campo FuncionarioWsVo.nomePai não tem entre 0 e 120 caracteres:
+Mensagem retornada quando o preenchimento do campo excede 120 caracteres.
+77. Não é possível informar “dataReabilitacao” quando o funcionário não é
+reabilitado: Mensagem retornada quando é informada uma data de reabilitação para
+funcionário que não é reabilitado.
+78. O campo deficienciaWsVo.dataReabilitacao não é uma data válida: Mensagem
+retornada quando a data informada não é válida.
+79. Código do RH já existe em outro funcionário do mesmo agrupamento de
+empresas.: Mensagem retornada quando for informado <criarFuncionario> como true
+ou <atualizarFuncionario> como true e, entre as empresas do agrupamento do
+funcionário, já existe um outro funcionário com o mesmo Código RH, impedindo a
+gravação.
+80. O gênero preenchido para o funcionário não foi encontrado.: Mensagem
+retornada quando for informado um código de gênero inválido, que não existe ou que
+está inativo.
+81. O campo funcionarioWsVo.dataValidadeRg não é uma data válida: Mensagem
+retornada quando o formato de data informado no campo é diferente do formato
+esperado: dd/mm/aaaa.
+82. A data de validade RG deve ser maior que a data de nascimento: Mensagem
+retornada quando a data de validade do RG informada é menor que a data de
+nascimento do funcionário.
+83. A data de validade RG deve ser maior que a data de emissão do RG: Mensagem
+retornada quando a data de validade do RG informada é menor que a data de emissão.
+84. preenchimento matriculaRh obrigatório: Mensagem retornada quando o campo
+matriculaRh não é preenchido e a empresa do funcionário tem os “Utilizar Matrícula RH”
+e “Matrícula RH do funcionário” como sim nos parâmetros eSocial da empresa. Será
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 91
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+obrigatório também quando o parâmetro “Matrícula RH do funcionário” estiver como
+parcial.
+85. classificacaoDeficiencia.codigo inválido: Mensagem retornada quando a tag
+“codigo” da “classificacaoDeficiencia” é preenchida com um código maior que 100000 e
+que não existe na classificação de deficiência padrão do SOC. Por regra, somente o
+sistema pode criar classificações com códigos igual ou maior que 100000. Os códigos que
+já existem no sistema podem ser usados para associação na deficiência do cadastro de
+funcionário.
+86. O gênero preenchido para o funcionário não foi encontrado.: Mensagem
+retornada quando a tag “codigoGenero” é preenchido com o código de um gênero que
+está inativo ou que não existe.
+4.3.2
+
+Status http 500
+87. Problems creating SAAJ object model: Mensagem retornada quando a requisição
+XML tem um problema de estrutura, como tags que são abertas e não são fechadas ou
+quando caracteres reservados do tipo XML não são substituídos por seus respectivos
+caracteres escapes.
+88. com.age.soc.vo.services.FuncionarioCargoWsVo.funcao não tem entre 0 e 200
+caracteres: Mensagem retornada quando o valor enviado no campo “função” ultrapassa
+o tamanho máximo permitido de 200 caracteres.
+89. com.age.soc.vo.services.FuncionarioUnidadeWsVo.cep não tem entre 0 e 8
+caracteres: Mensagem retornada quando a tag “cep” excede o tamanho máximo
+permitido de 8 caracteres.
+90. Código deve ser informado quando tipo de busca do funcionário for 'CODIGO':
+Quando a chave de procura definida para o funcionário for CODIGO, se faz necessário o
+preenchimento da propriedade funcionarioWsVo.codigo para que possa ser localizado o
+cadastro do funcionário.
+91. CPF deve ser informado quando tipo de busca do funcionario for 'CPF,
+CPF_PENDENTE, CPF_ATIVO, CPF_DATA_ADMISSAO ou
+CPF_DATA_ADMISSAO_PERIODO': Quando a chave de procura definida para o
+funcionário for CPF, CPF_PENDENTE, CPF_ATIVO, CPF_DATA_ADMISSAO ou
+CPF_DATA_ADMISSAO_PERIODO, se faz necessário o preenchimento da propriedade
+funcionarioWsVo.cpf para que possa ser localizado o cadastro do funcionário.
+92. com.age.soc.vo.services.FuncionarioWsVo.numeroEndereco não tem entre 0 e
+10 caracteres: Mensagem retornada quando a tag “numeroEndereco” excede o
+tamanho máximo permitido de 10 caracteres.
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 92
+
+WebService Funcionário Modelo 2
+Especificação Técnica
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Desenvolvimento - M-DEV-1512
+
+93. com.age.soc.vo.services.FuncionarioWsVo.cep não tem entre 0 e 8 caracteres:
+Mensagem retornada quando a tag “cep” excede o tamanho máximo permitido de 8
+caracteres.
+94. com.age.soc.vo.services.FuncionarioWsVo.emailPessoal não tem entre 0 e 400
+caracteres: Mensagem retornada quando a tag “emailPessoal” excede o tamanho
+máximo permitido de 400 caracteres.
+95. com.age.soc.vo.services.FuncionarioWsVo.matricula não tem entre 0 e 30
+caracteres: Mensagem retornada quando a tag “matricula” excede o tamanho máximo
+permitido de 30 caracteres.
+96. com.age.soc.vo.services.FuncionarioWsVo.matriculaRh não tem entre 0 e 30
+caracteres: Mensagem retornada quando a tag “matriculaRh” excede o tamanho
+máximo permitido de 30 caracteres.
+97. dataAdmissao invalida: Mensagem retornada quando a tag “dataAdmissao” não é
+uma data válida. O formato de data esperado pelo Webservice é dd/mm/aaaa.
+98. dataDemissao invalida: Mensagem retornada quando a tag “dataDemissao” não é
+uma data válida. O formato de data esperado pelo Webservice é dd/mm/aaaa.
+99. matricula deve ser informado quando tipo de busca do funcionario for
+'MATRICULA': Quando a chave de procura definida para o funcionário for
+MATRICULA, se faz necessário o preenchimento da propriedade
+funcionarioWsVo.matricula para que possa ser localizado o cadastro do funcionário.
+100. nome cargo deve ser informado quando tipo de busca for 'NOME': Quando o
+tipoBusca definido para o cargo for NOME, se faz necessário o preenchimento da
+propriedade cargoWsVo.nome para que possa ser localizado o cadastro do cargo.
+101. nome unidade deve ser informado quando tipo de busca for 'NOME': Quando o
+tipoBusca definido para a unidade for NOME, se faz necessário o preenchimento da
+propriedade unidadeWsVo.nome para que possa ser localizado o cadastro da unidade.
+102. O campo com.age.soc.vo.services.FuncionarioCargoWsVo.tipoBusca deve
+estar preenchido!: Mensagem retornada quando a tag “tipoBusca” do cargo não é
+preenchida com um valor válido de acordo com o enum disponível para a tag.
+103. O campo com.age.soc.vo.services.FuncionarioSetorWsVo.tipoBusca deve
+estar preenchido!: Mensagem retornada quando a tag “tipoBusca” do setor não é
+preenchida com um valor válido de acordo com o enum disponível para a tag.
+104. O campo com.age.soc.vo.services.FuncionarioUnidadeWsVo.tipoBusca deve
+estar preenchido!: Mensagem retornada quando a tag “tipoBusca” da unidade não é
+preenchida com um valor válido de acordo com o enum disponível para a tag.
+105. O campo FuncionarioWsVo.nomeFuncionario não pode conter aspas!:
+Mensagem retornada quando a tag “nomeFuncionario” enviada na requisição contém
+aspas.
+106. codigo unidade deve ser informado quando tipo de busca for 'CODIGO':
+Quando a chave de procura da unidade (unidadeWsVo.tipobusca) definida for CODIGO,
+se faz necessário o preenchimento da propriedade unidadeWsVo.codigo para
+localização da unidade.
+107. codigo setor deve ser informado quando tipo de busca for 'CODIGO': Quando a
+chave de procura do setor (setorWsVo.tipobusca ) definida for CODIGO, se faz
+necessário o preenchimento da propriedade setorWsVo.codigo para localização do
+setor.
+108. codigo cargo deve ser informado quando tipo de busca for 'CODIGO': Quando
+a chave de procura do cargo (cargoWsVo.tipobusca) definida for CODIGO, se faz
+necessário o preenchimento da propriedade cargoWsVo.codigo para localização do
+cargo.
+109. codigo rh cargo deve ser informado quando tipo de busca for 'CODIGO_RH':
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 93
+
+WebService Funcionário Modelo 2
+
+Versão:
+<3.8>
+Date: 26/05/2026
+
+Especificação Técnica
+Desenvolvimento - M-DEV-1512
+
+Quando a chave de procura do cargo (cargoWsVo.tipobusca) definida for CODIGO_RH,
+se faz necessário o preenchimento da propriedade cargoWsVo.codigoRh para
+localização do cargo.
+110. SetorWsVo.nome não tem entre 0 e 130 caracteres: Mensagem retornada
+quando a tag “nome” do setor excede o tamanho máximo permitido de 130 caracteres.
+111. Ja existe um cargo com o codigo rh informado: Mensagem retornada quando já
+existe um cargo cadastrado com o mesmo código do rh enviado na requisição.
+112. com.age.soc.vo.services.FuncionarioUnidadeWsVo.codigoCnae não tem entre 0 e
+9 caracteres: Mensagem retornada quando a tag “codigoCnae” da unidade excede o
+tamanho máximo permitido de 9 caracteres.
+
+113. O campo com.age.soc.vo.services.FuncionarioWsVo.codigoEmpresa deve
+estar preenchido!: Mensagem retornada quando a tag “codigoEmpresa” não é
+preenchida. Essa tag é obrigatória.
+114. O campo com.age.soc.vo.services.FuncionarioWsVo.cnpjEmpresaFuncionario
+deve conter apenas numeros e letras maiuscula!: Mensagem retornada quando o
+valor informado é inválido. Para ser importado corretamente, o CNPJ Alfanumérico deve
+ser informado sem máscara e, conter apenas números e letras maiúsculas.
+115. com.age.soc.vo.services.FuncionarioWsVo.cnpjEmpresaFuncionario is not
+between 0 and 20 characters long: Mensagem retornada quando o valor informado
+ultrapassa o limite máximo de 20 caracteres.
+116. com.age.soc.vo.services.FuncionarioUnidadeWsVo.codigoCnpjCei is not
+between 0 and 20 characters long: Mensagem retornada quando o valor informado
+ultrapassa o limite máximo de 20 caracteres.
+117. O campo com.age.soc.vo.services.FuncionarioWsVo.cep deve conter apenas
+numeros!: Mensagem retornada quando o cep informado contém máscara. O valor
+deve ser enviado sem máscara, como informado na mensagem de erro, deve conter
+apenas números.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2025
+Sensível
+
+Página 94
+
+

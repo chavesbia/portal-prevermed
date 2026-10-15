@@ -1,0 +1,1755 @@
+WS Download de Arquivos
+Especificação Técnica
+Versão <2.2>
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Histórico de Revisão
+
+Data
+17/11/2015
+
+Versão
+1.0
+
+Descrição
+Especificação do funcionamento do
+
+Autor
+Leonardo de Oliveira
+
+serviço de Download de Arquivos
+30/01/2017
+
+1.1
+
+Adicionada lista de falhas na requisição
+
+Roseane Alves
+
+10/02/2017
+
+1.2
+
+Propriedades separadas por endpoints
+
+Roseane Alves
+
+17/04/2017
+
+1.3
+
+Adicionadas observações aos campos
+
+Roseane Alves
+
+06/06/2019
+
+1.4
+
+Adicionado novo endpoint
+
+Marcos Santiago
+
+“downloadArquivosEsocial”
+07/01/2019
+
+1.5
+
+Atualização da lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+16/07/2021
+
+1.5.1
+
+Atualização da lista de valores possíveis
+
+Marcos Santiago
+
+na propriedade tipoEvento
+24/09/2021
+
+1.6
+
+Adicionado novo endpoint
+
+Marcos Santiago
+
+“downloadArquivoSolicitacaoProcessam
+ento”
+16/11/2021
+
+1.7
+
+Adicionado o campo
+
+Marcos Santiago
+
+numeroLoteArquivo no endpoint
+downloadArquivosEsocial
+13/07/2022
+
+1.8
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.9
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+05/09/2023
+
+1.9.1
+
+Incluída a mensagem de erro de código
+
+Marcos Santiago
+
+SOC-308
+17/10/2023
+
+2.0
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+26/07/2024
+
+2.1
+
+Adicionado o tipoEvento S2221
+
+Marcos Santiago
+
+12/08/2024
+
+2.2
+
+Adicionada a tag
+
+Marcos Santiago
+
+“codigoSequencialResultado” ao
+
+endpoint
+downloadArquivosGedPorSequencialFic
+ha
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WS Download de Arquivos
+Especificação Técnica
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Desenvolvimento – M-DEV-3041
+
+Índice
+1.
+
+2.
+
+3.
+
+Introdução
+
+5
+
+1.1
+1.2
+1.3
+
+5
+5
+5
+
+Parâmetros de Segurança para Acesso ao Serviço
+
+6
+
+2.1
+2.2
+2.3
+2.4
+
+6
+7
+9
+10
+
+Configuração Padrão
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+Considerações para as Propriedades da Tag wsse security
+Configurações adicionais para a tag wsse security
+
+Entradas
+
+11
+
+3.1
+
+11
+11
+12
+12
+13
+13
+14
+14
+14
+15
+15
+15
+16
+17
+17
+18
+18
+19
+19
+
+3.2
+
+3.3
+
+3.4
+
+3.5
+
+4.
+
+Objetivo
+Funcionamento
+Considerações
+
+Mensagem SOAP request downloadArquivosGedPorLote
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+Mensagem SOAP request downloadArquivosGedPorSequencialFicha
+3.2.1 Tabela de Propriedades da entrada
+3.2.2 Tag identificacaoWsVo
+3.2.3 Considerações para as propriedades
+Mensagem SOAP request downloadArquivosPorGed
+3.3.1 Tabela de Propriedades da entrada
+3.3.2 Tag identificacaoWsVo
+3.3.3 Considerações para as propriedades
+Mensagem SOAP request downloadArquivosEsocial
+3.4.1 Tabela de Propriedades da entrada
+3.4.2 Tag identificacaoWsVo
+3.4.3 Considerações para as propriedades
+Mensagem SOAP request downloadArquivoSolicitacaoProcessamento
+3.5.1 Tabela de Propriedades da entrada
+3.5.2 Tag identificacaoWsVo
+3.5.3 Considerações para as propriedades
+
+Saídas
+4.1
+
+20
+Mensagem SOAP response DownloadArquivosGedPorLote,
+
+downloadArquivosGedPorSequencialFicha, downloadArquivosPorGed,
+downloadArquivosEsocial e downloadArquivoSolicitacaoProcessamento
+4.1.1 Considerações para a response
+Falhas na requisição
+4.2.1 Username e password inválidos
+4.2.2 Tag Header preenchida incorretamente
+4.2.3 Requisição expirada
+4.3 Falhas de Acesso e consistência
+4.2
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+20
+20
+22
+22
+22
+23
+24
+
+Página 4
+
+WS Download de Arquivos
+Especificação Técnica
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Desenvolvimento – M-DEV-3041
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Serviço que permite o download de arquivo no GED.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com as
+informações do arquivo que será feito o download.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno com o arquivo em
+anexo.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente.
+2. O usuário informado deverá ter acesso ao SOCGED.
+3. O acesso ao serviço deve constar nas configurações de integração do usuário.
+4. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente, de
+forma automática e antecipadamente à data de expiração.
+5. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem ser
+enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique a
+performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+2.
+
+Parâmetros de Segurança para Acesso ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a
+adotar as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG
+Header com itens de segurança conforme política, segue um modelo do que deverá ser
+informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-soap-message-security-1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsasha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-soap-message-security1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da Tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição, Recomandamos o uso de um
+minuto, Requisições com timestamp superior a dois minutos serão
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela
+letra U (disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de
+integração). Contudo o cliente deverá informar o mesmo com o Tipo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+“PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma
+requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são
+trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a
+url da versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no
+header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar
+o alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request downloadArquivosGedPorLote
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:downloadArquivosGedPorLote>
+<downloadPorLote>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigosArquivosGed></codigosArquivosGed>
+<codigoGed></codigoGed>
+</downloadPorLote>
+</ser:downloadArquivosGedPorLote>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+identificacaoWsVo
+
+Tipo
+identificacaoWs
+Vo
+
+Obrigatório
+
+Observação
+Tag usada para identificar a
+
+Sim
+
+empresa que está enviando uma
+requisição
+
+codigoEmpresa
+
+Numérico
+
+Sim1
+
+codigosArquivosGed
+
+Numérico
+
+Sim2
+
+codigoGed
+
+Numérico
+
+Sim3
+
+Identificação da empresa onde o
+exame foi cadastrado
+Lista de códigos de arquivos
+contidos no GED
+Código de identificação do GED
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+3.1.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim4
+
+Código do Usuário responsável
+pela ação
+
+3.1.2
+
+Considerações para as propriedades
+1. O código da empresa onde o registro do GED está localizado;
+A informação pode ser consultada nas configurações de integração no Cadastro de Empresas;
+2. Esta propriedade é uma lista de inteiros, portanto, caso queira mais de um código basta
+copiar a tag (<codigosArquivosGed></codigosArquivosGed>) para cada código que seja
+necessário inserir;
+3. Código do GED;
+4. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e relacionar informar o usuário que realizou a operação;
+
+3.2
+
+Mensagem SOAP request downloadArquivosGedPorSequencialFicha
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:downloadArquivosGedPorSequencialFicha>
+<downloadPorSequencialFicha>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigoSequencialFicha></codigoSequencialFicha>
+<codigoSequencialResultado></codigoSequencialResultado>
+</downloadPorSequencialFicha>
+</ser:downloadArquivosGedPorSequencialFicha>
+</soapenv:Body>
+</soapenv:Envelope>
+3.2.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+identificacaoWsVo
+
+codigoEmpresa
+
+Tipo
+identificacao
+WsVo
+
+Obrigatório
+
+Observação
+Tag usada para identificar a
+
+Sim
+
+empresa que está enviando uma
+requisição
+
+Numérico
+
+Sim1
+
+Identificação da empresa onde o
+exame foi cadastrado
+
+codigoSequencialFicha
+
+Numérico
+
+Sim2
+
+Código da ficha associada ao GED
+
+codigoSequencialResult
+
+Numérico
+
+Não3
+
+Código sequencial do resultado do
+
+ado
+
+exame vinculado ao
+codigoSequencialFicha informado.
+
+3.2.2
+
+Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+codigoUsuario
+
+Numérico
+
+Sim4
+
+Código do Usuário responsável
+pela ação
+
+3.2.3
+
+Considerações para as propriedades
+1. O código da empresa onde o registro do GED está localizado;
+2. Localiza o GED através do código sequencial de uma ficha;
+3. Se informado, o Webservice devolverá somente o arquivo do SOCGED que estiver
+vinculado ao código sequencial do resultado de exame informado;
+4. O código do usuário que está executando a ação, que será utilizado para validar os
+acessos e informar o usuário que realizou a operação.
+
+3.3
+
+Mensagem SOAP request downloadArquivosPorGed
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:downloadArquivosPorGed>
+<downloadPorGed>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigoGed></codigoGed>
+</downloadPorGed>
+</ser:downloadArquivosPorGed>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.3.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Obrigatório
+Sim
+
+Observação
+Tag usada para identificar a
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+empresa que está enviando uma
+requisição
+
+3.3.2
+
+codigoEmpresa
+
+Numérico
+
+Sim1
+
+codigoGed
+
+Numérico
+
+Sim2
+
+Identificação da empresa onde o
+exame foi cadastrado
+Código de identificação do GED
+
+Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim3
+
+Código do Usuário responsável
+pela ação
+
+3.3.3
+
+Considerações para as propriedades
+1. O código da empresa onde o registro do GED está localizado;
+2. Código do GED;
+3. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e relacionar informar o usuário que realizou a operação;
+
+3.4
+
+Mensagem SOAP request downloadArquivosEsocial
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:downloadArquivosEsocial>
+<downloadArquivosEsocial>
+<identificacaoWsVo>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<dataInicio></dataInicio>
+<dataFim></dataFim>
+<tipoEvento></tipoEvento>
+<ambienteEsocial></ambienteEsocial>
+<numeroLoteArquivo></numeroLoteArquivo>
+</downloadArquivosEsocial>
+</ser:downloadArquivosEsocial>
+</soapenv:Body>
+</soapenv:Envelope>
+3.4.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+Tag usada para identificar a
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+empresa que está enviando
+uma requisição
+Identificação da empresa
+
+codigoEmpresa
+
+Numérico
+
+Sim
+
+1
+
+onde o evento foi
+cadastrado
+
+Enum:
+tipoBuscaEmpresa
+
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENT
+
+Define o conteúdo para
+localizar a empresa onde o
+Sim
+
+2
+
+arquivo está vinculado.
+
+E
+dataInicio
+
+dataFim
+tipoEvento
+
+DATA
+(DD/MM/AAAA)
+DATA
+(DD/MM/AAAA)
+Enum:
+
+Sim
+
+Sim
+Sim
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Data de início da geração
+do evento
+Data Final da geração do
+evento
+Informe o evento eSocial
+Página 16
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+•
+
+S2210
+
+•
+
+S2220
+
+•
+
+S2221
+
+•
+
+S2230
+
+•
+
+S2240
+
+•
+
+S3000
+
+do arquivo a ser localizado
+
+Enum
+ambienteEsocial
+
+Informe o ambiente do
+
+•
+
+PRODUCAO
+
+•
+
+PRE_PRODUCAO
+
+eSocial onde foi gerado o
+
+Sim
+
+arquivo.
+Número do lote de arquivo
+
+numeroLoteArquivo
+
+Numérico
+
+Não4
+
+a ser informado caso
+exceda o limite de arquivos
+a retornar: 2000.
+
+3.4.2
+
+Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrin
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+cipal
+
+Observação
+A informação pode ser
+consultada nas
+configurações de integração
+no cadastro de Empresa.
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser
+consultada nas
+configurações de integração
+no cadastro de Empresa.
+
+codigoUsuario
+
+Numérico
+
+Sim3
+
+Código do Usuário
+responsável pela ação.
+
+3.4.3
+
+Considerações para as propriedades
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+1. O código da empresa onde o registro do GED está localizado;
+2. Valor default: “CODIGO_SOC”;
+3. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e informar o usuário que realizou a operação;
+4. Caso essa propriedade seja informada vazia, assume-se o valor default como 1.
+
+3.5
+
+Mensagem SOAP request downloadArquivoSolicitacaoProcessamento
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:downloadArquivoSolicitacaoProcessamento>
+<downloadArquivoSolicitacaoProcessamento>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigoSolicitacao></codigoSolicitacao>
+</downloadArquivoSolicitacaoProcessamento>
+</ser:downloadArquivoSolicitacaoProcessamento>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.5.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+Tag usada para identificar a
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+empresa que está enviando
+uma requisição
+Identificação da empresa
+
+codigoEmpresa
+
+Numérico
+
+Sim
+
+onde a solicitação de
+processamento foi realizada
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+codigoSolicitacao
+
+3.5.2
+
+Numérico
+
+Código da solicitação de
+
+Sim¹
+
+processamento
+
+Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim2
+
+Código do Usuário responsável
+pela ação
+
+3.5.3
+
+Considerações para as propriedades
+1. Código da solicitação de processamento retornada na response da requisição enviada
+para o WebService de Solicitação de Processamento Assíncrono.
+2. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e informar o usuário que realizou a operação.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response DownloadArquivosGedPorLote,
+
+downloadArquivosGedPorSequencialFicha, downloadArquivosPorGed,
+downloadArquivosEsocial e downloadArquivoSolicitacaoProcessamento
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:nomeDoServico xmlns:ns2="http://services.soc.age.com/">
+<DownloadArquivosGed>
+<informacaoGeral>
+<codigoMensagem>SOC-100</codigoMensagem>
+<mensagem>SUCESSO. Operação realizada com sucesso</mensagem>
+<numeroErros>0</numeroErros>
+</informacaoGeral>
+<bytesArquivo>
+<xop:Include href="link" xmlns:xop="http://www.w3.org/2004/08/xop/include"/>
+</bytesArquivo>
+</DownloadArquivosGed>
+</ns2: nomeDoServico>
+</soap:Body>
+</soap:Envelope>
+4.1.1
+
+Considerações para a response
+1. Em caso de sucesso na operação o serviço devolverá um anexo, na response;
+2. Em caso de falha o serviço devolverá a falha ocorrida;
+3. Na utilização do endpoint downloadArquivosEsocial, quando o número limite de arquivos a
+serem retornados for excedido ocorrerá a seguinte falha:
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:downloadArquivosEsocialResponse xmlns:ns2="http://services.soc.age.com/">
+<DownloadArquivosEsocial>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-306</codigo>
+<mensagem>Quantidade de arquivos supera o limite de download. Este
+download deve ser efetuado informando o numeroLoteArquivo.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+<quantidadeArquivosDisponiveis>15742</quantidadeArquivosDisponiveis>
+<quantidadeLotesArquivos>8</quantidadeLotesArquivos>
+</DownloadArquivosEsocial>
+</ns2:downloadArquivosEsocialResponse>
+</soap:Body>
+</soap:Envelope>
+A. quantidadeArquivosDisponiveis: Esta tag informa a quantidade de arquivos
+disponíveis com base nos parâmetros enviados na requisição.
+B. quantidadeLotesArquvos: Esta tag informa a quantidade de lotes de arquivos
+existentes. Cada número de lote irá retornar até 2000 Arquivos. No exemplo acima,
+deveriam ser efetuadas 8 requisições informando o numeroLoteArquivo
+correspondente para obter todos os arquivos disponíveis.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Lista de falhas
+
+4.2
+
+Falhas na requisição
+
+4.2.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAPENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha
+(username e password, respectivamente) estão incorretos.
+4.2.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAPENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:InvalidSecurity</faultcode>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<faultstring>An error was discovered processing the
+&lt;wsse:Security> header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header for preenchida incorretamente.
+Verificar item 2 desse documento de especificação técnica.
+
+4.2.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento
+em que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 23
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+•
+
+4.3
+
+Ajustar horário do computador;
+
+Falhas de Acesso e consistência
+
+Código
+SOC-200
+
+Descrição
+ERRO. Operação não realizada.
+
+Observação
+Mensagem retornada quando não realizada
+a operação solicitada. Na tag
+mensagemOperacaoDetalheList podem ser
+visualizados os detalhes.
+
+SOC-201
+
+SOC-202
+
+ERRO DESCONHECIDO. Por favor, contate o
+
+Quando retornada, necessário o contato
+
+suporte SOC.
+
+com o Suporte SOC.
+
+ERRO. Código Empresa inválida.
+
+Mensagem retornada quando o valor
+informado na propriedade codigoEmpresa
+não representa uma empresa válida. Essa
+mensagem também será retornada ao
+enviar uma requisição SOCNET para o
+endpoint
+
+downloadArquivoSolicitacaoProcessamento.
+Esse endpoint não contempla SOCNET.
+SOC-203
+
+ERRO. Empresa informada não é de
+
+Mensagem retornada quando especificado
+
+homologação.
+
+na requisição que a empresa é de
+homologação, mas a empresa informada
+não está configurada como de
+homologação.
+
+SOC-204
+
+ERRO. codigoUsuario Inválido.
+
+Mensagem retornada quando o valor
+informado na propriedade codigoUsuario
+não configura um código de usuário válido
+do SOC.
+
+SOC-205
+
+ERRO. Identificação Invalida.
+
+Mensagem retornada quando os dados
+informados na tag identificacaoWsVo não
+configuram uma credencial válida de
+acesso aos Web Services.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 24
+
+WS Download de Arquivos
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+SOC-206
+
+ERRO. Empresa sem Acesso ao Webservice.
+
+Mensagem retornada quando a empresa
+não possui o web service habilitado nas
+Configurações de Integração da empresa.
+
+SOC-207
+
+ERRO. Ip nao autorizado.
+
+Mensagem retornada quando o IP de
+origem da requisição não consta nos IPs
+autorizados configurados na empresa.
+
+SOC-208
+
+ERRO. Login não localizado.
+
+Mensagem retornada quando não é
+possível localizar o login do usuário
+informado na propriedade codigoUsuario.
+
+SOC-209
+
+ERRO. O usuário não tem acessos suficientes.
+
+Mensagem retornada quando o usuário
+informado na propriedade codigoUsuario
+não possui os acessos necessários para
+realizar a ação solicitada.
+
+SOC-210
+
+SOC-301
+
+ERRO. Campos não preenchidos ou
+
+Mensagem retornada quando há erro de
+
+preenchidos incorretamente
+
+preenchimento nos campos da requisição.
+
+Não há arquivos para a seleção informada.
+
+Mensagem retornada quando não
+localizados arquivos no SOCGED com base
+nos dados informados na requisição.
+
+SOC-302
+
+O usuário não tem acesso à consulta.
+
+Mensagem retornada quando o usuário
+informado na propriedade codigoUsuario
+não possui acesso à consulta de SOCGED
+e/ou à consulta de Arquivos de SOCGED,
+impossibilitando o download dos arquivos.
+
+SOC-306
+
+Quantidade de arquivos supera o limite de
+
+Mensagem retornada quando a quantidade
+
+download. Este download deve ser efetuado
+
+de arquivos a ser entregue com base nos
+
+informando o numeroLoteArquivo.
+
+parâmetros da requisição excede o limite
+de download: 2000 arquivos e não for
+informado numeroLoteArquivo.
+
+SOC-307
+
+numeroLoteArquivo inválido.
+
+Mensagem retornada quando o valor
+informado para a propriedade
+numeroLoteArquivo é inválido.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+WS Download de Arquivos
+Especificação Técnica
+
+Versão:
+<2.2>
+Date: 12/08/2024
+
+Desenvolvimento – M-DEV-3041
+
+SOC-308
+
+Quantidade de arquivos supera o limite de
+
+Mensagem retornada pelo método
+
+download.
+
+downloadArquivosPorGed quando a
+quantidade de arquivos armazenada no
+GED informado for superior a 2000
+arquivos.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 26
+
+

@@ -1,0 +1,2254 @@
+WebService Setor
+Especificação Técnica
+Versão <1.9>
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+04/06/2014
+
+Draft
+
+Criação da documentação
+
+André Pinheiro
+
+20/06/2014
+
+1.0
+
+Padronização e Versionamento
+
+Valdilanio Cruz
+
+05/11/2014
+
+1.1
+
+Itens de segurança
+
+André Pinheiro
+
+25/01/2017
+
+1.2
+
+Adicionado lista de falhas na requisição
+
+Roseane Alves
+
+26/07/2017
+
+1.3
+
+Documentação atualizada de acordo
+
+Roseane Alves
+
+com as mudanças realizadas no
+serviço.
+27/03/2019
+
+1.3.1
+
+Retirada a propriedade “homologacao”
+
+Marcos Santiago
+
+da documentação do serviço.
+07/06/2019
+
+1.3.2
+
+Atualizado tamanho do campo “Codigo”
+
+Marcos Santiago
+
+da tabela de propriedades da entrada
+28/11/2019
+
+1.4
+
+Atualizada a lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+06/12/2019
+
+1.5
+
+Adicionada observação de inclusão de
+
+Gustavo Matos
+
+setor com código 0
+05/02/2021
+
+1.5.1
+
+Atualização das observações do serviço
+
+Gustavo Matos
+
+13/08/2021
+
+1.5.2
+
+Atualização das possíveis mensagens
+
+Marcos Santiago
+
+de retorno
+30/12/2021
+
+1.5.3
+
+Retirada a obrigatoriedade da
+
+Marcos Santiago
+
+propriedade tipoBuscaEmpresa
+21/03/2022
+
+1.6
+
+Inclusão dos endpoint’s incluirLote e
+
+Marcos Santiago
+
+alterarLote
+18/07/2022
+
+1.7
+
+Incluída consideração sobre certificado
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Marcos Santiago
+
+Página 2
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+de conexão HTTPS
+19/01/2023
+
+1.8
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+23/10/2023
+
+1.9
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WebService Setor
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+5
+5
+5
+5
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Configuração Padrão
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.1 Considerações para as Propriedades da tag wsse security
+2.2 Configurações adicionais para a tag wsse security
+
+6
+6
+7
+9
+10
+
+3.
+
+Entradas
+3.1 Mensagem SOAP Request Porta IncluirSetor/alterarSetor
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+3.2 Mensagem SOAP Request Porta consultarSetor
+3.2.1 Tabela de Propriedades da entrada
+3.2.2 Considerações para as Propriedades
+3.3 Mensagem SOAP Request Porta excluirSetor
+3.3.1 Tabela de Propriedades da entrada
+3.4 Mensagem SOAP Request Porta incluirLote/alterarLote
+3.4.1 Tabela de Propriedades da Entrada
+
+11
+11
+11
+13
+15
+15
+17
+18
+18
+20
+21
+
+4.
+
+Saídas
+4.1 Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar)
+4.2 Mensagem SOAP Response (Para a operação excluir)
+4.2.1 Tabela de Propriedades da Saída
+4.2.2 Considerações para as propriedades
+4.3 Mensagem SOAP Response (Para as operações incluirLote/alterarLote)
+4.3.1 Tabela de Propriedades da Saída
+
+24
+24
+24
+25
+25
+25
+26
+
+5.
+
+Lista de falhas
+5.1 Falhas na requisição
+5.1.1 Username e password inválidos.
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.2 Falhas de Acesso
+5.3 Falhas nas ações Inserir/Alterar
+5.4 Falha nas ações Alterar/Excluir
+5.5 Falhas na ação de Excluir
+5.6 Falhas nas ações incluirLote/alterarLote
+
+27
+27
+27
+27
+28
+29
+29
+30
+30
+30
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Especificação Técnica
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Permitir ao cliente a possibilidade de criar, alterar, consultar e excluir setores, a partir do
+consumo de WebService.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados do setor que será manipulado pelo cliente a partir de sua origem.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando os
+dados do setor manipulado, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para atualizar/incluir/excluir um setor por vez que é
+invocado, exceto a porta de consulta, que devolve uma lista de setores;
+3. O arquivo WSDL a ser usado será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+6. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG Header
+com itens de segurança conforme política, segue um modelo do que deverá ser informado.
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+2.1
+
+Considerações para as Propriedades da tag wsse security
+
+Propriedade
+
+Detalhes
+
+Timestamp
+
+É o tempo de validade da requisição. Recomendamos o uso de um
+minuto. Requisições com timestamp superior a dois minutos serão
+negadas.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela
+letra U (disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de
+integração). Contudo o cliente deverá informar o mesmo com o Tipo
+“PasswordDigest”
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para
+cada requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma
+requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são
+trafegados.
+
+2.2
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O web service com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP Request Porta IncluirSetor/alterarSetor
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirSetor>
+<setor>
+<ativo> </ativo>
+<codigo> </codigo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoRh> </codigoRh>
+<descricao> </descricao>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<nome> </nome>
+<observacaoAso> </observacaoAso>
+<tipoBusca> </tipoBusca>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+</setor>
+</ser:incluirSetor>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+ativo
+
+-
+
+Booleano (default = true)
+
+Não
+
+Indica se o setor está
+ativo ou não.
+
+codigo
+
+8
+
+Alfanumérico
+
+Sim1, 3
+
+Código do Setor no SOC.
+O valor informado deve
+corresponder ao tipo de
+busca informado na
+propriedade tipoBusca.
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa a
+qual o setor pertence.
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Não
+
+Código de integração do
+setor.
+
+descricao
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do setor. Será
+mostrada no PPRA e
+PCMSO.
+
+identificacaoWsVo
+
+-
+
+IdentificacaoWsVo
+
+Sim
+
+Tag usada para identificar
+a empresa que está
+enviando uma requisição.
+
+nome
+
+130
+
+Alfanumérico
+
+Sim
+
+Nome do setor.
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação que será
+visualizada na impressão
+do ASO.
+
+tipoBusca
+
+-
+
+Enum
+
+Sim4
+
+Valores possíveis:
+•
+
+CODIGO
+
+•
+
+CODIGO_RH
+
+•
+
+NOME
+
+Indica como será feita a
+busca pelo registro do
+setor; o valor inserido em
+“codigo” deve
+corresponder ao tipo de
+busca escolhido no
+tipoBusca.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+tipoBuscaEmpresa
+
+-
+
+Enum
+
+Não
+
+Indica como será feita a
+busca pela empresa; o
+
+Valores possíveis:
+•
+
+CODIGO_CLIENTE
+
+•
+
+CODIGO_SOC
+
+valor inserido em
+“codigoEmpresa” deve
+corresponder ao tipo de
+busca escolhido. Valor
+padrão: CODIGO_SOC
+
+3.1.1.1 Tag identificacaoWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+A informação pode ser
+
+chaveAcesso
+
+Alfanumérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoEmpresaPrincipal
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+
+codigoUsuario
+
+Numérico
+
+Sim
+
+Código do usuário que está
+enviando a requisição.
+
+3.1.2 Considerações para as propriedades
+
+
+O campo “codigo” é obrigatório apenas na alteração.
+
+
+
+O campo “nome” é obrigatório apenas na inclusão.
+
+
+
+Na inclusão de setor, caso informado o valor 0 no campo código, será realizada a
+geração automática de um código.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WebService Setor
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Alteração só pode ser feita informando tipoBusca “CODIGO” ou “CODIGO_RH”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Mensagem SOAP Request Porta consultarSetor
+
+3.2
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:consultarSetor>
+<setor>
+<ativo> </ativo>
+<codigo> </codigo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoRh> </codigoRh>
+<descricao> </descricao>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<nome> </nome>
+<observacaoAso> </observacaoAso>
+<tipoBusca> </tipoBusca>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+</setor>
+</ser:consultarSetor>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.2.1
+
+Tabela de Propriedades da entrada
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Observação
+Página 15
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+ativo
+
+-
+
+Booleano (default = true)
+
+Não
+
+Indica se o setor está
+ativo ou não.
+
+codigo
+
+8
+
+Alfanumérico
+
+Sim¹
+
+Código do Setor no
+SOC.
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa a
+qual o setor pertence.
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim²
+
+Código de integração do
+setor.
+
+descricao
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do setor. Será
+mostrada no PPRA e
+PCMSO.
+
+identificacaoWsVo
+
+-
+
+IdentificacaoWsVo
+
+Sim
+
+Tag usada para
+identificar a empresa
+que está enviando uma
+requisição.
+
+nome
+
+130
+
+Alfanumérico
+
+Sim³
+
+Nome do setor.
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação que será
+visualizada na
+impressão do ASO.
+
+tipoBusca
+
+-
+
+Enum
+
+Sim
+
+busca pelo registro do
+
+Valores possíveis:
+•
+
+CODIGO
+
+•
+
+CODIGO_RH
+
+•
+
+NOME
+
+Indica como será feita a
+setor; o valor inserido
+em “codigo” deve
+corresponder ao tipo de
+busca escolhido no
+tipoBusca.
+
+tipoBuscaEmpresa
+
+-
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_CLIENTE
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Indica como será feita a
+busca pela empresa; o
+valor inserido em
+Página 16
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+•
+
+“codigoEmpresa” deve
+
+CODIGO_SOC
+
+corresponder ao tipo de
+busca escolhido.
+Valor padrão:
+CODIGO_SOC
+3.1.1.1 Tag identificacaoWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+A informação pode ser
+
+chaveAcesso
+
+Alfanumérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoEmpresaPrincipal
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+
+codigoUsuario
+
+3.2.2
+
+Numérico
+
+Sim
+
+Código do usuário que está
+enviando a requisição.
+
+Considerações para as Propriedades
+
+
+O campo “codigo” é obrigatório quando “tipoBusca” for ” CODIGO”.
+
+
+
+O campo “codigoRh” é obrigatório quando “tipoBusca” for ” CODIGO_RH”.
+
+
+
+O campo “nome” é obrigatório quando “tipoBusca” for ”NOME”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+3.3
+
+Mensagem SOAP Request Porta excluirSetor
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:excluirSetor>
+<setor>
+<ativo> </ativo>
+<codigo> </codigo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoRh> </codigoRh>
+<descricao> </descricao>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<nome> </nome>
+<observacaoAso> </observacaoAso>
+<tipoBusca> </tipoBusca>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+</setor>
+</ser:excluirSetor>
+</soapenv:Body>
+</soapenv:Envelope
+
+3.3.1
+
+Tabela de Propriedades da entrada
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+ativo
+
+-
+
+Booleano (default = true)
+
+Não
+
+Indica se o setor está
+ativo ou não.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+codigo
+
+8
+
+Alfanumérico
+
+Sim¹
+
+Código do Setor no
+SOC.
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa a
+qual o setor pertence.
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim²
+
+Código de integração do
+setor.
+
+descricao
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do setor. Será
+mostrada no PPRA e
+PCMSO.
+
+identificacaoWsVo
+
+-
+
+IdentificacaoWsVo
+
+Sim
+
+Tag usada para
+identificar a empresa
+que está enviando uma
+requisição.
+
+nome
+
+130
+
+Alfanumérico
+
+Sim³
+
+Nome do setor.
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação que será
+visualizada na
+impressão do ASO.
+
+tipoBusca
+
+-
+
+Enum
+
+Sim
+
+busca pelo registro do
+
+Valores possíveis:
+•
+
+CODIGO
+
+•
+
+CODIGO_RH
+
+•
+
+NOME
+
+Indica como será feita a
+setor; o valor inserido
+em “codigo” deve
+corresponder ao tipo de
+busca escolhido no
+tipoBusca.
+
+tipoBuscaEmpresa
+
+-
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_CLIENTE
+
+•
+
+CODIGO_SOC
+
+Indica como será feita a
+busca pela empresa; o
+valor inserido em
+“codigoEmpresa” deve
+corresponder ao tipo de
+busca escolhido.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Valor padrão:
+CODIGO_SOC
+3.3.1.1 Tag identificacaoWsVo
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+A informação pode ser
+
+chaveAcesso
+
+Alfanumérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoEmpresaPrincipal
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+
+codigoUsuario
+
+3.4
+
+Numérico
+
+Sim
+
+Código do usuário que está
+enviando a requisição.
+
+Mensagem SOAP Request Porta incluirLote/alterarLote
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirLote>
+<lote>
+<identificacao>
+<chaveAcesso></chaveAcesso>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<homologacao></homologacao>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+<codigoUsuario></codigoUsuario>
+</identificacao>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<setores>
+<setor>
+<ativo></ativo>
+<codigo></codigo>
+<codigoRh></codigoRh>
+<descricao></descricao>
+<nome></nome>
+<observacaoAso></observacaoAso>
+</setor>
+</setores>
+</lote>
+</ser:incluirLote>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.4.1
+
+Tabela de Propriedades da Entrada
+Tag lote
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigoEmpresa
+
+16
+
+Numérico
+
+Sim
+
+Código da empresa a
+qual o setor pertence.
+
+tipoBuscaEmpresa
+
+-
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_CLIENTE
+
+•
+
+CODIGO_SOC
+
+Indica como será feita a
+busca pela empresa; o
+valor inserido em
+“codigoEmpresa” deve
+corresponder ao tipo de
+busca escolhido.
+Valor padrão:
+CODIGO_SOC
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+setores
+
+-
+
+List <String> setor
+
+Sim
+
+Lista de setores limitada
+a 100 registros por
+requisição. A tag
+<setor> deve ser
+repetida de acordo com
+a quantidade de
+respostas que serão
+informados.
+
+Tag setor
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+ativo
+
+-
+
+Booleano (default = true)
+
+Não
+
+Indica se o setor está
+ativo ou não.
+
+codigo
+
+8
+
+Alfanumérico
+
+Sim¹
+
+Código do Setor no
+SOC.
+
+codigoRh
+
+80
+
+Alfanumérico
+
+Sim²
+
+Código de integração do
+setor.
+
+descricao
+
+3000
+
+Alfanumérico
+
+Não
+
+Descrição do setor. Será
+mostrada no PPRA e
+PCMSO.
+
+nome
+
+130
+
+Alfanumérico
+
+Sim³
+
+Nome do setor.
+
+observacaoAso
+
+3000
+
+Alfanumérico
+
+Não
+
+Observação que será
+visualizada na
+impressão do ASO.
+
+3.4.1.1 Tag identificacao
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+A informação pode ser
+
+chaveAcesso
+
+Alfanumérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Empresa.
+A informação pode ser
+codigoEmpresaPrincipal
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+A informação pode ser
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+consultada nas configurações
+de integração no cadastro de
+Empresa.
+
+codigoUsuario
+
+Numérico
+
+Sim
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Código do usuário que está
+enviando a requisição.
+
+Página 23
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP Response (Para as operações Incluir/Consultar/Alterar)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:consultarSetorResponse xmlns:ns2="http://services.soc.age.com/">
+< SetorRetorno >
+<ativo> </ativo>
+<codigo> </codigo>
+<codigoEmpresa> </codigoEmpresa>
+<codigoRh> </codigoRh>
+<descricao> </descricao>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<nome> </nome>
+<observacaoAso> </observacaoAso>
+<tipoBusca> </tipoBusca>
+<tipoBuscaEmpresa> </tipoBuscaEmpresa>
+</ SetorRetorno >
+</ns2:consultarSetorResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2
+
+Mensagem SOAP Response (Para a operação excluir)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:excluirSetorResponse xmlns:ns2="http://services.soc.age.com/">
+<SetorRetorno>true</SetorRetorno>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 24
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+</ns2:excluirSetorResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2.1
+
+4.2.2
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+SetorRetorno
+
+Boolean
+
+Considerações para as propriedades
+Será atribuído o valor “true” quando a exclusão for realizada com sucesso.
+
+4.3
+
+Mensagem SOAP Response (Para as operações incluirLote/alterarLote)
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:incluirLoteResponse xmlns:ns2="http://services.soc.age.com/">
+<setores>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<numeroErros></numeroErros>
+</informacaoGeral>
+<setor>
+<codigo></codigo>
+<codigoRh></codigoRh>
+<nome></nome>
+<informacao>
+<codigo></codigo>
+<mensagem></mensagem>
+</informacao>
+</setor>
+</setores>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+</ns2:incluirLoteResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.3.1
+
+Tabela de Propriedades da Saída
+setoresRetorno
+Propriedade
+
+Tipo
+
+informacaoGeral
+
+Observação
+
+informacaoGeral
+
+Tag responsável pelo retorno das
+informações gerais do resultado
+da requisição
+
+setor
+
+setor
+
+Tag responsável pelo retorno dos
+dados do setor incluído
+informacaoGeral
+
+Propriedade
+
+Tipo
+
+Observação
+
+codigoMensagem
+
+Texto
+
+Código da mensagem de retorno
+
+mensagem
+
+Texto
+
+Descrição da mensagem de retorno
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag responsável pelo retorno
+detalhado do resultado da
+requisição
+
+numeroErros
+
+Número
+
+Quantidade de erros identificados
+na requisição
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Texto
+
+Retorna o código da mensagem
+
+mensagem
+
+Texto
+
+Retorna a descrição da mensagem
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 26
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+5.
+
+Lista de falhas
+Seguem as principais falhas que podem ocorrer ao utilizar o WebService de Setor.
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos.
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+
+5.1.2
+
+Tag Header preenchida incorretamente
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 27
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 28
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+
+Identificação Inválida: Mensagem retornada quando os dados informados na tag
+identificacaoWsVo não configuram uma credencial válida de acesso aos Web Services.
+
+
+
+Empresa Inválida: Mensagem retornada quando a empresa informada na propriedade
+codigoEmpresa não é válida.
+
+
+
+Usuário Sem Acesso: Mensagem retornada quando o usuário informado na
+propriedade codigoUsuario não possui acesso para realizar a ação solicitada. Os acessos
+necessários estão descritos no cadastro do serviço, nas configurações de integração da
+empresa.
+
+
+
+Login não Localizado: Mensagem retornada quando não é possível localizar o usuário
+informado na propriedade codigoUsuario.
+
+
+
+O campo SetorWsVo.codigoEmpresa não pode ser vazio!: Mensagem retornada
+quando o campo codigoEmpresa é enviado vazio. Esse campo é obrigatório.
+
+5.3
+
+Falhas nas ações Inserir/Alterar
+Ao inserir/alterar um setor, caso os dados não estejam de acordo, poderão ocorrer as seguintes
+falhas:
+
+
+Existe um setor com o nome informado: Mensagem retornada quando está se
+tentando gravar (incluir ou alterar) o cadastro de um setor com o mesmo nome de um
+setor já existente na empresa informada.
+
+
+
+Existe um setor com o código RH informado: Mensagem retornada quando está se
+tentando gravar (incluir ou alterar) o cadastro de um setor com o mesmo Código RH de
+um setor já existente na empresa informada.
+
+
+
+Código do setor inválido: Mensagem retornada quando o valor informado na
+propriedade código não é um código válido de setor.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 29
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+
+
+Código RH do Setor é obrigatório.: Mensagem retornada na inclusão quando o
+campo codigoRh não é informado na requisição e o parâmetro geral "Obriga preencher
+Código do RH do Setor" está habilitado na empresa da requisição. Na alteração a
+mensagem irá retornar quando o campo codigoRh não for informado na requisição, o
+parâmetro estiver habilitado na empresa e o setor informado na requisição não tem
+Código do Rh preenchido no SOC.
+
+5.4
+
+Falha nas ações Alterar/Excluir
+Ao tentar Alterar/Excluir um setor, poderá obter a falha:
+
+
+Setor não encontrado: Mensagem retornada quando não é possível localizar o setor a
+ser alterado/excluído.
+
+5.5
+
+Falhas na ação de Excluir
+Ao tentar efetuar a exclusão de um setor, poderão ocorrer as seguintes falhas:
+
+
+Existe funcionário com histórico nesse setor: Mensagem retornada quando o setor
+o qual está sendo realizada a tentativa de exclusão consta no histórico de ao menos um
+funcionário da empresa informada, impedindo a exclusão.
+
+
+
+Existe um GHE aplicado para este setor: Mensagem retornada quando o setor o
+qual está sendo realizada a tentativa de exclusão possui ao menos um GHE aplicado,
+impedindo a exclusão.
+
+
+
+Setor sendo Usado: Mensagem retornada quando o setor o qual está sendo realizada a
+tentativa de exclusão está sendo utilizado na empresa informada, impedindo a exclusão.
+
+5.6
+
+Falhas nas ações incluirLote/alterarLote
+
+Código
+SOC-101
+
+Descrição
+Processado com aviso.
+
+SOC-301
+
+Já existe um setor com o
+código informado.
+
+SOC-302
+
+Código do Setor inválido.
+
+Observação
+Mensagem retornada quando ao menos um
+registro gerou falha.
+Mensagem retornada quando está se tentando
+gravar (incluir ou alterar) o cadastro de um setor
+com o mesmo Código de um setor já existente
+na empresa informada.
+Mensagem retornada quando o valor informado
+na propriedade código não é um código válido
+de setor.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 30
+
+WebService Setor
+
+Versão:
+<1.9>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento M-DEV-861
+
+SOC-303
+
+Já existe um setor com o
+código RH informado.
+
+SOC-304
+
+Já existe um setor com o
+nome informado.
+
+SOC-305
+
+Código RH do Setor é
+obrigatório.
+
+Mensagem retornada na inclusão quando o
+campo codigoRh não é informado na requisição
+e o parâmetro geral "Obriga preencher Código
+do RH do Setor" está habilitado na empresa da
+requisição. Na alteração a mensagem irá
+retornar quando o campo codigoRh não for
+informado na requisição, o parâmetro estiver
+habilitado na empresa e o setor informado na
+requisição não tem Código do Rh preenchido no
+SOC.
+
+SOC-306
+
+Quantidade máxima de 100
+setores por lote excedida.
+Setor não encontrado.
+
+Por regra, o WebService processa até 100
+setores por requisição.
+Mensagem retornada quando não é possível
+localizar o setor a ser alterado.
+Mensagem retornada quando o setor que está
+tentando inativar tem vínculo com funcionário
+ativo.
+Necessário o preenchimento da tag nome.
+
+SOC-307
+SOC-308
+SOC-309
+
+Não é possível inativar o
+setor, existe funcionario ativo
+neste setor.
+Não é possivel incluir um
+setor sem nome.
+
+Mensagem retornada quando está se tentando
+gravar (incluir ou alterar) o cadastro de um setor
+com o mesmo Código RH de um setor já
+existente na empresa informada.
+Mensagem retornada quando está se tentando
+gravar (incluir ou alterar) o cadastro de um setor
+com o mesmo nome de um setor já existente na
+empresa informada.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 31
+
+

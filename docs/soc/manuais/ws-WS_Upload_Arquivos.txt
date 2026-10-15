@@ -1,0 +1,1151 @@
+WS Upload de Arquivos
+Especificação Técnica
+Versão <2.9.1>
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+Histórico de Revisão
+
+Data
+13/11/2014
+
+Versão
+<2.0>
+
+Descrição
+Atualização de padrão e melhor
+
+Autor
+Valdilanio Cruz
+
+detalhamento dos itens
+25/11/2015
+
+<2.1>
+
+Inclusão Campos (codigoUnidadeGed,
+
+Andre Pinheiro
+
+dataValidadeGed e revisaoGed)
+27/01/2017
+
+<2.2>
+
+Adicionada lista de falhas na requisição
+
+Roseane Alves
+
+e opções de configuração de segurança
+01/10/2019
+
+<2.3>
+
+Atualização da lista de valores possíveis
+
+Gustavo Matos
+
+do Enum classificação
+23/01/2020
+
+<2.4>
+
+Atualização da lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+08/03/2021
+
+<2.4.1>
+
+Atualização das propriedades da
+
+Gustavo Matos
+
+requisição
+07/07/2021
+
+<2.4.2>
+
+Atualização das observações das
+
+Marcos Santiago
+
+propriedades codigoGed e
+codigoSequencialFicha
+27/01/2022
+
+<2.4.3>
+
+Incluída observação sobre o campo
+
+Marcos Santiago
+
+revisaoGed
+18/07/2022
+
+<2.5>
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+29/07/2022
+
+<2.6>
+
+Inclusão do campo observação
+
+Marcos Santiago
+
+23/08/2022
+
+<2.6.1>
+
+Revisão de valores possíveis no campo
+
+Marcos Santiago
+
+classificacao
+19/01/2023
+
+<2.7>
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+16/06/2023
+
+<2.8>
+
+Inclusão da classificação “deficiencia” e
+
+Marcos Santiago
+
+atualizada a lista de falhas no
+preenchimento da mensagem
+23/10/2023
+
+<2.9>
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+17/10/2024
+
+<2.9.1>
+
+Atualizada a observação da tag
+
+Marcos Santiago
+
+“codigoGed”
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+Índice
+1.
+
+2.
+
+3.
+
+Introdução
+
+5
+
+1.1
+
+Objetivo
+
+5
+
+1.2
+
+Funcionamento
+
+5
+
+1.3
+
+Considerações
+
+5
+
+Parâmetros de Segurança para Acesso ao Serviço
+
+7
+
+2.1
+
+Configuração Padrão
+
+7
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+
+8
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+
+10
+
+2.4
+
+Configurações adicionais para a tag wsse security
+
+11
+
+Entradas
+Mensagem SOAP request uploadArquivo
+
+12
+
+3.1.1 Tabela de Propriedades da entrada
+
+13
+
+3.1.2 Considerações para as propriedades
+
+14
+
+3.1
+
+4.
+
+Saídas
+4.1
+
+5.
+
+12
+
+16
+Mensagem SOAP response uploadArquivo
+
+16
+
+4.1.1 Considerações para a response
+
+16
+
+Lista de falhas
+
+17
+
+5.1
+
+Falhas na requisição
+
+17
+
+5.1.1 Username e password inválidos
+
+17
+
+5.1.2 Tag Header preenchida incorretamente
+
+17
+
+5.1.3 Requisição expirada
+
+18
+
+5.2
+
+Falhas de Acesso
+
+19
+
+5.3
+
+Campos Obrigatórios não preenchidos
+
+19
+
+5.4
+
+Falhas no preenchimento da mensagem
+
+19
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Serviço que permite o upload de arquivo no GED.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados do arquivo.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando se o
+arquivo foi gravado.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para receber um arquivo por vez que é invocado;
+3. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente;
+4. O arquivo devera ser enviado em anexo utilizando MTOM-XOP, quando for uma
+requisição sem criptografia;
+5. O usuário informado deverá ter os acessos a SOCGED e UPLOAD DE ARQUIVOS, caso
+não exista um tipo de GED cadastrado da classificação informada na requisição, o mesmo
+deverá ter acesso a incluir “Tipo de SOCGED” ou se existir, o usuário devera ter acesso
+ao tipo já cadastrado.
+6. O acesso ao serviço deve constar nas configurações de integração do usuário.
+7. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WS Upload de Arquivos
+Especificação Técnica
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Desenvolvimento – M-DEV-1221
+
+8. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+2.
+
+Parâmetros de Segurança para Acesso ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header
+com itens de segurança conforme política. Segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedades
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição. Recomendamos o uso de um
+minuto. Requisições com timestamp superior a dois minutos serão
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra
+U (disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo
+
+“PasswordDigest”.
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma
+requisição.
+
+EncryptedKey
+
+2.4
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request uploadArquivo
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:uploadArquivo>
+<arg0>
+<arquivo>?</arquivo>
+<classificacao>?</classificacao>
+<codigoEmpresa>?</codigoEmpresa>
+<codigoFuncionario>?</codigoFuncionario>
+<codigoGed>?</codigoGed>
+<codigoSequencialFicha>?</codigoSequencialFicha>
+<codigoTipoGed>?</codigoTipoGed>
+<extensaoArquivo>?</extensaoArquivo>
+<identificacaoVo>
+<chaveAcesso>?</chaveAcesso>
+<codigoEmpresaPrincipal>?</codigoEmpresaPrincipal>
+<codigoResponsavel>?</codigoResponsavel>
+<codigoUsuario>?</codigoUsuario>
+</identificacaoVo>
+<nomeArquivo>?</nomeArquivo>
+<nomeGed>?</nomeGed>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+<nomeTipoGed>?</nomeTipoGed>
+<sobreescreveArquivo>?</sobreescreveArquivo>
+<codigoUnidadeGed>?</codigoUnidadeGed>
+<dataValidadeGed>?</dataValidadeGed>
+<revisaoGed>?</revisaoGed>
+<observacao>?</observacao>
+</arg0>
+</ser:uploadArquivo>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Tamanho
+
+Obrigatório
+
+Máximo
+(Caracteres)
+chaveAcesso
+
+Alfanumérico
+
+Sim1
+
+codigoEmpresaPrincipal Numérico
+
+Sim1
+
+codigoResponsavel
+
+Numérico
+
+Sim2
+
+codigoUsuario
+
+Alfanumérico
+
+Sim3
+
+arquivo
+
+arraybyte
+
+Sim4
+
+classificacao
+
+Enum
+
+Sim5
+
+Valores possíveis:
+•
+
+GED
+
+•
+
+ASO
+
+•
+
+ASO_BRANCO
+
+•
+
+FICHA_CLINICA
+
+•
+
+FICHA_CLINICA_BRANCO
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+3.1.2
+
+•
+
+PEDIDO_EXAME
+
+•
+
+RESULTADO_EXAME
+
+•
+
+ENFERMAGEM
+
+•
+
+CONSULTA_ASSISTENCIAL
+
+•
+
+LICENCA_MEDICA
+
+•
+
+FICHA_PERSONALIZADA
+
+•
+
+RECEITA_MEDICA
+
+•
+
+ATESTADO
+
+•
+
+GESTAO_FAP
+
+•
+
+DEFICIENCIA
+
+codigoGed
+
+Numérico
+
+Sim¹¹
+
+codigoSequencialFicha
+
+Numérico
+
+Sim6
+
+codigoTipoGed
+
+Alfanumérico
+
+Não10
+
+extensaoArquivo
+
+Enum
+
+Sim7
+
+nomeArquivo
+
+Alfanumérico
+
+200
+
+Sim8
+
+nomeGed
+
+Alfanumérico
+
+80
+
+Não9
+
+nomeTipoGed
+
+Alfanumérico
+
+100
+
+Não10
+
+sobreescreveArquivo
+
+Booleano (true/false)
+
+Não
+
+codigoUnidadeGed
+
+Alfanumérico
+
+Não
+
+dataValidadeGed
+
+Data (DD/MM/AAAA)
+
+Não
+
+revisaoGed
+
+Alfanumérico
+
+5
+
+Não12
+
+observacao
+
+Alfanumérico
+
+3400
+
+Não13
+
+Considerações para as propriedades
+1. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+2. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+3. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e relacionar informar o usuário que realizou a operação;
+4. O Arquivo que será gravado;
+5. Classificação do tipo de upload
+6. Código sequencial da ficha no qual o arquivo estará vinculado. Campo obrigatório apenas
+se informada qualquer classificação diferente de GED.
+Quando informado, o WebService permite que o SOCGED seja criado automaticamente.
+O SOCGED será criado pelo Webservice com o tipo de SOCGED que conter a classificação
+informada na requisição, e a nomenclatura do SOCGED será de acordo com o formato:
+Nome do funcionário da ficha_data da ficha_classificação do tipo de SOCGED.
+7. Extensão do arquivo. Extensões disponíveis:
+XLS, RTF, PDF, RPT, TXT, CSV, ZIP, HTML, XML, REM, DAT, XLX, XLSX, JPEG, BMP, GIF, JPG, WMF, PNG,
+TIFF, RAR, DOC, DOCX, PPS, PPT, PPSX, PBIX, TIF, MP4;
+8. Nome do arquivo;
+9. Quando necessária a inclusão de SOCGED, obrigatório o preenchimento.
+10. Quando necessária a inclusão de SOCGED, obrigatório o preenchimento da propriedade
+nomeTipoGed ou codigoTipoGed.
+11. Campo obrigatório apenas se informada a classificação GED e o campo "nomeGed" não
+for informado.
+12. Campo não atualizado pelo endpoint uploadArquivo por não pertencer ao arquivo. O
+campo Revisão pertence ao cadastro de SOCGED.
+13. O conteúdo do campo será considerado apenas na inclusão de SOCGED, será ignorado
+caso o SOCGED exista no sistema.
+14. As tags codigoSequencialFicha, codigoGed e codigoTipoGed serão desconsideradas
+quando a classificação for DEFICIENCIA.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response uploadArquivo
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:uploadArquivoResponse xmlns:ns2="http://services.soc.age.com/">
+<return>?</return>
+</ns2:uploadArquivoResponse>
+</soap:Body>
+</soap:Envelope>
+4.1.1
+
+Considerações para a response
+1. Em caso de sucesso na operação o serviço devolverá “true”, na response;
+2. Em caso de falha o serviço devolverá a falha ocorrida;
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+
+5.1.2
+
+Tag Header preenchida incorretamente
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 18
+
+WS Upload de Arquivos
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1221
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+
+
+Identificação Inválida: Mensagem retornada quando os dados informados na tag
+identificacaoWsVo não configuram uma credencial válida de acesso aos Web Services
+
+
+
+Empresa Invalida: Mensagem retornada quando a empresa informada não é valida
+para a identificação enviada na requisição.
+
+
+
+Usuário Sem Acesso: Mensagem retornada quando o usuário não possui os acessos
+necessários para a ação solicitada. Os acessos necessários estão descritos no cadastro do
+Web Service.
+
+
+
+Login não Localizado: Mensagem retornada quando não é possível localizar o usuário
+informado na requisição.
+
+5.3
+
+Campos Obrigatórios não preenchidos
+Quando campos obrigatórios não são preenchidos, o serviço lança uma falha, notificando o
+campo que deveria ter sido informado.
+Ex: uma requisição que não informa o arquivo que está sendo feito o upload o serviço retornará
+a seguinte response:
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<soap:Fault>
+<faultcode>soap:Server</faultcode>
+<faultstring>Anexo não enviado ou Inválido, deve ser usado anexo MTOMXOP</faultstring>
+</soap:Fault>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WS Upload de Arquivos
+Especificação Técnica
+
+Versão:
+<2.9.1>
+Date: 17/10/2024
+
+Desenvolvimento – M-DEV-1221
+
+</soap:Body>
+</soap:Envelope>
+
+5.4
+
+Falhas no preenchimento da mensagem
+ O campo observacao deve possuir entre 0 e 3400 caracteres.: Mensagem retornada
+quando o campo observacao informado excede 3400 caracteres.
+ Tamanho Do arquivo Maior que o permitido, tamanho maximo permitido –
+10485760: Mensagem retornada quando o tamanho do arquivo enviado é superior a 10
+Megabytes.
+ Anexo nao enviado ou Invalido, deve ser usado anexo MTOM-XOP: Mensagem
+retornada quando a requisição é enviada sem arquivo em anexo ou quando não é utilizado o
+content-type “application/xop+xml”.
+ O campo com.age.soc.vo.services.UploadArquivosWsVo.codigoSequencialFicha não
+pode ser vazio!: Mensagem retornada quando o campo codigoSequencialFicha é enviado vazio
+ou com um valor inválido. Verificar referência 6 desta documentação técnica.
+ É necessario preencher o campo nomeGed ou codigoGed: Mensagem retornada quando é
+enviada a classificação GED e não são informados os campos: nomeGed ou codigoGed.
+ É necessario preencher o campo nomeGed para criar um ged: Mensagem retornada
+quando o nomeGed não é enviado, a classificação GED está sendo utilizada e, o codigoGed
+informado não existe.
+ É necessario preencher o campo nomeTipoGed ou codigoTipoGed: Mensagem retornada
+quando não são enviados os campos nomeTipoGed ou codigoTipoGed para criar o SOCGED.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+

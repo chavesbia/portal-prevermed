@@ -1,0 +1,750 @@
+WebService Exporta Dados
+Especificação Técnica
+Versão <2.4>
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+Histórico de Revisão
+
+Data
+26/11/2014
+
+Versão
+2.0
+
+Descrição
+Atualização padrão de documentos e
+
+Autor
+Valdilanio Cruz
+
+melhorias de segurança
+08/10/2015
+
+2.1
+
+Alteração dos detalhes da propriedade
+
+Peter Nery
+
+Password
+25/01/2017
+
+2.2
+
+Adicionado lista de falhas na requisição
+
+Roseane Alves
+
+e opções de configuração de segurança
+13/07/2022
+
+2.3
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+2.4
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+Índice
+1.
+
+2.
+
+3.
+
+Introdução
+
+4
+
+1.1
+
+Objetivo
+
+4
+
+1.2
+
+Funcionamento
+
+4
+
+1.3
+
+Considerações
+
+4
+
+Parâmetros de Segurança para Acesso Ao Serviço
+
+5
+
+2.1
+
+Configuração utilizando a opção ‘Utiliza autenticação’ no cadastro do Serviço
+
+5
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+
+6
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+
+9
+
+2.4
+
+Configurações adicionais para a tag wsse security
+
+9
+
+Entradas
+Mensagem SOAP request Porta exportaDadosWs
+
+11
+
+3.1.1 Tabela de Propriedades da entrada
+
+11
+
+3.1.2 Considerações para as propriedades
+
+11
+
+3.1
+
+4.
+
+Saídas
+4.1
+
+5.
+
+11
+
+12
+Mensagem SOAP Response Porta exportaDadosWs
+
+12
+
+4.1.1 Tabela de Propriedades da Saída
+
+12
+
+4.1.2 Considerações para as propriedades
+
+12
+
+Lista de falhas
+
+13
+
+5.1
+
+Falhas na requisição
+
+13
+
+5.1.1 Username e password inválidos
+
+13
+
+5.1.2 Tag Header preenchida incorretamente
+
+13
+
+5.1.3 Requisição expirada
+
+14
+
+5.2
+
+Falhas de Acesso
+
+15
+
+5.3
+
+Falhas na execução do exporta dados
+
+15
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Serviço que permite a utilização da ferramenta "Exporta Dados", para obter informações de
+acordo com a máscara informada.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados da licença que será incluída pelo cliente a partir de sua origem;
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando o
+ocorrido com a requisição.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para obter informações do sistema SOC de Acordo com a
+máscara informada, a máscara será fornecida ao cliente;
+3. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente.
+4. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+5. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+as políticas de segurança fornecidas pela especificação WS-Security, utilizando a TAG Header
+com itens de segurança conforme política. Esse serviço tem autenticação e criptografia como
+requisitos opcionais. Recomendamos enfaticamente que seja utilizada a opção “utiliza
+autenticação”.
+Abaixo estão listadas as configurações padrões para cada item: autenticação e criptografia,
+respectivamente.
+
+2.1
+
+Configuração utilizando a opção ‘Utiliza autenticação’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição.
+Recomendamos o uso de um minuto. Requisições
+com timestamp superior a dois minutos serão
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido
+obrigatoriamente pela letra U (disponível nas
+configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas
+configurações de integração).Contudo o cliente
+deverá informar o mesmo com o Tipo
+“PasswordDigest”
+
+Nonce
+
+É um valor randômico que o cliente do serviço
+deverá criar para cada requisição que enviar.
+
+Signature
+
+Deve ser assinado com o certificado que a AGE
+fornecerá.
+
+EncryptedKey
+
+Deve ser criptografado com o certificado que a
+AGE fornecerá.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. A AGE
+fornecerá o endereço.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WebService Exporta Dados
+Especificação Técnica
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Desenvolvimento – M-DEV-1279
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request Porta exportaDadosWs
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:exportaDadosWs>
+<arg0>
+<parametros>?</parametros>
+</arg0>
+</ser:exportaDadosWs>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+parametros
+
+3.1.2
+
+Tipo
+JSON
+
+Obrigatório
+Sim
+
+Considerações para as propriedades
+1. Os parâmetros devem ser informados de acordo com o uso do “Exporta Dados”,
+Conforme orientado no “Estudo de Caso”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP Response Porta exportaDadosWs
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:exportaDadosWsResponse xmlns:ns2="http://services.soc.age.com/">
+<return>
+<erro>?</erro>
+<parametros>?</parametros>
+<retorno>?</retorno>
+</return>
+</ns2:exportaDadosWsResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+Propriedade
+
+Tipo
+
+erro
+
+Boolean
+
+mensagemErro
+
+Texto
+
+parametros
+
+JSON
+
+retorno
+
+-
+
+4.1.2
+
+Considerações para as propriedades
+1. Propriedade que informa que o retorno foi um erro;
+2. Descrição do erro ocorrido, em caso de falha;
+3. Os “parâmetros” enviados na notação JSON;
+4. O conteúdo retornado, de acordo com o tipo informado na requisição.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Verificar item 2 desse documento
+de especificação.
+
+Página 14
+
+WebService Exporta Dados
+
+Versão:
+<2.4>
+Date: 19/01/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-1279
+
+Portanto, um item a verificar para resolver essa falha é:
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso
+1. Faltam campos obrigatórios codigo, empresa, chave;
+2. Faltam campos obrigatórios usuário / identificação;
+3. Problema com informações de usuário, identificação ou acesso à empresa;
+4. Acesso Ip indevido
+
+5.3
+
+Falhas na execução do exporta dados
+1. Problema com parametros ou estrutura JSON
+2. Exporta Dados Inativo
+3. Problema com informações de código processo
+4. Problemas com a chave ou empresa
+5. Tipo de Retorno Não permitido / definido
+6. Período de datas maior do que o permitido
+7. Método de acesso não permitido
+8. Não encontrado exporta dados codigo/Empresa
+9. Erro no formato JSON dos parametros
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+

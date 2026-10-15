@@ -1,0 +1,1221 @@
+Web Service de Resultado de Exame - Respostas
+Ficha Personalizada
+Especificação Técnica
+Versão <1.4>
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+03/06/2015
+
+1.0
+
+Elaboração documentação
+
+Valdilanio Cruz
+
+27/07/2017
+
+1.1
+
+Atualização e formatação da
+
+Roseane Alves
+
+documentação para atender o serviço.
+27/03/2019
+
+1.1.1
+
+Retirada a propriedade “homologacao”
+
+Marcos Santiago
+
+da documentação do serviço.
+14/02/2022
+
+1.1.2
+
+Ajuste no tipo dos campos
+
+Marcos Santiago
+
+codigoEmpresa, codigoFuncionario e
+tipoeExame
+15/07/2022
+
+1.2
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+1.3
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+23/10/2023
+
+1.4
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+Índice
+1.
+
+Introdução
+1.1 Objetivo
+1.2 Funcionamento
+1.3 Considerações
+
+3
+3
+3
+4
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+2.1 Configuração Padrão
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+2.3 Considerações para as Propriedades da tag wsse security
+2.4 Configurações adicionais para a tag wsse security
+
+4
+4
+5
+8
+9
+
+3.
+
+Entradas
+3.1 Mensagem SOAP request Porta respostasPersonalizacao
+3.1.1 Tabela de Propriedade da Entrada
+3.1.2 Tag identificacaoWsVo
+3.1.3 Tag respostasList
+3.1.4 Considerações para as propriedades
+
+10
+10
+11
+13
+13
+14
+
+4.
+
+Saídas
+4.1 Mensagem SOAP response Porta respostasPersonalizacao
+4.1.1 Tabela de Propriedades da Saída
+4.1.2 Considerações para as propriedades
+
+15
+15
+15
+16
+
+5.
+
+Lista de falhas
+5.1 Falhas na requisição
+5.1.1 Username e password inválidos.
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.1.4 Empresa sem acesso
+5.2 Falhas de Acesso
+
+17
+17
+17
+17
+18
+19
+19
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Possibilitar o preenchimento de respostas de fichas clínicas que tenha personalização.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados para inclusão ou atualização desejados pelo cliente a partir de sua origem;
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando
+sucesso na criação ou atualização dos dados, bem como possíveis irregularidades nos
+dados enviados.
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir / atualizar a personalização de uma ficha por vez
+que é invocado;
+3. Propriedades não enviadas serão desconsideradas, se enviada em branco será
+considerado.
+4. O arquivo WSDL a ser usado já será enviado com as configurações de acordo com o
+ambiente que for definido com o cliente;
+5. O acesso ao serviço deve constar nas configurações de integração do usuário;
+6. O serviço de personalização, suporta as personalizações da Ficha clínica e Cadastro
+Médico.
+7. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+8. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, começou a adotar
+
+as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG Header com itens
+de segurança conforme política, segue um modelo do que deverá ser informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-username-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-soap-message-security1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+2.3
+
+Considerações para as Propriedades da tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+O valor inserido na tag define o tempo de vida do timestamp e,
+consequentemente, da mensagem. Mensagens enviadas com timestamp
+expirado devem ser rejeitadas pelo Web Service que as estão consumindo.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração).
+Contudo o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada requisição
+que enviar.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a url da
+versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar o
+alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request Porta respostasPersonalizacao
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:respostasPersonalizacao>
+<personalizacao>
+<apagarRespostasJaPreenchida> </apagarRespostasJaPreenchida>
+<codigoEmpresa> </codigoEmpresa>
+<codigoFuncionario> </codigoFuncionario>
+<codigoSequencialFichaclinica> </codigoSequencialFichaclinica>
+<codigoTipoPersonalizacao> </codigoTipoPersonalizacao>
+<dataFicha> </dataFicha>
+<identificacaoWsVo>
+<chaveAcesso> </chaveAcesso>
+<codigoEmpresaPrincipal> </codigoEmpresaPrincipal>
+<codigoResponsavel> </codigoResponsavel>
+<codigoUsuario> </codigoUsuario>
+</identificacaoWsVo>
+<incluirApenasSeTodosItensEstiveremCorretos>
+</incluirApenasSeTodosItensEstiveremCorretos>
+<incluirApenasSeTodosItensObrigatoriosEstiveremPreenchidos>
+</incluirApenasSeTodosItensObrigatoriosEstiveremPreenchidos>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+<preencherValoresPadroesQuandoNaoInformado>
+</preencherValoresPadroesQuandoNaoInformado>
+<!--Zero or more repetitions:-->
+<respostasList>
+<codigoItemPergunta> </codigoItemPergunta>
+<numeroLinhaRepeticao> </numeroLinhaRepeticao>
+<resposta> </resposta>
+<retorno> </retorno>
+</respostasList>
+<tipoeExame> </tipoeExame>
+</personalizacao>
+</ser:respostasPersonalizacao>
+</soapenv:Body>
+</soapenv:Envelope
+
+3.1.1
+
+Tabela de Propriedade da Entrada
+personalizacao
+Propriedade
+
+apagarRespostasJaPreenchida
+
+Tamanho
+-
+
+Tipo
+Booleano
+
+Obrigatório
+Não
+
+Observação
+Indica se é ou não
+para apagar as
+respostas já
+preenchidas
+
+codigoEmpresa
+
+6
+
+Numérico
+
+Sim
+
+Código de
+identificação SOC
+da empresa
+
+codigoFuncionario
+
+20
+
+Numérico
+
+Sim²
+
+Código de
+identificação SOC
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+do funcionário
+codigoSequencialFichaclinica
+
+6
+
+Alfanumérico
+
+Sim³
+
+Identificação
+sequencial da ficha
+clínica
+
+codigoTipoPersonalizacao
+
+8
+
+Numérico
+
+Sim4
+
+Código de
+identificação do
+tipo de
+personalização
+utilizada
+
+dataFicha
+
+-
+
+Data (dd/MM/aaaa)
+
+Sim²
+
+Data da ficha
+
+identificacaoWsVo
+
+-
+
+identificacaoWsVo
+
+Sim
+
+Verificar item 3.1.2
+
+incluirApenasSeTodosItensEsti
+
+-
+
+Booleano
+
+Não
+
+Indica se a
+
+veremCorretos
+
+inclusão deve ser
+feita apenas se
+todos os itens da
+lista estiverem
+corretos
+
+incluirApenasSeTodosItensObr
+
+-
+
+Booleano
+
+Não
+
+igatoriosEstiveremPreenchidos
+
+Indica se a
+inclusão deve ser
+feita apenas se
+todos os itens da
+lista, que sejam
+obrigatórios,
+estiverem corretos
+
+preencherValoresPadroesQuan
+
+-
+
+Booleano
+
+doNaoInformado
+
+Não
+
+Indica se campos
+com valores default
+devem ser
+utilizados quando
+nenhum dado for
+informado para os
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 12
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+mesmos
+respostasList
+
+-
+
+Lista de
+
+Sim
+
+Verificar item 3.1.3
+
+Não
+
+Identificação do
+
+PersonalizacaoDadosWs
+Vo
+tipoeExame
+
+2
+
+Numérico
+
+tipo de exame
+3.1.2
+
+Tag identificacaoWsVo
+identificacaoWsVo
+
+Propriedade
+
+Tamanho
+
+chaveAcesso
+
+10
+
+Tipo
+
+Obrigatório
+
+Alfanumérico
+
+Observação
+
+Sim¹
+
+Senha utilizada para acessar o serviço. A
+informação pode ser consultada nas
+configurações de integração no cadastro
+de Empresa
+
+codigoEmpresaPrincipal
+
+10
+
+Numérico
+
+Sim¹
+
+Código da empresa principal da empresa
+que está solicitando o serviço
+
+codigoResponsavel
+
+10
+
+Numérico
+
+Sim¹
+
+Código do usuário responsável pela
+empresa. A informação pode ser
+consultada nas configurações de
+integração no cadastro de Empresa
+
+codigoUsuario
+3.1.3
+
+10
+
+Numérico
+
+Sim¹
+
+Código do usuário responsável pela ação
+
+Tag respostasList
+respostasList - PersonalizacaoDadosWsVo
+
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+codigoItemPergunta
+
+8
+
+Numérico
+
+Sim5
+
+Identificação da pergunta
+
+numeroLinhaRepeticao
+
+-
+
+Numérico
+
+Não
+
+Número de repetições
+
+resposta
+
+-
+
+Alfanumérico
+
+Sim
+
+Resposta da pergunta
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+Valores possíveis:
+Sim, 1, true, S
+retorno
+
+-
+
+Alfanumérico
+
+Não
+
+Retorna os erros, caso
+existam, referentes à tag
+PersonalizacaoDadosWsVo
+
+3.1.4
+
+Considerações para as propriedades
+1. A informação pode ser consultada nas configurações de integração no Cadastro de
+Empresa;
+2. Obrigatório quando o sequencial da ficha não for informado;
+3. Obrigatório quando as propriedades de referência 2, não forem informadas;
+4. Os códigos de tipos da personalização podem ser consultados utilizando o Exporta Dados
+“Pergunta Itens da Personalização”, tipos de personalização aceitos são:
+•
+
+1 – Ficha Clínica;
+
+•
+
+2 – Cadastro Médico;
+
+•
+
+Os tipos de fichas personalizadas.
+
+5. Os códigos “item pergunta” podem ser consultados utilizando o Exporta Dados “Pergunta
+Itens da Personalização”.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response Porta respostasPersonalizacao
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:respostasPersonalizacaoResponse xmlns:ns2="http://services.soc.age.com/">
+<PersonalizacaoRetorno>
+<descricaoErroAviso>?</descricaoErroAviso>
+<erro>?</erro>
+<respostasList>
+<codigoItemPergunta>?</codigoItemPergunta>
+<numeroLinhaRepeticao>?</numeroLinhaRepeticao>
+<resposta>?</resposta>
+<retorno>?</retorno>
+</respostasList>
+</PersonalizacaoRetorno>
+</ns2:respostasPersonalizacaoResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1
+
+Tabela de Propriedades da Saída
+
+Propriedade
+
+Tipo
+
+descricaoErroAviso
+
+Alfanumérico
+
+erro
+
+boolean
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+respostasList¹
+codigoItemPergunta
+
+Numérico
+
+numeroLinhaRepeticao
+
+-
+
+resposta¹
+
+-
+
+retorno
+
+-
+
+4.1.2
+
+Considerações para as propriedades
+1. Devolve de 0 a N as repostas, com seus respectivos códigos item pergunta, e resposta, que
+em caso de falha, será discriminada na propriedade retorno.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header é preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+•
+
+Ajustar horário do computador;
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+5.1.4
+
+Empresa sem acesso
+Esta falha ocorrerá quando a empresa informada não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-206</codigo>
+<mensagem>ERRO. Empresa sem Acesso ao Webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração Empresa/Cliente (337) no SOC e adicionar o serviço à lista de webservices da empresa.
+5.2
+
+Falhas de Acesso
+A tag Identificação, caso o preenchimento não esteja de acordo, poderá prover as seguintes
+falhas:
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+Web Service Respostas Ficha Personalizada
+
+Versão:
+
+Especificação Técnica
+
+Data:
+
+<1.4>
+23/10/2023
+
+Desenvolvimento M-DEV-1919
+
+
+
+Identificação Inválida;
+
+
+
+Empresa Invalida;
+
+
+
+Usuário Sem Acesso;
+
+
+
+Login não Localizado;
+
+
+
+Usuário não pode ser o responsável pela empresa
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+

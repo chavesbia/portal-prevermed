@@ -1,0 +1,2766 @@
+WS SOCGED
+Especificação Técnica
+Versão <1.5>
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Histórico de Revisão
+
+Data
+
+Versão
+
+Descrição
+
+Autor
+
+25/09/2019
+
+<1.0>
+
+Elaboração da documentação
+
+Gustavo Matos
+
+22/01/2020
+
+<1.1>
+
+Atualização da lista de possíveis
+
+Gustavo Matos
+
+inconsistências
+22/10/2020
+
+<1.1.1>
+
+Atualização da observação da
+
+Gustavo Matos
+
+propriedade codigoEmpresa
+26/10/2020
+
+<1.2>
+
+Inclusão do endpoint incluirSocged
+
+Gustavo Matos
+
+19/01/2023
+
+<1.3>
+
+Incluída consideração sobre certificado
+
+Marcos Santiago
+
+de conexão HTTPS
+19/01/2023
+
+<1.4>
+
+Incluída consideração sobre o
+
+Marcos Santiago
+
+paralelismo de requisições
+23/10/2023
+
+<1.5>
+
+Removidas as considerações referentes
+
+Marcos Santiago
+
+à autenticação por empresa principal e
+cliente.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 2
+
+WS SOCGED
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Desenvolvimento – M-DEV-3041
+
+Índice
+1.
+
+2.
+
+3.
+
+4.
+
+Introdução
+
+4
+
+1.1
+1.2
+1.3
+
+4
+4
+4
+
+Objetivo
+Funcionamento
+Considerações
+
+Parâmetros de Segurança para Acesso ao Serviço
+
+5
+
+2.1
+2.2
+2.3
+2.4
+
+5
+6
+8
+9
+
+Configuração Padrão
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+Considerações para as Propriedades da Tag wsse security
+Configurações adicionais para a tag wsse security
+
+Entradas
+
+10
+
+3.1
+
+Mensagem SOAP request incluirSocGed
+3.1.1 Tabela de Propriedades da entrada
+3.1.2 Considerações para as propriedades
+3.2 Mensagem SOAP request alterarSocGed
+3.2.1 Tabela de Propriedades da entrada
+3.2.2 Considerações para as propriedades
+3.3 Mensagem SOAP request excluirSocGed
+3.3.1 Tabela de Propriedades da entrada
+3.3.2 Tag identificacaoWsVo
+3.3.3 Considerações para as propriedades
+
+10
+11
+13
+14
+15
+16
+16
+17
+18
+18
+
+Saídas
+Mensagem SOAP response incluirSocGed
+4.1.1 Tabela de propriedades da Saída
+4.1.2 Tag gedWsVo
+4.1.3 Tag informacaoGeral
+4.1.3 Tag mensagemOperacaoDetalheList
+4.2 Mensagem SOAP response alterarSocGed
+4.1.1 Tabela de propriedades da Saída
+4.1.2 Tag gedWsVo
+4.1.3 Tag informacaoGeral
+4.1.3 Tag mensagemOperacaoDetalheList
+4.3 Mensagem SOAP response excluirSocGed
+4.2.1 Tag informacaoGeral
+4.2.2 Tag mensagemOperacaoDetalheList
+
+19
+19
+20
+20
+21
+22
+22
+23
+23
+24
+25
+25
+25
+26
+
+Lista de falhas
+
+27
+
+5.1
+
+27
+27
+27
+28
+29
+
+4.1
+
+5.
+
+Falhas na requisição
+5.1.1 Username e password inválidos
+5.1.2 Tag Header preenchida incorretamente
+5.1.3 Requisição expirada
+5.2 Falhas de Acesso e consistência
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+WS SOCGED
+Especificação Técnica
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Desenvolvimento – M-DEV-3041
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Este serviço tem como objetivo permitir a inclusão, alteração e exclusão do cadastro de
+SOCGED.
+
+1.2
+
+Funcionamento
+1. As propriedades a serem enviadas para o SOC são populadas no WebService com as
+informações do SOCGED que será manipulado.
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando o
+sucesso da operação, bem como possíveis irregularidades nos dados enviados.
+
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O usuário informado deverá ter acesso a alteração e exclusão do cadastro de SOCGED.
+3. O acesso ao serviço deve constar nas configurações de integração do usuário.
+4. O Web Service foi projetado para incluir, alterar ou excluir um SOCGED por vez que é
+invocado.
+5.
+
+A entrada de exclusão excluirá os arquivos contidos no SOCGED informado, bem como o
+cadastro dele.
+
+6. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente, de
+forma automática e antecipadamente à data de expiração.
+7. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem ser
+enviadas de forma sequencial. Em caso de identificação de paralelismo que prejudique a
+performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+2.
+
+Parâmetros de Segurança para Acesso ao Serviço
+Para melhorar a segurança dos Web Services, A AGE Desenvolvimento LTDA, começou a
+adotar as políticas de segurança fornecidas pela especificação WS-Security. Utilizando a TAG
+Header com itens de segurança conforme política, segue um modelo do que deverá ser
+informado.
+
+2.1
+
+Configuração Padrão
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-soap-message-security-1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsasha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-soap-message-security1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+
+2.3
+
+Considerações para as Propriedades da Tag wsse security
+Propriedade
+
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição, Recomendamos o uso de um
+minuto, Requisições com timestamp superior a dois minutos serão
+negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela
+letra U (disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de
+integração). Contudo o cliente deverá informar o mesmo com o Tipo
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+“PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada
+requisição que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma
+requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são
+trafegados.
+
+2.4
+
+Configurações adicionais para a tag wsse security
+Para melhorar ainda mais a segurança dos WebServices, A AGE Desenvolvimento LTDA,
+disponibiliza a opção de criptografia e assinatura digital nos WebServices. Quando utilizado a
+url da versão com segurança deverá ser adicionado as tags Signature e EncryptedKey no
+header da requisição.
+A AGE fornecerá um keystore contendo dois alias. Para a assinatura digital (Signature) utilizar
+o alias clientkey e para a criptografia (EncryptedKey) utilizar o alias serverkey.
+O webservice com segurança adicional é utilizado em uma URL diferente da convencional. O
+endereço consta no WSDL do serviço.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request incluirSocGed
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirSocGed>
+<socged>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<gedWsVo>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<codigoEmpresaSocnet></codigoEmpresaSocnet>
+<nome></nome>
+<codigoTipo></codigoTipo>
+<codigoUnidade></codigoUnidade>
+<funcionario></funcionario>
+<tipoBuscaFuncionario></tipoBuscaFuncionario>
+<mandatoCipa></mandatoCipa>
+<exportaDados></exportaDados>
+<cadastroDinamico></cadastroDinamico>
+<registroCadastroDinamico></registroCadastroDinamico>
+<turma></turma>
+<fichaClinica></fichaClinica>
+<dataCriacao></dataCriacao>
+<dataValidade></dataValidade>
+<revisao></revisao>
+<observacao></observacao>
+</gedWsVo>
+</socged>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+</ser:incluirSocGed>
+</soapenv:Body>
+</soapenv:Envelope>
+
+3.1.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+Tag utilizada para identificar a
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+empresa que está enviando
+uma requisição
+
+gedWsVo
+
+gedWsVo
+
+Tag destinada aos dados do
+
+Sim
+
+SOCGED a ser manipulado
+
+3.1.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+
+Obrigatório
+
+Numérico
+
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim1
+
+Código do Usuário responsável
+pela ação
+
+3.1.1.2 Tag gedWsVo
+Tag gedWsVo
+Propriedade
+codigoEmpresa
+
+Tipo
+Numérico
+
+Obrigatório
+Não2
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Observação
+Identificação da
+Página 11
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+empresa do SOCGED.
+tipoBuscaEmpresa
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+Indica o critério para
+localizar o cadastro da
+empresa do SOCGED.
+O valor preenchido no
+campo
+“codigoEmpresa” deve
+corresponder ao tipo de
+busca definido.
+Valor default:
+CODIGO_SOC
+
+codigoEmpresaSocne
+
+Numérico
+
+Sim3
+
+t
+
+Código da empresa
+cliente, recebida via
+SOCNET, a ser
+vinculada ao SOCGED.
+
+nome
+
+Alfanumérico
+
+Sim
+
+Nome do SOCGED.
+
+codigoTipo
+
+Numérico
+
+Sim4
+
+Código do Tipo de
+SOCGED do SOCGED.
+
+codigoUnidade
+
+Numérico
+
+Não5
+
+Código da unidade do
+SOCGED.
+
+funcionario
+
+Alfanumérico
+
+Não
+
+Código do funcionário
+do SOCGED
+
+tipoBuscaFuncionario
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO
+
+•
+
+MATRICULA
+
+•
+
+CPF_ATIVO
+
+Tipo de busca a ser
+utilizado para localizar
+o funcionário. O valor
+informado
+
+na
+
+propriedade funcionario
+deve corresponder ao
+tipo de busca definido.
+
+mandatoCipa
+
+Numérico
+
+Não
+
+Código
+
+do
+
+Mandato
+
+CIPA a ser associado
+ao SOCGED.
+exportaDados
+
+Numérico
+
+Não
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Código
+
+do
+
+Exporta
+Página 12
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Dados a ser associado
+ao SOCGED.
+cadastroDinamico
+
+Numérico
+
+Não
+
+Código
+
+do
+
+dinâmico
+
+cadastro
+a
+
+ser
+
+associado ao SOCGED.
+registroCadastroDina
+
+Numérico
+
+Não
+
+mico
+
+Código do registro do
+cadastro dinâmico a ser
+vinculado ao SOCGED.
+
+turma
+
+Numérico
+
+Não
+
+Código da turma a ser
+associada ao SOCGED.
+
+fichaClinica
+
+Numérico
+
+Não
+
+Código sequencial da
+Ficha
+
+Clínica
+
+a
+
+ser
+
+associada ao SOCGED.
+dataCriacao
+
+Data (dd/mm/aaaa)
+
+Não
+
+Data de criação do
+SOCGED.
+
+dataValidade
+
+Data (dd/mm/aaaa)
+
+Não
+
+Data de validade.
+
+revisao
+
+Alfanumérico
+
+Não
+
+Campo destinado ao
+registro de revisão do
+SOCGED e
+documentos.
+
+observacao
+
+Alfanumérico
+
+Não
+
+Campo destinado a
+observações referentes
+ao SOCGED e
+documentos.
+
+3.1.2
+
+Considerações para as propriedades
+1. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e informar o usuário que realizou a operação;
+2. O cadastro do SOCGED ficará disponível na empresa principal da empresa informada na
+propriedade codigoEmpresa. Quando não informado valor para a propriedade, o SOCGED
+terá o campo Empresa definido como Todas as Empresas.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+3. Somente
+
+deve
+
+ser
+
+informado
+
+quando
+
+a
+
+empresa
+
+informada
+
+na
+
+propriedade
+
+codigoEmpresa for uma principal recebida via SOCNET. Quando não informado valor para
+a propriedade, o SOCGED terá o campo Empresa SOCNET definido como Todas as
+Empresas.
+4. Código do cadastro de Tipo de SOCGED, disponível na tela 623 - Tipo de SOCGED.
+5.
+
+A
+
+unidade
+
+informada
+
+deve
+
+pertencer
+
+a
+
+empresa
+
+informada
+
+na
+
+propriedade
+
+codigoEmpresa.
+
+3.2
+
+Mensagem SOAP request alterarSocGed
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:alterarSocGed>
+<socged>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<gedWsVo>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<codigo></codigo>
+<nome></nome>
+<codigoTipo></codigoTipo>
+<codigoUnidade></codigoUnidade>
+<dataCriacao></dataCriacao>
+<dataValidade></dataValidade>
+<observacao></observacao>
+<revisao></revisao>
+</gedWsVo>
+</socged>
+</ser:alterarSocGed>
+</soapenv:Body>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+</soapenv:Envelope>
+3.2.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+Tag utilizada para identificar a
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+empresa que está enviando
+uma requisição
+
+gedWsVo
+
+gedWsVo
+
+Tag destinada aos dados do
+
+Sim
+
+SOCGED a ser manipulado
+
+3.2.1.1 Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+
+Tipo
+
+codigoEmpresaPrincipal
+
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim1
+
+Código do Usuário responsável
+pela ação
+
+3.2.1.2 Tag gedWsVo
+Tag gedWsVo
+Propriedade
+codigoEmpresa
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+Identificação da
+empresa do SOCGED.
+
+tipoBuscaEmpresa
+
+Enum
+
+Não
+
+Valores possíveis:
+
+Indica o critério para
+localizar o cadastro da
+empresa do SOCGED.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+O valor preenchido no
+campo
+“codigoEmpresa” deve
+corresponder ao tipo de
+busca definido.
+Valor default:
+CODIGO_SOC
+
+codigo
+
+Numérico
+
+Sim
+
+Código de identificação
+do SOCGED a ser
+alterado
+
+nome
+
+Alfanumérico
+
+Não
+
+Nome do SOCGED
+
+codigoTipo
+
+Numérico
+
+Não
+
+Código do Tipo de
+SOCGED do SOCGED
+
+codigoUnidade
+
+Numérico
+
+Não
+
+Código da unidade do
+SOCGED
+
+dataCriacao
+
+Data (dd/mm/aaaa)
+
+Não
+
+Data de criação do
+SOCGED
+
+dataValidade
+
+Data (dd/mm/aaaa)
+
+Não
+
+Data de validade
+
+observacao
+
+Alfanumérico
+
+Não
+
+Campo destinado a
+observações referentes
+ao SOCGED e
+documentos
+
+revisao
+
+Alfanumérico
+
+Não
+
+Campo destinado ao
+registro de revisão do
+SOCGED e documentos
+
+3.2.2
+
+Considerações para as propriedades
+1. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e informar o usuário que realizou a operação;
+
+3.3
+
+Mensagem SOAP request excluirSocGed
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:excluirSocGed >
+<ExcluirGedWsVo>
+<identificacaoWsVo>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacaoWsVo>
+<codigoEmpresa></codigoEmpresa>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<codigoGed></codigoGed>
+</ExcluirGedWsVo>
+</ser:excluirSocGed>
+</soapenv:Body>
+</soapenv:Envelope>
+3.3.1
+
+Tabela de Propriedades da entrada
+Propriedade
+
+Tipo
+
+Obrigatório
+
+Observação
+Tag utilizada para
+
+identificacaoWsVo
+
+identificacaoWsVo
+
+Sim
+
+identificar a empresa
+que está enviando
+uma requisição
+
+codigoEmpresa
+
+Numérico
+
+Sim2
+
+Identificação da
+empresa do SOCGED.
+
+tipoBuscaEmpresa
+
+Enum
+
+Não
+
+Valores possíveis:
+•
+
+CODIGO_SOC
+
+•
+
+CODIGO_CLIENTE
+
+Indica o critério para
+localizar o cadastro da
+empresa do SOCGED.
+O valor preenchido no
+campo
+“codigoEmpresa” deve
+corresponder ao tipo
+de busca definido.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Valor default:
+CODIGO_SOC
+codigoGed
+
+Numérico
+
+Sim
+
+Código de identificação
+do SOCGED a ser
+excluído
+
+3.3.2
+
+Tag identificacaoWsVo
+Tag identificacaoWsVo
+Propriedade
+codigoEmpresaPrincipal
+
+Tipo
+Numérico
+
+Obrigatório
+Sim
+
+Observação
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoResponsavel
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração
+no cadastro de Empresa
+
+codigoUsuario
+
+Numérico
+
+Sim1
+
+Código do Usuário responsável
+pela ação
+
+3.3.3
+
+Considerações para as propriedades
+1. O código do usuário que está executando a ação, o mesmo será utilizado para validar os
+acessos e informar o usuário que realizou a operação;
+2. O código informado deve fazer referência ao campo “Empresas” do cadastro do SOCGED.
+Quando o cadastro possuir o campo “Empresas” definido como “Todas as Empresas”,
+deve ser informado o código da empresa principal. Quando a empresa do SOCGED for
+uma SOCNET, deve ser informado o código da empresa intermediária, o qual pode ser
+consultado na tela 337 – Empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response incluirSocGed
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirSocGedResponse xmlns:ns2="http://services.soc.age.com/">
+<return>
+<codigo></codigo>
+<gedWsVo>
+<codigoEmpresa/>
+<tipoBuscaEmpresa></tipoBuscaEmpresa>
+<codigoEmpresaSocnet/>
+<nome></nome>
+<codigoTipo></codigoTipo>
+<codigoUnidade/>
+<mandatoCipa/>
+<exportaDados/>
+<cadastroDinamico/>
+<registroCadastroDinamico/>
+<turma/>
+<dataCriacao/>
+<dataValidade/>
+<revisao/>
+<observacao/>
+</gedWsVo>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<numeroErros></numeroErros>
+</informacaoGeral>
+</return>
+</ns2:incluirSocGedResponse>
+</soap:Body>
+</soap:Envelope>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+4.1.1 Tabela de propriedades da Saída
+Propriedades da response incluirSocGed
+Propriedade
+
+Tipo
+
+Observação
+
+Codigo
+
+Numérico
+
+Retorna o código do SOCGED incluído.
+
+gedWsVo
+
+gedWsVo
+
+Tag responsável pelo retorno dos dados do
+SOCGED incluído.
+
+informacaoGeral
+
+informacaoGeral
+
+Tag
+
+responsável
+
+pelo
+
+retorno
+
+das
+
+sucesso
+
+da
+
+informações
+
+gerais
+
+de
+
+requisição,
+
+bem
+
+como
+
+possíveis
+
+inconsistências.
+
+4.1.2 Tag gedWsVo
+gedWsVo
+Propriedade
+codigoEmpresa
+
+Tipo
+Numérico
+
+Observação
+Código de identificação da empresa do
+SOCGED.
+
+tipoBuscaEmpresa
+
+Alfanumérico
+
+Retorna o tipo de busca utilizado
+
+codigoEmpresaSocnet
+
+Numérico
+
+Retorna o código do campo Empresa
+Socnet do SOCGED incluído
+
+nome
+
+Alfanumérico
+
+Retorna o nome do SOCGED incluído
+
+codigoTipo
+
+Numérico
+
+Retorna o código do Tipo SOCGED do
+SOCGED incluído
+
+codigoUnidade
+
+Numérico
+
+Retorna o código da unidade do SOCGED
+incluído
+
+mandatoCipa
+
+Numérico
+
+Retorna
+
+o
+
+código
+
+do
+
+Mandato
+
+Cipa
+
+associado ao SOCGED incluído
+exportaDados
+
+Numérico
+
+Retorna
+
+o
+
+código
+
+do
+
+Exporta
+
+Dados
+
+associado ao SOCGED incluído
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+cadastroDinamico
+
+Numérico
+
+Retorna o código do Cadastro Dinâmico
+associado ao SOCGED incluído
+
+registroCadastroDinamico
+
+Numérico
+
+Retorna o código do Registro de Cadastro
+Dinâmico associado ao SOCGED incluído
+
+turma
+
+Numérico
+
+Retorna o código da turma associada ao
+SOCGED incluído
+
+dataCriacao
+
+Data
+
+Retorna o campo Data Criação do SOCGED
+incluído
+
+dataValidade
+
+Data
+
+Retorna
+
+o
+
+campo
+
+Data
+
+Validade
+
+do
+
+SOCGED incluído
+revisao
+
+Alfanumérico
+
+Retorna o campo Revisão do SOCGED
+incluído
+
+observacao
+
+Alfanumérico
+
+Retorna o campo Observação do SOCGED
+incluído
+
+4.1.3 Tag informacaoGeral
+
+informacaoGeral
+Propriedade
+
+Tipo
+
+codigoMensagem
+
+Numérico
+
+Observação
+Código da mensagem de
+retorno
+
+da
+
+requisição,
+
+SOC-100 para Sucesso ou
+SOC-200 para Erro.
+mensagem
+
+Alfanumérico
+
+Descrição da mensagem
+de retorno da requisição
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag
+
+responsável
+
+pelo
+
+de
+
+erros
+
+retorno
+identificados
+requisição,
+
+na
+quando
+
+houver.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+numeroErros
+
+Numérico
+
+Retorna a quantidade de
+erros
+
+identificados
+
+na
+
+requisição.
+
+4.1.3 Tag mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Numérico
+
+Retorna o código do erro
+
+mensagem
+
+Alfanumérico
+
+Retorna a descrição do
+erro
+
+4.2
+
+Mensagem SOAP response alterarSocGed
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:alterarSocGedResponse xmlns:ns2="http://services.soc.age.com/">
+<return>
+<gedWsVo>
+<codigoEmpresa></codigoEmpresa>
+<codigo></codigo>
+<codigoTipo></codigoTipo>
+<codigoUnidade></codigoUnidade>
+<dataCriacao></dataCriacao>
+<dataValidade></dataValidade>
+<observacao></observacao>
+<revisao></revisao>
+</gedWsVo>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<mensagemOperacaoDetalheList>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<codigo></codigo>
+<mensagem></mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros></numeroErros>
+</informacaoGeral>
+</return>
+</ns2:alterarSocGedResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.1.1 Tabela de propriedades da Saída
+Propriedades da response alterarSocGed
+Propriedade
+gedWsVo
+
+Tipo
+gedWsVo
+
+Observação
+Tag responsável pelo retorno dos dados do
+SOCGED alterado.
+
+informacaoGeral
+
+informacaoGeral
+
+Tag
+
+responsável
+
+pelo
+
+retorno
+
+das
+
+sucesso
+
+da
+
+informações
+
+gerais
+
+de
+
+requisição,
+
+bem
+
+como
+
+possíveis
+
+inconsistências.
+
+4.1.2 Tag gedWsVo
+gedWsVo
+Propriedade
+codigoEmpresa
+
+Tipo
+Numérico
+
+Observação
+Código de identificação da empresa na
+qual está cadastrado o SOCGED
+
+codigo
+
+Numérico
+
+Código de identificação do SOCGED
+
+codigoTipo
+
+Numérico
+
+Código do Tipo de SOCGED do SOCGED
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 23
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+codigoUnidade
+
+Numérico
+
+Código da unidade do SOCGED
+
+dataCriacao
+
+Data
+
+Data de criação do SOCGED
+
+dataValidade
+
+Data
+
+Data de validade
+
+observacao
+
+Alfanumérico
+
+Campo destinado a observações referentes
+ao SOCGED e documentos
+
+revisao
+
+Alfanumérico
+
+Campo destinado ao registro de revisão do
+SOCGED e documentos
+
+4.1.3 Tag informacaoGeral
+
+informacaoGeral
+Propriedade
+
+Tipo
+
+codigoMensagem
+
+Numérico
+
+Observação
+Código da mensagem de
+retorno
+
+da
+
+requisição,
+
+SOC-100 para Sucesso ou
+SOC-200 para Erro.
+mensagem
+
+Alfanumérico
+
+Descrição da mensagem
+de retorno da requisição
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag
+
+responsável
+
+pelo
+
+de
+
+erros
+
+retorno
+identificados
+requisição,
+
+na
+quando
+
+houver.
+numeroErros
+
+Numérico
+
+Retorna a quantidade de
+erros
+
+identificados
+
+na
+
+requisição.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 24
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+4.1.3 Tag mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Numérico
+
+Retorna o código do erro
+
+mensagem
+
+Alfanumérico
+
+Retorna a descrição do
+erro
+
+4.3
+
+Mensagem SOAP response excluirSocGed
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:excluirSocGedResponse xmlns:ns2="http://services.soc.age.com/">
+<return>
+<informacaoGeral>
+<codigoMensagem></codigoMensagem>
+<mensagem></mensagem>
+<mensagemOperacaoDetalheList></ numeroErros >
+<codigo></codigo>
+<mensagem></mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros></numeroErros>
+</informacaoGeral>
+</return>
+</ns2:excluirSocGedResponse>
+</soap:Body>
+</soap:Envelope>
+
+4.2.1 Tag informacaoGeral
+
+informacaoGeral
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 25
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+Propriedade
+
+Tipo
+
+codigoMensagem
+
+Numérico
+
+Observação
+Código da mensagem de
+retorno
+
+da
+
+requisição,
+
+SOC-100 para Sucesso ou
+SOC-200 para Erro.
+mensagem
+
+Alfanumérico
+
+Descrição da mensagem
+de retorno da requisição
+
+mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+
+Tag
+
+responsável
+
+pelo
+
+de
+
+erros
+
+retorno
+identificados
+requisição,
+
+na
+quando
+
+houver.
+numeroErros
+
+Numérico
+
+Retorna a quantidade de
+erros
+
+identificados
+
+na
+
+requisição.
+
+4.2.2 Tag mensagemOperacaoDetalheList
+
+mensagemOperacaoDetalheList
+Propriedade
+
+Tipo
+
+Observação
+
+codigo
+
+Numérico
+
+Retorna o código do erro
+
+mensagem
+
+Alfanumérico
+
+Retorna a descrição do
+erro
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 26
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+5.
+
+Lista de falhas
+
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAPENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha
+(username e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAPENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:InvalidSecurity</faultcode>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 27
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+<faultstring>An error was discovered processing the
+&lt;wsse:Security> header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header for preenchida incorretamente.
+Verificar item 2 desse documento de especificação técnica.
+
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasisopen.org/wss/2004/01/oasis-200401-wss-wssecurity-secext1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento
+em que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 28
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+•
+
+5.2
+
+Ajustar horário do computador;
+
+Falhas de Acesso e consistência
+
+Código
+SOC-200
+
+Descrição
+ERRO. Operação não realizada.
+
+Observação
+Mensagem retornada quando não realizada a
+operação solicitada. Na tag
+mensagemOperacaoDetalheList podem ser
+visualizados os detalhes.
+
+SOC-201
+
+SOC-202
+
+ERRO DESCONHECIDO. Por favor, contate
+
+Quando retornada, necessário contato com o
+
+o suporte SOC.
+
+Suporte SOC.
+
+ERRO. Código Empresa inválida.
+
+Mensagem retornada quando o valor
+informado na propriedade codigoEmpresa não
+representa uma empresa válida.
+
+SOC-203
+
+ERRO. Empresa informada não é de
+
+Mensagem retornada quando especificado na
+
+homologação.
+
+requisição que a empresa é de homologação,
+mas a empresa informada não está
+configurada como de homologação.
+
+SOC-204
+
+ERRO. codigoUsuario Inválido.
+
+Mensagem retornada quando o valor
+informado na propriedade codigoUsuario não
+configura um código de usuário válido do SOC.
+
+SOC-205
+
+ERRO. Identificação Invalida.
+
+Mensagem retornada quando os dados
+informados na tag identificacaoWsVo não
+configuram uma credencial válida de acesso
+aos Web Services.
+
+SOC-206
+
+ERRO. Empresa sem Acesso ao
+
+Mensagem retornada quando a empresa não
+
+Webservice.
+
+possui o web service habilitado nas
+Configurações de Integração da empresa.
+
+SOC-207
+
+ERRO. Ip nao autorizado.
+
+Mensagem retornada quando o IP de origem
+da requisição não consta nos IPs autorizados
+configurados na empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 29
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+SOC-208
+
+ERRO. Login não localizado.
+
+Mensagem retornada quando não é possível
+localizar o login do usuário informado na
+propriedade codigoUsuario.
+
+SOC-209
+
+ERRO. O usuário não tem acessos
+
+Mensagem retornada quando o usuário
+
+suficientes.
+
+informado na propriedade codigoUsuario não
+possui os acessos necessários para realizar a
+ação solicitada.
+
+SOC-210
+
+SOC-301
+
+ERRO. Campos não preenchidos ou
+
+Mensagem retornada quando há erro de
+
+preenchidos incorreta
+
+preenchimento nos campos da requisição.
+
+ERRO. Ged nao encontrado.
+
+Mensagem retornada quando não é possível
+localizar o SOCGED especificado na requisição.
+
+SOC-302
+
+ERRO. Usuario sem acesso suficiente ao
+
+Mensagem retornada quando o usuário
+
+programa GED.
+
+informado na propriedade codigoUsuario não
+possui os acessos necessários para a operação
+solicitada. Os acessos necessários podem ser
+consultados no cadastro do serviço.
+
+SOC-303
+
+ERRO. Tipo de Ged nao encontrado.
+
+Mensagem retornada quando não é possível
+localizar o Tipo de SOCGED especificado na
+requisição.
+
+SOC-304
+
+ERRO. Unidade nao encontrada.
+
+Mensagem retornada quando não é possível
+localizar a unidade especificada na requisição.
+
+ERRO. Ged em uso.
+
+Mensagem retornada quando o SOCGED, que
+está sendo solicitada a exclusão, está sendo
+
+SOC-305
+
+utilizado na empresa.
+ERRO. Empresa inválida.
+
+Mensagem retornada quando a empresa
+informada no campo codigoEmpresa não é
+
+SOC-306
+
+válida.
+ERRO. Empresa SocNet inválida.
+
+Mensagem retornada quando a empresa
+informada no campo codigoEmpresaSocnet não
+
+SOC-307
+SOC-308
+
+é válida.
+ERRO. Já existe um Documento com esse
+
+Mensagem retornada quando já existe cadastro
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 30
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+nome.
+
+de SOCGED com o mesmo nome informado.
+
+ERRO. O campo gedWsVo.fichaClinica é
+
+Mensagem retornada quando o código
+
+inválido.
+
+sequencial informado na propriedade
+
+SOC-309
+
+fichaClinica não é válido.
+ERRO. Unidade não encontrada,
+
+Mensagem retornada quando informada uma
+
+gedWsVo.codigoEmpresaSocnet não
+
+empresa Socnet, informada uma unidade e não
+
+informado.
+
+informado o código da empresa cliente Socnet
+
+SOC-310
+
+na propriedade codigoEmpresaSocnet.
+ERRO. O campo gedWsVo.mandatoCipa é
+
+Mensagem retornada quando o valor
+
+inválido.
+
+informado na propriedade mandatoCipa não é
+um código válido de Mandato Cipa para os
+
+SOC-311
+
+parâmetros informados.
+ERRO. Não foram encontrados Cadastros
+
+Mensagem retornada quando não encontrado
+
+dinâmicos.
+
+registro de cadastro dinâmico com o código
+
+SOC-312
+
+informado na propriedade cadastroDinamico.
+ERRO. O campo
+
+Mensagem retornada quando o valor
+
+gedWsVo.cadastroDinamico é inválido.
+
+informado na propriedade cadastroDinamico
+
+SOC-313
+
+SOC-314
+
+não é um código de cadastro dinâmico válido.
+ERRO. O campo
+
+Mensagem retornada quando informado valor
+
+gedWsVo.registroCadastroDinamico é
+
+na propriedade cadastroDinamico e não
+
+obrigatório quando
+
+informado valor na propriedade
+
+gedWsVo.cadastroDinamico for informado.
+
+registroCadastroDinamico.
+
+ERRO. O campo gedWsVo.turma é inválido. Mensagem retornada quando o valor
+informado na propriedade turma não é um
+
+SOC-315
+
+SOC-316
+
+SOC-317
+
+código de turma válido.
+ERRO. Não é possível preencher
+
+Mensagem retornada quando informado valor
+
+gedWsVo.fichaClinica ou
+
+pra propriedade fichaClinica ou funcionario
+
+gedWsVo.funcionario quando
+
+quando preenchido valor para a propriedade
+
+gedWsVo.turma estiver preenchido.
+
+turma.
+
+ERRO. Não é possível preencher
+
+Mensagem retornada quando informado valor
+
+gedWsVo.fichaClinica ou
+
+para a propriedade fichaClinica ou funcionario
+
+gedWsVo.funcionario quando
+
+quando preenchido valor para a propriedade
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 31
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+gedWsVo.cadastroDinamico estiver
+
+cadastroDinamico.
+
+preenchido.
+
+SOC-318
+
+SOC-319
+
+ERRO. Não é possível preencher
+
+Mensagem retornada quando informado valor
+
+gedWsVo.fichaClinica ou
+
+para a propriedade fichaClinica ou funcionario
+
+gedWsVo.funcionario quando
+
+quando preenchido valor para a propriedade
+
+gedWsVo.mandatoCipa estiver preenchido.
+
+mandatoCipa.
+
+ERRO. Não é possível preencher
+
+Mensagem retornada quando preenchido um
+
+gedWsVo.fichaClinica quando
+
+valor para a propriedade fichaClinica, o Tipo
+
+gedWsVo.funcionario estiver preenchido e
+
+SOCGED possuir a classificação funcionário e a
+
+for TipoGed Funcionário.
+
+propriedade funcionario estiver preenchida.
+
+ERRO. O campo gedWsVo.turma somente
+
+Mensagem retornada quando o Tipo SOCGED
+
+pode ser informado quando o Tipo SOCGED informado não possuir a classificação
+possuir a classificação Treinamento.
+
+SOC-320
+
+SOC-321
+
+Treinamento e for informado um valor para a
+propriedade turma.
+
+ERRO. O campo
+
+Mensagem retornada quando o Tipo SOCGED
+
+gedWsVo.cadastroDinamico somente pode
+
+informado não possuir a classificação Cadastro
+
+ser informado quando o Tipo SOCGED
+
+Dinâmico e for informado um valor para a
+
+possuir a classificação Cadastro Dinamico.
+
+propriedade cadastroDinamico.
+
+ERRO. O campo gedWsVo.exportaDados
+
+Mensagem retornada quando o Tipo SOCGED
+
+somente pode ser informado quando o Tipo informado não possuir a classificação Exporta
+
+SOC-322
+
+SOCGED possuir a classificação Cadastro
+
+Dados e for informado um valor para a
+
+Exporta Dados.
+
+propriedade exportaDados.
+
+ERRO. O campo gedWsVo.mandatoCipa
+
+Mensagem retornada quando o Tipo SOCGED
+
+somente pode ser informado quando o Tipo informado não possuir a classificação Cadastro
+
+SOC-323
+
+SOC-324
+
+SOC-325
+
+SOCGED possuir a classificação Cadastro
+
+Mandato Cipa e for informado um valor para a
+
+Mandato Cipa.
+
+propriedade mandatoCipa.
+
+ERRO. Não é possível preencher
+
+Mensagem retornada quando realizada uma
+
+gedWsVo.cadastroDinamico quando for
+
+ação via SOCNET e preenchido a propriedade
+
+SOCNET.
+
+cadastroDinamico.
+
+ERRO. O campo gedWsVo.funcionario é
+
+Mensagem retornada quando o valor
+
+inválido.
+
+informado para a propriedade funcionario não
+é válido.
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 32
+
+WS SOCGED
+
+Versão:
+<1.5>
+Date: 23/10/2023
+
+Especificação Técnica
+Desenvolvimento – M-DEV-3041
+
+ERRO. Não é possível preencher
+
+Mensagem retornada quando realizada uma
+
+gedWsVo.funcionario quando for SOCNET.
+
+ação via SOCNET e informado um valor para a
+
+SOC-326
+
+propriedade funcionario.
+ERRO. O campo gedWsVo.mandatoCipa é
+
+Mensagem retornada quando o valor
+
+inválido. Controle de CIPA por unidade.
+
+informado para a propriedade mandatoCipa
+não é válido por ser utilizado controle de cipa
+
+SOC-327
+
+por unidade, no cadastro da empresa.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 33
+
+

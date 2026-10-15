@@ -1,0 +1,1251 @@
+Web Service de Sala de Atendimento
+Especificação Técnica
+Versão <1.0>
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+Histórico de Revisão
+Data
+16/12/2024
+
+Versão
+1.0
+
+Descrição
+Criação da documentação do serviço
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Autor
+Marcos Santiago
+
+Página 2
+
+Web Service de Centro de Custo
+Especificação Técnica
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Desenvolvimento – SOC-104805
+
+Índice
+1.
+
+Introdução .................................................................................................................................. 4
+1.1
+1.2
+1.3
+
+Objetivo
+Funcionamento
+Considerações
+
+4
+4
+4
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço ......................................................................... 5
+2.1 Configuração Padrão
+5
+2.2 Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+6
+2.3 Considerações para as Propriedades da tag wsse security
+9
+
+3.
+
+Entradas.................................................................................................................................... 10
+3.1 Mensagem SOAP request incluirAtendimento
+10
+3.1.1 - Tabela de Propriedades da entrada
+11
+3.1.1.1 Tag identificacao ....................................................................................................... 12
+3.1.1.2 Tag exames .............................................................................................................. 12
+3.1.2 - Considerações para as propriedades
+13
+
+4.
+
+Saídas ....................................................................................................................................... 14
+4.1
+
+Mensagem SOAP response incluirAtendimento
+4.1.1 - Tag SalaAtendimentoRetorno
+
+14
+15
+4.1.1.1 Tag webServiceInfoGeralVo........................................................................................ 15
+4.1.1.2 Tag mensagemOperacaoDetalheList ........................................................................... 15
+4.1.2 - Considerações para as propriedades
+15
+
+5.
+
+Lista de falhas ........................................................................................................................... 17
+5.1 Falhas na requisição
+17
+5.1.1 - Username e password inválidos
+17
+5.1.2 - Tag Header preenchida incorretamente
+17
+5.1.3 - Requisição expirada
+18
+5.1.4 - Empresa sem acesso
+19
+5.2 Falhas na consistência
+20
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 3
+
+Web Service de Centro de Custo
+Especificação Técnica
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Desenvolvimento – SOC-104805
+
+1.
+
+Introdução
+
+1.1
+
+Objetivo
+Possibilitar que o cliente realize a inclusão de um atendimento a partir de outros sistemas.
+
+1.2
+
+Funcionamento
+1.
+
+As propriedades a serem enviadas para o SOC são populadas no WebService com os
+dados do atendimento que será manipulado pelo cliente a partir de sua origem.
+
+2. Após o serviço ser consumido, o SOC emite uma mensagem de retorno informando o
+sucesso da operação, bem como possíveis irregularidades nos dados enviados.
+1.3
+
+Considerações
+1. O desenvolvimento da lógica para a chamada ao WebService é de responsabilidade do
+cliente;
+2. O WebService foi projetado para incluir um atendimento por vez que é invocado;
+3. O arquivo WSDL a ser usado está disponível nas configurações de integração do usuário.
+4. O acesso ao serviço deve constar nas configurações de integração do usuário.
+5. O usuário informado no campo “codigoUsuario” da TAG de identificação deve ser um
+usuário diferente do usuário super SOC e ter os acessos necessários descrito no cadastro
+do Serviço, no campo Observações.
+6. O certificado de conexão HTTPS disponibilizado no WebService é renovado anualmente,
+de forma automática e antecipadamente à data de expiração.
+7. O Webservice não oferece suporte ao paralelismo de requisições. As requisições devem
+ser enviadas de forma sequencial. Em caso de identificação de paralelismo que
+prejudique a performance do SOC, a integração será desligada sem aviso prévio.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 4
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+2.
+
+Parâmetros de Segurança para Acesso Ao Serviço
+
+Para melhorar a segurança dos WebServices, A AGE Desenvolvimento LTDA, adota as políticas de
+segurança fornecidas pela especificação WS-Security, utilizando a TAG Header com itens de
+segurança conforme política. Segue um modelo do que deverá ser informado.
+2.1
+
+Configuração Padrão
+A configuração padrão diz respeito ao uso de autenticação, que é um requisito obrigatório.
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wsswssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-utility-1.0.xsd">
+<wsu:Timestamp wsu:Id="TS-32E6B34377D7E4A58614607283662392">
+<wsu:Created>xxxx</wsu:Created>
+<wsu:Expires>xxxxx</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameToken32E6B34377D7E4A58614607283662221">
+<wsse:Username>xxxx</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile-1.0#PasswordDigest">xxxxx</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">xxxxxxx</wsse:Nonce>
+<wsu:Created>xxxxxx</wsu:Created>
+</wsse:UsernameToken>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 5
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+</wsse:Security>
+</soapenv:Header>
+2.2
+
+Configuração utilizando a opção ‘Utiliza criptografia’ no cadastro do Serviço
+<soapenv:Header>
+<wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-utility-1.0.xsd">
+<ds:Signature Id="SIG-4AE8A4927DB1928358141520612833543"
+xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-excc14n#">
+<ec:InclusiveNamespaces PrefixList="ser soapenv"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:CanonicalizationMethod>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+<ds:Reference URI="#id-4AE8A4927DB1928358141520612833442">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+<ec:InclusiveNamespaces PrefixList="ser"
+xmlns:ec="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+</ds:Transform>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+<ds:DigestValue>####</ds:DigestValue>
+</ds:Reference>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 6
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+</ds:SignedInfo>
+<ds:SignatureValue>####</ds:SignatureValue>
+<ds:KeyInfo Id="KI-4AE8A4927DB1928358141520612833340">
+<wsse:SecurityTokenReference wsu:Id="STR4AE8A4927DB1928358141520612833341">
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+</ds:Signature>
+<xenc:EncryptedKey Id="EK-4AE8A4927DB1928358141520612832637"
+xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
+<xenc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-oaepmgf1p"/>
+<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+<wsse:SecurityTokenReference>
+<ds:X509Data>
+<ds:X509IssuerSerial>
+<ds:X509IssuerName>####</ds:X509IssuerName>
+<ds:X509SerialNumber>####</ds:X509SerialNumber>
+</ds:X509IssuerSerial>
+</ds:X509Data>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 7
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+</wsse:SecurityTokenReference>
+</ds:KeyInfo>
+<xenc:CipherData>
+<xenc:CipherValue>####</xenc:CipherValue>
+</xenc:CipherData>
+<xenc:ReferenceList>
+<xenc:DataReference URI="#ED-4AE8A4927DB1928358141520612832738"/>
+</xenc:ReferenceList>
+</xenc:EncryptedKey>
+<wsu:Timestamp wsu:Id="TS-AFFAF9C28228C497B114031228446232">
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+</wsu:Timestamp>
+<wsse:UsernameToken wsu:Id="UsernameTokenAFFAF9C28228C497B114031228446111">
+<wsse:Username>###################</wsse:Username>
+<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wssusername-token-profile1.0#PasswordDigest">###################=</wsse:Password>
+<wsse:Nonce EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401wss-soap-message-security-1.0#Base64Binary">kAnmIripR9VPfury4L9yjg==</wsse:Nonce>
+<wsu:Created>2014-06-18T20:20:44.511Z</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+
+</soapenv:Header>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 8
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+2.3
+
+Considerações para as Propriedades da tag wsse security
+
+Propriedade
+Timestamp
+
+Detalhes
+É o tempo de validade da requisição. Recomendamos o uso de um minuto.
+Requisições com timestamp superior a dois minutos serão negadas.
+
+Username
+
+Código do usuário no sistema SOC precedido obrigatoriamente pela letra U
+(disponível nas configurações de integração).
+
+Password
+
+Chave de acesso do usuário (disponível nas configurações de integração). Contudo
+o cliente deverá informar o mesmo com o Tipo “PasswordDigest”.
+
+Nonce
+
+É um valor randômico que o cliente do serviço deverá criar para cada requisição
+que enviar.
+
+Signature
+
+Tag responsável pela integridade dos dados trafegados em uma requisição.
+
+EncryptedKey
+
+Tag responsável por manter os dados seguros enquanto são trafegados.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 9
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+3.
+
+Entradas
+
+3.1
+
+Mensagem SOAP request incluirAtendimento
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+xmlns:ser="http://services.soc.age.com/">
+<soapenv:Header/>
+<soapenv:Body>
+<ser:incluirAtendimento>
+<SalaAtendimento>
+<identificacao>
+<codigoEmpresaPrincipal></codigoEmpresaPrincipal>
+<codigoResponsavel></codigoResponsavel>
+<codigoUsuario></codigoUsuario>
+</identificacao>
+<codigoAgendamento></codigoAgendamento>
+<senha></senha>
+<sequencialFicha></sequencialFicha>
+<atendimentoPrioritario></atendimentoPrioritario>
+<selecaoExames></selecaoExames>
+<exames>
+<exame>
+<codigo></codigo>
+<tipoBusca></tipoBusca>
+</exame>
+</exames>
+</SalaAtendimento>
+</ser:incluirAtendimento>
+</soapenv:Body>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 10
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+</soapenv:Envelope>
+3.1.1
+
+Tabela de Propriedades da entrada
+Tag SalaAtendimento
+Propriedade
+
+identificacaoWsVo
+
+Tipo
+identificacaoWsVo
+
+Obrigatório
+Sim
+
+Observação
+Tag usada para identificar a
+empresa que está enviando uma
+requisição.
+
+codigoAgendamento
+
+Numérico
+
+Sim1
+
+Código do agendamento do
+atendimento.
+
+senha
+
+Numérico
+
+Não2
+
+Campo destinado à senha própria
+do atendimento.
+
+sequencialFicha
+
+Numérico
+
+Não3
+
+Código sequencial da ficha clínica a
+ser vinculada ao atendimento.
+
+atendimentoPrioritario
+
+Boolean(true/false)
+
+Não
+
+Indica se o atendimento é
+prioritário (true).
+
+selecaoExames
+
+Enum
+
+Não4
+
+Valores possíveis:
+•
+
+SUGERIDOS
+
+•
+
+ATRASADOS
+
+Define a seleção de exames para a
+criação da ficha clínica. Se
+informado como SUGERIDOS, a
+ficha clínica é criada com os
+exames sugeridos de acordo com o
+tipo de exame selecionado no
+agendamento + exames
+informados na tag “exames”. Se
+informado como ATRASADOS, a
+ficha clínica é criada com os
+exames atrasados de acordo com o
+tipo de exame selecionado no
+agendamento + exames
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 11
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+informados na tag exames”.
+exames
+
+exame
+
+Tag destinada à identificação dos
+exames
+
+3.1.1.1 Tag identificacao
+Tag identificacao
+Propriedade
+
+Tamanho
+
+codigoEmpresaPrincipal
+
+-
+
+Tipo
+
+Obrigatório
+
+Numérico
+
+Observação
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração no
+cadastro de Empresa
+
+codigoResponsavel
+
+-
+
+Numérico
+
+Sim
+
+A informação pode ser consultada
+nas configurações de integração no
+cadastro de Empresa
+
+codigoUsuario
+
+-
+
+Numérico
+
+Sim5
+
+Código do Usuário responsável pela
+ação
+
+3.1.1.2 Tag exames
+exames
+Propriedade
+
+Tamanho
+
+Tipo
+
+Obrigatório
+
+Observação
+
+Identificação do exame
+codigo
+
+-
+
+Numérico
+
+Não
+
+de acordo com o
+tipoBusca selecionado.
+
+Enum
+tipoBusca
+
+-
+
+Tipo de busca a ser
+
+Valores possíveis:
+•
+
+Não6
+
+CODIGO_SOC
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+utilizado na localização do
+exame.
+
+Página 12
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+•
+
+3.1.2
+
+CODIGO_RH
+
+Considerações para as propriedades
+1. Código gerado e devolvido quando invocado o método incluirAgendamento do
+Webservice de Agendamento.
+2. Esse campo é validado somente quando o mapa cadastrado no SOC possui o campo
+“Tipo de utilização” como “Utilizar Senha Própria”.
+3. Código sequencial da ficha vinculada ao atendimento. Se não informado, o Webservice
+cria uma ficha com base na data e no tipo do agendamento.
+4. Se não informado, a ficha clínica é criada sem exames ou será criada com os exames
+informados na tag “exames”.
+5. Deverá ser um usuário diferente do usuário super SOC e ter os acessos necessários
+descrito no cadastro do Serviço, no campo Observações.
+6. O tipoBusca CODIGO_SOC é correspondente ao campo “Código” da tela de cadastro de
+exame e, o tipoBusca CODIGO_RH é correspondente ao campo “Código do RH” da tela
+de cadastro de exame.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 13
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+4.
+
+Saídas
+
+4.1
+
+Mensagem SOAP response incluirAtendimento
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Body>
+<ns2:incluirAtendimentoResponse xmlns:ns2="http://services.soc.age.com/">
+<SalaAtendimentoRetorno>
+<informacaoGeral>
+<codigoMensagem>SOC-100</codigoMensagem>
+<mensagem>SUCESSO. Operação realizada com sucesso</mensagem>
+<numeroErros>0</numeroErros>
+</informacaoGeral>
+<mensagem>Atendimento criado com sucesso</mensagem>
+<senha>#</senha>
+</SalaAtendimentoRetorno>
+</ns2:incluirAtendimentoResponse>
+</soap:Body>
+</soap:Envelope>
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 14
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+4.1.1
+
+Tag SalaAtendimentoRetorno
+
+SalaAtendimentoRetorno
+Propriedade
+
+Tipo
+
+informacaoGeral
+
+webServiceInfoGeralVo
+
+4.1.1.1 Tag webServiceInfoGeralVo
+Tag webServiceInfoGeralVo
+Propriedade
+
+Tipo
+
+codigoMensagem
+
+Texto1
+
+Mensagem
+
+Texto2
+
+senha
+
+Número3
+
+mensagemOperacaoDetalheList
+
+Lista de mensagemOperacaoDetalheList
+
+numeroErros
+
+Número4
+
+4.1.1.2 Tag mensagemOperacaoDetalheList
+Tag mensagemOperacaoDetalheList
+Código
+
+Texto5
+
+Mensagem
+
+Texto6
+
+4.1.2
+
+Considerações para as propriedades
+1. Retorna o código da mensagem, SOC-100 para Sucesso ou SOC-200 para erro;
+2. Retorna a descrição do status da mensagem;
+3. Retorna a senha do atendimento criado;
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 15
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+4. Retorna a quantidade de erros na mensagem;
+5. Retorna o código do erro;
+6. Retorna a descrição do erro.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 16
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+5.
+
+Lista de falhas
+
+Segue as principais falhas que podem ocorrer ao utilizar o Web Service de Sala de Atendimento.
+5.1
+
+Falhas na requisição
+
+5.1.1
+
+Username e password inválidos
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:FailedAuthentication</faultcode>
+<faultstring>The security token could not be authenticated or
+authorized</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando os dados informados para usuário e senha (username
+e password, respectivamente) estão incorretos.
+5.1.2
+
+Tag Header preenchida incorretamente
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:InvalidSecurity</faultcode>
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 17
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+<faultstring>An error was discovered processing the &lt;wsse:Security>
+header.</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha na requisição acima ocorre quando a tag header for preenchida incorretamente. Verificar
+item 2 desse documento de especificação técnica.
+5.1.3
+
+Requisição expirada
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<soap:Fault>
+<faultcode xmlns:ns1="http://docs.oasis-open.org/wss/2004/01/oasis200401-wss-wssecurity-secext-1.0.xsd">ns1:MessageExpired</faultcode>
+<faultstring>The message has expired</faultstring>
+</soap:Fault>
+</soap:Body>
+</soap:Envelope>
+A falha acima ocorre quando o elemento de segurança “timestamp” é violado. O timestamp
+verifica a validade da mensagem enviada em termos de tempo.
+O sender especifica o tempo de validade, então, dois elementos são definidos no momento em
+que a mensagem é enviada:
+Onde:
+
+<wsu:Created>2014-06-18T20:20:44.623Z</wsu:Created>
+
+wsu:Created = hora atual;
+
+<wsu:Expires>2014-06-18T20:21:44.623Z</wsu:Expires>
+
+wsu:Expires = wsu:Created + (tempo de validade);
+
+Verificar item 2 desse documento
+de especificação.
+
+Portanto, uma ação a tomar para resolver essa falha é:
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 18
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+•
+5.1.4
+
+Ajustar horário do computador;
+
+Empresa sem acesso
+Esta falha ocorrerá quando o usuário informado não tiver acesso ao serviço em questão.
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Header xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"/>
+<soap:Body>
+<ns2:incluirResponse xmlns:ns2="http://services.soc.age.com/">
+<Retorno>
+<informacaoGeral>
+<codigoMensagem>SOC-200</codigoMensagem>
+<mensagem>ERRO. Operação não realizada.</mensagem>
+<mensagemOperacaoDetalheList>
+<codigo>SOC-212</codigo>
+<mensagem>ERRO. Usuário sem acesso ao webservice.</mensagem>
+</mensagemOperacaoDetalheList>
+<numeroErros>1</numeroErros>
+</informacaoGeral>
+</Retorno>
+</ns2:incluirResponse>
+</soap:Body>
+</soap:Envelope>
+Para resolver esse problema é necessário ir à tela de Configuração de Integração Empresa/Cliente (337) no SOC e adicionar o serviço à lista de webservices do usuário.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 19
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+5.2
+
+Falhas na consistência
+O serviço poderá retornar as seguintes falhas:
+
+Código
+
+Descrição
+
+Observação
+Mensagem retornada quando o campo
+
+SOC-205
+
+ERRO. Identificacao Invalida.
+
+“codigoEmpresaPrincipal” ou o campo
+“codigoResponsavel” possui preenchimento
+inválido.
+Mensagem retornada quando o usuário da
+
+SOC-209
+
+O usuário não tem acesso a incluir
+
+requisição não tem acesso a incluir no
+programa “Agenda”.
+
+SOC-209
+
+O usuário não tem acesso a incluir Sala
+Atendimento
+
+Mensagem retornada quando o usuário da
+requisição não tem acesso a incluir no
+programa “Salas de Atendimento”.
+Mensagem retornada quando a tag
+
+SOC-209
+
+O usuário não tem acesso a incluir Pedido
+
+sequencialFicha não é informada e o usuário
+
+de Exames
+
+da requisição não tem acesso a incluir no
+programa “Pedido de Exames”.
+Mensagem retornada quando a tag
+
+SOC-209
+
+O usuário não tem acesso a alterar Pedido
+
+sequencialFicha é informada e o usuário da
+
+de Exames
+
+requisição não tem acesso a alterar no
+programa “Pedido de Exames”.
+
+SOC-209
+
+SOC-210
+
+SOC-210
+
+O campo senha deve ter no máximo 9
+
+Mensagem retornada quando a tag senha
+
+caracteres.
+
+possui mais de 9 caracteres.
+
+O campo senha deve conter apenas
+
+Mensagem retornada quando o valor
+
+número positivo
+
+informado no campo senha é inválido.
+
+O campo codigoAgendamento deve estar
+
+Mensagem retornada quando o código do
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 20
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+preenchido
+
+SOC-210
+
+SOC-210
+
+agendamento não é informado.
+
+O campo codigoAgendamento deve conter
+apenas número positivo e maior que zero
+
+O campo sequencialFicha deve conter
+apenas número positivo e maior que zero
+
+Mensagem retornada quando o valor
+informado no campo codigoAgendamento é
+inválido.
+Mensagem retornada quando o valor
+informado no campo sequencialFicha é
+inválido.
+Mensagem retornada quando o usuário da
+
+SOC-212
+
+ERRO. Usuário sem acesso ao webservice.
+
+requisição não tem o Webservice selecionado
+na configuração de integração no SOC.
+
+SOC-302
+
+SOC-303
+
+SOC-304
+
+SOC-305
+
+Código de agendamento não localizado.
+
+Agendamento não possuí vínculo de
+empresa e funcionário.
+
+Mensagem retornada quando o código do
+agendamento informado não existe.
+Mensagem retornada quando o agendamento
+informado está relacionado a um compromisso
+sem funcionário vinculado.
+
+Agendamento não possuí vínculo com
+
+Mensagem retornada quando o agendamento
+
+cadastro de funcionário.
+
+informado não está vinculado a funcionário.
+
+Agendamento não possuí tipo de
+compromisso definido.
+
+Mensagem retornada quando o código do
+agendamento informado não tem compromisso
+definido na agenda.
+Mensagem retornada quando o código do
+
+SOC-306
+
+Agenda não possui mapa cadastrado.
+
+agendamento se refere a uma agenda sem
+mapa preenchido.
+Mensagem retornada quando o código do
+
+SOC-307
+
+Agenda não possui mapa cadastrado.
+
+agendamento se refere a uma agenda sem
+mapa vinculado.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 21
+
+Web Service de Centro de Custo
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Especificação Técnica
+Desenvolvimento – SOC-104805
+
+Mensagem retornada quando o campo senha
+SOC-308
+
+Campo senha é de preenchimento
+
+não é preenchido e o mapa cadastrado no SOC
+
+obrigatório.
+
+tem o campo “Tipo de utilização” definido
+como “Utilizar Senha Própria”.
+
+SOC-309
+
+SOC-310
+
+Código sequencial inválido, ficha não
+localizada.
+
+Mensagem retornada quando o código
+sequencial da ficha é inválido ou refere-se a
+uma ficha que já foi excluída do sistema.
+
+Codigo da ficha não pertence ao
+funcionário do agendamento.
+
+Mensagem retornada quando o
+sequencialFicha informado não pertence ao
+funcionário do codigoAgendamento informado.
+Mensagem retornada quando a tag
+
+SOC-311
+
+Já existe uma ficha cadastrada deste tipo
+
+sequencialFicha não é informada e já existe
+
+nesta mesma data.
+
+outra ficha com mesma data e tipo para o
+funcionário.
+Mensagem retornada quando a senha própria
+
+SOC-312
+
+Senha já utilizada na mesma data.
+
+informada já foi informada para um
+atendimento.
+Mensagem retornada quando a tag
+sequencialFicha não é informada e o exame
+
+SOC-313
+
+Exame ### não localizado ou inativo.
+
+informado na requisição não existe ou está
+inativo na empresa do agendamento. No lugar
+de ### será informado o código do exame
+que está sendo validado.
+
+SOC-314
+
+SOC-315
+
+O funcionário não possui exames aplicados.
+
+Mensagem retornada quando o funcionário do
+agendamento não possui exames aplicados.
+
+Funcionário não encontrado no
+
+Mensagem retornada quando não é possível
+
+compromisso Agenda.
+
+localizar o funcionário do agendamento.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 22
+
+Web Service de Centro de Custo
+Especificação Técnica
+
+Versão:
+<1.0>
+Date: <16/12/2024>
+
+Desenvolvimento – SOC-104805
+
+Mensagem retornada quando o código
+SOC-316
+
+Já existe uma ficha cadastrada deste tipo
+
+agendamento informado já foi enviado para a
+
+nesta mesma data e atendimento. Senha
+
+sala de atendimento. Neste caso, o Webservice
+
+Atendimento:#
+
+informa a senha do atendimento já existente
+no sistema.
+Mensagem retornada quando a tag
+
+SOC-317
+
+Funcionário(a) já possui uma ficha do tipo
+Admissional criada
+
+sequencialFicha não é informada e tenta-se
+criar um atendimento (ficha clínica) do tipo
+admissional para funcionário que já tem ficha
+admissional criada.
+
+©AGE Desenvolvimento de Sistemas LTDA, 2024
+Sensível
+
+Página 23
+
+
