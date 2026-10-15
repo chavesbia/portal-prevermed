@@ -16,6 +16,13 @@ const Body = z.discriminatedUnion('acao', [
   z.object({ acao: z.literal('funcionario'), ...Pessoa }),
   z.object({ acao: z.literal('exames'), ...Pessoa }),
   z.object({ acao: z.literal('hierarquia'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode }),
+  // SOCNET: consulta guias/fichas (Exporta 222211) por número sequencial e/ou período
+  z.object({
+    acao: z.literal('guias'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode,
+    sequencial: z.string().regex(/^\d{1,15}$/),
+    dataInicio: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/).optional(),
+    dataFim: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/).optional(),
+  }),
   z.object({
     acao: z.literal('cadastrar'), ...Pessoa,
     nome: z.string().trim().min(3).max(120),
@@ -80,7 +87,7 @@ async function exporta(params: Record<string, string>): Promise<Row[] | null> {
   const text = new TextDecoder('iso-8859-1').decode(await resp.arrayBuffer());
   if (!resp.ok) { console.error('SOC HTTP', resp.status, text.slice(0, 300)); return null; }
   const t = text.trim();
-  if (!t || /^"?sem resultado"?$/i.test(t)) return [];
+  if (!t || /^"?(sem|nenhum) resultado\.?"?$/i.test(t)) return [];
   try { const p = JSON.parse(t); return Array.isArray(p) ? p : (p?.data ?? []); }
   catch { console.error('SOC resposta', text.slice(0, 300)); return null; }
 }
@@ -124,6 +131,29 @@ Deno.serve(async (req) => {
     const emp = empresas?.find((e) => e.soc_code === b.socCode);
     if (!emp) return json({ error: 'Empresa inválida' }, 400);
     const livre = podeCriar(emp.subgrupo);
+
+    if (b.acao === 'guias') {
+      const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5); return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`; };
+      const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+      const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_GUIAS');
+      const chave = Deno.env.get('SOC_CHAVE_EXPORTA_GUIAS');
+      if (!empresa || !codigo || !chave) return json({ guias: [], indisponivel: true });
+      const rows = await exporta({
+        empresa, codigo, chave, empresaTrabalho: b.socCode,
+        codigoSequencial: b.sequencial,
+        dataInicio: b.dataInicio ?? fmtBR(-365),
+        dataFim: b.dataFim ?? fmtBR(90),
+      });
+      if (!rows) return json({ guias: [], indisponivel: true });
+      if (rows[0]) console.log('SOC guias campos', Object.keys(rows[0]).join(','), 'linhas', rows.length);
+      const guias = rows.map((r) => ({
+        empresaPrincipal: pick(r, ['CDEMPRESAPRINCIPAL']),
+        codigo: pick(r, ['COD']),
+        sequencial: pick(r, ['SEQ']),
+        executora: pick(r, ['CDEMPRESAPRINCIPALEXECUTORA']),
+      })).filter((g) => g.sequencial);
+      return json({ guias, socnet: guias.some((g) => g.executora && g.executora !== empresa) });
+    }
 
     if (b.acao === 'hierarquia') {
       const h = await hierarquia(b.socCode, livre);
