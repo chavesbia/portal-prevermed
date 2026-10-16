@@ -32,9 +32,9 @@ const CLINICO = "EXAME CLÍNICO";
 const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
 export default function AgendamentoPublico() {
-  const [passo, setPasso] = useState(0);
+  const [passo, setPasso] = useState(() => (new URLSearchParams(window.location.search).get("cnpj")?.length === 14 ? 1 : 0));
   const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [f, setF] = useState({ empresaNome: "", empresaCnpj: "", colaboradorNome: "", colaboradorCpf: "", cargo: "", tipoExame: "", observacoes: "" });
+  const [f, setF] = useState({ empresaNome: "", empresaCnpj: new URLSearchParams(window.location.search).get("cnpj") ?? "", colaboradorNome: "", colaboradorCpf: "", cargo: "", tipoExame: "", observacoes: "" });
   const [empresas, setEmpresas] = useState<Empresa[] | null>(null);
   const [socCode, setSocCode] = useState("");
   const [buscandoEmp, setBuscandoEmp] = useState(false);
@@ -54,7 +54,10 @@ export default function AgendamentoPublico() {
   const [erro, setErro] = useState("");
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
-  const [guia, setGuia] = useState<File | null>(null);
+  const [guias, setGuias] = useState<File[]>([]);
+  const [copiado, setCopiado] = useState(false);
+  const qs = new URLSearchParams(window.location.search);
+  const socInicial = qs.get("soc") ?? "";
   // Fora da carteira PreverMed (ex.: cliente de assessoria parceira) e pedido SOCNET localizado pelo CPF
   const [externa, setExterna] = useState<{ razao_social: string } | null>(null);
   type Pedido = { sequencialFicha: string; tipoExame: string | null; empresa: { codigo: string; nome: string }; assessoria: { codigo: string; nome: string }; funcionario: { nome: string }; exames: string[] };
@@ -78,7 +81,9 @@ export default function AgendamentoPublico() {
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "empresa", cnpj } }).then(({ data }) => {
       const lista: Empresa[] = data?.empresas ?? [];
       setEmpresas(lista);
-      if (lista.length === 1) setSoc(lista[0]);
+      const pre = socInicial ? lista.find((e) => e.soc_code === socInicial) : undefined;
+      if (pre) setSoc(pre); else if (lista.length === 1) setSoc(lista[0]);
+      else if (lista.length > 1) setPasso(0);
       if (!lista.length && data?.externa) { setExterna(data.externa); setF((p) => ({ ...p, empresaNome: data.externa.razao_social })); }
       setBuscandoEmp(false);
     });
@@ -229,7 +234,7 @@ export default function AgendamentoPublico() {
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
     cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre)),
-    pedido ? true : semPedido ? !!f.tipoExame && !!guia : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -240,13 +245,12 @@ export default function AgendamentoPublico() {
     const mudancaRisco = mudanca
       ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME PCMSO" : ""}`
       : undefined;
-    let guiaPayload: { nome: string; tipo: string; base64: string } | undefined;
-    if (guia) {
-      const b64 = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(guia); });
-      guiaPayload = { nome: guia.name.slice(0, 120), tipo: guia.type, base64: b64 };
-    }
     const toB64 = (file: File) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(file); });
-    const documentos = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v!.name.slice(0, 120), tipo: v!.type, base64: await toB64(v!) }))) : [];
+    const [primeira, ...demais] = guias;
+    const guiaPayload = primeira ? { nome: primeira.name.slice(0, 120), tipo: primeira.type, base64: await toB64(primeira) } : undefined;
+    const extras = await Promise.all(demais.map(async (g) => ({ tipoDocumento: "Guia/Kit", nome: g.name.slice(0, 120), tipo: g.type, base64: await toB64(g) })));
+    const docsRet = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v!.name.slice(0, 120), tipo: v!.type, base64: await toB64(v!) }))) : [];
+    const documentos = [...docsRet, ...extras].slice(0, 10);
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
@@ -271,6 +275,7 @@ export default function AgendamentoPublico() {
     setProtocolo(data.protocolo);
   };
 
+  const linkKit = `${window.location.origin}/agendamento/completar?protocolo=${protocolo}`;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
@@ -310,9 +315,14 @@ export default function AgendamentoPublico() {
                   Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
                 </div>
               )}
-              <div className="rounded-md border p-4 text-sm">
+              <div className="space-y-2 rounded-md border p-4 text-sm">
                 <p className="font-medium">Kit de atendimento (guia, ficha clínica, ASO)</p>
-                <p className="text-muted-foreground">Se ainda não tem o kit em mãos, envie depois em <a className="text-primary underline" href={`/agendamento/completar?protocolo=${protocolo}`}>Completar pré-agendamento</a>, usando o protocolo e o CPF do colaborador.</p>
+                <p className="text-muted-foreground">Se ainda não tem o kit em mãos, guarde ou copie o link abaixo. Ele abre a tela de envio já com este protocolo; basta informar o CPF do colaborador. O link também fica no comprovante impresso.</p>
+                <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{linkKit}</p>
+                <div className="flex flex-wrap gap-2 print:hidden">
+                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard?.writeText(linkKit); setCopiado(true); }}>{copiado ? "Link copiado!" : "Copiar link"}</Button>
+                  <Button size="sm" variant="outline" asChild><a href={linkKit}>Enviar kit agora</a></Button>
+                </div>
               </div>
               <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
@@ -320,7 +330,8 @@ export default function AgendamentoPublico() {
               </div>
               <div className="flex flex-wrap justify-center gap-2 print:hidden">
                 <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
-                <Button onClick={() => window.location.assign(window.location.pathname)}>Novo agendamento</Button>
+                <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>
+                <Button variant="outline" onClick={() => window.location.assign(window.location.pathname)}>Nova empresa</Button>
               </div>
             </CardContent>
           </Card>
@@ -544,7 +555,7 @@ export default function AgendamentoPublico() {
                     {mostrarGrade && [...pcmsoTipo, ...(pcmsoTipo.length > 0 ? [] : EXAMES.filter((e) => !pcmsoTipo.includes(e))), ...exames.filter((e) => !pcmsoTipo.includes(e))]
                       .filter((e, i, a) => a.indexOf(e) === i)
                       .map((e) => {
-                      const on = exames.includes(e); const doPcmso = pcmsoTipo.includes(e);
+                      const on = exames.includes(e); const doPcmso = temPcmso && pcmsoTipo.includes(e);
                       return (
                         <button key={e} type="button"
                           onClick={() => setExames((p) => p.includes(e) ? p.filter((x) => x !== e) : [...p, e])}
@@ -586,10 +597,24 @@ export default function AgendamentoPublico() {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label>Guia de encaminhamento ({semPedido ? "obrigatória" : "opcional"} — PDF ou imagem, até 5 MB)</Label>
-                  <Input type="file" accept="application/pdf,image/png,image/jpeg"
-                    onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return setGuia(null); } setErro(""); setGuia(file); }} />
+                <div className="space-y-2">
+                  <Label>Guia, pedido ou kit de atendimento ({semPedido ? "obrigatório" : "opcional"} — PDF ou imagem, até 5 MB cada, máx. 8 arquivos)</Label>
+                  <Input type="file" multiple accept="application/pdf,image/png,image/jpeg"
+                    onChange={(e) => {
+                      const novos = Array.from(e.target.files ?? []); e.target.value = "";
+                      if (novos.some((x) => x.size > 5 * 1024 * 1024)) return setErro("Há arquivo maior que 5 MB.");
+                      setErro(""); setGuias((p) => [...p, ...novos].slice(0, 8));
+                    }} />
+                  {guias.length > 0 && (
+                    <ul className="space-y-1 text-xs">
+                      {guias.map((g, i) => (
+                        <li key={i} className="flex items-center justify-between gap-2 rounded border px-2 py-1">
+                          <span className="truncate">{g.name}</span>
+                          <button type="button" className="text-destructive" onClick={() => setGuias((p) => p.filter((_, j) => j !== i))}>remover</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 {retorno && (
                   <div className="space-y-3 rounded-md border p-3">
@@ -616,15 +641,6 @@ export default function AgendamentoPublico() {
                   ))}
                 </div>
                 {carregando && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
-                {unidade && !carregando && regrasEx.length > 0 && (
-                  <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
-                    <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    <div className="space-y-1">
-                      <p>Alguns exames escolhidos têm dias e horários próprios. Mostramos só os horários em que todos podem ser feitos:</p>
-                      {regrasEx.map((r) => <p key={r.exame}><strong>{r.exame}:</strong> {r.texto}</p>)}
-                    </div>
-                  </div>
-                )}
                 {unidade && !carregando && dias.length === 0 && !erro && (
                   <div className="space-y-1 rounded-md border bg-muted/40 p-3 text-sm">
                     <p className="font-medium">Sem horários disponíveis nos próximos 14 dias nesta unidade.</p>
@@ -643,9 +659,9 @@ export default function AgendamentoPublico() {
                 )}
                 {dia && (
                   <div className="grid grid-cols-4 gap-2">
-                    {porData[dia].map(({ hora: h, vagas }) => (
-                      <Button key={h} size="sm" className="h-auto flex-col py-1" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>
-                        <span>{h}</span>{vagas > 1 && <span className="text-[10px] opacity-80 whitespace-nowrap">{vagas} vagas</span>}
+                    {porData[dia].map(({ hora: h }) => (
+                      <Button key={h} size="sm" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>
+                        {h}
                       </Button>
                     ))}
                   </div>
