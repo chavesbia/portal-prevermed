@@ -32,9 +32,9 @@ const CLINICO = "EXAME CLÍNICO";
 const semAcento = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
 export default function AgendamentoPublico() {
-  const [passo, setPasso] = useState(0);
+  const [passo, setPasso] = useState(() => (new URLSearchParams(window.location.search).get("cnpj")?.length === 14 ? 1 : 0));
   const [unidades, setUnidades] = useState<Unidade[]>([]);
-  const [f, setF] = useState({ empresaNome: "", empresaCnpj: "", colaboradorNome: "", colaboradorCpf: "", cargo: "", tipoExame: "", observacoes: "" });
+  const [f, setF] = useState({ empresaNome: "", empresaCnpj: new URLSearchParams(window.location.search).get("cnpj") ?? "", colaboradorNome: "", colaboradorCpf: "", cargo: "", tipoExame: "", observacoes: "" });
   const [empresas, setEmpresas] = useState<Empresa[] | null>(null);
   const [socCode, setSocCode] = useState("");
   const [buscandoEmp, setBuscandoEmp] = useState(false);
@@ -54,7 +54,10 @@ export default function AgendamentoPublico() {
   const [erro, setErro] = useState("");
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
-  const [guia, setGuia] = useState<File | null>(null);
+  const [guias, setGuias] = useState<File[]>([]);
+  const [copiado, setCopiado] = useState(false);
+  const qs = new URLSearchParams(window.location.search);
+  const socInicial = qs.get("soc") ?? "";
   // Fora da carteira PreverMed (ex.: cliente de assessoria parceira) e pedido SOCNET localizado pelo CPF
   const [externa, setExterna] = useState<{ razao_social: string } | null>(null);
   type Pedido = { sequencialFicha: string; tipoExame: string | null; empresa: { codigo: string; nome: string }; assessoria: { codigo: string; nome: string }; funcionario: { nome: string }; exames: string[] };
@@ -78,7 +81,9 @@ export default function AgendamentoPublico() {
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "empresa", cnpj } }).then(({ data }) => {
       const lista: Empresa[] = data?.empresas ?? [];
       setEmpresas(lista);
-      if (lista.length === 1) setSoc(lista[0]);
+      const pre = socInicial ? lista.find((e) => e.soc_code === socInicial) : undefined;
+      if (pre) setSoc(pre); else if (lista.length === 1) setSoc(lista[0]);
+      else if (lista.length > 1) setPasso(0);
       if (!lista.length && data?.externa) { setExterna(data.externa); setF((p) => ({ ...p, empresaNome: data.externa.razao_social })); }
       setBuscandoEmp(false);
     });
@@ -270,6 +275,7 @@ export default function AgendamentoPublico() {
     setProtocolo(data.protocolo);
   };
 
+  const linkKit = `${window.location.origin}/agendamento/completar?protocolo=${protocolo}`;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
@@ -653,9 +659,9 @@ export default function AgendamentoPublico() {
                 )}
                 {dia && (
                   <div className="grid grid-cols-4 gap-2">
-                    {porData[dia].map(({ hora: h, vagas }) => (
-                      <Button key={h} size="sm" className="h-auto flex-col py-1" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>
-                        <span>{h}</span>{vagas > 1 && <span className="text-[10px] opacity-80 whitespace-nowrap">{vagas} vagas</span>}
+                    {porData[dia].map(({ hora: h }) => (
+                      <Button key={h} size="sm" variant={hora === h ? "default" : "outline"} onClick={() => setHora(h)}>
+                        {h}
                       </Button>
                     ))}
                   </div>
