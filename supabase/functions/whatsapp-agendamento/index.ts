@@ -134,12 +134,13 @@ const ehClinico = (e: string) => semAcento(e).includes('CLINIC');
 const nomeExame = (e: string) => (ehClinico(e) ? 'Exame Clínico' : ROTULO[e] ?? titulo(e));
 const chaveExame = (e: string) => (ehClinico(e) ? 'CLINICO' : semAcento(e));
 // Na Monitoração Pontual o Exame Clínico é opcional: sai da base e vira opção da lista de extras
-const extrasDe = (d: Dados) => (d.tipoLabel === 'Monitoração Pontual' && !(d.exames ?? []).some(ehClinico) ? ['EXAME CLÍNICO', ...EXTRAS] : EXTRAS);
+const extrasDe = (d: Dados) => ((d.tipoLabel === 'Monitoração Pontual' || d.externo) && !(d.exames ?? []).some(ehClinico) ? ['EXAME CLÍNICO', ...EXTRAS] : EXTRAS);
 const listaExames = (ex: string[]) => (ex.length ? ex.map((e) => `• ${nomeExame(e)}`).join('\n') : '• _(nenhum exame selecionado)_');
 // Exames que não vieram do PCMSO
 const adicionais = (d: Dados) => { const base = new Set((d.examesBase ?? []).map(chaveExame)); return (d.exames ?? []).filter((e: string) => !base.has(chaveExame(e))); };
 // Linha compacta: com PCMSO resume; sem PCMSO lista em linha
 function textoExames(d: Dados) {
+  if (d.socnet) return `Autorizados no pedido: ${(d.exames ?? []).map(nomeExame).join(' • ')}`;
   const ad = adicionais(d).map(nomeExame);
   if ((d.examesBase ?? []).length) return `Previstos no PCMSO da função${ad.length ? ` + Adicionais: ${ad.join(', ')}` : ''}`;
   return (d.exames ?? []).map(nomeExame).join(' • ') || '-';
@@ -202,6 +203,7 @@ const ENDERECOS: Record<string, string> = { LAPA: 'Rua Afonso Sardinha, 155 - 1�
 const endereco = (u: any) => { const n = semAcento(String(u?.nome ?? '')); const k = Object.keys(ENDERECOS).find((k) => n.includes(k)); return k ? ENDERECOS[k] : ''; };
 // final=true → comprovante: com endereço completo, sem observação/anexo
 const examesResumo = (d: Dados) => {
+  if (d.socnet) return `🧪 ${textoExames(d)}`;
   const ad = adicionais(d).map(nomeExame);
   if ((d.examesBase ?? []).length) return `🧪 Exames *Previstos no PCMSO:* ${d.examesBase.map(nomeExame).join(' • ')}\n➕ Exames *Adicionais:* ${ad.length ? ad.join(' • ') : 'nenhum'}`;
   return `🧪 Exames: ${textoExames(d)}`;
@@ -269,6 +271,21 @@ function confirmarCad(d: Dados): Res {
   return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(c.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(c.nascimento)}\n${sexo}\n📆 Admissão: ${brIso(c.admissao)}\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
 }
 const menuCorrigir = (d: Dados): Res => ({ etapa: 'CAD_CORRIGIR', dados: d, resposta: `✏️ *O que você deseja corrigir?*\n\n*1* - Nome\n*2* - Data de nascimento\n*3* - Sexo\n*4* - Data de admissão\n*5* - Unidade / Setor / Cargo\n*6* - Voltar à confirmação${RODAPE}` });
+
+// ---- SOCNET: pedido de exames de assessoria parceira direcionado à PreverMed (busca só pelo CPF) ----
+const TIPO_SOCNET_LABEL: Record<string, string> = { Consulta: 'Consulta Ocupacional' };
+async function tentarSocnet(d: Dados): Promise<Res | null> {
+  const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'socnet', cpf: d.cpf });
+  const p = ok ? (data?.pedidos ?? [])[0] : null;
+  if (!p) return null;
+  d.socnet = { sequencialFicha: p.sequencialFicha, empresa: p.empresa, assessoria: p.assessoria };
+  d.colaboradorNome = p.funcionario?.nome ?? '';
+  d.tipoExame = p.tipoExame ?? 'Periódico'; d.tipoLabel = TIPO_SOCNET_LABEL[d.tipoExame] ?? d.tipoExame;
+  d.exames = [...(p.exames ?? [])]; d.examesBase = [...d.exames];
+  if (p.empresa?.nome) d.empresaNome = p.empresa.nome;
+  const u = await pedirUnidade(d);
+  return { ...u, resposta: `✅ *Localizamos a autorização de exames para este colaborador!*\n\n👤 *${titulo(d.colaboradorNome)}*\n📋 Tipo de exame: *${d.tipoLabel}*\n🏢 Empresa: *${titulo(d.empresaNome)}*\n\n🩺 *Exames autorizados no pedido:*\n${listaExames(d.exames)}\n\n${u.resposta}` };
+}
 
 async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?: string, arquivo?: { nome?: string; tipo: string; base64: string }): Promise<Res> {
   const t = texto.trim();
