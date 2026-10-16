@@ -130,10 +130,10 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin.from('soc_agendamentos').insert({
       exames, guia_path: guiaPath, unidade_id: b.unidadeId,
-      empresa_nome: emp.razao_social, empresa_cnpj: b.empresaCnpj, codigo_empresa_soc: b.codigoEmpresaSoc,
+      empresa_nome: empresaNome, empresa_cnpj: b.empresaCnpj, codigo_empresa_soc: codigoEmpresa,
       colaborador_nome: b.colaboradorNome.toUpperCase(), colaborador_cpf: b.colaboradorCpf,
       tipo_exame: b.tipoExame, data_agendada: b.data, hora_agendada: b.hora,
-      observacoes: [b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
+      observacoes: [origemTxt, b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
       motivo_retorno: retorno ? b.motivoRetorno : null,
       status: retorno ? 'aguardando_aprovacao' : 'solicitado',
       aprovacao_status: retorno ? 'pendente' : null,
@@ -143,13 +143,16 @@ Deno.serve(async (req) => {
 
     // Retorno ao Trabalho só vai para o SOC após aprovação da equipe de saúde
     if (retorno) return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true });
+    // Sem pedido SOCNET não há cadastro no SOC: a equipe confere a guia e lança a reserva
+    if (b.origem === 'externo' || !codigoEmpresa) return json({ protocolo: data.protocolo, agendadoSoc: false, pendenteEquipe: true });
 
     const soc = await incluirAgendamentoSoc({
-      codigoEmpresa: b.codigoEmpresaSoc, cpf: b.colaboradorCpf, codigoAgenda: unid.codigo_agenda,
+      codigoEmpresa, cpf: b.colaboradorCpf, codigoAgenda: unid.codigo_agenda,
       data: b.data, hora: b.hora, tipoExame: b.tipoExame,
-      codigoFuncionarioSoc: sit?.inativo ? sit.codigo ?? undefined : undefined,
+      codigoFuncionarioSoc: codFuncSocnet ?? (sit?.inativo ? sit.codigo ?? undefined : undefined),
       detalhes: [
         `PROTOCOLO: ${data.protocolo}`,
+        origemTxt,
         b.examesAdicionais ? `EXAMES ADICIONAIS: ${b.examesAdicionais.map((e) => e.toUpperCase()).join(', ') || 'NENHUM'}` : `EXAMES: ${exames.join(', ') || '-'}`,
         b.mudancaRisco ? `ATENÇÃO: ${b.mudancaRisco.toUpperCase()}` : '',
         b.observacoes?.trim() ? `OBSERVAÇÃO: ${b.observacoes.trim().toUpperCase()}` : '',
@@ -162,7 +165,8 @@ Deno.serve(async (req) => {
       soc_retorno: { codigoAgendamento: soc.codigoAgendamento ?? null, resposta: soc.resposta },
       soc_erro: soc.ok ? null : soc.erro,
     }).eq('id', data.id);
-    return json({ protocolo: data.protocolo, agendadoSoc: soc.ok });
+    // SOCNET: se o SOC recusar a reserva na base da PreverMed, a solicitação fica para a equipe confirmar
+    return json({ protocolo: data.protocolo, agendadoSoc: soc.ok, pendenteEquipe: !soc.ok && b.origem === 'socnet' });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
