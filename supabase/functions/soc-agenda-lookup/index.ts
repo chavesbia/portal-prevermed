@@ -126,8 +126,11 @@ async function pedidosSocnet(cpf: string) {
   const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_SOCNET_PEDIDOS');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_SOCNET_PEDIDOS');
   if (!empresa || !codigo || !chave) return { pedidos: [], indisponivel: true };
-  const rows = await exporta({ empresa, codigo, chave, DataInicio: fmtBR(-30), DataFim: fmtBR(60) });
-  if (!rows) return { pedidos: [], indisponivel: true };
+  // O relatório devolve um único dia (DATAFICHA) por chamada: varre de 15 dias atrás a 15 à frente
+  const dias = Array.from({ length: 31 }, (_, i) => i - 15);
+  const lotes = await Promise.all(dias.map((d) => exporta({ empresa, codigo, chave, DataInicio: fmtBR(d) })));
+  if (lotes.every((l) => l === null)) return { pedidos: [], indisponivel: true };
+  const rows = lotes.flatMap((l) => l ?? []);
   const fichas = new Map<string, any>();
   for (const r of rows) {
     if ((pick(r, ['CPF']) ?? '').replace(/\D/g, '').padStart(11, '0') !== cpf) continue;
