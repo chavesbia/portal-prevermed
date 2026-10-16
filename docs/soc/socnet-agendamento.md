@@ -16,3 +16,7 @@
 - "Exames do Funcionário SOCNET" (Sim) — exames aplicados e vencimentos (tela 238).
 - "Pedido Exame" (não SOCNET) — por CPF/período, base própria; útil para fila de exames/etiquetas (o que integradores como a VALC usam).
 - Futuro ASO: "ASO" (Sim, por sequencial), "ASOs no período", "Dados ASO com exames", "Convocação de Exames" (Sim).
+
+## Validado em 16/10/2026 (221785)
+- Gerar com `empresa` = Empresa Principal; parâmetro `DataInicio` (D maiúsculo). Retorna só os pedidos com DATAFICHA = DataInicio (um dia por chamada; DataFim é ignorado).
+- Exemplo real: PAULO GALDINO (Sendas 906767, repasse 897109) — pedido 380415090, Periódico, sem guia. TIPOEXAME: 1 Adm, 2 Per, 3 Retorno, 4 Mudança, 5 Dem, 6 Pontual (conferir 3–6).
