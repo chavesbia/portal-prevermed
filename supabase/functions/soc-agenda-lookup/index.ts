@@ -166,7 +166,17 @@ Deno.serve(async (req) => {
       .select('soc_code, razao_social, nome_abreviado, cidade, estado, subgrupo')
       .eq('cnpj', b.cnpj).eq('is_active', true).order('razao_social');
 
-    if (b.acao === 'empresa') return json({ empresas: (empresas ?? []).map(({ subgrupo, ...e }) => ({ ...e, podeCriar: podeCriar(subgrupo) })) });
+    if (b.acao === 'empresa') {
+      const lista = (empresas ?? []).map(({ subgrupo, ...e }) => ({ ...e, podeCriar: podeCriar(subgrupo) }));
+      if (lista.length) return json({ empresas: lista });
+      // Fora da carteira (ex.: cliente de assessoria parceira via SOCNET): só identifica a razão social na Receita
+      let externa: { razao_social: string } | null = null;
+      try {
+        const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${b.cnpj}`);
+        if (r.ok) { const d = await r.json(); const nome = d.razao_social || d.nome_fantasia; if (nome) externa = { razao_social: String(nome).toUpperCase() }; }
+      } catch (e) { console.error('brasilapi', e); }
+      return json({ empresas: [], externa });
+    }
 
     // Só consulta colaborador de empresa ativa vinculada ao CNPJ informado
     const emp = empresas?.find((e) => e.soc_code === b.socCode);
