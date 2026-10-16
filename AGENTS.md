@@ -6,3 +6,4 @@
 - WhatsApp: o robô (n8n) só repassa mensagens; etapas e regras ficam em `whatsapp-agendamento`, que chama as mesmas funções da página pública e é protegida pelo header `x-bot-token` — a regra de negócio fica num lugar só.
 - WhatsApp: rastreabilidade (número/nome do solicitante, protocolos de análise PCMSO e atendente humano) fica em `whatsapp_registros`, legível só por adm_master — o número não vai para `soc_agendamentos`, que outros perfis leem.
 - SOC: antes de propor ou construir qualquer integração SOC, consultar `docs/soc/` (manuais integrais + catálogo dos 207 Exporta Dados) — evita afirmar limitações ou telas sem checar a fonte oficial.
+- SOCNET: pedidos de outras bases direcionados à PreverMed vêm do Exporta 221785 via `soc-agenda-lookup` (acao `socnet`, só CPF); o relatório devolve um dia por chamada, por isso a busca varre dia a dia — guia (Tela 675) nem sempre existe, o pedido (Tela 248) sim.

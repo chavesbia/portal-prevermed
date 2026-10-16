@@ -16,6 +16,8 @@ const Body = z.discriminatedUnion('acao', [
   z.object({ acao: z.literal('funcionario'), ...Pessoa }),
   z.object({ acao: z.literal('exames'), ...Pessoa }),
   z.object({ acao: z.literal('hierarquia'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode }),
+  // SOCNET: pedidos de outras bases direcionados à PreverMed (Exporta 221785), só pelo CPF
+  z.object({ acao: z.literal('socnet'), cpf: Pessoa.cpf }),
   // SOCNET: consulta guias/fichas (Exporta 222211) por número sequencial e/ou período
   z.object({
     acao: z.literal('guias'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode,
@@ -113,6 +115,43 @@ async function buscarFuncionario(socCode: string, cpf: string): Promise<{ row: R
   return { row: ultimo, inativo: true };
 }
 
+const TIPO_FICHA: Record<string, string> = {
+  '1': 'Admissional', '2': 'Periódico', '3': 'Retorno ao Trabalho', '4': 'Mudança de Risco', '5': 'Demissional', '6': 'Monitoração Pontual',
+};
+const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5); return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`; };
+
+// Pedidos SOCNET abertos (sem resultado) direcionados à PreverMed para o CPF, agrupados por ficha
+async function pedidosSocnet(cpf: string) {
+  const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
+  const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_SOCNET_PEDIDOS');
+  const chave = Deno.env.get('SOC_CHAVE_EXPORTA_SOCNET_PEDIDOS');
+  if (!empresa || !codigo || !chave) return { pedidos: [], indisponivel: true };
+  // O relatório devolve um único dia (DATAFICHA) por chamada: varre de 15 dias atrás a 15 à frente
+  const dias = Array.from({ length: 31 }, (_, i) => i - 15);
+  const lotes = await Promise.all(dias.map((d) => exporta({ empresa, codigo, chave, DataInicio: fmtBR(d) })));
+  if (lotes.every((l) => l === null)) return { pedidos: [], indisponivel: true };
+  const rows = lotes.flatMap((l) => l ?? []);
+  const fichas = new Map<string, any>();
+  for (const r of rows) {
+    if ((pick(r, ['CPF']) ?? '').replace(/\D/g, '').padStart(11, '0') !== cpf) continue;
+    const seq = pick(r, ['SEQUENCIALFICHA']); if (!seq) continue;
+    if (!fichas.has(seq)) fichas.set(seq, {
+      sequencialFicha: seq, dataFicha: pick(r, ['DATAFICHA']),
+      tipoExame: TIPO_FICHA[pick(r, ['TIPOEXAME']) ?? ''] ?? null,
+      empresa: { codigo: pick(r, ['CODIGOEMPRESA']), nome: pick(r, ['NOMEEMPRESA']) },
+      assessoria: { codigo: pick(r, ['CODIGOEMPRESAREPASSE']), nome: pick(r, ['NOMEEMPRESAREPASSE']) },
+      funcionario: { codigo: pick(r, ['CODIGOFUNCIONARIO']), nome: pick(r, ['NOME']), nascimento: pick(r, ['DTNASC']), sexo: pick(r, ['SEXO']) === '2' ? 'FEMININO' : 'MASCULINO' },
+      exames: [] as string[], pendentes: 0,
+    });
+    const f = fichas.get(seq);
+    const nome = (pick(r, ['NOMEEXAME']) ?? '').toUpperCase();
+    if (nome && !f.exames.includes(nome)) f.exames.push(nome);
+    if (!pick(r, ['DATARESULTADO'])) f.pendentes++;
+  }
+  const pedidos = [...fichas.values()].filter((f) => f.pendentes > 0).map(({ pendentes, ...f }) => f);
+  return { pedidos, socnet: pedidos.length > 0 };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -120,6 +159,8 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: 'Dados inválidos' }, 400);
     const b = parsed.data;
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+    if (b.acao === 'socnet') return json(await pedidosSocnet(b.cpf));
 
     const { data: empresas } = await admin.from('companies')
       .select('soc_code, razao_social, nome_abreviado, cidade, estado, subgrupo')
