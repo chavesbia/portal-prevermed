@@ -126,9 +126,22 @@ async function pedidosSocnet(cpf: string) {
   const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_SOCNET_PEDIDOS');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_SOCNET_PEDIDOS');
   if (!empresa || !codigo || !chave) return { pedidos: [], indisponivel: true };
-  // O relatório devolve um único dia (DATAFICHA) por chamada: varre de 15 dias atrás a 15 à frente
+  // O relatório devolve um único dia (DATAFICHA) por chamada: varre de 15 dias atrás a 15 à frente.
+  // O SOC aceita no máximo 5 chamadas simultâneas: fila com 4 em paralelo e nova tentativa se for recusada.
   const dias = Array.from({ length: 31 }, (_, i) => i - 15);
-  const lotes = await Promise.all(dias.map((d) => exporta({ empresa, codigo, chave, DataInicio: fmtBR(d) })));
+  const lotes: (Row[] | null)[] = new Array(dias.length).fill(null);
+  let prox = 0;
+  const trabalhador = async () => {
+    while (prox < dias.length) {
+      const i = prox++;
+      for (let t = 0; t < 3 && lotes[i] === null; t++) {
+        if (t) await new Promise((r) => setTimeout(r, 400 * t));
+        lotes[i] = await exporta({ empresa, codigo, chave, DataInicio: fmtBR(dias[i]) });
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 4 }, trabalhador));
+  if (lotes.some((l) => l === null)) console.error('SOCNET: dias sem resposta', lotes.filter((l) => l === null).length);
   if (lotes.every((l) => l === null)) return { pedidos: [], indisponivel: true };
   const rows = lotes.flatMap((l) => l ?? []);
   const fichas = new Map<string, any>();
@@ -166,7 +179,17 @@ Deno.serve(async (req) => {
       .select('soc_code, razao_social, nome_abreviado, cidade, estado, subgrupo')
       .eq('cnpj', b.cnpj).eq('is_active', true).order('razao_social');
 
-    if (b.acao === 'empresa') return json({ empresas: (empresas ?? []).map(({ subgrupo, ...e }) => ({ ...e, podeCriar: podeCriar(subgrupo) })) });
+    if (b.acao === 'empresa') {
+      const lista = (empresas ?? []).map(({ subgrupo, ...e }) => ({ ...e, podeCriar: podeCriar(subgrupo) }));
+      if (lista.length) return json({ empresas: lista });
+      // Fora da carteira (ex.: cliente de assessoria parceira via SOCNET): só identifica a razão social na Receita
+      let externa: { razao_social: string } | null = null;
+      try {
+        const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${b.cnpj}`);
+        if (r.ok) { const d = await r.json(); const nome = d.razao_social || d.nome_fantasia; if (nome) externa = { razao_social: String(nome).toUpperCase() }; }
+      } catch (e) { console.error('brasilapi', e); }
+      return json({ empresas: [], externa });
+    }
 
     // Só consulta colaborador de empresa ativa vinculada ao CNPJ informado
     const emp = empresas?.find((e) => e.soc_code === b.socCode);
