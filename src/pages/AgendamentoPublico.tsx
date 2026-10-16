@@ -55,6 +55,12 @@ export default function AgendamentoPublico() {
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
   const [guia, setGuia] = useState<File | null>(null);
+  // Fora da carteira PreverMed (ex.: cliente de assessoria parceira) e pedido SOCNET localizado pelo CPF
+  const [externa, setExterna] = useState<{ razao_social: string } | null>(null);
+  type Pedido = { sequencialFicha: string; tipoExame: string | null; empresa: { codigo: string; nome: string }; assessoria: { codigo: string; nome: string }; funcionario: { nome: string }; exames: string[] };
+  const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [semPedido, setSemPedido] = useState(false);
+  const [pendenteEquipe, setPendenteEquipe] = useState(false);
 
   useEffect(() => {
     document.title = "Agendamento de Exames | PreverMed";
@@ -66,13 +72,14 @@ export default function AgendamentoPublico() {
 
   const cnpj = dig(f.empresaCnpj);
   useEffect(() => {
-    setEmpresas(null); setSocCode(""); setFunc(null);
+    setEmpresas(null); setSocCode(""); setFunc(null); setExterna(null);
     if (cnpj.length !== 14) return;
     setBuscandoEmp(true);
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "empresa", cnpj } }).then(({ data }) => {
       const lista: Empresa[] = data?.empresas ?? [];
       setEmpresas(lista);
       if (lista.length === 1) setSoc(lista[0]);
+      if (!lista.length && data?.externa) { setExterna(data.externa); setF((p) => ({ ...p, empresaNome: data.externa.razao_social })); }
       setBuscandoEmp(false);
     });
   }, [cnpj]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -81,18 +88,33 @@ export default function AgendamentoPublico() {
 
   const cpf = dig(f.colaboradorCpf);
   const cpfValido = isValidCPF(cpf);
+  const buscarPedido = async () => {
+    const { data } = await supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "socnet", cpf } });
+    const p: Pedido | undefined = data?.pedidos?.[0];
+    if (!p) return false;
+    setPedido(p);
+    setF((x) => ({ ...x, colaboradorNome: p.funcionario?.nome ?? "", empresaNome: p.empresa?.nome || x.empresaNome, tipoExame: p.tipoExame ?? "Periódico" }));
+    setExames(p.exames);
+    return true;
+  };
   useEffect(() => {
-    setFunc(null);
-    if (!cpfValido || !socCode) return;
+    setFunc(null); setPedido(null); setSemPedido(false);
+    if (!cpfValido || (!socCode && !externa)) return;
     setBuscandoFunc(true);
-    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(({ data }) => {
+    if (!socCode) {
+      buscarPedido().then((ok) => { if (!ok) { setSemPedido(true); setF((p) => ({ ...p, colaboradorNome: "", tipoExame: "" })); } setBuscandoFunc(false); });
+      return;
+    }
+    supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(async ({ data }) => {
       const r: Func = data?.encontrado !== undefined ? data : { encontrado: false, indisponivel: true };
+      // Colaborador da base de assessoria parceira: o pedido SOCNET tem prioridade sobre o pré-cadastro
+      if (!r.encontrado && !r.indisponivel && (await buscarPedido())) { setBuscandoFunc(false); return; }
       setFunc(r);
       if (r.encontrado) setF((p) => ({ ...p, colaboradorNome: r.funcionario.nome ?? "", cargo: r.funcionario.cargo ?? "" }));
       else setF((p) => ({ ...p, colaboradorNome: "", cargo: "" }));
       setBuscandoFunc(false);
     });
-  }, [cpf, socCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cpf, socCode, externa]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unidade = unidades.find((u) => u.id === unidadeId);
   useEffect(() => {
@@ -131,7 +153,7 @@ export default function AgendamentoPublico() {
     [pcmso, f.tipoExame, mudanca],
   );
   useEffect(() => {
-    if (!f.tipoExame) return;
+    if (!f.tipoExame || pedido) return;
     setExames(pcmsoTipo);
   }, [pcmsoTipo]); // eslint-disable-line react-hooks/exhaustive-deps
   const temPcmso = !!pcmso && pcmso.length > 0;
@@ -205,9 +227,9 @@ export default function AgendamentoPublico() {
   const retorno = f.tipoExame === "Retorno ao Trabalho";
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   const valido = [
-    !!socCode && cnpj.length === 14,
-    !!func && (func.encontrado || func.indisponivel) && !inativoLivre && cpfValido && f.colaboradorNome.trim().length >= 3,
-    !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    (!!socCode || !!externa) && cnpj.length === 14,
+    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre)),
+    pedido ? true : semPedido ? !!f.tipoExame && !!guia && exames.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -227,10 +249,11 @@ export default function AgendamentoPublico() {
     const documentos = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v!.name.slice(0, 120), tipo: v!.type, base64: await toB64(v!) }))) : [];
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
-        unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: socCode,
+        unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
+        origem: pedido ? "socnet" : semPedido ? "externo" : "cliente", sequencialFicha: pedido?.sequencialFicha,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
-        exames: [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
+        exames: pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
         documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
       },
     });
@@ -241,6 +264,7 @@ export default function AgendamentoPublico() {
       return setErro(msg ?? "Não foi possível concluir. Tente novamente.");
     }
     if (data?.aguardandoAprovacao) { setAguardandoAprov(true); return setProtocolo(data.protocolo); }
+    if (data?.pendenteEquipe) { setPendenteEquipe(true); return setProtocolo(data.protocolo); }
     if (!data?.agendadoSoc) {
       return setErro(`Não conseguimos reservar este horário na agenda (protocolo ${data?.protocolo ?? "-"}). Escolha outro horário ou fale com a PreverMed antes de comparecer.`);
     }
@@ -262,7 +286,8 @@ export default function AgendamentoPublico() {
             <CardContent className="space-y-5 py-8">
               <div className="space-y-2 text-center">
                 <CalendarCheck className="mx-auto h-12 w-12 text-primary" />
-                <p className="text-lg font-semibold">{aguardandoAprov ? "Solicitação recebida — aguardando aprovação" : "Pré-agendamento realizado!"}</p>
+                <p className="text-lg font-semibold">{aguardandoAprov ? "Solicitação recebida — aguardando aprovação" : pendenteEquipe ? "Solicitação recebida!" : "Pré-agendamento realizado!"}</p>
+                {pendenteEquipe && <p className="text-sm text-muted-foreground">Nossa equipe vai conferir {pedido ? "o pedido" : "a guia enviada"} e confirmar a reserva na agenda. Se houver pendência, entraremos em contato.</p>}
                 <p className="font-mono text-2xl">{protocolo}</p>
                 <p className="text-xs text-muted-foreground">Guarde este número de protocolo.</p>
               </div>
@@ -271,7 +296,7 @@ export default function AgendamentoPublico() {
                 <dt className="text-muted-foreground">Colaborador</dt><dd className="font-medium">{f.colaboradorNome}</dd>
                 {func?.funcionario?.unidade && (<><dt className="text-muted-foreground">Unidade do colaborador</dt><dd className="font-medium">{func.funcionario.unidade}</dd></>)}
                 <dt className="text-muted-foreground">Tipo de exame</dt><dd className="font-medium">{f.tipoExame}</dd>
-                <dt className="text-muted-foreground">Exames</dt><dd className="font-medium">{usaGradePcmso ? "CONFORME PCMSO" : [...(temPcmso ? [] : [CLINICO]), ...exames].join(", ") || "-"}</dd>
+                <dt className="text-muted-foreground">Exames</dt><dd className="font-medium">{pedido ? pedido.exames.join(", ") : usaGradePcmso ? "CONFORME PCMSO" : [...(temPcmso ? [] : [CLINICO]), ...exames].join(", ") || "-"}</dd>
                 <dt className="text-muted-foreground">Local de atendimento</dt>
                 <dd><span className="font-medium">{unidade?.nome}</span>
                   {ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""] && <span className="block text-xs text-muted-foreground">{ENDERECOS[unidade!.codigo_agenda.replace(/^0+/, "")]}</span>}
@@ -313,8 +338,14 @@ export default function AgendamentoPublico() {
               {passo === 0 && (<>
                 <div><Label>CNPJ da empresa</Label><Input inputMode="numeric" value={f.empresaCnpj} onChange={set("empresaCnpj")} placeholder="Somente números" /></div>
                 {buscandoEmp && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                {empresas && empresas.length === 0 && (
-                  <p className="text-sm text-destructive">CNPJ não encontrado entre os clientes ativos. Fale com a PreverMed.</p>
+                {empresas && empresas.length === 0 && externa && (
+                  <div className="flex gap-2 rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <p>Empresa identificada: <strong>{externa.razao_social}</strong>. Continue para informar o CPF do colaborador.</p>
+                  </div>
+                )}
+                {empresas && empresas.length === 0 && !externa && (
+                  <p className="text-sm text-destructive">Não conseguimos identificar este CNPJ. Confira os números ou fale com a PreverMed.</p>
                 )}
                 {empresas && empresas.length > 1 && <p className="text-sm text-muted-foreground">Encontramos {empresas.length} operações para este CNPJ. Selecione a correta:</p>}
                 {empresas?.map((e) => (
@@ -329,7 +360,23 @@ export default function AgendamentoPublico() {
               {passo === 1 && (<>
                 <div><Label>CPF do colaborador</Label><Input inputMode="numeric" maxLength={14} value={maskCPF(f.colaboradorCpf)} onChange={(e) => setF((p) => ({ ...p, colaboradorCpf: dig(e.target.value).slice(0, 11) }))} placeholder="000.000.000-00" />
                   {cpf.length === 11 && !cpfValido && <p className="mt-1 text-xs text-destructive">CPF inválido. Confira os números digitados.</p>}</div>
-                {buscandoFunc && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
+                {buscandoFunc && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin text-primary" /> Consultando…</p>}
+                {pedido && (
+                  <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                    <p className="flex items-center gap-1.5 font-semibold text-primary"><CheckCircle2 className="h-4 w-4" /> Localizamos a autorização de exames!</p>
+                    <p className="font-semibold">{pedido.funcionario?.nome}</p>
+                    <p>Tipo de exame: {pedido.tipoExame ?? "Periódico"}</p>
+                    <p>Empresa: {pedido.empresa?.nome}</p>
+                    <p>Exames autorizados: {pedido.exames.join(", ")}</p>
+                  </div>
+                )}
+                {semPedido && (<>
+                  <div className="flex gap-2 rounded-md border bg-muted/40 p-3 text-sm">
+                    <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
+                    <p>Não localizamos um pedido eletrônico de exames para este CPF. Para seguir, informe o nome do colaborador e, na próxima etapa, envie a guia/autorização de exames.</p>
+                  </div>
+                  <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
+                </>)}
                 {inativoLivre && (
                   <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
                     <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
@@ -409,7 +456,15 @@ export default function AgendamentoPublico() {
                   </div>
                 )}
               </>)}
-              {passo === 2 && (<>
+              {passo === 2 && pedido && (
+                <div className="space-y-2 rounded-md border border-primary bg-primary/5 p-3 text-sm">
+                  <p>Tipo de exame: <strong>{f.tipoExame}</strong></p>
+                  <p className="font-medium">Exames autorizados no pedido:</p>
+                  <div className="flex flex-wrap gap-1.5">{pedido.exames.map((e) => <span key={e} className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-primary bg-primary px-2.5 py-1 text-xs text-primary-foreground"><Check className="h-3 w-3" />{e}</span>)}</div>
+                  <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
+                </div>
+              )}
+              {passo === 2 && !pedido && (<>
                 {inativo && (
                   <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
@@ -417,7 +472,7 @@ export default function AgendamentoPublico() {
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-2">
-                  {TIPOS.map((t) => (
+                  {TIPOS.filter((t) => !semPedido || t !== "Retorno ao Trabalho").map((t) => (
                     <Button key={t} type="button" variant={f.tipoExame === t ? "default" : "outline"} onClick={() => setF({ ...f, tipoExame: t })}>{t}</Button>
                   ))}
                 </div>
@@ -532,7 +587,7 @@ export default function AgendamentoPublico() {
                   )}
                 </div>
                 <div>
-                  <Label>Guia de encaminhamento (opcional — PDF ou imagem, até 5 MB)</Label>
+                  <Label>Guia de encaminhamento ({semPedido ? "obrigatória" : "opcional"} — PDF ou imagem, até 5 MB)</Label>
                   <Input type="file" accept="application/pdf,image/png,image/jpeg"
                     onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return setGuia(null); } setErro(""); setGuia(file); }} />
                 </div>
