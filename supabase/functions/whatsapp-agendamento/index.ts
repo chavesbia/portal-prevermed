@@ -121,9 +121,8 @@ async function pedirDatas(d: Dados): Promise<Res> {
   }
   d.horarios = Object.fromEntries(datas.map((k) => [k, porData[k].map((h) => h.hora)]));
   d.datas = datas;
-  const rx = Array.isArray(data?.regrasExames) ? data.regrasExames.map((x: any) => `⚠️ ${nomeExame(x.exame)}: ${x.texto}`).join('\n') : typeof data?.regrasExames === 'string' ? data.regrasExames.trim() : '';
-  const aviso = rx ? `\n\n_${rx}_` : '';
-  return { etapa: 'ESCOLHENDO_DATA', dados: d, resposta: `📅 Datas disponíveis em *${titulo(d.unidade.nome)}*:\n\n${menu(datas)}${aviso}${RODAPE}` };
+  // Regras de horário dos exames já filtram as datas no backend; não exibimos o detalhe ao solicitante
+  return { etapa: 'ESCOLHENDO_DATA', dados: d, resposta: `📅 Datas disponíveis em *${titulo(d.unidade.nome)}*:\n\n${menu(datas)}${RODAPE}` };
 }
 
 function lotacao(d: Dados) {
@@ -661,8 +660,9 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         return { etapa: 'ERRO_CONF', dados: d, resposta: `⚠️ ${det ? 'Este colaborador já possui um agendamento nesta data:' : `Não foi possível concluir: ${data?.error ?? 'erro inesperado'}`}${det}\n\nO que deseja fazer?\n*1* - Escolher outra data para este colaborador\n*2* - Novo agendamento (outro colaborador)${RODAPE}` };
       }
       await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
-      return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
-        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}${data.pendenteEquipe ? `\n\n📌 Nossa equipe vai conferir ${d.externo && !d.socnet ? 'a guia enviada' : 'o pedido'} e confirmar a reserva na agenda. Se houver qualquer pendência, entraremos em contato por este número.` : ''}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *1*.` };
+      const mesmaEmpresa = { cnpj: d.cnpj, empresaNome: d.empresaNome, socCode: d.socCode, externo: d.externo, livre: d.livre, termoAceito: d.termoAceito };
+      return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo, mesmaEmpresa }, resposta:
+        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}${data.pendenteEquipe ? `\n\n📌 Nossa equipe vai conferir ${d.externo && !d.socnet ? 'a guia enviada' : 'o pedido'} e confirmar a reserva na agenda. Se houver qualquer pendência, entraremos em contato por este número.` : ''}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\n📎 Para enviar o kit (guia, ficha, ASO) depois, acesse ${PORTAL.replace(/\/$/, '')}/agendamento/completar?protocolo=${data.protocolo} e informe o CPF do colaborador.\n\nPrecisa de outro agendamento?\n*1* - Nova empresa\n*2* - Outro colaborador de *${titulo(d.empresaNome)}*` };
     }
     default:
       return boasVindas(nome);
@@ -694,7 +694,11 @@ Deno.serve(async (req) => {
     let r: Res;
     // "Sair"/"encerrar" a qualquer momento, ou "0" na primeira mensagem (não há o que recomeçar) → encerra
     const naAbertura = !expirada && ['TERMO', 'AGUARDANDO_CNPJ'].includes(sessao?.etapa ?? '');
-    if (reiniciar && sessao && sessao.etapa !== 'FINALIZADO' && (['sair', 'encerrar'].includes(cmd) || naAbertura)) {
+    const mesma = !expirada && sessao?.etapa === 'FINALIZADO' && cmd === '2' ? (sessao.dados_sessao as Dados)?.mesmaEmpresa : null;
+    if (mesma?.cnpj) {
+      // Outro colaborador da mesma empresa: pula CNPJ
+      r = await pedirCpf({ ...mesma });
+    } else if (reiniciar && sessao && sessao.etapa !== 'FINALIZADO' && (['sair', 'encerrar'].includes(cmd) || naAbertura)) {
       r = { etapa: 'FINALIZADO', dados: {}, resposta: 'Atendimento encerrado. Quando quiser, é só enviar *1*. 👋' };
     } else if (voltar && etapa !== 'INICIO') {
       const prev = hist.pop();
