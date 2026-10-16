@@ -180,7 +180,9 @@ const confExames = (d: Dados, prefixo = ''): Res => ({ etapa: 'CONF_EXAMES', dad
 const bloqueioPcmso = (d: Dados): Res => ({ etapa: 'PCMSO_BLOQUEIO', dados: d, resposta: `⚠️ *Atenção:* Não localizamos os exames do PCMSO ativos para o cargo *${titulo(d.lotCargo || 'informado')}* nesta unidade.\n\nPara a conformidade do ASO, este atendimento precisa de validação técnica prévia da nossa equipe.\n\n*1* - Solicitar análise da equipe técnica PreverMed\n*2* - Falar com um atendente humano\n*3* - Voltar e conferir o cargo/setor informado${RODAPE}` });
 
 const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 *OBSERVAÇÃO* para a equipe do *BALCÃO DE ATENDIMENTO*\n\n_(ex: PCD, atendimento preferencial, restrição de mobilidade, contato do gestor ou outras informações)_\n\nCaso não possua nenhuma observação para atendimento, digite *1* para avançar.${RODAPE}` });
-const pedirAnexo = (d: Dados): Res => ({ etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar a foto ou PDF da guia/pedido de exame ou de outro documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` });
+const pedirAnexo = (d: Dados): Res => d.externo && !d.socnet
+  ? { etapa: 'ANEXO', dados: d, resposta: `📎 Envie agora a *foto ou PDF da guia/autorização de exames* (obrigatório para este atendimento).${RODAPE}` }
+  : { etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar a foto ou PDF da guia/pedido de exame ou de outro documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
 
 function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
   const tipo = arquivo.tipo.split(';')[0].trim().toLowerCase();
@@ -350,6 +352,27 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       d.tipos = d.inativo ? ['Demissional', 'Novo vínculo (pré-cadastro)'] : TIPOS_ATIVO;
       const aviso = d.inativo ? '\n\n⚠️ O cadastro deste colaborador está *inativo*.' : '';
       return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}${aviso}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+    }
+    case 'EXT_OFERTA': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para continuar ou *2* para digitar o CPF novamente.${RODAPE}` };
+      if (i === 1) return { etapa: 'AGUARDANDO_CPF', dados: d, resposta: `Digite o *CPF* do colaborador:${RODAPE}` };
+      return { etapa: 'EXT_NOME', dados: d, resposta: `Digite o *nome completo* do colaborador:${RODAPE}` };
+    }
+    case 'EXT_NOME': {
+      const n = t.replace(/\s+/g, ' ');
+      if (n.length < 5 || !n.includes(' ') || /\d/.test(n) || n.length > 120) return { etapa, dados: d, resposta: `Digite o *nome completo* do colaborador (nome e sobrenome, sem números):${RODAPE}` };
+      d.colaboradorNome = n.toUpperCase();
+      d.tipos = TIPOS_CADASTRO.filter((x) => x !== 'Retorno ao Trabalho');
+      return { etapa: 'EXT_TIPO', dados: d, resposta: `Qual o tipo de exame indicado na guia?\n\n${menu(d.tipos)}${RODAPE}` };
+    }
+    case 'EXT_TIPO': {
+      const i = escolha(t, d.tipos.length);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite apenas o *número* da opção.${RODAPE}` };
+      const tipo = d.tipos[i];
+      d.tipoExame = TIPO_SISTEMA[tipo] ?? tipo; d.tipoLabel = tipo; d.tiposAnt = d.tipos; delete d.tipos;
+      d.exames = []; d.examesBase = [];
+      return pedirExtras(d);
     }
     case 'CAD_OFERTA': {
       const i = escolha(t, 2);
@@ -597,6 +620,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
     }
     case 'ANEXO': {
       if (arquivo) return receberAnexo(etapa, d, arquivo);
+      if (t === '1' && d.externo && !d.socnet && !listaAnexos(d).length) return { etapa, dados: d, resposta: `📎 Para este atendimento a *guia/autorização de exames* é obrigatória. Envie a foto ou o PDF agora.${RODAPE}` };
       if (t === '1') return resumo(d);
       if (t === '[midia]') return { etapa, dados: d, resposta: `Recebi o arquivo, mas não consegui abri-lo 😕 Tente enviar novamente como *foto* ou *PDF* (até 5 MB), ou digite *1* para continuar sem anexo.${RODAPE}` };
       return { etapa, dados: d, resposta: `Envie a foto ou o PDF agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
@@ -620,7 +644,8 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i === 1) return pedirDatas(d);
       d.termoAceito = new Date().toISOString();
       const { ok, data } = await chamar('soc-agenda-solicitar', {
-        unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode,
+        unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socnet || d.externo ? undefined : d.socCode,
+        origem: d.socnet ? 'socnet' : d.externo ? 'externo' : 'cliente', sequencialFicha: d.socnet?.sequencialFicha,
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
         data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: d.mudancaRisco,
         observacoes: d.obs || undefined, examesAdicionais: adicionais(d), solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
@@ -637,7 +662,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       }
       await registrar(ctx, 'agendamento', d, data.protocolo, { data: d.data, hora: d.hora, local: d.unidade.nome, termoAceito: d.termoAceito });
       return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo }, resposta:
-        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *1*.` };
+        `✅ *Agendamento registrado com sucesso!*\n\n🔖 Protocolo: *${data.protocolo}*\n\n${blocoAgendamento(d, true)}${data.pendenteEquipe ? `\n\n📌 Nossa equipe vai conferir ${d.externo && !d.socnet ? 'a guia enviada' : 'o pedido'} e confirmar a reserva na agenda. Se houver qualquer pendência, entraremos em contato por este número.` : ''}\n\n🪪 Levar um *documento de identificação com foto* no dia do atendimento.\n\nℹ️ *Atenção:* este é um *pré-agendamento*, feito para agilizar a abertura da ficha na recepção. O horário agendado é uma previsão de chegada do colaborador e *não garante atendimento exatamente no horário marcado*.\n\nSe precisar de outro agendamento, digite *1*.` };
     }
     default:
       return boasVindas(nome);
