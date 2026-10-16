@@ -229,7 +229,7 @@ export default function AgendamentoPublico() {
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
     cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre)),
-    pedido ? true : semPedido ? !!f.tipoExame && !!guia && exames.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    pedido ? true : semPedido ? !!f.tipoExame && !!guia : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
     !!unidadeId && !!dia && !!hora,
   ];
 
