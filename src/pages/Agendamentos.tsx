@@ -251,8 +251,6 @@ export default function Agendamentos() {
         <TabsContent value="calendario">
           <CalendarioOperacional hoje={hojeIso()} onDia={(d) => setFiltro({ tab: "lista", de: d, ate: d })} />
         </TabsContent>
-        <TabsList className="hidden">
-        </TabsList>
         <TabsContent value="lista">
           <Card><CardContent className="pt-4">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : lista.length ? <Linhas itens={lista} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
