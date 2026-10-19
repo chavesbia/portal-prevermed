@@ -145,7 +145,7 @@ export default function Agendamentos() {
       return Object.entries(m).sort((x, y) => y[1] - x[1]);
     };
     const exames = (a: any): string[] => (Array.isArray(a.exames) ? a.exames : []).map((e: string) => String(e).toUpperCase());
-    const nomesUn = [...new Set(lista.map(nomeUnidade))].sort();
+    const nomesUn = [...new Set(lista.map(nomeUnidade))].sort() as string[];
     const dias = [...new Set(lista.map((a: any) => a.data_agendada))].sort() as string[];
     const porDiaUn = dias.map((d) => {
       const doDia = lista.filter((a: any) => a.data_agendada === d);
