@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
 
 const db = supabase as any;
 const fmtData = (d: string) => d.split("-").reverse().join("/");
@@ -245,6 +246,12 @@ export default function Agendamentos() {
           <TabsTrigger value="lista">Agendamentos ({lista.length})</TabsTrigger>
           <TabsTrigger value="aprovacao">Aprovação de documentação{pendentes.filter((p: any) => p.aprovacao_status === "pendente").length ? ` (${pendentes.filter((p: any) => p.aprovacao_status === "pendente").length})` : ""}</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="calendario">Calendário</TabsTrigger>
+        </TabsList>
+        <TabsContent value="calendario">
+          <CalendarioOperacional hoje={hojeIso()} onDia={(d) => setFiltro({ tab: "lista", de: d, ate: d })} />
+        </TabsContent>
+        <TabsList className="hidden">
         </TabsList>
         <TabsContent value="lista">
           <Card><CardContent className="pt-4">
