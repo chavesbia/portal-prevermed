@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, FileText, Loader2, Paperclip } from "lucide-react";
+import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const db = supabase as any;
@@ -27,6 +27,18 @@ const STATUS: Record<string, { label: string; variant: "default" | "secondary" |
   aguardando_aprovacao: { label: "Aguardando aprovação", variant: "secondary" },
   documentacao_devolvida: { label: "Documentação devolvida", variant: "outline" },
 };
+
+const fmtDataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const nomeUnidade = (a: any) => a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "Sem unidade";
+const canal = (a: any) => {
+  const o = String(a.observacoes ?? "").toUpperCase();
+  if (o.includes("VIA WHATSAPP")) return "WhatsApp";
+  if (o.startsWith("SOCNET:") || o.includes("\nSOCNET:")) return "SOCNET";
+  return "Link público";
+};
+const ehClinico = (e: string) => /CL[IÍ]NIC/i.test(e);
+const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const faixa = (h: string) => { const n = Number(h.slice(0, 2)); return n < 9 ? "07h–09h" : n < 11 ? "09h–11h" : n < 13 ? "11h–13h" : n < 16 ? "13h–16h" : "16h+"; };
 
 const abrirArquivo = async (path: string) => {
   const { data, error } = await supabase.storage.from("os-anexos").createSignedUrl(path, 300);
@@ -81,6 +93,21 @@ export default function Agendamentos() {
     },
   });
 
+  const codigos = useMemo(() => [...new Set([...lista, ...pendentes].map((a: any) => a.codigo_empresa_soc).filter(Boolean))] as string[], [lista, pendentes]);
+  const { data: subgrupos = {} } = useQuery({
+    queryKey: ["agendamentos-subgrupos", codigos.join(",")],
+    enabled: codigos.length > 0,
+    queryFn: async () => {
+      const m: Record<string, string> = {};
+      for (let i = 0; i < codigos.length; i += 200) {
+        const { data } = await db.from("companies").select("soc_code, subgrupo").in("soc_code", codigos.slice(i, i + 200));
+        (data ?? []).forEach((c: any) => { if (c.subgrupo) m[c.soc_code] = c.subgrupo; });
+      }
+      return m;
+    },
+  });
+  const subgrupoDe = (a: any) => (a.codigo_empresa_soc && (subgrupos as any)[a.codigo_empresa_soc]) || (canal(a) === "SOCNET" ? "SOCNET (outra assessoria)" : a.codigo_empresa_soc ? "Sem subgrupo" : "Externa / Parceira avulsa");
+
   // Atualiza ao vivo quando chegam agendamentos ou anexos
   useEffect(() => {
     const ch = supabase.channel("agendamentos-live")
@@ -92,6 +119,12 @@ export default function Agendamentos() {
 
   const [detalhe, setDetalhe] = useState<any | null>(null);
   const [motivo, setMotivo] = useState("");
+  // Nome/telefone de quem agendou pelo WhatsApp: só ADM Master lê (protegido no servidor)
+  const { data: solicitante } = useQuery({
+    queryKey: ["agendamento-solicitante", detalhe?.protocolo],
+    enabled: !!detalhe && isAdmMaster && canal(detalhe) === "WhatsApp",
+    queryFn: async () => (await db.from("whatsapp_registros").select("nome_whatsapp, telefone, created_at").eq("protocolo", detalhe.protocolo).maybeSingle()).data,
+  });
   const [enviando, setEnviando] = useState(false);
   const decidir = async (decisao: "aprovar" | "devolver") => {
     setEnviando(true);
@@ -106,16 +139,44 @@ export default function Agendamentos() {
   };
 
   const dash = useMemo(() => {
-    const conta = (f: (a: any) => string): [string, number][] => (Object.entries(lista.reduce((m: Record<string, number>, a: any) => ((m[f(a)] = (m[f(a)] ?? 0) + 1), m), {} as Record<string, number>)) as [string, number][]).sort((a, b) => b[1] - a[1]);
+    const conta = (itens: any[], f: (a: any) => string | string[]): [string, number][] => {
+      const m: Record<string, number> = {};
+      itens.forEach((a) => { const k = f(a); (Array.isArray(k) ? k : [k]).forEach((x) => (m[x] = (m[x] ?? 0) + 1)); });
+      return Object.entries(m).sort((x, y) => y[1] - x[1]);
+    };
+    const exames = (a: any): string[] => (Array.isArray(a.exames) ? a.exames : []).map((e: string) => String(e).toUpperCase());
+    const nomesUn = [...new Set(lista.map(nomeUnidade))].sort();
+    const dias = [...new Set(lista.map((a: any) => a.data_agendada))].sort() as string[];
+    const porDiaUn = dias.map((d) => {
+      const doDia = lista.filter((a: any) => a.data_agendada === d);
+      const r: Record<string, number> = {};
+      nomesUn.forEach((u) => (r[u] = doDia.filter((a: any) => nomeUnidade(a) === u).length));
+      return { dia: d, total: doDia.length, porUn: r };
+    });
+    const ordenados = [...porDiaUn].sort((x, y) => y.total - x.total);
+    const semana = DIAS_SEMANA.map((nome, i) => {
+      const ds = porDiaUn.filter((p) => new Date(p.dia + "T12:00:00").getDay() === i);
+      return [nome, ds.length ? Math.round(ds.reduce((s, p) => s + p.total, 0) / ds.length) : 0] as [string, number];
+    }).filter(([, v]) => v > 0);
+    const totExames = lista.reduce((s: number, a: any) => s + exames(a).length, 0);
+    const clinicos = lista.reduce((s: number, a: any) => s + exames(a).filter(ehClinico).length, 0);
     return {
       total: lista.length,
       colaboradores: new Set(lista.map((a: any) => a.colaborador_cpf)).size,
-      exames: lista.reduce((s: number, a: any) => s + (Array.isArray(a.exames) ? a.exames.length : 0), 0),
-      porDia: conta((a) => fmtData(a.data_agendada)),
-      porUnidade: conta((a) => a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"),
-      porTipo: conta((a) => a.tipo_exame),
+      exames: totExames, clinicos, complementares: totExames - clinicos,
+      mediaDia: dias.length ? (lista.length / dias.length).toFixed(1) : "0",
+      nomesUn, porDiaUn, pico: ordenados.slice(0, 3), calmo: ordenados.slice(-3).reverse(), semana,
+      porUnidade: conta(lista, nomeUnidade),
+      porTipo: conta(lista, (a) => a.tipo_exame),
+      topExames: conta(lista, exames).slice(0, 10),
+      complementaresRank: conta(lista, (a) => exames(a).filter((e) => !ehClinico(e))).slice(0, 10),
+      porSubgrupo: conta(lista, subgrupoDe),
+      porCanal: conta(lista, canal),
+      porStatus: conta(lista, (a) => STATUS[a.status]?.label ?? a.status),
+      porFaixa: conta(lista, (a) => faixa(a.hora_agendada)).sort((x, y) => x[0].localeCompare(y[0])),
+      topEmpresas: conta(lista, (a) => a.empresa_nome ?? "-").slice(0, 10),
     };
-  }, [lista]);
+  }, [lista, subgrupos]);
 
   const Linhas = ({ itens }: { itens: any[] }) => (
     <div className="overflow-x-auto">
@@ -147,11 +208,22 @@ export default function Agendamentos() {
     </div>
   );
 
-  const Ranking = ({ titulo, dados }: { titulo: string; dados: [string, number][] }) => (
-    <Card><CardHeader><CardTitle className="text-sm">{titulo}</CardTitle></CardHeader>
-      <CardContent className="space-y-1 text-sm">
-        {dados.length ? dados.map(([k, v]) => <div key={k} className="flex justify-between gap-2"><span>{k}</span><span className="font-semibold">{v}</span></div>) : <p className="text-muted-foreground">Sem dados no período.</p>}
-      </CardContent></Card>
+  const Ranking = ({ titulo, dados, sub }: { titulo: string; dados: [string, number][]; sub?: string }) => {
+    const max = Math.max(1, ...dados.map(([, v]) => v));
+    return (
+      <Card><CardHeader className="pb-2"><CardTitle className="text-sm">{titulo}</CardTitle>{sub && <p className="text-xs text-muted-foreground">{sub}</p>}</CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {dados.length ? dados.map(([k, v]) => (
+            <div key={k}>
+              <div className="flex justify-between gap-2"><span className="truncate" title={k}>{k}</span><span className="font-semibold">{v}</span></div>
+              <div className="h-1.5 rounded bg-muted"><div className="h-1.5 rounded bg-primary" style={{ width: `${(v / max) * 100}%` }} /></div>
+            </div>
+          )) : <p className="text-muted-foreground">Sem dados no período.</p>}
+        </CardContent></Card>
+    );
+  };
+  const Kpi = ({ k, v, sub }: { k: string; v: string | number; sub?: string }) => (
+    <Card><CardContent className="pt-6"><p className="text-sm text-muted-foreground">{k}</p><p className="text-3xl font-semibold">{v}</p>{sub && <p className="text-xs text-muted-foreground">{sub}</p>}</CardContent></Card>
   );
 
   return (
@@ -186,15 +258,43 @@ export default function Agendamentos() {
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="dashboard" className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[["Agendamentos", dash.total], ["Colaboradores", dash.colaboradores], ["Exames", dash.exames]].map(([k, v]) => (
-              <Card key={k as string}><CardContent className="pt-6"><p className="text-sm text-muted-foreground">{k}</p><p className="text-3xl font-semibold">{v}</p></CardContent></Card>
-            ))}
+          <p className="text-xs text-muted-foreground">Período: {fmtData(de)} a {fmtData(ate)}. Atualiza sozinho quando entra um agendamento novo. Para ver tendências, use um período maior (ex.: o mês).</p>
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+            <Kpi k="Agendamentos" v={dash.total} sub={`média de ${dash.mediaDia} por dia`} />
+            <Kpi k="Colaboradores" v={dash.colaboradores} />
+            <Kpi k="Exames" v={dash.exames} />
+            <Kpi k="Exames clínicos" v={dash.clinicos} sub="demanda médica" />
+            <Kpi k="Complementares" v={dash.complementares} sub="demanda de enfermagem/técnicos" />
+          </div>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Fluxo por dia e unidade</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              {dash.porDiaUn.length ? (
+                <Table><TableHeader><TableRow><TableHead>Dia</TableHead>{dash.nomesUn.map((u) => <TableHead key={u} className="text-right">{u}</TableHead>)}<TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
+                  <TableBody>{dash.porDiaUn.map((p) => (
+                    <TableRow key={p.dia}><TableCell className="whitespace-nowrap">{fmtData(p.dia)} <span className="text-xs text-muted-foreground">{DIAS_SEMANA[new Date(p.dia + "T12:00:00").getDay()]}</span></TableCell>
+                      {dash.nomesUn.map((u) => <TableCell key={u} className="text-right">{p.porUn[u]}</TableCell>)}<TableCell className="text-right font-semibold">{p.total}</TableCell></TableRow>
+                  ))}</TableBody></Table>
+              ) : <p className="text-sm text-muted-foreground">Sem dados no período.</p>}
+            </CardContent></Card>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Ranking titulo="Dias de maior fluxo" dados={dash.pico.map((p) => [fmtData(p.dia), p.total])} />
+            <Ranking titulo="Dias mais tranquilos" dados={dash.calmo.map((p) => [fmtData(p.dia), p.total])} />
+            <Ranking titulo="Média por dia da semana" dados={dash.semana} />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <Ranking titulo="Por dia" dados={dash.porDia} />
             <Ranking titulo="Por unidade" dados={dash.porUnidade} />
-            <Ranking titulo="Por tipo de ficha" dados={dash.porTipo} />
+            <Ranking titulo="Faixa de horário de chegada" dados={dash.porFaixa} sub="ajuda a organizar a recepção e triagem" />
+            <Ranking titulo="Por tipo de exame" dados={dash.porTipo} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Ranking titulo="10 exames mais solicitados" dados={dash.topExames} />
+            <Ranking titulo="Exames complementares mais solicitados" dados={dash.complementaresRank} sub="impacto na escala de enfermagem" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Ranking titulo="Por subgrupo da empresa" dados={dash.porSubgrupo} />
+            <Ranking titulo="Canal de entrada" dados={dash.porCanal} />
+            <Ranking titulo="Situação no SOC" dados={dash.porStatus} />
+            <Ranking titulo="Empresas que mais agendam" dados={dash.topEmpresas} />
           </div>
         </TabsContent>
       </Tabs>
@@ -203,12 +303,25 @@ export default function Agendamentos() {
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {detalhe && (<>
             <SheetHeader><SheetTitle>{detalhe.colaborador_nome}</SheetTitle></SheetHeader>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge className="whitespace-nowrap">{nomeUnidade(detalhe)}</Badge>
+              <Badge variant="secondary" className="whitespace-nowrap">{subgrupoDe(detalhe)}</Badge>
+              <Badge variant="outline" className="whitespace-nowrap">{canal(detalhe)}</Badge>
+            </div>
             <dl className="mt-4 grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Protocolo</dt><dd className="font-mono">{detalhe.protocolo}</dd>
               <dt className="text-muted-foreground">CPF</dt><dd>{fmtCpf(detalhe.colaborador_cpf)}</dd>
-              <dt className="text-muted-foreground">Empresa</dt><dd>{detalhe.empresa_nome}</dd>
+              <dt className="text-muted-foreground">Emitido em</dt><dd>{fmtDataHora(detalhe.created_at)}</dd>
+              {canal(detalhe) === "WhatsApp" && (<><dt className="text-muted-foreground">Solicitante</dt><dd>
+                {!isAdmMaster ? <span className="text-muted-foreground">Via WhatsApp (contato visível para ADM Master)</span>
+                  : solicitante ? (<div className="space-y-1"><p>{solicitante.nome_whatsapp || "Sem nome no WhatsApp"}</p>
+                    <a className="inline-flex items-center gap-1 text-primary underline" href={`https://wa.me/${solicitante.telefone}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-3 w-3" />{solicitante.telefone}</a></div>)
+                  : <span className="text-muted-foreground">Não localizado</span>}
+              </dd></>)}
+              <dt className="text-muted-foreground">Empresa</dt><dd>{detalhe.empresa_nome}{detalhe.codigo_empresa_soc ? <span className="text-xs text-muted-foreground"> · SOC {detalhe.codigo_empresa_soc}</span> : null}</dd>
               <dt className="text-muted-foreground">Data</dt><dd>{fmtData(detalhe.data_agendada)} às {detalhe.hora_agendada.slice(0, 5)}</dd>
-              <dt className="text-muted-foreground">Unidade</dt><dd>{detalhe.soc_agenda_unidades?.nome}</dd>
+              <dt className="text-muted-foreground">Unidade</dt><dd>{nomeUnidade(detalhe)}</dd>
+              <dt className="text-muted-foreground">Subgrupo</dt><dd>{subgrupoDe(detalhe)}</dd>
               <dt className="text-muted-foreground">Tipo</dt><dd>{detalhe.tipo_exame}</dd>
               <dt className="text-muted-foreground">Exames</dt><dd>{(detalhe.exames ?? []).join(", ") || "-"}</dd>
               {detalhe.motivo_retorno && (<><dt className="text-muted-foreground">Motivo do retorno</dt><dd className="whitespace-pre-wrap">{detalhe.motivo_retorno}</dd></>)}
