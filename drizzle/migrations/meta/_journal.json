@@ -169,6 +169,13 @@
       "when": 1791998734314,
       "tag": "0023_agenda_exames_nao_agendavel",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792523441672,
+      "tag": "0024_migration",
+      "breakpoints": true
     }
   ]
 }
