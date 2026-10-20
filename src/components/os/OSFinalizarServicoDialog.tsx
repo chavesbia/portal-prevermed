@@ -179,13 +179,13 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       }
 
 
-      // Verificar se já existe um laudo para este serviço, tipo e unidade
+      // Um laudo por serviço + tipo (regra garantida também no banco)
       const { data: laudoExistente, error: laudoCheckErr } = await supabase
         .from('laudos')
         .select('*')
         .eq('servico_id', servico.id)
         .eq('tipo_laudo_id', form.tipoLaudoId)
-        .eq('unidade_id', unidadeId)
+        .limit(1)
         .maybeSingle();
 
       if (laudoCheckErr) throw laudoCheckErr;
