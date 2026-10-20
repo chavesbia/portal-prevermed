@@ -9,7 +9,7 @@ export const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   vencendo_15: { label: 'Vence 15d', tone: 'bg-amber-200 text-amber-900' },
   vencido: { label: 'Vencido', tone: 'bg-red-100 text-red-800' },
   encerrado: { label: 'Encerrado', tone: 'bg-slate-600 text-white' },
-  cancelado: { label: 'Cancelado', tone: 'bg-red-50 text-red-600' },
+  cancelado: { label: 'Substituído', tone: 'bg-slate-100 text-slate-600' },
 };
 
 /**
