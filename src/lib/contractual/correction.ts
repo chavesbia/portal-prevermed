@@ -185,7 +185,7 @@ export async function cancelarEReenviarContrato(contratoId: string): Promise<str
       console.error('Erro ao gerar notificações de correção:', notifErr);
     }
 
-    toast.success('Contrato anterior cancelado. Novo rascunho criado para correção.');
+    toast.success('Contrato anterior substituído. Novo rascunho criado para correção.');
     return novoDraft.id;
 
   } catch (e: any) {
