@@ -53,13 +53,6 @@ export default function GestaoOS() {
           <p className="text-muted-foreground">Controle de Ordens de Serviço</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {canCorrecao && (
-            <Button variant="outline" asChild>
-              <Link to="/gestao-os/correcao-retroativa">
-                <Wrench className="h-4 w-4 mr-2" /> Correção Retroativa
-              </Link>
-            </Button>
-          )}
           {canCreateOS && (
             <Button onClick={() => setNovaOpen(true)}>
               <Plus className="h-4 w-4 mr-2" /> Nova OS
