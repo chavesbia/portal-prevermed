@@ -38,7 +38,6 @@ const GuiaDetalhe = lazy(() => import("./pages/guias/GuiaDetalhe"));
 // const CarteiraComercial = lazy(() => import("./pages/CarteiraComercial")); // módulo aposentado
 const GestaoOS = lazy(() => import("./pages/GestaoOS"));
 const GestaoVendas = lazy(() => import("./pages/GestaoVendas"));
-const LiberacaoASOs = lazy(() => import("./pages/LiberacaoASOs"));
 const GestaoOcorrencias = lazy(() => import("./pages/GestaoOcorrencias"));
 const RetificacaoASOs = lazy(() => import("./pages/RetificacaoASOs"));
 
@@ -114,7 +113,6 @@ const App = () => (
                 <Route path="/carteira-comercial" element={<Navigate to="/" replace />} />
                 <Route path="/gestao-os" element={<GestaoOS />} />
                 <Route path="/gestao-ocorrencias" element={<ProtectedModuleRoute route="/gestao-ocorrencias"><GestaoOcorrencias /></ProtectedModuleRoute>} />
-                <Route path="/liberacao-asos" element={<ProtectedModuleRoute route="/liberacao-asos"><LiberacaoASOs /></ProtectedModuleRoute>} />
                 <Route path="/retificacao-asos" element={<ProtectedModuleRoute route="/retificacao-asos"><RetificacaoASOs /></ProtectedModuleRoute>} />
                 <Route path="/gestao-passivos" element={<Navigate to="/" replace />} />
                 <Route path="/gestao-feedback" element={<ProtectedModuleRoute route="/gestao-feedback"><GestaoFeedback /></ProtectedModuleRoute>} />

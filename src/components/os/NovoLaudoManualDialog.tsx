@@ -104,6 +104,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
   };
 
   const handleSave = async () => {
+    if (saving) return;
     if (!company) return toast({ title: 'Empresa obrigatória', description: 'Selecione a empresa do laudo.', variant: 'destructive' });
     if (!tipoLaudoId) return toast({ title: 'Tipo obrigatório', description: 'Selecione o tipo de laudo.', variant: 'destructive' });
     if (!responsavelId) return toast({ title: 'Responsável obrigatório', description: 'Selecione o responsável técnico.', variant: 'destructive' });
