@@ -104,6 +104,7 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
   };
 
   const handleSave = async () => {
+    if (saving) return;
     if (!company) return toast({ title: 'Empresa obrigatória', description: 'Selecione a empresa do laudo.', variant: 'destructive' });
     if (!tipoLaudoId) return toast({ title: 'Tipo obrigatório', description: 'Selecione o tipo de laudo.', variant: 'destructive' });
     if (!responsavelId) return toast({ title: 'Responsável obrigatório', description: 'Selecione o responsável técnico.', variant: 'destructive' });
@@ -137,9 +138,12 @@ export function NovoLaudoManualDialog({ open, onOpenChange, companyId, laudo, on
 
     if (error) {
       console.error('Erro ao salvar laudo:', error);
+      const dup = (error as any).code === '23505';
       toast({ 
-        title: 'Erro', 
-        description: `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo: ${error.message}`, 
+        title: dup ? 'Laudo já cadastrado' : 'Erro', 
+        description: dup
+          ? 'Já existe um laudo deste tipo para esta empresa/unidade com a mesma data de emissão.'
+          : `Não foi possível ${laudo?.id ? 'atualizar' : 'cadastrar'} o laudo: ${error.message}`, 
         variant: 'destructive' 
       });
       return;

@@ -46,7 +46,6 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
   const { user, profile } = useAuth();
   const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
-  const { add: addLaudo } = useLaudos();
 
   const { addCusto } = useOSCustos(ordem.id);
 
@@ -179,13 +178,13 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       }
 
 
-      // Verificar se já existe um laudo para este serviço, tipo e unidade
+      // Um laudo por serviço + tipo (regra garantida também no banco)
       const { data: laudoExistente, error: laudoCheckErr } = await supabase
         .from('laudos')
         .select('*')
         .eq('servico_id', servico.id)
         .eq('tipo_laudo_id', form.tipoLaudoId)
-        .eq('unidade_id', unidadeId)
+        .limit(1)
         .maybeSingle();
 
       if (laudoCheckErr) throw laudoCheckErr;
@@ -222,10 +221,15 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
           .eq('id', laudoExistente.id);
         if (updErr) throw updErr;
       } else {
-        await addLaudo({
-          ...laudoData,
-          created_by: user?.id || null,
-        } as any);
+        const { error: insErr } = await supabase
+          .from('laudos')
+          .insert({ ...laudoData, created_by: user?.id || null } as any);
+        // 23505 = já gravado por outro clique/aba: atualiza em vez de duplicar
+        if (insErr && (insErr as any).code === '23505') {
+          const { error: upd2 } = await supabase.from('laudos').update(laudoData as any)
+            .eq('servico_id', servico.id).eq('tipo_laudo_id', form.tipoLaudoId);
+          if (upd2) throw upd2;
+        } else if (insErr) throw insErr;
       }
 
       // Lançar custos reais
