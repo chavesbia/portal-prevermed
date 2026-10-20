@@ -7709,6 +7709,10 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       soc_full_sync_scheduled: { Args: never; Returns: undefined }
+      tem_html_final: {
+        Args: { c: Database["public"]["Tables"]["contract_contratos"]["Row"] }
+        Returns: boolean
+      }
       user_has_module_access: {
         Args: { _module_id: string; _user_id: string }
         Returns: boolean
