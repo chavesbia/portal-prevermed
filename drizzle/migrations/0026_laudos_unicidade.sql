@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX IF NOT EXISTS laudos_unq_servico_tipo ON public.laudos (servico_id, tipo_laudo_id) WHERE servico_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS laudos_unq_manual ON public.laudos (coalesce(company_id::text, upper(trim(empresa_cliente))), tipo_laudo_id, coalesce(unidade_id::text,''), data_emissao) WHERE servico_id IS NULL;
+CREATE INDEX IF NOT EXISTS laudos_data_validade_idx ON public.laudos (data_validade);
