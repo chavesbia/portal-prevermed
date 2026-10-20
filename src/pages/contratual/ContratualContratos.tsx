@@ -73,14 +73,14 @@ export default function ContratualContratos({ canEdit }: Props) {
     queryKey: ['contract-contratos'],
     queryFn: async () => {
       const { data, error } = await supabase.from('contract_contratos')
-        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, tem_html_final, origem, numero_original, cliente:contract_clientes(razao_social, cnpj, company:companies(razao_social, nome_fantasia, cnpj))')
+        .select('id, numero_contrato, status, data_inicio, data_fim, valor_mensal, pdf_url, tem_html_final, origem, numero_original, cliente:contract_clientes(razao_social, cnpj, company:companies(razao_social, cnpj))')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []).map((c: any) => ({
         ...c,
         html_final: c.tem_html_final ? '1' : null,
         _razao: c.cliente?.company?.razao_social || c.cliente?.razao_social || '',
-        _fantasia: c.cliente?.company?.nome_fantasia || '',
+        _fantasia: "",
         _cnpj: (c.cliente?.company?.cnpj || c.cliente?.cnpj || '').replace(/\D/g, ''),
       }));
     },
@@ -179,7 +179,7 @@ export default function ContratualContratos({ canEdit }: Props) {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[260px] max-w-md">
           <Search className="h-4 w-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input placeholder="Buscar por nome, fantasia, nº ou CNPJ…" className="pl-8 pr-8"
+          <Input placeholder="Buscar por empresa, nº do contrato ou CNPJ…" className="pl-8 pr-8"
             value={searchInput} onChange={e => setSearchInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') setParam({ q: searchInput }); }} />
           {searchInput && (
