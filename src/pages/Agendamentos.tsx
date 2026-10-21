@@ -119,6 +119,10 @@ export default function Agendamentos() {
   }, [qc]);
 
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const conf = sp.get("conf") ?? "todos";
+  const setConf = (v: string) => { const n = new URLSearchParams(sp); n.set("conf", v); setSp(n, { replace: true }); };
+  const [agora, setAgora] = useState(() => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
+  useEffect(() => { setAgora(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })); }, [lista]);
   const [motivo, setMotivo] = useState("");
   // Nome/telefone de quem agendou pelo WhatsApp: só ADM Master lê (protegido no servidor)
   const { data: solicitante } = useQuery({
@@ -247,9 +251,61 @@ export default function Agendamentos() {
           <TabsTrigger value="aprovacao">Aprovação de documentação{pendentes.filter((p: any) => p.aprovacao_status === "pendente").length ? ` (${pendentes.filter((p: any) => p.aprovacao_status === "pendente").length})` : ""}</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="calendario">Calendário</TabsTrigger>
+          <TabsTrigger value="conferencia">Conferência</TabsTrigger>
         </TabsList>
         <TabsContent value="calendario">
           <CalendarioOperacional hoje={hojeIso()} onDia={(d) => setFiltro({ tab: "lista", de: d, ate: d })} />
+        </TabsContent>
+        <TabsContent value="conferencia" className="space-y-4">
+          {(() => {
+            const semKit = (a: any) => !a.soc_agendamento_anexos?.length;
+            const filtros: Record<string, { label: string; f: (a: any) => boolean }> = {
+              todos: { label: "Todos", f: () => true },
+              soc: { label: "Gravados no SOC", f: (a) => a.status === "agendado_soc" },
+              pendente: { label: "Não entraram no SOC", f: (a) => a.status === "solicitado" },
+              aprovacao: { label: "Aguardando aprovação", f: (a) => a.status === "aguardando_aprovacao" || a.status === "documentacao_devolvida" },
+              semkit: { label: "Sem kit", f: semKit },
+            };
+            const fsel = filtros[conf] ? conf : "todos";
+            const itens = [...lista].filter(filtros[fsel].f).sort((x: any, y: any) => y.created_at.localeCompare(x.created_at));
+            const novo = (a: any) => Date.now() - new Date(a.created_at).getTime() < 30 * 60_000;
+            return (<>
+              <p className="text-xs text-muted-foreground">Agendamentos do link público e WhatsApp no período ({fmtData(de)} a {fmtData(ate)}), do mais recente para o mais antigo. Atualiza sozinho ao entrar um novo pedido · última atualização {agora}.</p>
+              <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+                {Object.entries(filtros).map(([k, v]) => (
+                  <button key={k} onClick={() => setConf(k)} className={`rounded-lg border p-4 text-left transition-colors ${fsel === k ? "border-primary bg-primary/5" : "bg-card hover:bg-muted"}`}>
+                    <p className="text-sm text-muted-foreground whitespace-nowrap">{v.label}</p>
+                    <p className={`text-3xl font-semibold ${k === "pendente" && lista.filter(v.f).length ? "text-destructive" : ""}`}>{lista.filter(v.f).length}</p>
+                  </button>
+                ))}
+              </div>
+              <Card><CardContent className="pt-4 overflow-x-auto">
+                {itens.length ? (
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background"><TableRow>
+                      <TableHead>Emitido em</TableHead><TableHead>Atendimento</TableHead><TableHead>Colaborador</TableHead><TableHead>Empresa</TableHead>
+                      <TableHead>Unidade</TableHead><TableHead>Canal</TableHead><TableHead>Kit</TableHead><TableHead>Situação</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>{itens.map((a: any) => {
+                      const st = STATUS[a.status] ?? { label: a.status, variant: "secondary" as const };
+                      return (
+                        <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
+                          <TableCell className="whitespace-nowrap">{fmtDataHora(a.created_at)}{novo(a) && <Badge className="ml-2 whitespace-nowrap">Novo</Badge>}</TableCell>
+                          <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)} {a.hora_agendada.slice(0, 5)}</TableCell>
+                          <TableCell><p className="font-medium">{a.colaborador_nome}</p><p className="text-xs text-muted-foreground">{a.tipo_exame}</p></TableCell>
+                          <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
+                          <TableCell className="whitespace-nowrap">{nomeUnidade(a)}</TableCell>
+                          <TableCell><Badge variant="outline" className="whitespace-nowrap">{canal(a)}</Badge></TableCell>
+                          <TableCell>{semKit(a) ? <Badge variant="secondary" className="whitespace-nowrap">Sem kit</Badge> : <Badge variant="outline" className="whitespace-nowrap"><Paperclip className="mr-1 h-3 w-3" />{a.soc_agendamento_anexos.length}</Badge>}</TableCell>
+                          <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge>{a.soc_erro && <p className="mt-1 max-w-[220px] truncate text-xs text-destructive" title={a.soc_erro}>{a.soc_erro}</p>}</TableCell>
+                        </TableRow>
+                      );
+                    })}</TableBody>
+                  </Table>
+                ) : <p className="text-sm text-muted-foreground">Nada para conferir neste filtro.</p>}
+              </CardContent></Card>
+            </>);
+          })()}
         </TabsContent>
         <TabsContent value="lista">
           <Card><CardContent className="pt-4">
