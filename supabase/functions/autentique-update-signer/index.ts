@@ -49,26 +49,29 @@ Deno.serve(async (req) => {
 
     // 1. Remover signatário antigo (se existir no Autentique)
     if (oldSignerId) {
-      const removeMutation = `mutation RemoveSigner($documentId: UUID!, $signerId: UUID!) {
-        removeSigner(documentId: $documentId, signerId: $signerId)
+      const removeMutation = `mutation DeleteSigner($publicId: UUID!, $documentId: UUID!) {
+        deleteSigner(public_id: $publicId, document_id: $documentId)
       }`;
 
       console.log(`Removendo signatário ${oldSignerId} do documento ${docId}`);
       const removeResp = await fetch(AUTENTIQUE_URL, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          query: removeMutation, 
-          variables: { documentId: docId, signerId: oldSignerId } 
+        body: JSON.stringify({
+          query: removeMutation,
+          variables: { publicId: oldSignerId, documentId: docId },
         }),
       });
       const removeJson = await removeResp.json();
-      console.log('Autentique removeSigner response:', JSON.stringify(removeJson));
+      console.log('Autentique deleteSigner response:', JSON.stringify(removeJson));
+      if (!removeResp.ok || removeJson.errors) {
+        return json({ error: 'Erro ao remover signatário antigo no Autentique', details: removeJson }, 502);
+      }
     }
 
     // 2. Adicionar novo signatário
-    const addMutation = `mutation AddSigner($documentId: UUID!, $signer: SignerInput!) {
-      addSigner(documentId: $documentId, signer: $signer) {
+    const addMutation = `mutation CreateSigner($documentId: UUID!, $signer: SignerInput!) {
+      createSigner(document_id: $documentId, signer: $signer) {
         public_id
         name
         email
@@ -79,26 +82,26 @@ Deno.serve(async (req) => {
     const addResp = await fetch(AUTENTIQUE_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        query: addMutation, 
-        variables: { 
-          documentId: docId, 
-          signer: { 
-            email: novo_email, 
-            name: novo_nome, 
-            action: 'SIGN' 
-          } 
-        } 
+      body: JSON.stringify({
+        query: addMutation,
+        variables: {
+          documentId: docId,
+          signer: {
+            email: novo_email,
+            name: novo_nome,
+            action: 'SIGN'
+          }
+        }
       }),
     });
     const addJson = await addResp.json();
-    
+
     if (!addResp.ok || addJson.errors) {
-      console.error('Erro Autentique AddSigner:', JSON.stringify(addJson.errors));
+      console.error('Erro Autentique CreateSigner:', JSON.stringify(addJson.errors));
       return json({ error: 'Erro ao adicionar signatário no Autentique', details: addJson }, 502);
     }
 
-    const newSigner = addJson.data?.addSigner;
+    const newSigner = addJson.data?.createSigner;
     if (!newSigner?.public_id) {
       return json({ error: 'Resposta inválida do Autentique ao adicionar signatário' }, 502);
     }
