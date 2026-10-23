@@ -271,7 +271,6 @@ export default function Agendamentos() {
             <option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </select></div>
         <Button variant="outline" onClick={() => setFiltro({ de: hojeIso(), ate: hojeIso() })}>Hoje</Button>
-        <Button variant="outline" onClick={() => setFiltro(periodoAgenda(hojeIso()))}>D-5 a D+5</Button>
       </div>
 
       <Tabs value={aba} onValueChange={(v) => setFiltro({ tab: v })}>
@@ -340,9 +339,8 @@ export default function Agendamentos() {
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[200px] flex-1"><Label htmlFor="busca-agenda">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
             <div><Label>Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
-            <div><Label>Ordenação</Label><select aria-label="Ordenação" className="h-10 rounded-md border bg-background px-3 text-sm" value={ordem} onChange={(e) => setFiltro({ ordem: e.target.value })}><option value="agenda">Data e horário</option><option value="recente">Mais recentes</option><option value="nome">Colaborador A–Z</option></select></div>
+            <div><Label>Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
           </div>
-          <div className="flex flex-wrap gap-2">{[["todos", "Todos"], ["sem", "Sem kit"], ["enviado", "Kit enviado"], ["imprimir", "A imprimir"], ["impresso", "Impresso"]].map(([v, label]) => <Button key={v} size="sm" variant={kit === v ? "default" : "outline"} onClick={() => setFiltro({ kit: v })}>{label}</Button>)}</div>
           <Card><CardContent className="pt-4">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
           </CardContent></Card>
@@ -428,7 +426,7 @@ export default function Agendamentos() {
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
               {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
-              {podeEditar && temKitAgenda(detalhe) && <Button variant="outline" size="sm" disabled={enviando} onClick={marcarKit}><Printer className="mr-2 h-4 w-4" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar kit como impresso"}</Button>}
+              {podeEditar && temKitAgenda(detalhe) && <button type="button" disabled={enviando} onClick={marcarKit} className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"><Printer className="h-3 w-3" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar como impresso"}</button>}
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
                 <Button key={x.id} variant="outline" size="sm" className="w-full justify-start min-w-0" onClick={() => abrirArquivo(x.path)}>
                   <FileText className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{x.tipo_documento}{x.nome_arquivo ? `: ${x.nome_arquivo}` : ""}</span><span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>
