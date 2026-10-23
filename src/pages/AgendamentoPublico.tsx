@@ -351,7 +351,7 @@ export default function AgendamentoPublico() {
                   <h2 className="font-semibold">Preparos dos exames</h2>
                   <p className="text-xs text-muted-foreground">Clique no exame para ver o preparo.</p>
                   {preparosDosExames(pedido ? pedido.exames : exames).map((p) => (
-                    <details key={p.codigo} className="rounded-md border px-3 py-2">
+                    <details key={p.codigo} className="rounded-md border px-3 py-2 print:break-inside-avoid">
                       <summary className="cursor-pointer font-medium">{p.nome}</summary>
                       <p className="mt-1 whitespace-pre-line break-words text-muted-foreground">{p.texto.replace(/\s*\n(?![*•\-A-ZÀ-Ú])\s*/g, " ")}</p>
                     </details>
