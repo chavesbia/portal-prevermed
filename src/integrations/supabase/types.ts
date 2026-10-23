@@ -6745,6 +6745,8 @@ export type Database = {
           guia_path: string | null
           hora_agendada: string
           id: string
+          kit_impresso_em: string | null
+          kit_impresso_por: string | null
           motivo_retorno: string | null
           observacoes: string | null
           protocolo: string
@@ -6771,6 +6773,8 @@ export type Database = {
           guia_path?: string | null
           hora_agendada: string
           id?: string
+          kit_impresso_em?: string | null
+          kit_impresso_por?: string | null
           motivo_retorno?: string | null
           observacoes?: string | null
           protocolo?: string
@@ -6797,6 +6801,8 @@ export type Database = {
           guia_path?: string | null
           hora_agendada?: string
           id?: string
+          kit_impresso_em?: string | null
+          kit_impresso_por?: string | null
           motivo_retorno?: string | null
           observacoes?: string | null
           protocolo?: string
@@ -7621,6 +7627,10 @@ export type Database = {
       }
     }
     Functions: {
+      agenda_marcar_kit_impresso: {
+        Args: { _agendamento_id: string; _impresso: boolean }
+        Returns: undefined
+      }
       apply_shadow_template: {
         Args: { _notes?: string; _shadow_id: string }
         Returns: undefined
