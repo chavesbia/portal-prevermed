@@ -460,7 +460,7 @@ export default function AgendamentoPublico() {
                 )}
                 {(precisaCadastro || alterandoLot) && cadAberto && (
                   <div className="space-y-3 rounded-md border p-3">
-                    <p className="text-sm font-medium">{alterandoLot ? "Alterar lotação" : "Pré-cadastro do colaborador"}</p>
+                    <p className="text-sm font-medium">{alterandoLot ? "Corrigir cargo, setor e unidade" : "Pré-cadastro do colaborador"}</p>
                     {!alterandoLot && <><div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div><Label>Nascimento *</Label><Input type="date" value={cad.nascimento} onChange={(e) => setCad({ ...cad, nascimento: e.target.value })} /></div>
