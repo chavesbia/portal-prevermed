@@ -298,6 +298,30 @@ Deno.serve(async (req) => {
       } });
     }
 
+    if (b.acao === 'reativar') {
+      // Só Parceiras/Pontual: inativação ali é só controle de vidas cobradas; reaproveita o mesmo cadastro
+      if (!livre) return json({ error: 'Reativação direta disponível apenas para empresas Parceiras e Pontual.' }, 403);
+      const existente = await buscarFuncionario(b.socCode, b.cpf);
+      if (!existente) return json({ error: 'Cadastro não localizado nesta empresa.' }, 400);
+      if (!existente.inativo) return json({ error: 'Este cadastro já está ativo nesta empresa.' }, 409);
+      const row = existente.row;
+      const atual = (cod: string[], nome: string[]) => { const c = pick(row, cod); return c ? { codigo: c } : { nome: pick(row, nome) ?? '' }; };
+      const unidade = b.unidade ?? atual(['CODIGOUNIDADE'], ['NOMEUNIDADE', 'UNIDADE']);
+      const setor = b.setor ?? atual(['CODIGOSETOR'], ['NOMESETOR', 'SETOR']);
+      const cargo = b.cargo ?? atual(['CODIGOCARGO'], ['NOMECARGO', 'CARGO']);
+      const nome = pick(row, ['NOME', 'NOMEFUNCIONARIO']) ?? '';
+      const r = await alterarLotacaoSoc({ codigoEmpresa: b.socCode, cpf: b.cpf, nome, unidade, setor, cargo, podeCriar: true, reativar: true, dataAdmissao: b.dataAdmissao || undefined });
+      if (!r.ok) return json({ error: `O SOC recusou a reativação: ${r.erro ?? 'erro desconhecido'}` }, 422);
+      const conferir = await buscarFuncionario(b.socCode, b.cpf);
+      if (!conferir || conferir.inativo) return json({ error: 'Reativação enviada, mas o SOC ainda não confirmou. Consulte novamente antes de agendar.' }, 503);
+      return json({ ok: true, funcionario: {
+        nome: pick(conferir.row, ['NOME', 'NOMEFUNCIONARIO']),
+        cargo: pick(conferir.row, ['NOMECARGO', 'CARGO']), setor: pick(conferir.row, ['NOMESETOR', 'SETOR']),
+        unidade: pick(conferir.row, ['NOMEUNIDADE', 'UNIDADE']), situacao: pick(conferir.row, ['SITUACAO', 'SITUACAOFUNCIONARIO']),
+        admissao: pick(conferir.row, ['DATA_ADMISSAO', 'DATAADMISSAO']),
+      } });
+    }
+
     const achado = await buscarFuncionario(b.socCode, b.cpf);
     if (achado === null) return json(b.acao === 'exames' ? { exames: [], indisponivel: true } : { encontrado: false, indisponivel: true });
     if (achado === false) return json(b.acao === 'exames' ? { exames: [] } : { encontrado: false });
@@ -336,6 +360,7 @@ Deno.serve(async (req) => {
         setor: pick(ativo, ['NOMESETOR', 'SETOR']),
         unidade: pick(ativo, ['NOMEUNIDADE', 'UNIDADE']),
         situacao: pick(ativo, ['SITUACAO', 'SITUACAOFUNCIONARIO']),
+        admissao: pick(ativo, ['DATA_ADMISSAO', 'DATAADMISSAO']),
       },
     });
   } catch (e) {
