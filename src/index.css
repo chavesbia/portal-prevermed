@@ -265,3 +265,10 @@
     @apply bg-muted-foreground/30;
   }
 }
+
+/* Na impressão, preparos (<details>) saem sempre abertos */
+@media print {
+  details > :not(summary) { display: block !important; }
+  details::details-content { content-visibility: visible !important; display: block !important; }
+  details summary { list-style: none; }
+}
