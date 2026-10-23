@@ -414,7 +414,7 @@ export default function AgendamentoPublico() {
                   {guiaSocnet && <p className="rounded-md border border-primary p-3 text-sm">Localizamos a guia SOCNET {guiaSocnet.numero}: {guiaSocnet.exames.join(", ")}. Anexe o kit para conferência da equipe antes da confirmação do atendimento.</p>}
                   <div className="flex gap-2 rounded-md border bg-muted/40 p-3 text-sm">
                     <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    <p>Não localizamos um pedido eletrônico de exames para este CPF. Para seguir, informe o nome do colaborador e, na próxima etapa, envie a guia/autorização de exames.</p>
+                    <p>Não localizamos pedido de exames nem guia de encaminhamento para este CPF no SOC. Solicite à empresa/assessoria a abertura do pedido de exames no SOC direcionado à PreverMed, ou informe o nome do colaborador e, na próxima etapa, envie a guia de encaminhamento / kit de atendimento para a equipe lançar o atendimento.</p>
                   </div>
                   <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
                 </>)}
