@@ -58,7 +58,6 @@ export default function AgendamentoPublico() {
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
   const [guias, setGuias] = useState<File[]>([]);
-  const [copiado, setCopiado] = useState(false);
   const qs = new URLSearchParams(window.location.search);
   const socInicial = qs.get("soc") ?? "";
   // Fora da carteira PreverMed (ex.: cliente de assessoria parceira) e pedido SOCNET localizado pelo CPF
@@ -293,7 +292,6 @@ export default function AgendamentoPublico() {
     setProtocolo(data.protocolo);
   };
 
-  const linkKit = `${window.location.origin}/agendamento/completar?protocolo=${protocolo}`;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
@@ -333,15 +331,6 @@ export default function AgendamentoPublico() {
                   Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
                 </div>
               )}
-              <div className="space-y-2 rounded-md border p-4 text-sm">
-                <p className="font-medium">Kit de atendimento (guia, ficha clínica, ASO)</p>
-                <p className="text-muted-foreground">Se ainda não tem o kit em mãos, guarde ou copie o link abaixo. Ele abre a tela de envio já com este protocolo; basta informar o CPF do colaborador. O link também fica no comprovante impresso.</p>
-                <p className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{linkKit}</p>
-                <div className="flex flex-wrap gap-2 print:hidden">
-                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard?.writeText(linkKit); setCopiado(true); }}>{copiado ? "Link copiado!" : "Copiar link"}</Button>
-                  <Button size="sm" variant="outline" asChild><a href={linkKit}>Enviar kit agora</a></Button>
-                </div>
-              </div>
               <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
@@ -557,7 +546,15 @@ export default function AgendamentoPublico() {
                       {" "}Verifique se o <strong>tipo de exame</strong> está correto antes de prosseguir.</p>
                   </div>
                 )}
-                {mudanca && <div className="space-y-2 rounded-md border p-3 text-sm"><p>Confira a unidade, o setor e o cargo de destino antes de agendar.</p><p>{func?.funcionario?.unidade} · {func?.funcionario?.setor} · {func?.funcionario?.cargo}</p><Button variant="outline" size="sm" onClick={() => { setPasso(1); abrirLotacao(); }}>Alterar lotação de destino</Button></div>}
+                {mudanca && (
+                  <div className="space-y-1 rounded-md border p-3 text-sm">
+                    {func?.funcionario?.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
+                    {func?.funcionario?.setor && <p>Setor: {func.funcionario.setor}</p>}
+                    {func?.funcionario?.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
+                    <p className="pt-1 text-xs text-muted-foreground">Estes são o cargo, o setor e a unidade para onde o colaborador vai? Eles definem os exames do atendimento.</p>
+                    <button type="button" className="text-xs font-medium text-primary hover:underline whitespace-nowrap" onClick={() => { setPasso(1); abrirLotacao(); }}>Não, corrigir</button>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label>Exames</Label>
