@@ -347,13 +347,14 @@ export default function AgendamentoPublico() {
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
               </div>
               {preparosDosExames(pedido ? pedido.exames : exames).length > 0 && (
-                <section className="space-y-3 border-t pt-4 text-sm">
+                <section className="space-y-2 border-t pt-4 text-sm">
                   <h2 className="font-semibold">Preparos dos exames</h2>
+                  <p className="text-xs text-muted-foreground">Clique no exame para ver o preparo.</p>
                   {preparosDosExames(pedido ? pedido.exames : exames).map((p) => (
-                    <div key={p.codigo} className="space-y-1 break-words">
-                      <h3 className="font-medium">{p.nome}</h3>
-                      <p className="whitespace-pre-wrap text-muted-foreground">{p.texto}</p>
-                    </div>
+                    <details key={p.codigo} className="rounded-md border px-3 py-2">
+                      <summary className="cursor-pointer font-medium">{p.nome}</summary>
+                      <p className="mt-1 whitespace-pre-line break-words text-muted-foreground">{p.texto.replace(/\s*\n(?![*•\-A-ZÀ-Ú])\s*/g, " ")}</p>
+                    </details>
                   ))}
                 </section>
               )}
@@ -432,7 +433,17 @@ export default function AgendamentoPublico() {
                     {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
                     {inativo && <p className="text-xs font-semibold text-destructive whitespace-nowrap">Cadastro INATIVO nesta empresa</p>}
                     {func.recemCadastrado && <p className="text-xs text-primary">Pré-cadastrado agora no SOC (situação Pendente).</p>}
-                    {!inativo && !cadAberto && <div className="flex flex-wrap gap-2 pt-2"><Button size="sm" variant={lotConfirmada ? "outline" : "default"} onClick={() => setLotConfirmada(true)}><Check className="mr-1 h-4 w-4" />{lotConfirmada ? "Lotação confirmada" : "Confirmar lotação"}</Button><Button size="sm" variant="outline" onClick={abrirLotacao}>Alterar lotação</Button></div>}
+                    {!inativo && !cadAberto && (
+                      <div className="space-y-1 pt-2">
+                        <p className="text-xs text-muted-foreground">O cargo, o setor e a unidade acima estão corretos? Eles definem os exames do atendimento.</p>
+                        {lotConfirmada
+                          ? <p className="flex items-center gap-1 text-xs font-medium text-primary whitespace-nowrap"><Check className="h-3.5 w-3.5" />Dados confirmados</p>
+                          : <div className="flex items-center gap-3 text-xs">
+                              <button type="button" className="font-medium text-primary hover:underline whitespace-nowrap" onClick={() => setLotConfirmada(true)}>Sim, estão corretos</button>
+                              <button type="button" className="text-muted-foreground hover:underline whitespace-nowrap" onClick={abrirLotacao}>Não, corrigir</button>
+                            </div>}
+                      </div>
+                    )}
                   </div>
                 )}
                 {func?.indisponivel && !func.encontrado && (<>
@@ -449,7 +460,7 @@ export default function AgendamentoPublico() {
                 )}
                 {(precisaCadastro || alterandoLot) && cadAberto && (
                   <div className="space-y-3 rounded-md border p-3">
-                    <p className="text-sm font-medium">{alterandoLot ? "Alterar lotação" : "Pré-cadastro do colaborador"}</p>
+                    <p className="text-sm font-medium">{alterandoLot ? "Corrigir cargo, setor e unidade" : "Pré-cadastro do colaborador"}</p>
                     {!alterandoLot && <><div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div><Label>Nascimento *</Label><Input type="date" value={cad.nascimento} onChange={(e) => setCad({ ...cad, nascimento: e.target.value })} /></div>
