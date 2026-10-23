@@ -120,8 +120,7 @@ export default function AgendamentoPublico() {
     }
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "funcionario", cnpj, socCode, cpf } }).then(async ({ data }) => {
       const r: Func = data?.encontrado !== undefined ? data : { encontrado: false, indisponivel: true };
-      // Colaborador da base de assessoria parceira: o pedido SOCNET tem prioridade sobre o pré-cadastro
-      if (!r.encontrado && !r.indisponivel && (await buscarPedido())) { setBuscandoFunc(false); return; }
+      // Blindagem: empresa da carteira nunca consulta pedidos SOCNET de outras empresas pelo CPF
       setFunc(r);
       if (r.encontrado) setF((p) => ({ ...p, colaboradorNome: r.funcionario.nome ?? "", cargo: r.funcionario.cargo ?? "" }));
       else setF((p) => ({ ...p, colaboradorNome: "", cargo: "" }));
