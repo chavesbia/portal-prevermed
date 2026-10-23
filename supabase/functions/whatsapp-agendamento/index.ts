@@ -355,15 +355,13 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         d.cpf = cpf;
         const s = await tentarSocnet(d);
         if (s) return s;
-        return { etapa: 'EXT_OFERTA', dados: d, resposta: `ℹ️ Não localizamos um pedido eletrônico de exames para este CPF.\n\nPara seguir com o agendamento, será necessário enviar a *guia/autorização de exames* da empresa ou assessoria.\n\n*1* - Continuar e enviar a guia\n*2* - Conferir e digitar o CPF novamente${RODAPE}` };
+        return { etapa: 'EXT_OFERTA', dados: d, resposta: `ℹ️ Não localizamos *pedido de exames* nem *guia de encaminhamento* para este CPF no SOC.\n\nSolicite à empresa/assessoria a abertura do *pedido de exames* no SOC direcionado à PreverMed, ou envie a *guia de encaminhamento / kit de atendimento* para a equipe lançar o atendimento.\n\n*1* - Continuar e enviar a guia/kit\n*2* - Conferir e digitar o CPF novamente${RODAPE}` };
       }
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'funcionario', cnpj: d.cnpj, socCode: d.socCode, cpf });
       if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar o cadastro agora. Digite o CPF novamente em instantes.${RODAPE}` };
       d.cpf = cpf;
       if (!data?.encontrado) {
-        // Parceira na carteira, mas colaborador da base da assessoria: procura pedido SOCNET antes do pré-cadastro
-        const s = await tentarSocnet(d);
-        if (s) return s;
+        // Blindagem: empresa da carteira nunca consulta pedidos SOCNET de outras empresas pelo CPF
         return { etapa: 'CAD_OFERTA', dados: d, resposta: `ℹ️ Não localizamos cadastro para este CPF nesta empresa.\n\nDeseja realizar o pré-cadastro agora para prosseguir com o agendamento?\n\n*1* - Sim, realizar pré-cadastro\n*2* - Digitar outro CPF${RODAPE}` };
       }
       d.colaboradorNome = data.funcionario?.nome ?? '';
