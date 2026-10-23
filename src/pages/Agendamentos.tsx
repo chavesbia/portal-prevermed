@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowUpDown, CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
 import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
+import { toTitleCase } from "@/lib/guias/blocklist";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
 
 const db = supabase as any;
@@ -241,7 +242,7 @@ export default function Agendamentos() {
               <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                 <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)}</TableCell>
                 <TableCell>{a.hora_agendada.slice(0, 5)}</TableCell>
-                <TableCell className="sticky left-0 z-10 bg-background"><p className="font-medium">{a.colaborador_nome}</p><p className="text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
+                <TableCell className="sticky left-0 z-10 max-w-[220px] bg-background"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="whitespace-nowrap text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
@@ -334,7 +335,7 @@ export default function Agendamentos() {
                         <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                           <TableCell className="whitespace-nowrap">{fmtDataHora(a.created_at)}{novo(a) && <Badge className="ml-2 whitespace-nowrap">Novo</Badge>}</TableCell>
                           <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)} {a.hora_agendada.slice(0, 5)}</TableCell>
-                          <TableCell><p className="font-medium">{a.colaborador_nome}</p><p className="text-xs text-muted-foreground">{a.tipo_exame}</p></TableCell>
+                          <TableCell className="max-w-[220px]"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="text-xs text-muted-foreground">{a.tipo_exame}</p></TableCell>
                           <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                           <TableCell className="whitespace-nowrap">{nomeUnidade(a)}</TableCell>
                           <TableCell><Badge variant="outline" className="whitespace-nowrap">{canal(a)}</Badge></TableCell>
@@ -351,9 +352,9 @@ export default function Agendamentos() {
         </TabsContent>
         <TabsContent value="lista" className="space-y-3">
           <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-[200px] flex-1"><Label htmlFor="busca-agenda">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
-            <div><Label>Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
-            <div><Label>Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
+            <div className="min-w-[200px] flex-1 space-y-2"><Label htmlFor="busca-agenda" className="block">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
+            <div className="space-y-2"><Label className="block">Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
+            <div className="space-y-2"><Label className="block">Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
           </div>
           <Card><CardContent className="pt-4">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
@@ -410,7 +411,7 @@ export default function Agendamentos() {
       <Sheet open={!!detalhe} onOpenChange={(o) => !o && setDetalhe(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {detalhe && (<>
-            <SheetHeader><SheetTitle>{detalhe.colaborador_nome}</SheetTitle></SheetHeader>
+            <SheetHeader><SheetTitle className="text-lg">{toTitleCase(detalhe.colaborador_nome)}</SheetTitle></SheetHeader>
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge className="whitespace-nowrap">{nomeUnidade(detalhe)}</Badge>
               <Badge variant="secondary" className="whitespace-nowrap">{subgrupoDe(detalhe)}</Badge>
@@ -426,7 +427,7 @@ export default function Agendamentos() {
                     <a className="inline-flex items-center gap-1 text-primary underline" href={`https://wa.me/${solicitante.telefone}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-3 w-3" />{solicitante.telefone}</a></div>)
                   : <span className="text-muted-foreground">Não localizado</span>}
               </dd></>)}
-              <dt className="text-muted-foreground">Empresa</dt><dd>{detalhe.empresa_nome}{detalhe.codigo_empresa_soc ? <span className="text-xs text-muted-foreground"> · SOC {detalhe.codigo_empresa_soc}</span> : null}</dd>
+              <dt className="text-muted-foreground">Empresa</dt><dd>{toTitleCase(detalhe.empresa_nome)}{detalhe.codigo_empresa_soc ? <span className="text-xs text-muted-foreground"> · SOC {detalhe.codigo_empresa_soc}</span> : null}</dd>
               <dt className="text-muted-foreground">Data</dt><dd>{fmtData(detalhe.data_agendada)} às {detalhe.hora_agendada.slice(0, 5)}</dd>
               <dt className="text-muted-foreground">Unidade</dt><dd>{nomeUnidade(detalhe)}</dd>
               <dt className="text-muted-foreground">Subgrupo</dt><dd>{subgrupoDe(detalhe)}</dd>
