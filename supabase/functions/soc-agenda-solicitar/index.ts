@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
         b.observacoes?.trim() ? `OBSERVAÇÃO: ${b.observacoes.trim().toUpperCase()}` : '',
         anexos.length ? `ANEXO: SIM${anexos.length > 1 ? ` (${anexos.length} ARQUIVOS)` : ''} (VERIFICAR NO PORTAL)` : '',
         b.solicitadoPor ? `SOLICITADO VIA ${b.solicitadoPor.toUpperCase()}` : '',
-      ].filter(Boolean).join('\n'),
+      ].filter(Boolean).map((l) => l.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()).join('\n\n'),
     });
     await admin.from('soc_agendamentos').update({
       status: soc.ok ? 'agendado_soc' : 'solicitado',

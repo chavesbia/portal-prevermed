@@ -74,3 +74,44 @@ ${vo('unidadeWsVo', p.unidade)}
     return { ok: false, erro: String(e) };
   }
 }
+
+// Atualiza a lotação (unidade/setor/cargo) de um colaborador já cadastrado, localizado pelo CPF.
+// Sem criar funcionário: o SOC grava o novo vínculo na hierarquia e os riscos/exames passam a seguir o PCMSO da nova lotação.
+export async function alterarLotacaoSoc(p: {
+  codigoEmpresa: string; cpf: string; nome: string; unidade: Ref; setor: Ref; cargo: Ref; podeCriar: boolean;
+}): Promise<{ ok: boolean; erro?: string }> {
+  const user = Deno.env.get('SOC_WS_USUARIO');
+  const senha = Deno.env.get('SOC_WS_CHAVE');
+  const resp = Deno.env.get('SOC_WS_CODIGO_RESPONSAVEL');
+  const principal = Deno.env.get('SOC_CODIGO_EMPRESA');
+  if (!user || !senha || !resp || !principal) return { ok: false, erro: 'Credenciais do Web Service SOC ausentes' };
+  const codUser = user.replace(/^U/i, '');
+  const criar = p.podeCriar ? 'true' : 'false';
+  const body = `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.soc.age.com/">
+<soap:Header>${await wssHeader(`U${codUser}`, senha)}</soap:Header>
+<soap:Body><ser:importacaoFuncionario><Funcionario>
+<atualizarCargo>false</atualizarCargo><atualizarFuncionario>true</atualizarFuncionario><atualizarSetor>false</atualizarSetor><atualizarUnidade>false</atualizarUnidade>
+${vo('cargoWsVo', p.cargo)}
+<criarCargo>${criar}</criarCargo><criarFuncionario>false</criarFuncionario><criarSetor>${criar}</criarSetor><criarUnidade>${criar}</criarUnidade>
+<funcionarioWsVo>
+<chaveProcuraFuncionario>CPF</chaveProcuraFuncionario>
+<codigoEmpresa>${esc(p.codigoEmpresa)}</codigoEmpresa><tipoBuscaEmpresa>CODIGO_SOC</tipoBuscaEmpresa>
+<cpf>${esc(p.cpf)}</cpf><nomeFuncionario>${esc(p.nome.toUpperCase())}</nomeFuncionario>
+</funcionarioWsVo>
+<identificacaoWsVo><chaveAcesso>${esc(senha)}</chaveAcesso><codigoEmpresaPrincipal>${esc(principal)}</codigoEmpresaPrincipal><codigoResponsavel>${esc(resp)}</codigoResponsavel><codigoUsuario>${esc(codUser)}</codigoUsuario></identificacaoWsVo>
+<naoImportarFuncionarioSemHierarquia>${p.podeCriar ? 'false' : 'true'}</naoImportarFuncionarioSemHierarquia>
+${vo('setorWsVo', p.setor)}
+${vo('unidadeWsVo', p.unidade)}
+</Funcionario></ser:importacaoFuncionario></soap:Body></soap:Envelope>`;
+  try {
+    const r = await fetch(URL_WS, { method: 'POST', headers: { 'Content-Type': 'text/xml; charset=utf-8', SOAPAction: '' }, body });
+    const text = await r.text();
+    console.log('SOC lotacao', r.status, text.slice(0, 600));
+    const fault = tag(text, 'faultstring');
+    if (fault) return { ok: false, erro: fault };
+    if (tag(text, 'encontrouErro') === 'true') return { ok: false, erro: tag(text, 'descricaoErro') ?? 'Erro no SOC' };
+    return { ok: r.ok, erro: r.ok ? undefined : `HTTP ${r.status}` };
+  } catch (e) {
+    return { ok: false, erro: String(e) };
+  }
+}
