@@ -79,6 +79,8 @@ ${vo('unidadeWsVo', p.unidade)}
 // Sem criar funcionário: o SOC grava o novo vínculo na hierarquia e os riscos/exames passam a seguir o PCMSO da nova lotação.
 export async function alterarLotacaoSoc(p: {
   codigoEmpresa: string; cpf: string; nome: string; unidade: Ref; setor: Ref; cargo: Ref; podeCriar: boolean;
+  // Reativação (Parceiras/Pontual): o mesmo cadastro inativo volta como PENDENTE, sem novo vínculo
+  reativar?: boolean; dataAdmissao?: string;
 }): Promise<{ ok: boolean; erro?: string }> {
   const user = Deno.env.get('SOC_WS_USUARIO');
   const senha = Deno.env.get('SOC_WS_CHAVE');
@@ -97,6 +99,7 @@ ${vo('cargoWsVo', p.cargo)}
 <chaveProcuraFuncionario>CPF</chaveProcuraFuncionario>
 <codigoEmpresa>${esc(p.codigoEmpresa)}</codigoEmpresa><tipoBuscaEmpresa>CODIGO_SOC</tipoBuscaEmpresa>
 <cpf>${esc(p.cpf)}</cpf><nomeFuncionario>${esc(p.nome.toUpperCase())}</nomeFuncionario>
+${p.reativar ? '<situacao>PENDENTE</situacao>' : ''}${p.dataAdmissao ? `<dataAdmissao>${p.dataAdmissao.split('-').reverse().join('/')}</dataAdmissao>` : ''}
 </funcionarioWsVo>
 <identificacaoWsVo><chaveAcesso>${esc(senha)}</chaveAcesso><codigoEmpresaPrincipal>${esc(principal)}</codigoEmpresaPrincipal><codigoResponsavel>${esc(resp)}</codigoResponsavel><codigoUsuario>${esc(codUser)}</codigoUsuario></identificacaoWsVo>
 <naoImportarFuncionarioSemHierarquia>${p.podeCriar ? 'false' : 'true'}</naoImportarFuncionarioSemHierarquia>

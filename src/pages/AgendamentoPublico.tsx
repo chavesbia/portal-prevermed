@@ -207,7 +207,23 @@ export default function AgendamentoPublico() {
   const inativo = !!func?.encontrado && !!func.inativo;
   // Pontuais/parceiros: histórico inativo vai direto para o novo cadastro
   const inativoLivre = inativo && !!empSel?.podeCriar;
-  useEffect(() => { if (inativoLivre && !cadAberto) abrirCadastro(); }, [inativoLivre]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Parceiras/Pontual: o cadastro inativo é reativado (volta como Pendente) em vez de criar outro
+  const [reativ, setReativ] = useState(false);
+  const [reativando, setReativando] = useState(false);
+  useEffect(() => { setReativ(false); }, [cpf, socCode]);
+  const reativarDireto = async () => {
+    setReativando(true); setCadErro("");
+    const { data, error } = await supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "reativar", cnpj, socCode, cpf } });
+    setReativando(false);
+    if (error || !data?.ok) {
+      let msg = data?.error;
+      try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+      return setCadErro(msg ?? "Não foi possível reativar o cadastro agora. Tente novamente.");
+    }
+    setFunc({ encontrado: true, funcionario: data.funcionario });
+    setF((p) => ({ ...p, cargo: data.funcionario.cargo ?? "", tipoExame: "" }));
+    setLotConfirmada(true); setExames([]);
+  };
   const precisaCadastro = !!func && ((!func.encontrado && !func.indisponivel) || inativo);
   const tipoPermitidoInativo = f.tipoExame === "Demissional";
   const uSel = hier?.unidades.find((u) => u.codigo === cad.unidade);
@@ -218,7 +234,7 @@ export default function AgendamentoPublico() {
   const cadastrar = async () => {
     setCadastrando(true); setCadErro("");
     const body = {
-      acao: alterandoLot ? "alterarLotacao" : "cadastrar", cnpj, socCode, cpf, nome: f.colaboradorNome.trim(), dataNascimento: cad.nascimento, dataAdmissao: cad.admissao, sexo: cad.sexo,
+      acao: reativ ? "reativar" : alterandoLot ? "alterarLotacao" : "cadastrar", cnpj, socCode, cpf, nome: f.colaboradorNome.trim(), dataNascimento: cad.nascimento, dataAdmissao: cad.admissao, sexo: cad.sexo,
       unidade: livre ? ref(cad.unidade, hier?.unidades) : { codigo: cad.unidade },
       setor: livre ? ref(cad.setor, hier?.setores) : { codigo: cad.setor },
       cargo: livre ? ref(cad.cargo, hier?.cargos) : { codigo: cad.cargo },
@@ -230,7 +246,8 @@ export default function AgendamentoPublico() {
       try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
       return setCadErro(msg ?? "Não foi possível cadastrar agora. Tente novamente.");
     }
-    if (alterandoLot) {
+    if (alterandoLot || reativ) {
+      setReativ(false);
       if (!data.funcionario) return setCadErro("Não foi possível conferir a lotação no SOC. Tente consultar novamente.");
       setFunc({ encontrado: true, funcionario: data.funcionario });
       setF((p) => ({ ...p, cargo: data.funcionario.cargo ?? "", tipoExame: "" }));
@@ -408,20 +425,26 @@ export default function AgendamentoPublico() {
                   </div>
                   <div><Label>Nome completo</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
                 </>)}
-                {inativoLivre && (
-                  <div className="flex gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
-                    <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                    <p>Identificamos um cadastro anterior inativo. Para este atendimento, preencha os dados abaixo para prosseguir com o agendamento.</p>
-                  </div>
-                )}
-                {func?.encontrado && !inativoLivre && (
+                {func?.encontrado && (
                   <div className="space-y-1 rounded-md border border-primary bg-primary/5 p-3 text-sm">
                     <p className="font-semibold">{func.funcionario.nome}</p>
                     {func.funcionario.cargo && <p>Cargo: {func.funcionario.cargo}</p>}
                     {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
                     {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
-                    {inativo && <p className="text-xs font-semibold text-destructive whitespace-nowrap">Cadastro INATIVO nesta empresa</p>}
+                    {inativo && !inativoLivre && <p className="text-xs font-semibold text-destructive whitespace-nowrap">Cadastro INATIVO nesta empresa</p>}
                     {func.recemCadastrado && <p className="text-xs text-primary">Pré-cadastrado agora no SOC (situação Pendente).</p>}
+                    {inativoLivre && !cadAberto && (
+                      <div className="space-y-1 pt-2">
+                        <p className="text-xs text-muted-foreground">Encontramos o cadastro deste colaborador. O cargo, o setor e a unidade acima continuam os mesmos?</p>
+                        {reativando
+                          ? <p className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap"><Loader2 className="h-3 w-3 animate-spin" />Atualizando cadastro…</p>
+                          : <div className="flex items-center gap-3 text-xs">
+                              <button type="button" className="font-medium text-primary hover:underline whitespace-nowrap" onClick={reativarDireto}>Sim, estão corretos</button>
+                              <button type="button" className="text-muted-foreground hover:underline whitespace-nowrap" onClick={() => { abrirLotacao(); setReativ(true); }}>Não, corrigir</button>
+                            </div>}
+                        {cadErro && !cadAberto && <p className="text-xs text-destructive">{cadErro}</p>}
+                      </div>
+                    )}
                     {!inativo && !cadAberto && (
                       <div className="space-y-1 pt-2">
                         <p className="text-xs text-muted-foreground">O cargo, o setor e a unidade acima estão corretos? Eles definem os exames do atendimento.</p>
@@ -460,6 +483,7 @@ export default function AgendamentoPublico() {
                       <div><Label>Admissão *</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>
                     </div>
                     </>}
+                    {reativ && <div className="sm:w-1/3"><Label>Admissão</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>}
                     {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
                     {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
                     {hier && !hier.indisponivel && !livre && (<>
@@ -491,7 +515,7 @@ export default function AgendamentoPublico() {
                     </>)}
                     {cadErro && <p className="text-sm text-destructive">{cadErro}</p>}
                     <div className="flex justify-end gap-2">
-                      {!inativoLivre && <Button type="button" variant="ghost" size="sm" onClick={() => { setCadAberto(false); setAlterandoLot(false); }}>Cancelar</Button>}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setCadAberto(false); setAlterandoLot(false); setReativ(false); }}>Cancelar</Button>
                       <Button type="button" size="sm" disabled={!cadOk || cadastrando} onClick={cadastrar}>
                         {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}{alterandoLot ? "Confirmar e atualizar no SOC" : "Pré-cadastrar no SOC"}
                       </Button>
