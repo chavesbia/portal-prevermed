@@ -294,7 +294,12 @@ const TIPO_SOCNET_LABEL: Record<string, string> = { Consulta: 'Consulta Ocupacio
 async function tentarSocnet(d: Dados): Promise<Res | null> {
   const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'socnet', cpf: d.cpf });
   const p = ok ? (data?.pedidos ?? [])[0] : null;
-  if (!p) return null;
+  if (!p) {
+    const guia = ok ? data?.guias?.[0] : null;
+    if (!guia) return null;
+    d.externo = true; d.guiaSocnet = guia.numero;
+    return { etapa: 'EXT_OFERTA', dados: d, resposta: `📋 Localizamos a *guia SOCNET ${guia.numero}* para este CPF.\n\nExames: ${listaExames(guia.exames ?? [])}\n\nEnvie o kit para a equipe conferir antes de confirmar o atendimento.\n\n*1* - Continuar e enviar a guia\n*2* - Conferir e digitar o CPF novamente${RODAPE}` };
+  }
   d.socnet = { sequencialFicha: p.sequencialFicha, empresa: p.empresa, assessoria: p.assessoria };
   d.colaboradorNome = p.funcionario?.nome ?? '';
   d.tipoExame = p.tipoExame ?? 'Periódico'; d.tipoLabel = TIPO_SOCNET_LABEL[d.tipoExame] ?? d.tipoExame;
