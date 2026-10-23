@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Loader2, Stethoscope, Syringe, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const db = supabase as any;
@@ -66,12 +66,7 @@ export function CalendarioOperacional({ hoje, onDia }: { hoje: string; onDia: (i
           {unidades.map((u) => <span key={u} className="whitespace-nowrap"><b>{u}:</b> {totaisUn[u]} no mês</span>)}
         </div>
       </div>
-      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1 whitespace-nowrap"><Stethoscope className="h-3 w-3" /> exames clínicos (médico)</span>
-        <span className="flex items-center gap-1 whitespace-nowrap"><Syringe className="h-3 w-3" /> complementares (enfermagem)</span>
-        <span className="flex items-center gap-1 whitespace-nowrap"><Clock className="h-3 w-3" /> pendentes da equipe</span>
-        <span className="whitespace-nowrap">Cor mais forte = dia mais cheio. Atualiza sozinho{dataUpdatedAt ? ` (última: ${new Date(dataUpdatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})` : ""}.</span>
-      </div>
+      <p className="text-xs text-muted-foreground">Colaboradores agendados por unidade. Cor mais forte = dia mais cheio. Clique no dia para ver a lista.</p>
       <div className="overflow-x-auto">
         <div className="grid grid-cols-7 gap-1 min-w-[720px]">
           {SEMANA.map((s) => <div key={s} className="text-center text-xs font-medium text-muted-foreground py-1">{s}</div>)}
@@ -81,17 +76,10 @@ export function CalendarioOperacional({ hoje, onDia }: { hoje: string; onDia: (i
             const tot = Object.values(dia).reduce((s, t) => s + t.total, 0);
             return (
               <button key={iso} onClick={() => onDia(iso)} title="Ver agendamentos do dia"
-                className={cn("min-h-[96px] rounded-md border p-1.5 text-left text-xs transition-colors hover:border-primary", nivel(tot), iso === hoje && "ring-2 ring-primary")}>
-                <div className="flex justify-between"><span className="font-semibold">{Number(iso.slice(8))}</span>{tot > 0 && <span className="font-semibold">{tot}</span>}</div>
+                className={cn("min-h-[80px] rounded-md border p-1.5 text-left text-xs transition-colors hover:border-primary", nivel(tot), iso === hoje && "ring-2 ring-primary")}>
+                <div className="font-semibold text-muted-foreground">{Number(iso.slice(8))}</div>
                 {unidades.filter((u) => dia[u]).map((u) => (
-                  <div key={u} className="mt-1">
-                    <div className="font-medium whitespace-nowrap">{u}: {dia[u].total}</div>
-                    <div className="flex gap-2 text-muted-foreground">
-                      <span className="flex items-center gap-0.5"><Stethoscope className="h-3 w-3" />{dia[u].clinicos}</span>
-                      <span className="flex items-center gap-0.5"><Syringe className="h-3 w-3" />{dia[u].complementares}</span>
-                      {dia[u].pendentes > 0 && <span className="flex items-center gap-0.5 text-destructive"><Clock className="h-3 w-3" />{dia[u].pendentes}</span>}
-                    </div>
-                  </div>
+                  <div key={u} className="mt-1 whitespace-nowrap"><span className="text-muted-foreground">{u}</span> <b>{dia[u].total}</b></div>
                 ))}
               </button>
             );

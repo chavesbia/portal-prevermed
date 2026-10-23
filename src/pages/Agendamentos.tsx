@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
+import { ArrowUpDown, CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
 import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
@@ -59,12 +59,12 @@ export default function Agendamentos() {
   const [sp, setSp] = useSearchParams();
   const aba = sp.get("tab") ?? "lista";
   const padrao = periodoAgenda(hojeIso());
-  const de = sp.get("de") ?? salvo.de ?? padrao.de;
-  const ate = sp.get("ate") ?? salvo.ate ?? padrao.ate;
+  const de = sp.get("de") ?? padrao.de;
+  const ate = sp.get("ate") ?? padrao.ate;
   const busca = sp.get("busca") ?? "";
   const kit = sp.get("kit") ?? "todos";
   const filtroCanal = sp.get("canal") ?? "todos";
-  const ordem = sp.get("ordem") ?? "agenda";
+  const ordem = sp.get("ordem") ?? "data:asc";
   const podeEditar = isAdmMaster || hasPermission("/agendamentos", "edit");
   const unidade = sp.get("unidade") ?? salvo.unidade ?? "";
   const setFiltro = (patch: Record<string, string>) => {
@@ -198,7 +198,11 @@ export default function Agendamentos() {
       const texto = normalizar([a.colaborador_nome, a.colaborador_cpf, fmtCpf(a.colaborador_cpf), a.empresa_nome, a.empresa_cnpj, a.protocolo, a.tipo_exame].join(" "));
       return (!q || texto.includes(q)) && (filtroCanal === "todos" || canal(a) === filtroCanal) &&
         (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
-    }).sort((a: any, b: any) => ordem === "recente" ? b.created_at.localeCompare(a.created_at) : ordem === "nome" ? a.colaborador_nome.localeCompare(b.colaborador_nome) : `${a.data_agendada} ${a.hora_agendada}`.localeCompare(`${b.data_agendada} ${b.hora_agendada}`));
+    }).sort((a: any, b: any) => {
+      const [campo, dir] = ordem.split(":");
+      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada} ${x.hora_agendada}`;
+      return String(val(a)).localeCompare(String(val(b))) * (dir === "desc" ? -1 : 1);
+    });
   }, [lista, busca, filtroCanal, kit, ordem]);
   const marcarKit = async () => {
     if (!detalhe || !podeEditar) return;
@@ -211,13 +215,23 @@ export default function Agendamentos() {
     toast.success("Controle de impressão atualizado");
   };
 
+  const Th = ({ c, children, className = "" }: { c: string; children: React.ReactNode; className?: string }) => {
+    const [campo, dir] = ordem.split(":");
+    const ativo = (campo || "data") === c;
+    return (
+      <TableHead className={`cursor-pointer select-none whitespace-nowrap hover:text-foreground ${className}`} onClick={() => setFiltro({ ordem: `${c}:${ativo && dir !== "desc" ? "desc" : "asc"}` })}>
+        <span className="inline-flex items-center gap-1">{children}<ArrowUpDown className={`h-3 w-3 ${ativo ? "text-foreground" : "text-muted-foreground/40"}`} /></span>
+      </TableHead>
+    );
+  };
+
   const Linhas = ({ itens }: { itens: any[] }) => (
     <div className="max-h-[60vh] overflow-auto">
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
-            <TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead className="sticky left-0 z-20 bg-background">Colaborador</TableHead><TableHead>Empresa</TableHead>
-            <TableHead>Tipo</TableHead><TableHead>Unidade</TableHead><TableHead>Kit</TableHead><TableHead>Status</TableHead>
+            <Th c="data">Data</Th><Th c="data">Hora</Th><Th c="colaborador" className="sticky left-0 z-20 bg-background">Colaborador</Th><Th c="empresa">Empresa</Th>
+            <Th c="tipo">Tipo</Th><Th c="unidade">Unidade</Th><Th c="kit">Kit</Th><Th c="status">Status</Th>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -231,7 +245,7 @@ export default function Agendamentos() {
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
-                <TableCell><Badge variant={a.kit_impresso_em ? "default" : "outline"} className="whitespace-nowrap">{a.kit_impresso_em ? <><Printer className="mr-1 h-3 w-3" />Impresso</> : temKitAgenda(a) ? "A imprimir" : "Sem kit"}</Badge></TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{temKitAgenda(a) ? <span className="inline-flex items-center gap-1" title={a.kit_impresso_em ? "Kit impresso" : "Kit anexado, não impresso"}><Paperclip className="h-3 w-3" />{a.kit_impresso_em && <Printer className="h-3 w-3 text-primary" />}</span> : "-"}</TableCell>
                 <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
               </TableRow>
             );
@@ -271,7 +285,6 @@ export default function Agendamentos() {
             <option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </select></div>
         <Button variant="outline" onClick={() => setFiltro({ de: hojeIso(), ate: hojeIso() })}>Hoje</Button>
-        <Button variant="outline" onClick={() => setFiltro(periodoAgenda(hojeIso()))}>D-5 a D+5</Button>
       </div>
 
       <Tabs value={aba} onValueChange={(v) => setFiltro({ tab: v })}>
@@ -340,9 +353,8 @@ export default function Agendamentos() {
           <div className="flex flex-wrap items-end gap-2">
             <div className="min-w-[200px] flex-1"><Label htmlFor="busca-agenda">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
             <div><Label>Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
-            <div><Label>Ordenação</Label><select aria-label="Ordenação" className="h-10 rounded-md border bg-background px-3 text-sm" value={ordem} onChange={(e) => setFiltro({ ordem: e.target.value })}><option value="agenda">Data e horário</option><option value="recente">Mais recentes</option><option value="nome">Colaborador A–Z</option></select></div>
+            <div><Label>Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
           </div>
-          <div className="flex flex-wrap gap-2">{[["todos", "Todos"], ["sem", "Sem kit"], ["enviado", "Kit enviado"], ["imprimir", "A imprimir"], ["impresso", "Impresso"]].map(([v, label]) => <Button key={v} size="sm" variant={kit === v ? "default" : "outline"} onClick={() => setFiltro({ kit: v })}>{label}</Button>)}</div>
           <Card><CardContent className="pt-4">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
           </CardContent></Card>
@@ -428,7 +440,7 @@ export default function Agendamentos() {
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
               {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
-              {podeEditar && temKitAgenda(detalhe) && <Button variant="outline" size="sm" disabled={enviando} onClick={marcarKit}><Printer className="mr-2 h-4 w-4" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar kit como impresso"}</Button>}
+              {podeEditar && temKitAgenda(detalhe) && <button type="button" disabled={enviando} onClick={marcarKit} className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"><Printer className="h-3 w-3" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar como impresso"}</button>}
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
                 <Button key={x.id} variant="outline" size="sm" className="w-full justify-start min-w-0" onClick={() => abrirArquivo(x.path)}>
                   <FileText className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{x.tipo_documento}{x.nome_arquivo ? `: ${x.nome_arquivo}` : ""}</span><span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>
