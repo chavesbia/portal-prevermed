@@ -562,7 +562,6 @@ export default function AgendamentoPublico() {
                           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : doPcmso ? "border-dashed border-primary/60 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>
                           {on && <Check className="h-3 w-3" />}
                           {e}
-                          {doPcmso && <span className={`rounded px-1 text-[9px] font-semibold whitespace-nowrap ${on ? "bg-primary-foreground/20" : "bg-primary/10 text-primary"}`}>PCMSO</span>}
                         </button>
                       );
                     })}
