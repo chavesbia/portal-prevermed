@@ -10,6 +10,7 @@ import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
 import { isValidCPF, maskCPF } from "@/lib/contractual/cpf";
+import { preparosDosExames } from "../../supabase/functions/_shared/preparosExames";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
@@ -341,6 +342,17 @@ export default function AgendamentoPublico() {
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
               </div>
+              {preparosDosExames(pedido ? pedido.exames : exames).length > 0 && (
+                <section className="space-y-3 border-t pt-4 text-sm">
+                  <h2 className="font-semibold">Preparos dos exames</h2>
+                  {preparosDosExames(pedido ? pedido.exames : exames).map((p) => (
+                    <div key={p.codigo} className="space-y-1 break-words">
+                      <h3 className="font-medium">{p.nome}</h3>
+                      <p className="whitespace-pre-wrap text-muted-foreground">{p.texto}</p>
+                    </div>
+                  ))}
+                </section>
+              )}
               <div className="flex flex-wrap justify-center gap-2 print:hidden">
                 <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
                 <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>

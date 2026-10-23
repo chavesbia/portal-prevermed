@@ -5,6 +5,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { CATALOGO } from './catalogo.ts';
 import { naoAgendaveisGlobais } from '../_shared/agendaRegras.ts';
+import { preparosDosExames } from '../_shared/preparosExames.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -214,7 +215,10 @@ const examesResumo = (d: Dados) => {
 };
 const blocoAgendamento = (d: Dados, final = false) =>
   `🏢 Empresa: *${titulo(d.empresaNome)}*\n🪪 CNPJ: ${fmtCnpj(d.cnpj)}\n👤 Colaborador: *${titulo(d.colaboradorNome)}*\n🪪 CPF: ${fmtCpf(d.cpf)}\n${lotacao(d) ? lotacao(d) + '\n' : ''}🩺 Tipo de exame: *${d.tipoLabel ?? d.tipoExame}*\n${final ? `🧪 Exames: ${textoExames(d)}` : examesResumo(d)}\n📍 Local: *${nomeLocal(d.unidade.nome)}*\n${final && endereco(d.unidade) ? `🗺️ Endereço: ${endereco(d.unidade)}\n` : ''}📅 Data: *${d.data}* às *${d.hora}*` +
-  (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexos: ${listaAnexos(d).length ? `(${listaAnexos(d).length}) ` + listaAnexos(d).map((a: any) => a.nome).join(', ') : 'não'}`);
+  (final ? (() => {
+    const preparos = preparosDosExames([...(d.examesBase ?? []), ...(d.exames ?? [])].map((e: any) => typeof e === 'string' ? e : e.nome ?? ''));
+    return preparos.length ? '\n\n📋 *Preparos dos exames*\n\n' + preparos.map((p) => `*${nomeExame(p.nome)}*\n${p.texto}`).join('\n\n') : '';
+  })() : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexos: ${listaAnexos(d).length ? `(${listaAnexos(d).length}) ` + listaAnexos(d).map((a: any) => a.nome).join(', ') : 'não'}`);
 
 function resumo(d: Dados): Res {
   const semKit = d.livre && !d.externo && !d.socnet && !listaAnexos(d).length ? `\n\n${AVISO_KIT}` : '';
