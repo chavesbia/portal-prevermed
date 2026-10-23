@@ -141,7 +141,7 @@ const adicionais = (d: Dados) => { const base = new Set((d.examesBase ?? []).map
 function textoExames(d: Dados) {
   if (d.socnet) return `Autorizados no pedido: ${(d.exames ?? []).map(nomeExame).join(' • ')}`;
   const ad = adicionais(d).map(nomeExame);
-  if ((d.examesBase ?? []).length) return `Previstos no PCMSO da função${ad.length ? ` + Adicionais: ${ad.join(', ')}` : ''}`;
+  if ((d.examesBase ?? []).length) return [...d.examesBase.map(nomeExame), ...ad].join(' • ');
   return (d.exames ?? []).map(nomeExame).join(' • ') || '-';
 }
 function adicionar(d: Dados, novos: string[]) {
@@ -164,15 +164,15 @@ async function buscarExame(d: Dados, termo: string): Promise<Res> {
   const mais = ach.length > MAX_OP ? `\n\n_Mostrando ${MAX_OP} de ${ach.length}. Digite mais letras para refinar._` : '';
   return { etapa: 'EXAME_BUSCA', dados: d, resposta: `Encontrei estas opções no catálogo:\n\n${menu(d.achados.map(nomeExame))}${mais}\n\nDigite o *número* da opção ou mais letras para refinar.${RODAPE}` };
 }
-const menuAlterar = (d: Dados): Res => ({ etapa: 'ALTERAR_EXAMES', dados: d, resposta: `✏️ *Alterar lista de exames*\n\n*1* - Adicionar outro exame\n*2* - Remover um exame adicionado\n*3* - Manter apenas os exames previstos no PCMSO${RODAPE}` });
+const menuAlterar = (d: Dados): Res => ({ etapa: 'ALTERAR_EXAMES', dados: d, resposta: `✏️ *Alterar lista de exames*\n\n*1* - Adicionar outro exame\n*2* - Remover exame${RODAPE}` });
 
 function pedirExtras(d: Dados): Res {
   if (!d.exames?.length) {
     const m = menuExtras(d);
-    return { ...m, resposta: `🩺 Este atendimento não possui exames pré-definidos no PCMSO.\n\nSelecione os *exames que serão realizados*:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` };
+    return { ...m, resposta: `🩺 Este atendimento não possui exames pré-definidos.\n\nSelecione os *exames que serão realizados*:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` };
   }
   const lista = listaExames(d.exames);
-  return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames *previstos no PCMSO* para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
+  return { etapa: 'PERGUNTANDO_EXTRAS', dados: d, resposta: `🩺 Exames *previstos* para este atendimento:\n\n${lista}\n\nDeseja acrescentar algum exame complementar?\n\n*1* - Não, apenas os exames acima\n*2* - Sim, quero adicionar outros exames${RODAPE}` };
 }
 const menuExtras = (d: Dados): Res => ({ etapa: 'ADICIONANDO_EXAMES', dados: d, resposta: `Escolha os *exames complementares* desejados:\n\n${menu(extrasDe(d).map(nomeExame))}\n\nDigite os números desejados (ex: *1, 2*) ou parte do nome para buscar no catálogo (ex: _raio_, _glicemia_).${RODAPE}` });
 const confExames = (d: Dados, prefixo = ''): Res => ({ etapa: 'CONF_EXAMES', dados: d, resposta: `${prefixo}📋 *Confira os exames selecionados para este atendimento:*\n\n${listaExames(d.exames ?? [])}\n\n*1* - Confirmar exames\n*2* - Alterar lista de exames${RODAPE}` });
@@ -181,7 +181,10 @@ const bloqueioPcmso = (d: Dados): Res => ({ etapa: 'PCMSO_BLOQUEIO', dados: d, r
 const pedirObs = (d: Dados): Res => ({ etapa: 'OBSERVACOES', dados: d, resposta: `📝 *OBSERVAÇÃO* para a equipe do *BALCÃO DE ATENDIMENTO*\n\n_(ex: PCD, atendimento preferencial, restrição de mobilidade, contato do gestor ou outras informações)_\n\nCaso não possua nenhuma observação para atendimento, digite *1* para avançar.${RODAPE}` });
 const pedirAnexo = (d: Dados): Res => d.externo && !d.socnet
   ? { etapa: 'ANEXO', dados: d, resposta: `📎 Envie agora a *foto ou PDF da guia/autorização de exames* (obrigatório para este atendimento).${RODAPE}` }
-  : { etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar a foto ou PDF da guia/pedido de exame ou de outro documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
+  : d.livre
+    ? { etapa: 'ANEXO', dados: d, resposta: `📎 *Kit de atendimento / Guia*\n\nEnvie a foto ou PDF do kit (guia, ficha clínica e ASO), ou digite *1* para continuar sem anexo.\n\n${AVISO_KIT}${RODAPE}` }
+    : { etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar algum documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
+const AVISO_KIT = '⚠️ *Atenção:* O atendimento no balcão depende da apresentação do kit (guia, ficha clínica e ASO) para realização do atendimento.';
 
 function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
   const tipo = arquivo.tipo.split(';')[0].trim().toLowerCase();
@@ -206,7 +209,7 @@ const endereco = (u: any) => { const n = semAcento(String(u?.nome ?? '')); const
 const examesResumo = (d: Dados) => {
   if (d.socnet) return `🧪 ${textoExames(d)}`;
   const ad = adicionais(d).map(nomeExame);
-  if ((d.examesBase ?? []).length) return `🧪 Exames *Previstos no PCMSO:* ${d.examesBase.map(nomeExame).join(' • ')}\n➕ Exames *Adicionais:* ${ad.length ? ad.join(' • ') : 'nenhum'}`;
+  if ((d.examesBase ?? []).length) return `🧪 Exames *previstos:* ${d.examesBase.map(nomeExame).join(' • ')}\n➕ Exames *adicionais:* ${ad.length ? ad.join(' • ') : 'nenhum'}`;
   return `🧪 Exames: ${textoExames(d)}`;
 };
 const blocoAgendamento = (d: Dados, final = false) =>
@@ -214,7 +217,8 @@ const blocoAgendamento = (d: Dados, final = false) =>
   (final ? '' : `\n📝 Observação para o balcão: ${d.obs || '-'}\n📎 Anexos: ${listaAnexos(d).length ? `(${listaAnexos(d).length}) ` + listaAnexos(d).map((a: any) => a.nome).join(', ') : 'não'}`);
 
 function resumo(d: Dados): Res {
-  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}\n\n⚠️ *Atenção:* Confira todos os dados antes de confirmar. Informações incorretas podem gerar *custos adicionais* com a correção do ASO e/ou a realização de exames complementares extras.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data${RODAPE}` };
+  const semKit = d.livre && !d.externo && !d.socnet && !listaAnexos(d).length ? `\n\n${AVISO_KIT}` : '';
+  return { etapa: 'CONFIRMANDO', dados: d, resposta: `Confira os dados do agendamento:\n\n${blocoAgendamento(d)}${semKit}\n\n⚠️ *Atenção:* Confira todos os dados antes de confirmar. Informações incorretas podem gerar *custos adicionais* com a correção do ASO e/ou a realização de exames complementares extras.\n\n*1* - Confirmar agendamento e dados\n*2* - Escolher outra data${RODAPE}` };
 }
 
 // ---- Pré-cadastro de colaborador sem cadastro no SOC (mesma regra da página pública) ----
@@ -266,7 +270,15 @@ function aplicarNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo', ref: { cod
   if (nivel === 'setor') { d.cad.cargo = undefined; return pedirNivel(d, 'cargo'); }
   return confirmarCad(d);
 }
+// ---- Confirmação da lotação atual (empresa da carteira, cadastro ativo) ----
+const pedirConfLot = (d: Dados): Res => ({ etapa: 'LOT_CONF', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*\n\n📌 *Confira a lotação atual no SOC:*\n${lotacao(d) || '_(sem lotação informada)_'}\n\nOs riscos e exames do ASO seguem esta lotação.\n\n*1* - Confirmar lotação\n*2* - Alterar lotação${RODAPE}` });
+const menuTipos = (d: Dados, prefixo = ''): Res => { d.tipos = TIPOS_ATIVO; return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `${prefixo}👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` }; };
+function confirmarLot(d: Dados): Res {
+  const c = d.cad;
+  return { etapa: 'LOT_SALVAR', dados: d, resposta: `Confira a *nova lotação*:\n\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\nAo confirmar, a lotação será atualizada no SOC e os exames seguirão os riscos da nova função.\n\n*1* - Confirmar e atualizar\n*2* - Escolher novamente${RODAPE}` };
+}
 function confirmarCad(d: Dados): Res {
+  if (d.cad?.alterando) return confirmarLot(d);
   const c = d.cad; c.corrigindo = false;
   const sexo = c.sexo === 'FEMININO' ? '♀️ Sexo: Feminino' : '♂️ Sexo: Masculino';
   return { etapa: 'CAD_CONFIRMAR', dados: d, resposta: `Confira o pré-cadastro:\n\n👤 Nome: *${titulo(c.nome)}*\n🪪 CPF: ${d.cpf}\n🎂 Nascimento: ${brIso(c.nascimento)}\n${sexo}\n📆 Admissão: ${brIso(c.admissao)}\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\n*1* - Confirmar pré-cadastro\n*2* - Corrigir dados${RODAPE}` };
@@ -348,9 +360,34 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       d.colaboradorNome = data.funcionario?.nome ?? '';
       d.lotUnidade = data.funcionario?.unidade ?? ''; d.lotSetor = data.funcionario?.setor ?? ''; d.lotCargo = data.funcionario?.cargo ?? '';
       d.inativo = !!data.inativo;
+      if (!d.inativo) return pedirConfLot(d);
       d.tipos = d.inativo ? ['Demissional', 'Novo vínculo (pré-cadastro)'] : TIPOS_ATIVO;
       const aviso = d.inativo ? '\n\n⚠️ O cadastro deste colaborador está *inativo*.' : '';
       return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}${aviso}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+    }
+    case 'LOT_CONF': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para alterar a lotação.${RODAPE}` };
+      if (i === 0) return menuTipos(d);
+      const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
+      if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter a lotação.${RODAPE}` };
+      d.cad = { alterando: true, livre: !!data.podeCriar }; d.hier = data;
+      if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa não possui unidades, setores e cargos ativos para alteração de lotação.');
+      return pedirNivel(d, 'unidade');
+    }
+    case 'LOT_SALVAR': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para escolher novamente.${RODAPE}` };
+      const c = d.cad;
+      if (i === 1) { c.unidade = undefined; c.setor = undefined; c.cargo = undefined; return pedirNivel(d, 'unidade'); }
+      const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
+      const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'alterarLotacao', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo) });
+      if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar a lotação: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Escolher novamente${RODAPE}` };
+      const antes = `${d.lotUnidade || '-'} / ${d.lotSetor || '-'} / ${d.lotCargo || '-'}`;
+      d.lotUnidade = c.unidade.nome; d.lotSetor = c.setor.nome; d.lotCargo = c.cargo.nome;
+      d.lotAlterada = `LOTAÇÃO ATUALIZADA NO SOC VIA AGENDAMENTO — DE: ${antes} — PARA: ${d.lotUnidade} / ${d.lotSetor} / ${d.lotCargo}`.toUpperCase();
+      delete d.cad; delete d.hier;
+      return { ...menuTipos(d, '✅ Lotação atualizada no SOC!\n\n'), semVolta: true };
     }
     case 'EXT_OFERTA': {
       const i = escolha(t, 2);
@@ -513,8 +550,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         const prot = await registrar(ctx, 'atendimento_humano', d, undefined, { motivo: 'PCMSO sem exames para o cargo' });
         return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `👩‍💼 Pedido de atendimento registrado (protocolo *${prot}*).\n\nUm atendente da PreverMed vai continuar o atendimento por este número em breve.\n\nSe precisar de outro atendimento, digite *1*.` };
       }
-      d.tipos = d.tiposAnt;
-      return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `Confira a lotação cadastrada do colaborador:\n\n👤 *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nSe o cargo/setor estiver incorreto, a lotação precisa ser atualizada no SOC antes do agendamento.\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+      return pedirConfLot(d);
     }
     case 'CONFIRMANDO_LOTACAO': {
       const i = escolha(t, 2);
@@ -567,7 +603,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       return pedirUnidade(d);
     }
     case 'ALTERAR_EXAMES': {
-      const i = escolha(t, 3);
+      const i = escolha(t, 2);
       if (i < 0) return menuAlterar(d);
       if (i === 0) return menuExtras(d);
       if (i === 1) {
@@ -575,8 +611,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         if (!ad.length) return { ...menuAlterar(d), resposta: `Não há exames adicionais para remover.\n\n${menuAlterar(d).resposta}` };
         return { etapa: 'REMOVER_EXAME', dados: d, resposta: `Qual exame deseja remover?\n\n${menu(ad.map(nomeExame))}${RODAPE}` };
       }
-      d.exames = [...(d.examesBase ?? [])];
-      return confExames(d, `✅ Mantidos apenas os exames previstos no PCMSO.\n\n`);
+      return menuAlterar(d);
     }
     case 'REMOVER_EXAME': {
       const ad = adicionais(d);
@@ -598,7 +633,8 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const todas = d.horarios[d.data] as string[];
       const lab = (d.exames ?? []).some((e: string) => LAB.test(semAcento(e)));
       const pref = todas.filter((h) => (lab ? h <= '10:00' : h >= '10:30'));
-      const horas = [...pref, ...todas.filter((h) => !pref.includes(h))].slice(0, 20);
+      const base = (pref.length >= 4 ? pref : todas).slice().sort();
+      const horas = base.length <= 4 ? base : [0, 1, 2, 3].map((k) => base[Math.round((k * (base.length - 1)) / 3)]);
       d.horas = horas;
       return { etapa: 'ESCOLHENDO_HORARIO', dados: d, resposta: `🕐 Horários em *${d.data}*:\n\n${menu(horas)}${RODAPE}` };
     }
@@ -646,7 +682,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         unidadeId: d.unidade.id, empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socnet || d.externo ? undefined : d.socCode,
         origem: d.socnet ? 'socnet' : d.externo ? 'externo' : 'cliente', sequencialFicha: d.socnet?.sequencialFicha,
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
-        data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: d.mudancaRisco,
+        data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: [d.lotAlterada, d.mudancaRisco].filter(Boolean).join(' · ') || undefined,
         observacoes: d.obs || undefined, examesAdicionais: adicionais(d), solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
         documentos: listaAnexos(d).map((a: any) => ({ ...a, tipoDocumento: 'Anexo WhatsApp' })),
       });

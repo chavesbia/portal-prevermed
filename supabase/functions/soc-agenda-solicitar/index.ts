@@ -28,7 +28,7 @@ const Body = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hora: z.string().regex(/^\d{2}:\d{2}$/),
   observacoes: z.string().max(1000).optional(),
-  mudancaRisco: z.string().max(400).optional(),
+  mudancaRisco: z.string().max(800).optional(),
   motivoRetorno: z.string().trim().max(1000).optional(),
   exames: z.array(z.string().trim().min(2).max(80)).max(40).default([]),
   guia: Arquivo.optional(),
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
         b.observacoes?.trim() ? `OBSERVAÇÃO: ${b.observacoes.trim().toUpperCase()}` : '',
         anexos.length ? `ANEXO: SIM${anexos.length > 1 ? ` (${anexos.length} ARQUIVOS)` : ''} (VERIFICAR NO PORTAL)` : '',
         b.solicitadoPor ? `SOLICITADO VIA ${b.solicitadoPor.toUpperCase()}` : '',
-      ].filter(Boolean).join('\n'),
+      ].filter(Boolean).map((l) => l.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()).join('\n\n'),
     });
     await admin.from('soc_agendamentos').update({
       status: soc.ok ? 'agendado_soc' : 'solicitado',

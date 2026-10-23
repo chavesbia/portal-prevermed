@@ -16,7 +16,7 @@ type Empresa = { soc_code: string; razao_social: string; cidade: string | null; 
 type Item = { codigo: string; nome: string };
 type Hier = { unidades: (Item & { setores: (Item & { cargos: Item[] })[] })[]; setores?: Item[]; cargos?: Item[]; podeCriar: boolean; indisponivel?: boolean };
 type Func = { encontrado: boolean; inativo?: boolean; indisponivel?: boolean; funcionario?: any; recemCadastrado?: boolean };
-const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"] as const;
+const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta"] as const;
 const dig = (v: string) => v.replace(/\D/g, "");
 // Endereço exibido no comprovante, por código da agenda SOC
 const ENDERECOS: Record<string, string> = {
@@ -562,7 +562,6 @@ export default function AgendamentoPublico() {
                           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : doPcmso ? "border-dashed border-primary/60 text-foreground" : "border-border text-muted-foreground hover:bg-muted"}`}>
                           {on && <Check className="h-3 w-3" />}
                           {e}
-                          {doPcmso && <span className={`rounded px-1 text-[9px] font-semibold whitespace-nowrap ${on ? "bg-primary-foreground/20" : "bg-primary/10 text-primary"}`}>PCMSO</span>}
                         </button>
                       );
                     })}
@@ -597,14 +596,18 @@ export default function AgendamentoPublico() {
                     </p>
                   )}
                 </div>
+                {(semPedido || !!pedido || !!empSel?.podeCriar) && (
                 <div className="space-y-2">
-                  <Label>Guia, pedido ou kit de atendimento ({semPedido ? "obrigatório" : "opcional"} — PDF ou imagem, até 5 MB cada, máx. 8 arquivos)</Label>
+                  <Label>Kit de atendimento / Guia ({semPedido ? "obrigatório" : "opcional"} — PDF ou imagem, até 5 MB cada, máx. 8 arquivos)</Label>
                   <Input type="file" multiple accept="application/pdf,image/png,image/jpeg"
                     onChange={(e) => {
                       const novos = Array.from(e.target.files ?? []); e.target.value = "";
                       if (novos.some((x) => x.size > 5 * 1024 * 1024)) return setErro("Há arquivo maior que 5 MB.");
                       setErro(""); setGuias((p) => [...p, ...novos].slice(0, 8));
                     }} />
+                  {guias.length === 0 && !semPedido && (
+                    <p className="text-xs text-destructive">Atenção: O atendimento no balcão depende da apresentação do kit (guia, ficha clínica e ASO) para realização do atendimento.</p>
+                  )}
                   {guias.length > 0 && (
                     <ul className="space-y-1 text-xs">
                       {guias.map((g, i) => (
@@ -616,6 +619,7 @@ export default function AgendamentoPublico() {
                     </ul>
                   )}
                 </div>
+                )}
                 {retorno && (
                   <div className="space-y-3 rounded-md border p-3">
                     <p className="text-sm font-medium">Documentação do retorno ao trabalho</p>
