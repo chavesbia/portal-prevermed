@@ -254,7 +254,22 @@ Deno.serve(async (req) => {
       const nome = pick(existente.row, ['NOME', 'NOMEFUNCIONARIO']) ?? '';
       const r = await alterarLotacaoSoc({ codigoEmpresa: b.socCode, cpf: b.cpf, nome, unidade: b.unidade, setor: b.setor, cargo: b.cargo, podeCriar: livre });
       if (!r.ok) return json({ error: `O SOC recusou a alteração: ${r.erro ?? 'erro desconhecido'}` }, 422);
-      return json({ ok: true });
+      // Read-back: não libera a próxima etapa com uma lotação apenas presumida.
+      const conferir = await buscarFuncionario(b.socCode, b.cpf);
+      if (!conferir || conferir.inativo) return json({ error: 'Alteração enviada, mas não foi possível conferir a lotação no SOC. Consulte novamente antes de agendar.' }, 503);
+      const corresponde = (ref: { codigo?: string; nome?: string }, codigos: string[], nomes: string[]) => ref.codigo
+        ? pick(conferir.row, codigos) === ref.codigo
+        : norm(pick(conferir.row, nomes) ?? '') === norm(ref.nome ?? '');
+      if (!corresponde(b.unidade, ['CODIGOUNIDADE'], ['NOMEUNIDADE', 'UNIDADE']) ||
+          !corresponde(b.setor, ['CODIGOSETOR'], ['NOMESETOR', 'SETOR']) ||
+          !corresponde(b.cargo, ['CODIGOCARGO'], ['NOMECARGO', 'CARGO'])) {
+        return json({ error: 'O SOC ainda não confirmou a nova unidade, setor e cargo. Consulte novamente antes de agendar.' }, 409);
+      }
+      return json({ ok: true, funcionario: {
+        nome: pick(conferir.row, ['NOME', 'NOMEFUNCIONARIO']),
+        cargo: pick(conferir.row, ['NOMECARGO', 'CARGO']), setor: pick(conferir.row, ['NOMESETOR', 'SETOR']),
+        unidade: pick(conferir.row, ['NOMEUNIDADE', 'UNIDADE']), situacao: pick(conferir.row, ['SITUACAO', 'SITUACAOFUNCIONARIO']),
+      } });
     }
 
     const achado = await buscarFuncionario(b.socCode, b.cpf);
