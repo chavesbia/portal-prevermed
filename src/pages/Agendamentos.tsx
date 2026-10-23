@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
+import { ArrowUpDown, CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
 import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
@@ -59,12 +59,12 @@ export default function Agendamentos() {
   const [sp, setSp] = useSearchParams();
   const aba = sp.get("tab") ?? "lista";
   const padrao = periodoAgenda(hojeIso());
-  const de = sp.get("de") ?? salvo.de ?? padrao.de;
-  const ate = sp.get("ate") ?? salvo.ate ?? padrao.ate;
+  const de = sp.get("de") ?? padrao.de;
+  const ate = sp.get("ate") ?? padrao.ate;
   const busca = sp.get("busca") ?? "";
   const kit = sp.get("kit") ?? "todos";
   const filtroCanal = sp.get("canal") ?? "todos";
-  const ordem = sp.get("ordem") ?? "agenda";
+  const ordem = sp.get("ordem") ?? "data:asc";
   const podeEditar = isAdmMaster || hasPermission("/agendamentos", "edit");
   const unidade = sp.get("unidade") ?? salvo.unidade ?? "";
   const setFiltro = (patch: Record<string, string>) => {
@@ -198,7 +198,11 @@ export default function Agendamentos() {
       const texto = normalizar([a.colaborador_nome, a.colaborador_cpf, fmtCpf(a.colaborador_cpf), a.empresa_nome, a.empresa_cnpj, a.protocolo, a.tipo_exame].join(" "));
       return (!q || texto.includes(q)) && (filtroCanal === "todos" || canal(a) === filtroCanal) &&
         (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
-    }).sort((a: any, b: any) => ordem === "recente" ? b.created_at.localeCompare(a.created_at) : ordem === "nome" ? a.colaborador_nome.localeCompare(b.colaborador_nome) : `${a.data_agendada} ${a.hora_agendada}`.localeCompare(`${b.data_agendada} ${b.hora_agendada}`));
+    }).sort((a: any, b: any) => {
+      const [campo, dir] = ordem.split(":");
+      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada} ${x.hora_agendada}`;
+      return String(val(a)).localeCompare(String(val(b))) * (dir === "desc" ? -1 : 1);
+    });
   }, [lista, busca, filtroCanal, kit, ordem]);
   const marcarKit = async () => {
     if (!detalhe || !podeEditar) return;
@@ -211,13 +215,23 @@ export default function Agendamentos() {
     toast.success("Controle de impressão atualizado");
   };
 
+  const Th = ({ c, children, className = "" }: { c: string; children: React.ReactNode; className?: string }) => {
+    const [campo, dir] = ordem.split(":");
+    const ativo = (campo || "data") === c;
+    return (
+      <TableHead className={`cursor-pointer select-none whitespace-nowrap hover:text-foreground ${className}`} onClick={() => setFiltro({ ordem: `${c}:${ativo && dir !== "desc" ? "desc" : "asc"}` })}>
+        <span className="inline-flex items-center gap-1">{children}<ArrowUpDown className={`h-3 w-3 ${ativo ? "text-foreground" : "text-muted-foreground/40"}`} /></span>
+      </TableHead>
+    );
+  };
+
   const Linhas = ({ itens }: { itens: any[] }) => (
     <div className="max-h-[60vh] overflow-auto">
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
-            <TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead className="sticky left-0 z-20 bg-background">Colaborador</TableHead><TableHead>Empresa</TableHead>
-            <TableHead>Tipo</TableHead><TableHead>Unidade</TableHead><TableHead>Kit</TableHead><TableHead>Status</TableHead>
+            <Th c="data">Data</Th><Th c="data">Hora</Th><Th c="colaborador" className="sticky left-0 z-20 bg-background">Colaborador</Th><Th c="empresa">Empresa</Th>
+            <Th c="tipo">Tipo</Th><Th c="unidade">Unidade</Th><Th c="kit">Kit</Th><Th c="status">Status</Th>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -231,7 +245,7 @@ export default function Agendamentos() {
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
-                <TableCell><Badge variant={a.kit_impresso_em ? "default" : "outline"} className="whitespace-nowrap">{a.kit_impresso_em ? <><Printer className="mr-1 h-3 w-3" />Impresso</> : temKitAgenda(a) ? "A imprimir" : "Sem kit"}</Badge></TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{temKitAgenda(a) ? <span className="inline-flex items-center gap-1" title={a.kit_impresso_em ? "Kit impresso" : "Kit anexado, não impresso"}><Paperclip className="h-3 w-3" />{a.kit_impresso_em && <Printer className="h-3 w-3 text-primary" />}</span> : "-"}</TableCell>
                 <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
               </TableRow>
             );
