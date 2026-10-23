@@ -58,7 +58,6 @@ export default function AgendamentoPublico() {
   const [protocolo, setProtocolo] = useState("");
   const [exames, setExames] = useState<string[]>([]);
   const [guias, setGuias] = useState<File[]>([]);
-  const [copiado, setCopiado] = useState(false);
   const qs = new URLSearchParams(window.location.search);
   const socInicial = qs.get("soc") ?? "";
   // Fora da carteira PreverMed (ex.: cliente de assessoria parceira) e pedido SOCNET localizado pelo CPF
@@ -293,7 +292,6 @@ export default function AgendamentoPublico() {
     setProtocolo(data.protocolo);
   };
 
-  const linkKit = `${window.location.origin}/agendamento/completar?protocolo=${protocolo}`;
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   return (
