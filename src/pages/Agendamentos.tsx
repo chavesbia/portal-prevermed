@@ -278,16 +278,6 @@ export default function Agendamentos() {
     <div className="space-y-4 p-4 md:p-6">
       <div className="flex items-center gap-2"><CalendarCheck className="h-6 w-6 text-primary" /><h1 className="text-2xl font-semibold">Agendamentos</h1></div>
 
-      <div className="flex flex-wrap items-end gap-2">
-        <div><Label>De</Label><Input type="date" value={de} onChange={(e) => setFiltro({ de: e.target.value })} /></div>
-        <div><Label>Até</Label><Input type="date" value={ate} onChange={(e) => setFiltro({ ate: e.target.value })} /></div>
-        <div><Label>Unidade</Label>
-          <select className="flex h-10 rounded-md border border-input bg-background px-3 text-sm" value={unidade} onChange={(e) => setFiltro({ unidade: e.target.value })}>
-            <option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
-          </select></div>
-        <Button variant="outline" onClick={() => setFiltro({ de: hojeIso(), ate: hojeIso() })}>Hoje</Button>
-      </div>
-
       <Tabs value={aba} onValueChange={(v) => setFiltro({ tab: v })}>
         <TabsList className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="lista">Agendamentos ({lista.length})</TabsTrigger>
@@ -296,6 +286,22 @@ export default function Agendamentos() {
           <TabsTrigger value="calendario">Calendário</TabsTrigger>
           <TabsTrigger value="conferencia">Conferência</TabsTrigger>
         </TabsList>
+        {aba !== "calendario" && (
+          <div className="mt-3 flex flex-wrap items-end gap-2">
+            {aba === "lista" && <>
+              <div className="min-w-[200px] flex-1 space-y-2"><Label htmlFor="busca-agenda" className="block">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
+              <div className="space-y-2"><Label className="block">Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
+              <div className="space-y-2"><Label className="block">Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
+            </>}
+            <div className="space-y-2"><Label className="block">Unidade</Label>
+              <select aria-label="Unidade" className="flex h-10 rounded-md border border-input bg-background px-3 text-sm" value={unidade} onChange={(e) => setFiltro({ unidade: e.target.value })}>
+                <option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+              </select></div>
+            <div className="space-y-2"><Label className="block">De</Label><Input type="date" value={de} onChange={(e) => setFiltro({ de: e.target.value })} /></div>
+            <div className="space-y-2"><Label className="block">Até</Label><Input type="date" value={ate} onChange={(e) => setFiltro({ ate: e.target.value })} /></div>
+            <Button variant="outline" onClick={() => setFiltro({ de: hojeIso(), ate: hojeIso() })}>Hoje</Button>
+          </div>
+        )}
         <TabsContent value="calendario">
           <CalendarioOperacional hoje={hojeIso()} onDia={(d) => setFiltro({ tab: "lista", de: d, ate: d })} />
         </TabsContent>
@@ -351,11 +357,6 @@ export default function Agendamentos() {
           })()}
         </TabsContent>
         <TabsContent value="lista" className="space-y-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-[200px] flex-1 space-y-2"><Label htmlFor="busca-agenda" className="block">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
-            <div className="space-y-2"><Label className="block">Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
-            <div className="space-y-2"><Label className="block">Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
-          </div>
           <Card><CardContent className="pt-4">
             {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
           </CardContent></Card>
