@@ -368,9 +368,26 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       d.lotUnidade = data.funcionario?.unidade ?? ''; d.lotSetor = data.funcionario?.setor ?? ''; d.lotCargo = data.funcionario?.cargo ?? '';
       d.inativo = !!data.inativo;
       if (!d.inativo) return pedirConfLot(d);
+      // Parceiras/Pontual: reaproveita o cadastro inativo (volta como Pendente no SOC)
+      if (d.livre) return { etapa: 'REATIVAR_CONF', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*\n\nEncontramos o cadastro deste colaborador:\n${lotacao(d) || '_(sem dados informados)_'}\n\nO cargo, o setor e a unidade continuam os mesmos?\n\n*1* - Sim, estão corretos\n*2* - Não, corrigir${RODAPE}` };
       d.tipos = d.inativo ? ['Demissional', 'Novo vínculo (pré-cadastro)'] : TIPOS_ATIVO;
       const aviso = d.inativo ? '\n\n⚠️ O cadastro deste colaborador está *inativo*.' : '';
       return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}${aviso}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+    }
+    case 'REATIVAR_CONF': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* se os dados estão corretos ou *2* para corrigir.${RODAPE}` };
+      if (i === 1) {
+        const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
+        if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter os dados.${RODAPE}` };
+        d.cad = { alterando: true, reativar: true, livre: true }; d.hier = data;
+        return pedirNivel(d, 'unidade');
+      }
+      const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'reativar', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf });
+      if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar o cadastro: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Corrigir dados${RODAPE}` };
+      d.inativo = false;
+      d.lotUnidade = data.funcionario?.unidade ?? d.lotUnidade; d.lotSetor = data.funcionario?.setor ?? d.lotSetor; d.lotCargo = data.funcionario?.cargo ?? d.lotCargo;
+      return { ...menuTipos(d), semVolta: true };
     }
     case 'LOT_CONF': {
       const i = escolha(t, 2);
@@ -388,13 +405,15 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const c = d.cad;
       if (i === 1) { c.unidade = undefined; c.setor = undefined; c.cargo = undefined; return pedirNivel(d, 'unidade'); }
       const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
-      const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'alterarLotacao', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo) });
+      const { ok, data } = await chamar('soc-agenda-lookup', { acao: c.reativar ? 'reativar' : 'alterarLotacao', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo) });
       if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar a lotação: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Escolher novamente${RODAPE}` };
       const antes = `${d.lotUnidade || '-'} / ${d.lotSetor || '-'} / ${d.lotCargo || '-'}`;
       d.lotUnidade = c.unidade.nome; d.lotSetor = c.setor.nome; d.lotCargo = c.cargo.nome;
       d.lotAlterada = `LOTAÇÃO ATUALIZADA NO SOC VIA AGENDAMENTO — DE: ${antes} — PARA: ${d.lotUnidade} / ${d.lotSetor} / ${d.lotCargo}`.toUpperCase();
+      const reat = !!c.reativar;
+      if (reat) { d.inativo = false; delete d.lotAlterada; }
       delete d.cad; delete d.hier;
-      return { ...menuTipos(d, '✅ Lotação atualizada no SOC!\n\n'), semVolta: true };
+      return { ...menuTipos(d, reat ? '✅ Cadastro atualizado!\n\n' : '✅ Lotação atualizada no SOC!\n\n'), semVolta: true };
     }
     case 'EXT_OFERTA': {
       const i = escolha(t, 2);
