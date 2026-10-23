@@ -67,6 +67,7 @@ export default function AgendamentoPublico() {
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [semPedido, setSemPedido] = useState(false);
   const [pendenteEquipe, setPendenteEquipe] = useState(false);
+  const [guiaSocnet, setGuiaSocnet] = useState<{ numero: string; exames: string[] } | null>(null);
 
   useEffect(() => {
     document.title = "Agendamento de Exames | PreverMed";
@@ -99,14 +100,18 @@ export default function AgendamentoPublico() {
   const buscarPedido = async () => {
     const { data } = await supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "socnet", cpf } });
     const p: Pedido | undefined = data?.pedidos?.[0];
-    if (!p) return false;
+    if (!p) {
+      const guia = data?.guias?.[0];
+      if (guia) setGuiaSocnet(guia);
+      return false;
+    }
     setPedido(p);
     setF((x) => ({ ...x, colaboradorNome: p.funcionario?.nome ?? "", empresaNome: p.empresa?.nome || x.empresaNome, tipoExame: p.tipoExame ?? "Periódico" }));
     setExames(p.exames);
     return true;
   };
   useEffect(() => {
-    setFunc(null); setPedido(null); setSemPedido(false); setLotConfirmada(false); setAlterandoLot(false);
+    setFunc(null); setPedido(null); setSemPedido(false); setLotConfirmada(false); setAlterandoLot(false); setGuiaSocnet(null);
     if (!cpfValido || (!socCode && !externa)) return;
     setBuscandoFunc(true);
     if (!socCode) {
@@ -407,6 +412,7 @@ export default function AgendamentoPublico() {
                   </div>
                 )}
                 {semPedido && (<>
+                  {guiaSocnet && <p className="rounded-md border border-primary p-3 text-sm">Localizamos a guia SOCNET {guiaSocnet.numero}: {guiaSocnet.exames.join(", ")}. Anexe o kit para conferência da equipe antes da confirmação do atendimento.</p>}
                   <div className="flex gap-2 rounded-md border bg-muted/40 p-3 text-sm">
                     <Info className="h-4 w-4 shrink-0 text-primary mt-0.5" />
                     <p>Não localizamos um pedido eletrônico de exames para este CPF. Para seguir, informe o nome do colaborador e, na próxima etapa, envie a guia/autorização de exames.</p>
