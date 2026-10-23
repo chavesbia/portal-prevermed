@@ -9,11 +9,11 @@
 - [x] Detalhes enviados ao SOC em maiúsculo, sem acento, com linha em branco entre blocos
 
 ## Em aberto
-- [ ] Confirmação de lotação também na página pública (link)
-- [ ] Reativar cadastro inativo quando não houver demissional
-- [ ] Painel: período D-5/D+5, ordenação, filtros rápidos, busca, controle de kit impresso
-- [ ] SOCNET: buscar guia (Exporta 212792) quando não achar pedido — precisa do código/chave do Exporta
-- [ ] Catálogo de preparos (planilha com 23 recomendações) + envio no comprovante
+- [x] Confirmação de lotação na página pública; confirmação testada com cadastro ativo, escrita de alteração ainda não testada no SOC
+- [ ] Reativar cadastro inativo quando não houver demissional — bloqueado: falta relatório SOC completo de histórico demissional; DATA_DEMISSAO não comprova exame
+- [x] Painel: período D-5/D+5, ordenação, filtros rápidos, busca, controle de kit impresso; persistência de impressão testada e estado original restaurado
+- [ ] SOCNET: fallback 212792 implementado e chave salva; teste real retornou guiaIndisponivel=true — bloqueado até validar habilitação/chave/máscara do Exporta no SOC
+- [x] Catálogo com 23 preparos oficiais da planilha nos comprovantes público e WhatsApp; correspondência testada, emissão real ainda não testada
 - [ ] Leitura de guias com IA (OCR) — versão futura
 
 ## Solicitação atual
