@@ -28,7 +28,7 @@ const Body = z.object({
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   hora: z.string().regex(/^\d{2}:\d{2}$/),
   observacoes: z.string().max(1000).optional(),
-  mudancaRisco: z.string().max(400).optional(),
+  mudancaRisco: z.string().max(800).optional(),
   motivoRetorno: z.string().trim().max(1000).optional(),
   exames: z.array(z.string().trim().min(2).max(80)).max(40).default([]),
   guia: Arquivo.optional(),

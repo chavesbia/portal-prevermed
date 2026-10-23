@@ -550,8 +550,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         const prot = await registrar(ctx, 'atendimento_humano', d, undefined, { motivo: 'PCMSO sem exames para o cargo' });
         return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `👩‍💼 Pedido de atendimento registrado (protocolo *${prot}*).\n\nUm atendente da PreverMed vai continuar o atendimento por este número em breve.\n\nSe precisar de outro atendimento, digite *1*.` };
       }
-      d.tipos = d.tiposAnt;
-      return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `Confira a lotação cadastrada do colaborador:\n\n👤 *${titulo(d.colaboradorNome)}*\n${lotacao(d)}\n\nSe o cargo/setor estiver incorreto, a lotação precisa ser atualizada no SOC antes do agendamento.\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` };
+      return pedirConfLot(d);
     }
     case 'CONFIRMANDO_LOTACAO': {
       const i = escolha(t, 2);
