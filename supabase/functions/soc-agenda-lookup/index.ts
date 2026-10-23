@@ -35,6 +35,7 @@ const Body = z.discriminatedUnion('acao', [
   }),
   // Confirmação de lotação na tela do CPF: grava no SOC antes de buscar exames (riscos/ASO corretos)
   z.object({ acao: z.literal('alterarLotacao'), ...Pessoa, unidade: Ref, setor: Ref, cargo: Ref }),
+  z.object({ acao: z.literal('reativar'), ...Pessoa, unidade: Ref.optional(), setor: Ref.optional(), cargo: Ref.optional(), dataAdmissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }),
 ]);
 
 // Subgrupos com laudos (PGR/PCMSO): só podem selecionar unidade/setor/cargo existentes.
