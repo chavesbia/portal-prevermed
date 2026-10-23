@@ -2,7 +2,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
-import { cadastrarFuncionarioSoc } from './socFuncionario.ts';
+import { alterarLotacaoSoc, cadastrarFuncionarioSoc } from './socFuncionario.ts';
 
 const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
 const json = (body: unknown, status = 200) =>
@@ -33,6 +33,8 @@ const Body = z.discriminatedUnion('acao', [
     sexo: z.enum(['MASCULINO', 'FEMININO']),
     unidade: Ref, setor: Ref, cargo: Ref,
   }),
+  // Confirmação de lotação na tela do CPF: grava no SOC antes de buscar exames (riscos/ASO corretos)
+  z.object({ acao: z.literal('alterarLotacao'), ...Pessoa, unidade: Ref, setor: Ref, cargo: Ref }),
 ]);
 
 // Subgrupos com laudos (PGR/PCMSO): só podem selecionar unidade/setor/cargo existentes.
@@ -238,6 +240,21 @@ Deno.serve(async (req) => {
       const r = await cadastrarFuncionarioSoc({ ...b, codigoEmpresa: b.socCode, podeCriar: livre });
       if (!r.ok) return json({ error: `O SOC recusou o cadastro: ${r.erro ?? 'erro desconhecido'}` }, 422);
       return json({ ok: true, codigoFuncionario: r.codigoFuncionario });
+    }
+
+    if (b.acao === 'alterarLotacao') {
+      const existente = await buscarFuncionario(b.socCode, b.cpf);
+      if (!existente || existente.inativo) return json({ error: 'Colaborador sem cadastro ativo nesta empresa.' }, 400);
+      if (!livre) {
+        const h = await hierarquia(b.socCode, false);
+        const u = h?.unidades.find((x) => x.codigo === b.unidade.codigo);
+        const st = u?.setores.find((x) => x.codigo === b.setor.codigo);
+        if (!st?.cargos.some((x) => x.codigo === b.cargo.codigo)) return json({ error: 'Selecione unidade, setor e cargo existentes na hierarquia da empresa.' }, 400);
+      }
+      const nome = pick(existente.row, ['NOME', 'NOMEFUNCIONARIO']) ?? '';
+      const r = await alterarLotacaoSoc({ codigoEmpresa: b.socCode, cpf: b.cpf, nome, unidade: b.unidade, setor: b.setor, cargo: b.cargo, podeCriar: livre });
+      if (!r.ok) return json({ error: `O SOC recusou a alteração: ${r.erro ?? 'erro desconhecido'}` }, 422);
+      return json({ ok: true });
     }
 
     const achado = await buscarFuncionario(b.socCode, b.cpf);
