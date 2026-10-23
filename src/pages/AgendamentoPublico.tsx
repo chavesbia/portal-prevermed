@@ -10,6 +10,7 @@ import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
 import { isValidCPF, maskCPF } from "@/lib/contractual/cpf";
+import { preparosDosExames } from "../../supabase/functions/_shared/preparosExames";
 
 type Unidade = { id: string; nome: string; codigo_agenda: string };
 type Empresa = { soc_code: string; razao_social: string; cidade: string | null; estado: string | null; podeCriar?: boolean };
@@ -40,6 +41,8 @@ export default function AgendamentoPublico() {
   const [buscandoEmp, setBuscandoEmp] = useState(false);
   const [func, setFunc] = useState<Func | null>(null);
   const [buscandoFunc, setBuscandoFunc] = useState(false);
+  const [lotConfirmada, setLotConfirmada] = useState(false);
+  const [alterandoLot, setAlterandoLot] = useState(false);
   const [unidadeId, setUnidadeId] = useState("");
   const [porData, setPorData] = useState<Record<string, { hora: string; vagas: number }[]>>({});
   const [indisp, setIndisp] = useState<{ data: string; motivo: string }[]>([]);
@@ -103,7 +106,7 @@ export default function AgendamentoPublico() {
     return true;
   };
   useEffect(() => {
-    setFunc(null); setPedido(null); setSemPedido(false);
+    setFunc(null); setPedido(null); setSemPedido(false); setLotConfirmada(false); setAlterandoLot(false);
     if (!cpfValido || (!socCode && !externa)) return;
     setBuscandoFunc(true);
     if (!socCode) {
@@ -154,7 +157,7 @@ export default function AgendamentoPublico() {
   const mudanca = f.tipoExame === "Mudança de Risco";
   // Na Mudança de Risco os exames do cargo atual não valem: a grade é a da nova função
   const pcmsoTipo = useMemo(
-    () => (pcmso && f.tipoExame && !mudanca ? pcmso.filter((e) => e.tipos[f.tipoExame]).map((e) => e.nome) : []),
+    () => (pcmso && f.tipoExame ? pcmso.filter((e) => e.tipos[f.tipoExame]).map((e) => e.nome) : []),
     [pcmso, f.tipoExame, mudanca],
   );
   useEffect(() => {
@@ -162,7 +165,7 @@ export default function AgendamentoPublico() {
     setExames(pcmsoTipo);
   }, [pcmsoTipo]); // eslint-disable-line react-hooks/exhaustive-deps
   const temPcmso = !!pcmso && pcmso.length > 0;
-  const usaGradePcmso = mudanca && conformePcmso;
+  const usaGradePcmso = false;
   const mostrarGrade = !usaGradePcmso;
 
   const [busca, setBusca] = useState("");
@@ -186,10 +189,15 @@ export default function AgendamentoPublico() {
   const [cadErro, setCadErro] = useState("");
   useEffect(() => { setCadAberto(false); setHier(null); setCadErro(""); }, [cpf, socCode]);
   const abrirCadastro = () => {
-    setCadAberto(true);
+    setAlterandoLot(false); setCadAberto(true);
     if (hier) return;
     supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "hierarquia", cnpj, socCode } })
       .then(({ data }) => setHier(data ?? { unidades: [], podeCriar: false, indisponivel: true }));
+  };
+  const abrirLotacao = () => {
+    setAlterandoLot(true); setCadAberto(true); setCadErro(""); setLotConfirmada(false);
+    setCad((p) => ({ ...p, unidade: "", setor: "", cargo: "" }));
+    if (!hier) supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "hierarquia", cnpj, socCode } }).then(({ data }) => setHier(data ?? { unidades: [], podeCriar: false, indisponivel: true }));
   };
   const livre = !!hier?.podeCriar;
   const empSel = empresas?.find((e) => e.soc_code === socCode);
@@ -203,11 +211,11 @@ export default function AgendamentoPublico() {
   const sSel = uSel?.setores.find((x) => x.codigo === cad.setor);
   // Livre: aceita nome digitado; se bater com um existente, envia o código
   const ref = (txt: string, lista: Item[] = []) => { const t = txt.trim().toUpperCase(); const m = lista.find((i) => i.nome.toUpperCase() === t || i.codigo === txt); return m ? { codigo: m.codigo } : { nome: t }; };
-  const cadOk = f.colaboradorNome.trim().length >= 3 && !!cad.nascimento && !!cad.sexo && !!cad.admissao && !!cad.unidade.trim() && !!cad.setor.trim() && !!cad.cargo.trim();
+  const cadOk = !hier?.indisponivel && !!hier && (alterandoLot || (f.colaboradorNome.trim().length >= 3 && !!cad.nascimento && !!cad.sexo && !!cad.admissao)) && !!cad.unidade.trim() && !!cad.setor.trim() && !!cad.cargo.trim();
   const cadastrar = async () => {
     setCadastrando(true); setCadErro("");
     const body = {
-      acao: "cadastrar", cnpj, socCode, cpf, nome: f.colaboradorNome.trim(), dataNascimento: cad.nascimento, dataAdmissao: cad.admissao, sexo: cad.sexo,
+      acao: alterandoLot ? "alterarLotacao" : "cadastrar", cnpj, socCode, cpf, nome: f.colaboradorNome.trim(), dataNascimento: cad.nascimento, dataAdmissao: cad.admissao, sexo: cad.sexo,
       unidade: livre ? ref(cad.unidade, hier?.unidades) : { codigo: cad.unidade },
       setor: livre ? ref(cad.setor, hier?.setores) : { codigo: cad.setor },
       cargo: livre ? ref(cad.cargo, hier?.cargos) : { codigo: cad.cargo },
@@ -219,6 +227,14 @@ export default function AgendamentoPublico() {
       try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
       return setCadErro(msg ?? "Não foi possível cadastrar agora. Tente novamente.");
     }
+    if (alterandoLot) {
+      if (!data.funcionario) return setCadErro("Não foi possível conferir a lotação no SOC. Tente consultar novamente.");
+      setFunc({ encontrado: true, funcionario: data.funcionario });
+      setF((p) => ({ ...p, cargo: data.funcionario.cargo ?? "", tipoExame: "" }));
+      setCadAberto(false); setAlterandoLot(false); setLotConfirmada(true); setExames([]);
+      return;
+    }
+    setLotConfirmada(true);
     const nomeDe = (v: string, l: Item[] = []) => l.find((i) => i.codigo === v)?.nome ?? v.toUpperCase();
     const cargoNome = livre ? cad.cargo.toUpperCase() : nomeDe(cad.cargo, sSel?.cargos);
     setFunc({ encontrado: true, recemCadastrado: true, funcionario: {
@@ -233,8 +249,8 @@ export default function AgendamentoPublico() {
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
-    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre)),
-    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && (!mudanca || (novoSetor.trim().length >= 2 && novoCargo.trim().length >= 2)),
+    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre && (inativo || lotConfirmada) && !cadAberto)),
+    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && !buscandoPcmso,
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -242,14 +258,12 @@ export default function AgendamentoPublico() {
     setCarregando(true); setErro("");
     const fu = func?.funcionario;
     void fu;
-    const mudancaRisco = mudanca
-      ? `MUDANÇA DE RISCO — ATUALIZAR LOTAÇÃO NO SOC ANTES DO ATENDIMENTO — novo setor: ${novoSetor.trim().toUpperCase()}; novo cargo: ${novoCargo.trim().toUpperCase()}${usaGradePcmso ? " — EXAMES CONFORME PCMSO" : ""}`
-      : undefined;
+    const mudancaRisco = mudanca ? `MUDANÇA DE RISCO — LOTAÇÃO CONFERIDA NO SOC: ${func?.funcionario?.unidade ?? ""}; ${func?.funcionario?.setor ?? ""}; ${func?.funcionario?.cargo ?? ""}` : undefined;
     const toB64 = (file: File) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] ?? ""); r.onerror = rej; r.readAsDataURL(file); });
     const [primeira, ...demais] = guias;
     const guiaPayload = primeira ? { nome: primeira.name.slice(0, 120), tipo: primeira.type, base64: await toB64(primeira) } : undefined;
     const extras = await Promise.all(demais.map(async (g) => ({ tipoDocumento: "Guia/Kit", nome: g.name.slice(0, 120), tipo: g.type, base64: await toB64(g) })));
-    const docsRet = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v!.name.slice(0, 120), tipo: v!.type, base64: await toB64(v!) }))) : [];
+    const docsRet = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v?.name.slice(0, 120), tipo: v?.type, base64: v ? await toB64(v) : "" }))) : [];
     const documentos = [...docsRet, ...extras].slice(0, 10);
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
@@ -304,7 +318,7 @@ export default function AgendamentoPublico() {
                 <dt className="text-muted-foreground">Exames</dt><dd className="font-medium">{pedido ? pedido.exames.join(", ") : usaGradePcmso ? "CONFORME PCMSO" : [...(temPcmso ? [] : [CLINICO]), ...exames].join(", ") || "-"}</dd>
                 <dt className="text-muted-foreground">Local de atendimento</dt>
                 <dd><span className="font-medium">{unidade?.nome}</span>
-                  {ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""] && <span className="block text-xs text-muted-foreground">{ENDERECOS[unidade!.codigo_agenda.replace(/^0+/, "")]}</span>}
+                  {ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""] && <span className="block text-xs text-muted-foreground">{ENDERECOS[unidade?.codigo_agenda.replace(/^0+/, "") ?? ""]}</span>}
                 </dd>
                 <dt className="text-muted-foreground">Data</dt><dd className="font-medium">{dia}</dd>
                 <dt className="text-muted-foreground">Horário</dt><dd className="font-medium">{hora}h</dd>
@@ -328,6 +342,17 @@ export default function AgendamentoPublico() {
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
               </div>
+              {preparosDosExames(pedido ? pedido.exames : exames).length > 0 && (
+                <section className="space-y-3 border-t pt-4 text-sm">
+                  <h2 className="font-semibold">Preparos dos exames</h2>
+                  {preparosDosExames(pedido ? pedido.exames : exames).map((p) => (
+                    <div key={p.codigo} className="space-y-1 break-words">
+                      <h3 className="font-medium">{p.nome}</h3>
+                      <p className="whitespace-pre-wrap text-muted-foreground">{p.texto}</p>
+                    </div>
+                  ))}
+                </section>
+              )}
               <div className="flex flex-wrap justify-center gap-2 print:hidden">
                 <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
                 <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>
@@ -401,7 +426,8 @@ export default function AgendamentoPublico() {
                     {func.funcionario.setor && <p>Setor: {func.funcionario.setor}</p>}
                     {func.funcionario.unidade && <p>Unidade: {func.funcionario.unidade}</p>}
                     {inativo && <p className="text-xs font-semibold text-destructive whitespace-nowrap">Cadastro INATIVO nesta empresa</p>}
-                    {func.recemCadastrado && <p className="text-xs text-primary">Cadastrado agora no SOC (situação Pendente).</p>}
+                    {func.recemCadastrado && <p className="text-xs text-primary">Pré-cadastrado agora no SOC (situação Pendente).</p>}
+                    {!inativo && !cadAberto && <div className="flex flex-wrap gap-2 pt-2"><Button size="sm" variant={lotConfirmada ? "outline" : "default"} onClick={() => setLotConfirmada(true)}><Check className="mr-1 h-4 w-4" />{lotConfirmada ? "Lotação confirmada" : "Confirmar lotação"}</Button><Button size="sm" variant="outline" onClick={abrirLotacao}>Alterar lotação</Button></div>}
                   </div>
                 )}
                 {func?.indisponivel && !func.encontrado && (<>
@@ -416,10 +442,10 @@ export default function AgendamentoPublico() {
                     <Button type="button" size="sm" onClick={abrirCadastro}>Sim, cadastrar colaborador</Button>
                   </div>
                 )}
-                {precisaCadastro && cadAberto && (
+                {(precisaCadastro || alterandoLot) && cadAberto && (
                   <div className="space-y-3 rounded-md border p-3">
-                    <p className="text-sm font-medium">Cadastro do colaborador</p>
-                    <div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
+                    <p className="text-sm font-medium">{alterandoLot ? "Alterar lotação" : "Pré-cadastro do colaborador"}</p>
+                    {!alterandoLot && <><div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
                     <div className="grid gap-2 sm:grid-cols-3">
                       <div><Label>Nascimento *</Label><Input type="date" value={cad.nascimento} onChange={(e) => setCad({ ...cad, nascimento: e.target.value })} /></div>
                       <div><Label>Sexo *</Label>
@@ -428,6 +454,7 @@ export default function AgendamentoPublico() {
                         </select></div>
                       <div><Label>Admissão *</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>
                     </div>
+                    </>}
                     {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
                     {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
                     {hier && !hier.indisponivel && !livre && (<>
@@ -459,9 +486,9 @@ export default function AgendamentoPublico() {
                     </>)}
                     {cadErro && <p className="text-sm text-destructive">{cadErro}</p>}
                     <div className="flex justify-end gap-2">
-                      {!inativoLivre && <Button type="button" variant="ghost" size="sm" onClick={() => setCadAberto(false)}>Cancelar</Button>}
+                      {!inativoLivre && <Button type="button" variant="ghost" size="sm" onClick={() => { setCadAberto(false); setAlterandoLot(false); }}>Cancelar</Button>}
                       <Button type="button" size="sm" disabled={!cadOk || cadastrando} onClick={cadastrar}>
-                        {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}Cadastrar no SOC
+                        {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}{alterandoLot ? "Confirmar e atualizar no SOC" : "Pré-cadastrar no SOC"}
                       </Button>
                     </div>
                   </div>
@@ -514,23 +541,7 @@ export default function AgendamentoPublico() {
                       {" "}Verifique se o <strong>tipo de exame</strong> está correto antes de prosseguir.</p>
                   </div>
                 )}
-                {mudanca && (
-                  <div className="space-y-2 rounded-md border bg-muted/40 p-3">
-                    <p className="text-sm font-medium">Informe a nova função pretendida.</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <div><Label>Novo setor *</Label><Input value={novoSetor} onChange={(e) => setNovoSetor(e.target.value)} maxLength={80} /></div>
-                      <div><Label>Novo cargo *</Label><Input value={novoCargo} onChange={(e) => setNovoCargo(e.target.value)} maxLength={80} /></div>
-                    </div>
-                    <label className="flex items-start gap-2 text-sm cursor-pointer">
-                      <Checkbox checked={conformePcmso} onCheckedChange={(v) => setConformePcmso(v === true)} className="mt-0.5" />
-                      <span>Realizar exames conforme grade do PCMSO da nova função</span>
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      A lotação do colaborador será atualizada no SOC considerando o novo setor e/ou cargo antes do atendimento, para aplicar os riscos e exames corretos.
-                      {conformePcmso && " Nossa equipe aplicará os exames previstos no PCMSO conforme a mudança de risco ocupacional."}
-                    </p>
-                  </div>
-                )}
+                {mudanca && <div className="space-y-2 rounded-md border p-3 text-sm"><p>Confira a unidade, o setor e o cargo de destino antes de agendar.</p><p>{func?.funcionario?.unidade} · {func?.funcionario?.setor} · {func?.funcionario?.cargo}</p><Button variant="outline" size="sm" onClick={() => { setPasso(1); abrirLotacao(); }}>Alterar lotação de destino</Button></div>}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <Label>Exames</Label>

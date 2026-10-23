@@ -13,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle } from "lucide-react";
+import { CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search } from "lucide-react";
 import { toast } from "sonner";
+import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
 
 const db = supabase as any;
@@ -57,11 +58,17 @@ export default function Agendamentos() {
   const salvo = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "{}"); } catch { return {}; } })();
   const [sp, setSp] = useSearchParams();
   const aba = sp.get("tab") ?? "lista";
-  const de = sp.get("de") ?? salvo.de ?? hojeIso();
-  const ate = sp.get("ate") ?? salvo.ate ?? de;
+  const padrao = periodoAgenda(hojeIso());
+  const de = sp.get("de") ?? salvo.de ?? padrao.de;
+  const ate = sp.get("ate") ?? salvo.ate ?? padrao.ate;
+  const busca = sp.get("busca") ?? "";
+  const kit = sp.get("kit") ?? "todos";
+  const filtroCanal = sp.get("canal") ?? "todos";
+  const ordem = sp.get("ordem") ?? "agenda";
+  const podeEditar = isAdmMaster || hasPermission("/agendamentos", "edit");
   const unidade = sp.get("unidade") ?? salvo.unidade ?? "";
   const setFiltro = (patch: Record<string, string>) => {
-    const n = { tab: aba, de, ate, unidade, ...patch };
+    const n = { ...Object.fromEntries(sp), tab: aba, de, ate, unidade, ...patch };
     if (n.ate < n.de) n.ate = n.de;
     localStorage.setItem(LS_KEY, JSON.stringify({ de: n.de, ate: n.ate, unidade: n.unidade }));
     setSp(n, { replace: true });
@@ -114,7 +121,8 @@ export default function Agendamentos() {
     const ch = supabase.channel("agendamentos-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "soc_agendamentos" }, () => {
         qc.invalidateQueries({ queryKey: ["agendamentos"] }); qc.invalidateQueries({ queryKey: ["agendamentos-pendentes"] });
-      }).subscribe();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "soc_agendamento_anexos" }, () => { qc.invalidateQueries({ queryKey: ["agendamentos"] }); qc.invalidateQueries({ queryKey: ["agendamentos-pendentes"] }); }).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [qc]);
 
@@ -183,13 +191,33 @@ export default function Agendamentos() {
     };
   }, [lista, subgrupos]);
 
+  const visiveis = useMemo(() => {
+    const normalizar = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const q = normalizar(busca.trim());
+    return lista.filter((a: any) => {
+      const texto = normalizar([a.colaborador_nome, a.colaborador_cpf, fmtCpf(a.colaborador_cpf), a.empresa_nome, a.empresa_cnpj, a.protocolo, a.tipo_exame].join(" "));
+      return (!q || texto.includes(q)) && (filtroCanal === "todos" || canal(a) === filtroCanal) &&
+        (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
+    }).sort((a: any, b: any) => ordem === "recente" ? b.created_at.localeCompare(a.created_at) : ordem === "nome" ? a.colaborador_nome.localeCompare(b.colaborador_nome) : `${a.data_agendada} ${a.hora_agendada}`.localeCompare(`${b.data_agendada} ${b.hora_agendada}`));
+  }, [lista, busca, filtroCanal, kit, ordem]);
+  const marcarKit = async () => {
+    if (!detalhe || !podeEditar) return;
+    setEnviando(true);
+    const { error } = await db.rpc("agenda_marcar_kit_impresso", { _agendamento_id: detalhe.id, _impresso: !detalhe.kit_impresso_em });
+    setEnviando(false);
+    if (error) return toast.error(error.message);
+    setDetalhe({ ...detalhe, kit_impresso_em: detalhe.kit_impresso_em ? null : new Date().toISOString() });
+    qc.invalidateQueries({ queryKey: ["agendamentos"] }); qc.invalidateQueries({ queryKey: ["agendamentos-pendentes"] });
+    toast.success("Controle de impressão atualizado");
+  };
+
   const Linhas = ({ itens }: { itens: any[] }) => (
-    <div className="overflow-x-auto">
+    <div className="max-h-[60vh] overflow-auto">
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
-            <TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead>Colaborador</TableHead><TableHead>Empresa</TableHead>
-            <TableHead>Tipo</TableHead><TableHead>Unidade</TableHead><TableHead>Kit/anexos</TableHead><TableHead>Status</TableHead>
+            <TableHead>Data</TableHead><TableHead>Hora</TableHead><TableHead className="sticky left-0 z-20 bg-background">Colaborador</TableHead><TableHead>Empresa</TableHead>
+            <TableHead>Tipo</TableHead><TableHead>Unidade</TableHead><TableHead>Kit</TableHead><TableHead>Status</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -199,11 +227,11 @@ export default function Agendamentos() {
               <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                 <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)}</TableCell>
                 <TableCell>{a.hora_agendada.slice(0, 5)}</TableCell>
-                <TableCell><p className="font-medium">{a.colaborador_nome}</p><p className="text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
+                <TableCell className="sticky left-0 z-10 bg-background"><p className="font-medium">{a.colaborador_nome}</p><p className="text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
-                <TableCell>{a.soc_agendamento_anexos?.length ? <Badge variant="outline" className="whitespace-nowrap"><Paperclip className="mr-1 h-3 w-3" />{a.soc_agendamento_anexos.length}</Badge> : <span className="text-xs text-muted-foreground whitespace-nowrap">Sem anexo</span>}</TableCell>
+                <TableCell><Badge variant={a.kit_impresso_em ? "default" : "outline"} className="whitespace-nowrap">{a.kit_impresso_em ? <><Printer className="mr-1 h-3 w-3" />Impresso</> : temKitAgenda(a) ? "A imprimir" : "Sem kit"}</Badge></TableCell>
                 <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
               </TableRow>
             );
@@ -243,10 +271,11 @@ export default function Agendamentos() {
             <option value="">Todas</option>{unidades.map((u: any) => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </select></div>
         <Button variant="outline" onClick={() => setFiltro({ de: hojeIso(), ate: hojeIso() })}>Hoje</Button>
+        <Button variant="outline" onClick={() => setFiltro(periodoAgenda(hojeIso()))}>D-5 a D+5</Button>
       </div>
 
       <Tabs value={aba} onValueChange={(v) => setFiltro({ tab: v })}>
-        <TabsList>
+        <TabsList className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="lista">Agendamentos ({lista.length})</TabsTrigger>
           <TabsTrigger value="aprovacao">Aprovação de documentação{pendentes.filter((p: any) => p.aprovacao_status === "pendente").length ? ` (${pendentes.filter((p: any) => p.aprovacao_status === "pendente").length})` : ""}</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -258,7 +287,7 @@ export default function Agendamentos() {
         </TabsContent>
         <TabsContent value="conferencia" className="space-y-4">
           {(() => {
-            const semKit = (a: any) => !a.soc_agendamento_anexos?.length;
+            const semKit = (a: any) => !temKitAgenda(a);
             const filtros: Record<string, { label: string; f: (a: any) => boolean }> = {
               todos: { label: "Todos", f: () => true },
               soc: { label: "Gravados no SOC", f: (a) => a.status === "agendado_soc" },
@@ -307,9 +336,15 @@ export default function Agendamentos() {
             </>);
           })()}
         </TabsContent>
-        <TabsContent value="lista">
+        <TabsContent value="lista" className="space-y-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[200px] flex-1"><Label htmlFor="busca-agenda">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
+            <div><Label>Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
+            <div><Label>Ordenação</Label><select aria-label="Ordenação" className="h-10 rounded-md border bg-background px-3 text-sm" value={ordem} onChange={(e) => setFiltro({ ordem: e.target.value })}><option value="agenda">Data e horário</option><option value="recente">Mais recentes</option><option value="nome">Colaborador A–Z</option></select></div>
+          </div>
+          <div className="flex flex-wrap gap-2">{[["todos", "Todos"], ["sem", "Sem kit"], ["enviado", "Kit enviado"], ["imprimir", "A imprimir"], ["impresso", "Impresso"]].map(([v, label]) => <Button key={v} size="sm" variant={kit === v ? "default" : "outline"} onClick={() => setFiltro({ kit: v })}>{label}</Button>)}</div>
           <Card><CardContent className="pt-4">
-            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : lista.length ? <Linhas itens={lista} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
+            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="aprovacao">
@@ -392,6 +427,8 @@ export default function Agendamentos() {
             </dl>
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
+              {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
+              {podeEditar && temKitAgenda(detalhe) && <Button variant="outline" size="sm" disabled={enviando} onClick={marcarKit}><Printer className="mr-2 h-4 w-4" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar kit como impresso"}</Button>}
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
                 <Button key={x.id} variant="outline" size="sm" className="w-full justify-start min-w-0" onClick={() => abrirArquivo(x.path)}>
                   <FileText className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{x.tipo_documento}{x.nome_arquivo ? `: ${x.nome_arquivo}` : ""}</span><span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>

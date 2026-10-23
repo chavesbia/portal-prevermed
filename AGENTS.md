@@ -8,3 +8,6 @@
 - SOC: antes de propor ou construir qualquer integração SOC, consultar `docs/soc/` (manuais integrais + catálogo dos 207 Exporta Dados) — evita afirmar limitações ou telas sem checar a fonte oficial.
 - SOCNET: pedidos de outras bases direcionados à PreverMed vêm do Exporta 221785 via `soc-agenda-lookup` (acao `socnet`, só CPF); o relatório devolve um dia por chamada, por isso a busca varre dia a dia — guia (Tela 675) nem sempre existe, o pedido (Tela 248) sim.
 - Agenda/SOCNET: CNPJ fora da carteira segue pelo CPF (`origem` socnet/externo em `soc-agenda-solicitar`); o servidor reconfere o pedido no SOC e, sem pedido, exige guia e deixa para a equipe lançar — a tela/robô não são confiáveis. Exporta Dados aceita no máximo 5 chamadas simultâneas: varreduras usam fila de 4 com nova tentativa.
+- Agenda: lotation updates require SOC read-back before releasing exam selection, so unconfirmed hierarchy writes cannot silently drive ASO exams.
+- Agenda: kit print state is shared through a permission-checked, audited RPC; direct writes to print fields are blocked to preserve operator attribution.
+- Agenda: exam preparation data lives in a shared pure catalog used by public receipts and WhatsApp, so both channels reproduce the same official source text.

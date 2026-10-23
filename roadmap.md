@@ -15,3 +15,6 @@
 - [ ] SOCNET: buscar guia (Exporta 212792) quando não achar pedido — precisa do código/chave do Exporta
 - [ ] Catálogo de preparos (planilha com 23 recomendações) + envio no comprovante
 - [ ] Leitura de guias com IA (OCR) — versão futura
+
+## Solicitação atual
+- Executar os itens em aberto acima, exceto OCR; não expor chaves do SOC no chat.
