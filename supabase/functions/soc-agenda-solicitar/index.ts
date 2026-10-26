@@ -36,6 +36,13 @@ const Body = z.object({
   examesAdicionais: z.array(z.string().trim().min(2).max(80)).max(40).optional(),
   solicitadoPor: z.string().trim().max(120).optional(),
   documentos: z.array(Arquivo.extend({ tipoDocumento: z.string().trim().min(2).max(80) })).max(10).default([]),
+  // Unidade/setor/cargo inexistente no SOC (empresa com laudos): pré-agenda travado até a Engenharia validar
+  estruturaNova: z.object({
+    unidade: z.string().trim().min(2).max(120), setor: z.string().trim().min(2).max(120), cargo: z.string().trim().min(2).max(120),
+    atividades: z.string().trim().max(800).optional(),
+    nascimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), sexo: z.enum(['MASCULINO', 'FEMININO']).optional(),
+    admissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  }).optional(),
 });
 
 // Reconfere no SOC o pedido SOCNET (não confia no que veio da tela/robô)
@@ -126,6 +133,7 @@ Deno.serve(async (req) => {
       if (b.guia) { guiaPath = await salvarArquivo(admin, b.data, b.guia); anexos.push({ tipo_documento: b.tipoAnexo ?? 'Guia', nome_arquivo: b.guia.nome, path: guiaPath }); }
       for (const d of b.documentos) anexos.push({ tipo_documento: d.tipoDocumento, nome_arquivo: d.nome, path: await salvarArquivo(admin, b.data, d) });
     } catch (e) { return json({ error: (e as Error).message }, 400); }
+    const eng = !!b.estruturaNova && b.origem === 'cliente';
     const exames = [...new Set(b.exames.map((e) => e.toUpperCase()))];
 
     const { data, error } = await admin.from('soc_agendamentos').insert({
@@ -135,14 +143,16 @@ Deno.serve(async (req) => {
       tipo_exame: b.tipoExame, data_agendada: b.data, hora_agendada: b.hora,
       observacoes: [origemTxt, b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
       motivo_retorno: retorno ? b.motivoRetorno : null,
-      status: retorno ? 'aguardando_aprovacao' : 'solicitado',
-      aprovacao_status: retorno ? 'pendente' : null,
+      status: retorno || eng ? 'aguardando_aprovacao' : 'solicitado',
+      aprovacao_status: retorno || eng ? 'pendente' : null,
+      fila_aprovacao: eng ? 'engenharia' : 'saude',
+      estrutura_solicitada: eng ? b.estruturaNova : null,
     }).select('id, protocolo').single();
     if (error) return json({ error: 'Não foi possível registrar' }, 500);
     if (anexos.length) await admin.from('soc_agendamento_anexos').insert(anexos.map((a) => ({ ...a, agendamento_id: data.id })));
 
     // Retorno ao Trabalho só vai para o SOC após aprovação da equipe de saúde
-    if (retorno) return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true });
+    if (retorno || eng) return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true, engenharia: eng });
     // Sem pedido SOCNET não há cadastro no SOC: a equipe confere a guia e lança a reserva
     if (b.origem === 'externo' || !codigoEmpresa) return json({ protocolo: data.protocolo, agendadoSoc: false, pendenteEquipe: true });
 
