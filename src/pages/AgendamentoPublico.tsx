@@ -269,7 +269,7 @@ export default function AgendamentoPublico() {
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
-    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && (func.encontrado || func.indisponivel) && !inativoLivre && (inativo || lotConfirmada) && !cadAberto)),
+    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && !func.encontrado && !!func.indisponivel && !!f.cargo.trim()) || (!!func && func.encontrado && !inativoLivre && (inativo || lotConfirmada) && !cadAberto)),
     pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && !buscandoPcmso,
     !!unidadeId && !!dia && !!hora,
   ];
