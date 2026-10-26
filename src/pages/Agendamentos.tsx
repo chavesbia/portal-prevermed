@@ -281,7 +281,7 @@ export default function Agendamentos() {
       <Tabs value={aba} onValueChange={(v) => setFiltro({ tab: v })}>
         <TabsList className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="lista">Agendamentos ({lista.length})</TabsTrigger>
-          <TabsTrigger value="aprovacao">Aprovação de documentação{pendentes.filter((p: any) => p.aprovacao_status === "pendente").length ? ` (${pendentes.filter((p: any) => p.aprovacao_status === "pendente").length})` : ""}</TabsTrigger>
+          <TabsTrigger value="aprovacao">Aprovações{pendentes.filter((p: any) => p.aprovacao_status === "pendente").length ? ` (${pendentes.filter((p: any) => p.aprovacao_status === "pendente").length})` : ""}</TabsTrigger>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="calendario">Calendário</TabsTrigger>
           <TabsTrigger value="conferencia">Conferência</TabsTrigger>
@@ -362,10 +362,26 @@ export default function Agendamentos() {
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="aprovacao">
-          <Card><CardContent className="pt-4 space-y-2">
-            <p className="text-sm text-muted-foreground">Retorno ao Trabalho: confira se a documentação está completa e legível. Ao aprovar, o horário é gravado no SOC; ao devolver, o cliente vê o motivo e reenvia pelo protocolo.</p>
-            {pendentes.length ? <Linhas itens={pendentes} /> : <p className="text-sm text-muted-foreground">Nenhuma documentação aguardando.</p>}
-          </CardContent></Card>
+          {(() => {
+            const fila = sp.get("fila") === "engenharia" ? "engenharia" : "saude";
+            const daFila = (k: string) => pendentes.filter((p: any) => (p.fila_aprovacao ?? "saude") === k);
+            const n = (k: string) => daFila(k).filter((p: any) => p.aprovacao_status === "pendente").length;
+            const itens = daFila(fila);
+            return (
+              <Tabs value={fila} onValueChange={(v) => setFiltro({ fila: v })}>
+                <TabsList>
+                  <TabsTrigger value="saude" className="whitespace-nowrap"><Stethoscope className="mr-1 h-4 w-4" />Saúde{n("saude") ? ` (${n("saude")})` : ""}</TabsTrigger>
+                  <TabsTrigger value="engenharia" className="whitespace-nowrap"><HardHat className="mr-1 h-4 w-4" />Engenharia{n("engenharia") ? ` (${n("engenharia")})` : ""}</TabsTrigger>
+                </TabsList>
+                <Card className="mt-3"><CardContent className="pt-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">{fila === "saude"
+                    ? "Documentação de saúde (Retorno ao Trabalho e outras): confira se está completa e legível. Ao aprovar, o horário é gravado no SOC; ao devolver, o cliente vê o motivo e reenvia pelo protocolo."
+                    : "Unidade, setor ou cargo que não existem no SOC. Cadastre a estrutura e o colaborador no SOC, depois aprove para gravar o horário. Até lá o agendamento fica travado."}</p>
+                  {itens.length ? <Linhas itens={itens} /> : <p className="text-sm text-muted-foreground">Nada aguardando nesta fila.</p>}
+                </CardContent></Card>
+              </Tabs>
+            );
+          })()}
         </TabsContent>
         <TabsContent value="dashboard" className="space-y-4">
           <p className="text-xs text-muted-foreground">Período: {fmtData(de)} a {fmtData(ate)}. Atualiza sozinho quando entra um agendamento novo. Para ver tendências, use um período maior (ex.: o mês).</p>
@@ -438,6 +454,12 @@ export default function Agendamentos() {
               {detalhe.observacoes && (<><dt className="text-muted-foreground">Observações</dt><dd className="whitespace-pre-wrap">{detalhe.observacoes}</dd></>)}
               {detalhe.soc_erro && (<><dt className="text-muted-foreground">Erro SOC</dt><dd className="text-destructive">{detalhe.soc_erro}</dd></>)}
               {detalhe.devolucao_motivo && (<><dt className="text-muted-foreground">Devolvido</dt><dd>{detalhe.devolucao_motivo}</dd></>)}
+              {detalhe.estrutura_solicitada && (<>
+                <dt className="text-muted-foreground">Estrutura informada</dt>
+                <dd>{[detalhe.estrutura_solicitada.unidade, detalhe.estrutura_solicitada.setor, detalhe.estrutura_solicitada.cargo].map((x: string) => toTitleCase(x)).join(" · ")}</dd>
+                {detalhe.estrutura_solicitada.atividades && (<><dt className="text-muted-foreground">Atividades</dt><dd>{detalhe.estrutura_solicitada.atividades}</dd></>)}
+                {detalhe.estrutura_solicitada.nascimento && (<><dt className="text-muted-foreground">Pré-cadastro</dt><dd>Nasc. {fmtData(detalhe.estrutura_solicitada.nascimento)} · {toTitleCase(detalhe.estrutura_solicitada.sexo ?? "")} · Admissão {fmtData(detalhe.estrutura_solicitada.admissao ?? "")}</dd></>)}
+              </>)}
             </dl>
             <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
@@ -451,8 +473,8 @@ export default function Agendamentos() {
             </div>
             {podeAprovar && detalhe.aprovacao_status === "pendente" && (
               <div className="mt-6 space-y-2 rounded-md border p-3">
-                <p className="text-sm font-medium">Decisão da equipe de saúde</p>
-                <Textarea placeholder="Motivo da devolução (obrigatório para devolver). Ex.: laudo ilegível, falta alta médica." value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={1000} />
+                <p className="text-sm font-medium">{detalhe.fila_aprovacao === "engenharia" ? "Decisão da Engenharia" : "Decisão da equipe de saúde"}</p>
+                <Textarea placeholder={detalhe.fila_aprovacao === "engenharia" ? "Motivo da devolução (obrigatório para devolver). Ex.: cargo já existe com outro nome, informar atividades." : "Motivo da devolução (obrigatório para devolver). Ex.: laudo ilegível, falta alta médica."} value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={1000} />
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" disabled={enviando || motivo.trim().length < 5} onClick={() => decidir("devolver")}>Devolver</Button>
                   <Button disabled={enviando} onClick={() => decidir("aprovar")}>{enviando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Aprovar e agendar</Button>
