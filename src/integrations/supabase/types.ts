@@ -6741,7 +6741,9 @@ export type Database = {
           devolucao_motivo: string | null
           empresa_cnpj: string | null
           empresa_nome: string | null
+          estrutura_solicitada: Json | null
           exames: Json
+          fila_aprovacao: string
           guia_path: string | null
           hora_agendada: string
           id: string
@@ -6769,7 +6771,9 @@ export type Database = {
           devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
+          estrutura_solicitada?: Json | null
           exames?: Json
+          fila_aprovacao?: string
           guia_path?: string | null
           hora_agendada: string
           id?: string
@@ -6797,7 +6801,9 @@ export type Database = {
           devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
+          estrutura_solicitada?: Json | null
           exames?: Json
+          fila_aprovacao?: string
           guia_path?: string | null
           hora_agendada?: string
           id?: string
