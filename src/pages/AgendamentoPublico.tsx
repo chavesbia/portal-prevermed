@@ -352,7 +352,7 @@ export default function AgendamentoPublico() {
               </dl>
               {aguardandoAprov && (
                 <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-sm">
-                  Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação.
+                  {pedidoEng ? "Nossa equipe técnica vai conferir a unidade, o setor e o cargo informados. O horário fica reservado e só é confirmado após essa conferência." : "Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação."}
                   Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
                 </div>
               )}
