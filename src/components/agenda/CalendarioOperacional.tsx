@@ -84,7 +84,7 @@ export function CalendarioOperacional({ hoje, onDia }: { hoje: string; onDia: (i
                 className={cn("min-h-[80px] rounded-md border p-1.5 text-left text-xs transition-colors hover:border-primary", nivel(dia.length), iso === hoje && "ring-2 ring-primary")}>
                 <div className="flex items-center justify-between font-semibold text-muted-foreground">
                   <span>{Number(iso.slice(8))}</span>
-                  {semKit && <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="Há agendamento sem kit" />}
+                  {semKit && <span className="h-2 w-2 rounded-full bg-warning" aria-label="Há agendamento sem kit" />}
                 </div>
                 {Object.entries(porUn).sort().map(([u, n]) => (
                   <div key={u} className="mt-1 whitespace-nowrap"><span className="text-muted-foreground">{u}</span> <b>{n}</b></div>
