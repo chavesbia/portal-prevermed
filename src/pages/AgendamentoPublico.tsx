@@ -554,7 +554,7 @@ export default function AgendamentoPublico() {
               </>)}
               {passo === 1 && pedidoEng && !cadAberto && (
                 <div className="rounded-md border p-3 text-sm">
-                  <p><strong>{toTitle(pedidoEng.cargo)}</strong> · {toTitle(pedidoEng.setor)} · {toTitle(pedidoEng.unidade)}</p>
+                  <p><strong>{pedidoEng.cargo.toUpperCase()}</strong> · {pedidoEng.setor.toUpperCase()} · {pedidoEng.unidade.toUpperCase()}</p>
                   <p className="text-xs text-muted-foreground">Nossa equipe técnica vai conferir antes de confirmar o horário.</p>
                   <button type="button" className="text-xs text-primary underline" onClick={() => setPedidoEng(null)}>Corrigir</button>
                 </div>
