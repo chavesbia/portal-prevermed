@@ -173,7 +173,8 @@ async function guiasEncaminhamento(cpf: string) {
   const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_GUIA_ENCAMINHAMENTO');
   if (!empresa || !chave) return { guias: [], guiaIndisponivel: true };
-  const rows = await exporta({ empresa, codigo: '212792', chave, funcionario: cpf, paramFunc: '1', paramData: '1', dataInicio: fmtBR(-15), dataFim: fmtBR(14) });
+  // SOCNET: só temos o CPF; o 212792 exige intervalo de código do funcionário, então usamos o intervalo amplo e filtramos o CPF abaixo
+  const rows = await exporta({ empresa, codigo: '212792', chave, funcionarioInicio: '1', funcionarioFim: '999999999', paramData: '1', dataInicio: fmtBR(-15), dataFim: fmtBR(14) });
   if (!rows) return { guias: [], guiaIndisponivel: true };
   const grupos = new Map<string, { numero: string; funcionario: { nome: string | null }; exames: string[] }>();
   for (const r of rows) {
