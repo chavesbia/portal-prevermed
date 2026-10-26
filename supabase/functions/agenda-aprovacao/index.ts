@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     if (b.decisao === 'devolver' && (!b.motivo || b.motivo.length < 5)) return json({ error: 'Informe o motivo da devolução.' }, 400);
 
     const { data: ag } = await admin.from('soc_agendamentos')
-      .select('id, protocolo, codigo_empresa_soc, colaborador_cpf, tipo_exame, data_agendada, hora_agendada, exames, observacoes, motivo_retorno, aprovacao_status, soc_agenda_unidades(codigo_agenda)')
+      .select('id, protocolo, codigo_empresa_soc, colaborador_cpf, tipo_exame, data_agendada, hora_agendada, exames, observacoes, motivo_retorno, aprovacao_status, fila_aprovacao, soc_agenda_unidades(codigo_agenda)')
       .eq('id', b.agendamentoId).maybeSingle();
     if (!ag) return json({ error: 'Agendamento não encontrado' }, 404);
     if (ag.aprovacao_status !== 'pendente') return json({ error: 'Este agendamento não está aguardando aprovação.' }, 400);
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     if (b.decisao === 'devolver') {
       await admin.from('soc_agendamentos').update({ aprovacao_status: 'devolvido', status: 'documentacao_devolvida', devolucao_motivo: b.motivo, aprovado_por: uid, aprovado_em: new Date().toISOString() }).eq('id', ag.id);
-      await audit('agenda_documentacao_devolvida', { protocolo: ag.protocolo, motivo: b.motivo });
+      await audit('agenda_documentacao_devolvida', { protocolo: ag.protocolo, motivo: b.motivo, fila: ag.fila_aprovacao });
       return json({ ok: true });
     }
 
@@ -56,14 +56,14 @@ Deno.serve(async (req) => {
       codigoEmpresa: ag.codigo_empresa_soc, cpf: ag.colaborador_cpf,
       codigoAgenda: (ag.soc_agenda_unidades as any)?.codigo_agenda, data: ag.data_agendada, hora: String(ag.hora_agendada).slice(0, 5),
       tipoExame: ag.tipo_exame,
-      detalhes: [`Portal: ${ag.protocolo}`, `Exames: ${(ag.exames as string[]).join(', ') || '-'}`, `Motivo do retorno: ${ag.motivo_retorno ?? '-'}`, 'Documentação aprovada no Portal', ag.observacoes ? `Obs: ${ag.observacoes}` : ''].filter(Boolean).join('\n'),
+      detalhes: [`Portal: ${ag.protocolo}`, `Exames: ${(ag.exames as string[]).join(', ') || '-'}`, ag.fila_aprovacao === 'engenharia' ? 'Estrutura (unidade/setor/cargo) validada pela Engenharia no Portal' : `Motivo do retorno: ${ag.motivo_retorno ?? '-'}`, ag.fila_aprovacao === 'engenharia' ? '' : 'Documentação aprovada no Portal', ag.observacoes ? `Obs: ${ag.observacoes}` : ''].filter(Boolean).join('\n'),
     });
     await admin.from('soc_agendamentos').update({
       aprovacao_status: 'aprovado', aprovado_por: uid, aprovado_em: new Date().toISOString(), devolucao_motivo: null,
       status: soc.ok ? 'agendado_soc' : 'solicitado',
       soc_retorno: { codigoAgendamento: soc.codigoAgendamento ?? null, resposta: soc.resposta }, soc_erro: soc.ok ? null : soc.erro,
     }).eq('id', ag.id);
-    await audit('agenda_documentacao_aprovada', { protocolo: ag.protocolo, agendadoSoc: soc.ok, erro: soc.ok ? null : soc.erro });
+    await audit('agenda_documentacao_aprovada', { protocolo: ag.protocolo, fila: ag.fila_aprovacao, agendadoSoc: soc.ok, erro: soc.ok ? null : soc.erro });
     return json({ ok: true, agendadoSoc: soc.ok, erro: soc.ok ? null : `Aprovado, mas o SOC recusou o horário: ${soc.erro}. Combine outro horário com o cliente.` });
   } catch (e) {
     return json({ error: String(e) }, 500);

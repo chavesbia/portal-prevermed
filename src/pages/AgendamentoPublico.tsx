@@ -190,7 +190,11 @@ export default function AgendamentoPublico() {
   const [cad, setCad] = useState({ nascimento: "", sexo: "", admissao: new Date().toISOString().slice(0, 10), unidade: "", setor: "", cargo: "" });
   const [cadastrando, setCadastrando] = useState(false);
   const [cadErro, setCadErro] = useState("");
-  useEffect(() => { setCadAberto(false); setHier(null); setCadErro(""); }, [cpf, socCode]);
+  // Unidade/setor/cargo inexistente no SOC: segue como pré-agendamento travado para a Engenharia
+  const [engAberto, setEngAberto] = useState(false);
+  const [eng, setEng] = useState({ unidade: "", setor: "", cargo: "", atividades: "" });
+  const [pedidoEng, setPedidoEng] = useState<typeof eng | null>(null);
+  useEffect(() => { setCadAberto(false); setHier(null); setCadErro(""); setEngAberto(false); setPedidoEng(null); }, [cpf, socCode]);
   const abrirCadastro = () => {
     setAlterandoLot(false); setCadAberto(true);
     if (hier) return;
@@ -269,7 +273,7 @@ export default function AgendamentoPublico() {
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
-    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && !func.encontrado && !!func.indisponivel && !!f.cargo.trim()) || (!!func && func.encontrado && !inativoLivre && (inativo || lotConfirmada) && !cadAberto)),
+    cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && !func.encontrado && !!func.indisponivel && !!f.cargo.trim()) || (!!func && func.encontrado && !inativoLivre && (inativo || lotConfirmada) && !cadAberto) || (!!pedidoEng && !cadAberto)),
     pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && !buscandoPcmso,
     !!unidadeId && !!dia && !!hora,
   ];
@@ -293,6 +297,10 @@ export default function AgendamentoPublico() {
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
         exames: pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
         documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
+        estruturaNova: pedidoEng ? {
+          unidade: pedidoEng.unidade.trim(), setor: pedidoEng.setor.trim(), cargo: pedidoEng.cargo.trim(), atividades: pedidoEng.atividades.trim() || undefined,
+          ...(alterandoLot ? {} : { nascimento: cad.nascimento || undefined, sexo: cad.sexo || undefined, admissao: cad.admissao || undefined }),
+        } : undefined,
       },
     });
     setCarregando(false);
@@ -344,7 +352,7 @@ export default function AgendamentoPublico() {
               </dl>
               {aguardandoAprov && (
                 <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-sm">
-                  Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação.
+                  {pedidoEng ? "Nossa equipe técnica vai conferir a unidade, o setor e o cargo informados. O horário fica reservado e só é confirmado após essa conferência." : "Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação."}
                   Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
                 </div>
               )}
@@ -500,6 +508,27 @@ export default function AgendamentoPublico() {
                             {lista.map((i) => <option key={i.codigo} value={i.codigo}>{i.nome}</option>)}
                           </select></div>
                       ))}
+                      {!engAberto ? (
+                        <button type="button" className="text-xs text-primary underline" onClick={() => setEngAberto(true)}>Não encontrei a unidade, o setor ou o cargo</button>
+                      ) : (
+                        <div className="space-y-2 rounded-md bg-muted/50 p-3">
+                          <p className="text-xs text-muted-foreground">Informe como é na empresa. O horário fica reservado e nossa equipe técnica confere antes de confirmar.</p>
+                          <div className="grid gap-2 sm:grid-cols-3">
+                            {(["unidade", "setor", "cargo"] as const).map((k) => (
+                              <div key={k}><Label className="capitalize">{k} *</Label><Input value={eng[k]} maxLength={120} onChange={(e) => setEng({ ...eng, [k]: e.target.value })} /></div>
+                            ))}
+                          </div>
+                          <div><Label>Atividades do cargo</Label><Textarea rows={2} maxLength={800} value={eng.atividades} onChange={(e) => setEng({ ...eng, atividades: e.target.value })} /></div>
+                          <div className="flex justify-end gap-2">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEngAberto(false)}>Voltar</Button>
+                            <Button type="button" size="sm"
+                              disabled={eng.unidade.trim().length < 2 || eng.setor.trim().length < 2 || eng.cargo.trim().length < 2 || (!alterandoLot && (f.colaboradorNome.trim().length < 3 || !cad.nascimento || !cad.sexo || !cad.admissao))}
+                              onClick={() => { setPedidoEng({ ...eng }); setF((p) => ({ ...p, cargo: eng.cargo.trim().toUpperCase(), tipoExame: alterandoLot ? "Mudança de Risco" : "Admissional" })); setCadAberto(false); setEngAberto(false); }}>
+                              Continuar
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </>)}
                     {hier && !hier.indisponivel && livre && (<>
                       <p className="text-xs text-muted-foreground">Escolha uma opção existente ou digite uma nova.</p>
@@ -523,6 +552,13 @@ export default function AgendamentoPublico() {
                   </div>
                 )}
               </>)}
+              {passo === 1 && pedidoEng && !cadAberto && (
+                <div className="rounded-md border p-3 text-sm">
+                  <p><strong>{pedidoEng.cargo.toUpperCase()}</strong> · {pedidoEng.setor.toUpperCase()} · {pedidoEng.unidade.toUpperCase()}</p>
+                  <p className="text-xs text-muted-foreground">Nossa equipe técnica vai conferir antes de confirmar o horário.</p>
+                  <button type="button" className="text-xs text-primary underline" onClick={() => setPedidoEng(null)}>Corrigir</button>
+                </div>
+              )}
               {passo === 2 && pedido && (
                 <div className="space-y-2 rounded-md border border-primary bg-primary/5 p-3 text-sm">
                   <p>Tipo de exame: <strong>{f.tipoExame}</strong></p>

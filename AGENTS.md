@@ -11,3 +11,4 @@
 - Agenda: lotation updates require SOC read-back before releasing exam selection, so unconfirmed hierarchy writes cannot silently drive ASO exams.
 - Agenda: kit print state is shared through a permission-checked, audited RPC; direct writes to print fields are blocked to preserve operator attribution.
 - Agenda: exam preparation data lives in a shared pure catalog used by public receipts and WhatsApp, so both channels reproduce the same official source text.
+- Agenda: approvals are split by `soc_agendamentos.fila_aprovacao` (saude/engenharia); unknown unit/sector/job in laudo companies is booked locked (aguardando_aprovacao) and only reaches SOC via `agenda-aprovacao` — keeps unvalidated structures out of SOC.
