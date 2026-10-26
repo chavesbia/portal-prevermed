@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { toTitleCase } from "@/lib/guias/blocklist";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
+import { AgendaGraficos } from "@/components/agenda/AgendaGraficos";
 
 const db = supabase as any;
 const fmtData = (d: string) => d.split("-").reverse().join("/");
@@ -189,6 +190,8 @@ export default function Agendamentos() {
       porStatus: conta(lista, (a) => STATUS[a.status]?.label ?? a.status),
       porFaixa: conta(lista, (a) => faixa(a.hora_agendada)).sort((x, y) => x[0].localeCompare(y[0])),
       topEmpresas: conta(lista, (a) => a.empresa_nome ?? "-").slice(0, 10),
+      semKit: lista.filter((a: any) => !temKitAgenda(a)).length,
+      kitPct: lista.length ? Math.round((lista.filter((a: any) => temKitAgenda(a)).length / lista.length) * 100) : 0,
     };
   }, [lista, subgrupos]);
 
@@ -384,43 +387,41 @@ export default function Agendamentos() {
           })()}
         </TabsContent>
         <TabsContent value="dashboard" className="space-y-4">
-          <p className="text-xs text-muted-foreground">Período: {fmtData(de)} a {fmtData(ate)}. Atualiza sozinho quando entra um agendamento novo. Para ver tendências, use um período maior (ex.: o mês).</p>
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+          {(() => {
+            const h = hojeIso();
+            const menos = (n: number) => new Date(new Date(h + "T12:00:00").getTime() - n * 86400_000).toISOString().slice(0, 10);
+            const fimMes = (() => { const d = new Date(h + "T12:00:00"); return new Date(d.getFullYear(), d.getMonth() + 1, 0, 12).toISOString().slice(0, 10); })();
+            const atalhos: [string, string, string][] = [["Hoje", h, h], ["7 dias", menos(6), h], ["Mês atual", h.slice(0, 8) + "01", fimMes], ["30 dias", menos(29), h]];
+            return (
+              <div className="flex flex-wrap items-center gap-2">
+                {atalhos.map(([r, d1, d2]) => <Button key={r} size="sm" variant={de === d1 && ate === d2 ? "default" : "outline"} onClick={() => setFiltro({ de: d1, ate: d2 })}>{r}</Button>)}
+                <span className="text-xs text-muted-foreground">Período: {fmtData(de)} a {fmtData(ate)} · atualiza sozinho</span>
+              </div>
+            );
+          })()}
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
             <Kpi k="Agendamentos" v={dash.total} sub={`média de ${dash.mediaDia} por dia`} />
             <Kpi k="Colaboradores" v={dash.colaboradores} />
             <Kpi k="Exames" v={dash.exames} />
             <Kpi k="Exames clínicos" v={dash.clinicos} sub="demanda médica" />
-            <Kpi k="Complementares" v={dash.complementares} sub="demanda de enfermagem/técnicos" />
+            <Kpi k="Complementares" v={dash.complementares} sub="enfermagem/técnicos" />
+            <Kpi k="Com kit" v={`${dash.kitPct}%`} sub={`${dash.semKit} sem kit anexado`} />
           </div>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Fluxo por dia e unidade</CardTitle></CardHeader>
-            <CardContent className="overflow-x-auto">
-              {dash.porDiaUn.length ? (
-                <Table><TableHeader><TableRow><TableHead>Dia</TableHead>{dash.nomesUn.map((u) => <TableHead key={u} className="text-right">{u}</TableHead>)}<TableHead className="text-right">Total</TableHead></TableRow></TableHeader>
-                  <TableBody>{dash.porDiaUn.map((p) => (
-                    <TableRow key={p.dia}><TableCell className="whitespace-nowrap">{fmtData(p.dia)} <span className="text-xs text-muted-foreground">{DIAS_SEMANA[new Date(p.dia + "T12:00:00").getDay()]}</span></TableCell>
-                      {dash.nomesUn.map((u) => <TableCell key={u} className="text-right">{p.porUn[u]}</TableCell>)}<TableCell className="text-right font-semibold">{p.total}</TableCell></TableRow>
-                  ))}</TableBody></Table>
-              ) : <p className="text-sm text-muted-foreground">Sem dados no período.</p>}
-            </CardContent></Card>
+          <AgendaGraficos nomesUn={dash.nomesUn} porDiaUn={dash.porDiaUn} porFaixa={dash.porFaixa} porCanal={dash.porCanal} porSubgrupo={dash.porSubgrupo} />
           <div className="grid gap-4 md:grid-cols-3">
             <Ranking titulo="Dias de maior fluxo" dados={dash.pico.map((p) => [fmtData(p.dia), p.total])} />
             <Ranking titulo="Dias mais tranquilos" dados={dash.calmo.map((p) => [fmtData(p.dia), p.total])} />
             <Ranking titulo="Média por dia da semana" dados={dash.semana} />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <Ranking titulo="Por unidade" dados={dash.porUnidade} />
-            <Ranking titulo="Faixa de horário de chegada" dados={dash.porFaixa} sub="ajuda a organizar a recepção e triagem" />
-            <Ranking titulo="Por tipo de exame" dados={dash.porTipo} />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
             <Ranking titulo="10 exames mais solicitados" dados={dash.topExames} />
             <Ranking titulo="Exames complementares mais solicitados" dados={dash.complementaresRank} sub="impacto na escala de enfermagem" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Ranking titulo="Por subgrupo da empresa" dados={dash.porSubgrupo} />
-            <Ranking titulo="Canal de entrada" dados={dash.porCanal} />
-            <Ranking titulo="Situação no SOC" dados={dash.porStatus} />
             <Ranking titulo="Empresas que mais agendam" dados={dash.topEmpresas} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Ranking titulo="Por unidade" dados={dash.porUnidade} />
+            <Ranking titulo="Por tipo de exame" dados={dash.porTipo} />
+            <Ranking titulo="Situação no SOC" dados={dash.porStatus} />
           </div>
         </TabsContent>
       </Tabs>
