@@ -35,6 +35,7 @@ import {
   Package,
   NotebookPen,
   FileEdit,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,7 @@ const departmentIconMap: Record<string, LucideIcon> = {
 
 // Map module icon strings (from DB) to lucide components
 const moduleIconMap: Record<string, LucideIcon> = {
+  'FlaskConical': FlaskConical,
   'Calculator': Calculator,
   'ClipboardList': ClipboardList,
   'DollarSign': DollarSign,
