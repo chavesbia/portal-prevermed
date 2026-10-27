@@ -1,0 +1,2 @@
+ALTER TABLE public.soc_prestadores DROP CONSTRAINT soc_prestadores_unidade_responsavel_check;
+ALTER TABLE public.soc_prestadores ADD CONSTRAINT soc_prestadores_unidade_responsavel_check CHECK (unidade_responsavel = ANY (ARRAY['lapa'::text, 'osasco'::text, 'ambas'::text]));
