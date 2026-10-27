@@ -64,7 +64,7 @@ export default function AdminPrestadores() {
       .eq("codigo", p.codigo);
     if (error) return toast.error("Não foi possível salvar a classificação.");
     await supabase.from("audit_log").insert({
-      user_id: user?.id, action: "prestador_classificado", entity_type: "soc_prestadores", entity_id: null,
+      user_id: user?.id, action_type: "prestador_classificado", object_type: "soc_prestadores", object_id: null,
       details: { codigo: p.codigo, nome: p.nome, de: p.unidade_responsavel, para: valor },
     } as any);
     qc.setQueryData<Prestador[]>(["soc-prestadores"], (old) => old?.map((x) => x.codigo === p.codigo ? { ...x, unidade_responsavel: valor } : x));
