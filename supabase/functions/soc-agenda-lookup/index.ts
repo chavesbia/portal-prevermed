@@ -3,6 +3,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { alterarLotacaoSoc, cadastrarFuncionarioSoc } from './socFuncionario.ts';
+import { varrerPedidosSocnet, fichaParaPedido, type FichaSocnet } from '../_shared/socnetPedidos.ts';
 
 const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
 const json = (body: unknown, status = 200) =>
@@ -123,49 +124,27 @@ const TIPO_FICHA: Record<string, string> = {
 };
 const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5); return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`; };
 
-// Pedidos SOCNET abertos (sem resultado) direcionados à PreverMed para o CPF, agrupados por ficha
+// Pedidos SOCNET abertos (sem resultado) direcionados à PreverMed para o CPF.
+// 1º lê a cópia local (soc-pedidos-sync): resposta imediata, sem fila no SOC.
+// Sem registro local (ex.: pedido emitido após a última rotina), varre o SOC ao vivo e grava tudo o que vier.
 async function pedidosSocnet(cpf: string) {
-  const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
-  const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_SOCNET_PEDIDOS');
-  const chave = Deno.env.get('SOC_CHAVE_EXPORTA_SOCNET_PEDIDOS');
-  if (!empresa || !codigo || !chave) return { pedidos: [], indisponivel: true };
-  // O relatório devolve um único dia (DATAFICHA) por chamada: varre de 15 dias atrás a 15 à frente.
-  // O SOC aceita no máximo 5 chamadas simultâneas: fila com 4 em paralelo e nova tentativa se for recusada.
-  const dias = Array.from({ length: 31 }, (_, i) => i - 15);
-  const lotes: (Row[] | null)[] = new Array(dias.length).fill(null);
-  let prox = 0;
-  const trabalhador = async () => {
-    while (prox < dias.length) {
-      const i = prox++;
-      for (let t = 0; t < 3 && lotes[i] === null; t++) {
-        if (t) await new Promise((r) => setTimeout(r, 400 * t));
-        lotes[i] = await exporta({ empresa, codigo, chave, DataInicio: fmtBR(dias[i]) });
-      }
-    }
-  };
-  await Promise.all(Array.from({ length: 4 }, trabalhador));
-  if (lotes.some((l) => l === null)) console.error('SOCNET: dias sem resposta', lotes.filter((l) => l === null).length);
-  if (lotes.every((l) => l === null)) return { pedidos: [], indisponivel: true };
-  const rows = lotes.flatMap((l) => l ?? []);
-  const fichas = new Map<string, any>();
-  for (const r of rows) {
-    if ((pick(r, ['CPF']) ?? '').replace(/\D/g, '').padStart(11, '0') !== cpf) continue;
-    const seq = pick(r, ['SEQUENCIALFICHA']); if (!seq) continue;
-    if (!fichas.has(seq)) fichas.set(seq, {
-      sequencialFicha: seq, dataFicha: pick(r, ['DATAFICHA']),
-      tipoExame: TIPO_FICHA[pick(r, ['TIPOEXAME']) ?? ''] ?? null,
-      empresa: { codigo: pick(r, ['CODIGOEMPRESA']), nome: pick(r, ['NOMEEMPRESA']) },
-      assessoria: { codigo: pick(r, ['CODIGOEMPRESAREPASSE']), nome: pick(r, ['NOMEEMPRESAREPASSE']) },
-      funcionario: { codigo: pick(r, ['CODIGOFUNCIONARIO']), nome: pick(r, ['NOME']), nascimento: pick(r, ['DTNASC']), sexo: pick(r, ['SEXO']) === '2' ? 'FEMININO' : 'MASCULINO' },
-      exames: [] as string[], pendentes: 0,
-    });
-    const f = fichas.get(seq);
-    const nome = (pick(r, ['NOMEEXAME']) ?? '').toUpperCase();
-    if (nome && !f.exames.includes(nome)) f.exames.push(nome);
-    if (!pick(r, ['DATARESULTADO'])) f.pendentes++;
+  const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  const { data: locais } = await admin.from('soc_pedidos_socnet').select('*').eq('cpf', cpf).gt('pendentes', 0);
+  if (locais?.length) {
+    const pedidos = (locais as FichaSocnet[]).map(fichaParaPedido);
+    return { pedidos, socnet: true, origemDados: 'portal' };
   }
-  const pedidos = [...fichas.values()].filter((f) => f.pendentes > 0).map(({ pendentes, ...f }) => f);
-  return { pedidos, socnet: pedidos.length > 0 };
+  const res = await varrerPedidosSocnet(15, 15);
+  if (!res) return { pedidos: [], indisponivel: true };
+  if (res.falhas) console.error('SOCNET: dias sem resposta', res.falhas);
+  const agora = new Date().toISOString();
+  if (res.fichas.length) {
+    const { error } = await admin.from('soc_pedidos_socnet')
+      .upsert(res.fichas.map((f) => ({ ...f, sincronizado_em: agora })), { onConflict: 'sequencial_ficha' });
+    if (error) console.error('cache socnet', error);
+  }
+  const pedidos = res.fichas.filter((f) => f.cpf === cpf && f.pendentes > 0).map(fichaParaPedido);
+  return { pedidos, socnet: pedidos.length > 0, origemDados: 'soc' };
 }
 
 // Fallback da Tela 675: não cria pedido nem presume atendimento liberado por qualquer guia.
