@@ -12,3 +12,4 @@
 - Agenda: kit print state is shared through a permission-checked, audited RPC; direct writes to print fields are blocked to preserve operator attribution.
 - Agenda: exam preparation data lives in a shared pure catalog used by public receipts and WhatsApp, so both channels reproduce the same official source text.
 - Agenda: approvals are split by `soc_agendamentos.fila_aprovacao` (saude/engenharia); unknown unit/sector/job in laudo companies is booked locked (aguardando_aprovacao) and only reaches SOC via `agenda-aprovacao` — keeps unvalidated structures out of SOC.
+- Agenda/SOCNET: guias de outras bases (Exporta 212792) só aparecem com `empresaTrabalho`; o CNPJ externo é mapeado para o código SOC em `socnet_empresas` (só servidor/adm_master) — sem o mapeamento a guia não é encontrada.

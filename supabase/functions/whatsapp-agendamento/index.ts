@@ -292,7 +292,7 @@ const menuCorrigir = (d: Dados): Res => ({ etapa: 'CAD_CORRIGIR', dados: d, resp
 // ---- SOCNET: pedido de exames de assessoria parceira direcionado à PreverMed (busca só pelo CPF) ----
 const TIPO_SOCNET_LABEL: Record<string, string> = { Consulta: 'Consulta Ocupacional' };
 async function tentarSocnet(d: Dados): Promise<Res | null> {
-  const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'socnet', cpf: d.cpf });
+  const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'socnet', cpf: d.cpf, ...(d.cnpj ? { cnpj: d.cnpj } : {}) });
   const p = ok ? (data?.pedidos ?? [])[0] : null;
   if (!p) {
     const guia = ok ? data?.guias?.[0] : null;

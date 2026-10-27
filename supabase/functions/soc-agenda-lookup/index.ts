@@ -17,7 +17,7 @@ const Body = z.discriminatedUnion('acao', [
   z.object({ acao: z.literal('exames'), ...Pessoa }),
   z.object({ acao: z.literal('hierarquia'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode }),
   // SOCNET: pedidos de outras bases direcionados à PreverMed (Exporta 221785), só pelo CPF
-  z.object({ acao: z.literal('socnet'), cpf: Pessoa.cpf }),
+  z.object({ acao: z.literal('socnet'), cpf: Pessoa.cpf, cnpj: Pessoa.cnpj.optional() }),
   // SOCNET: consulta guias/fichas (Exporta 222211) por número sequencial e/ou período
   z.object({
     acao: z.literal('guias'), cnpj: Pessoa.cnpj, socCode: Pessoa.socCode,
@@ -169,12 +169,17 @@ async function pedidosSocnet(cpf: string) {
 }
 
 // Fallback da Tela 675: não cria pedido nem presume atendimento liberado por qualquer guia.
-async function guiasEncaminhamento(cpf: string) {
+async function guiasEncaminhamento(cpf: string, empresaTrabalho?: string | null) {
   const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_GUIA_ENCAMINHAMENTO');
   if (!empresa || !chave) return { guias: [], guiaIndisponivel: true };
-  // SOCNET: só temos o CPF; o 212792 exige intervalo de código do funcionário, então usamos o intervalo amplo e filtramos o CPF abaixo
-  const rows = await exporta({ empresa, codigo: '212792', chave, funcionarioInicio: '1', funcionarioFim: '999999999', paramData: '1', dataInicio: fmtBR(-15), dataFim: fmtBR(14) });
+  // Guias de outra base SOCNET só aparecem com empresaTrabalho (código SOC da empresa do colaborador).
+  // Só temos o CPF; o 212792 exige intervalo de código do funcionário, então usamos o intervalo amplo e filtramos o CPF abaixo.
+  // Sem paramData: com ele o SOC descarta guias cuja data não bate com o período.
+  const rows = await exporta({
+    empresa, codigo: '212792', chave, funcionarioInicio: '1', funcionarioFim: '999999999', dataInicio: fmtBR(-30), dataFim: fmtBR(30),
+    ...(empresaTrabalho ? { empresaTrabalho } : {}),
+  });
   if (!rows) return { guias: [], guiaIndisponivel: true };
   const grupos = new Map<string, { numero: string; funcionario: { codigo: string | null; nome: string | null }; exames: string[] }>();
   for (const r of rows) {
@@ -202,7 +207,12 @@ Deno.serve(async (req) => {
     if (b.acao === 'socnet') {
       const pedidos = await pedidosSocnet(b.cpf);
       if (pedidos.pedidos.length) return json(pedidos);
-      return json({ ...pedidos, ...await guiasEncaminhamento(b.cpf) });
+      let empresaTrabalho: string | null = null;
+      if (b.cnpj) {
+        const { data: sn } = await admin.from('socnet_empresas').select('soc_code').eq('cnpj', b.cnpj).maybeSingle();
+        empresaTrabalho = sn?.soc_code ?? null;
+      }
+      return json({ ...pedidos, ...await guiasEncaminhamento(b.cpf, empresaTrabalho) });
     }
 
     const { data: empresas } = await admin.from('companies')
