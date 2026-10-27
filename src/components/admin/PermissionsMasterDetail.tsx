@@ -572,13 +572,13 @@ export function PermissionsMasterDetail() {
                 </div>
               </div>
 
-              <div className="border border-border rounded-lg overflow-hidden">
+              <div className="border border-border rounded-lg">
                 <table className="w-full text-left">
-                  <thead className="bg-muted/50 border-b border-border">
+                  <thead className="sticky -top-5 z-20">
                     <tr>
-                      <th className="py-2.5 px-4 text-xs font-bold text-muted-foreground">Módulo</th>
+                      <th className="py-2.5 px-4 text-xs font-bold text-muted-foreground bg-muted border-b border-border rounded-tl-lg">Módulo</th>
                       {ACTIONS.map(a => (
-                        <th key={a.key} className="py-2.5 px-2 text-center text-xs font-bold text-muted-foreground w-24">
+                        <th key={a.key} className="py-2.5 px-2 text-center text-xs font-bold text-muted-foreground w-24 bg-muted border-b border-border">
                           {a.label}
                         </th>
                       ))}
