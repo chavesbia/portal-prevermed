@@ -299,7 +299,7 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
             </tbody>
           </table>
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="flex justify-end gap-2 pt-3 border-t mt-3">
         <Button variant="ghost" size="sm" onClick={() => setPending({})} disabled={changesCount === 0 || saving}>
