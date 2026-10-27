@@ -6874,6 +6874,75 @@ export type Database = {
         }
         Relationships: []
       }
+      soc_prestadores: {
+        Row: {
+          ativo: boolean
+          celular: string | null
+          cidade: string | null
+          classificado_em: string | null
+          classificado_por: string | null
+          cnpj: string | null
+          codigo: string
+          data_cancelamento: string | null
+          dias_atendimento: string[]
+          email: string | null
+          endereco: string | null
+          horario: string | null
+          nome: string
+          razao_social: string | null
+          sincronizado_em: string
+          socnet: boolean
+          telefone: string | null
+          tipo_atendimento: string | null
+          uf: string | null
+          unidade_responsavel: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          celular?: string | null
+          cidade?: string | null
+          classificado_em?: string | null
+          classificado_por?: string | null
+          cnpj?: string | null
+          codigo: string
+          data_cancelamento?: string | null
+          dias_atendimento?: string[]
+          email?: string | null
+          endereco?: string | null
+          horario?: string | null
+          nome: string
+          razao_social?: string | null
+          sincronizado_em?: string
+          socnet?: boolean
+          telefone?: string | null
+          tipo_atendimento?: string | null
+          uf?: string | null
+          unidade_responsavel?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          celular?: string | null
+          cidade?: string | null
+          classificado_em?: string | null
+          classificado_por?: string | null
+          cnpj?: string | null
+          codigo?: string
+          data_cancelamento?: string | null
+          dias_atendimento?: string[]
+          email?: string | null
+          endereco?: string | null
+          horario?: string | null
+          nome?: string
+          razao_social?: string | null
+          sincronizado_em?: string
+          socnet?: boolean
+          telefone?: string | null
+          tipo_atendimento?: string | null
+          uf?: string | null
+          unidade_responsavel?: string | null
+        }
+        Relationships: []
+      }
       socnet_empresas: {
         Row: {
           ativo: boolean
