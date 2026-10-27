@@ -232,6 +232,13 @@
       "when": 1793111052294,
       "tag": "0032_socnet_empresas_indices",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793113103606,
+      "tag": "0033_soc_pedidos_socnet_cache",
+      "breakpoints": true
     }
   ]
 }

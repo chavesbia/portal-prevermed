@@ -6829,6 +6829,51 @@ export type Database = {
           },
         ]
       }
+      soc_pedidos_socnet: {
+        Row: {
+          assessoria_codigo: string | null
+          assessoria_nome: string | null
+          cpf: string
+          data_ficha: string | null
+          empresa_codigo: string | null
+          empresa_nome: string | null
+          exames: string[]
+          funcionario: Json
+          pendentes: number
+          sequencial_ficha: string
+          sincronizado_em: string
+          tipo_exame: string | null
+        }
+        Insert: {
+          assessoria_codigo?: string | null
+          assessoria_nome?: string | null
+          cpf: string
+          data_ficha?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          exames?: string[]
+          funcionario?: Json
+          pendentes?: number
+          sequencial_ficha: string
+          sincronizado_em?: string
+          tipo_exame?: string | null
+        }
+        Update: {
+          assessoria_codigo?: string | null
+          assessoria_nome?: string | null
+          cpf?: string
+          data_ficha?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          exames?: string[]
+          funcionario?: Json
+          pendentes?: number
+          sequencial_ficha?: string
+          sincronizado_em?: string
+          tipo_exame?: string | null
+        }
+        Relationships: []
+      }
       socnet_empresas: {
         Row: {
           ativo: boolean
