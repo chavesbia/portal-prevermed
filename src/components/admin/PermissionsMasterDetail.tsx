@@ -573,7 +573,7 @@ export function PermissionsMasterDetail() {
               </div>
 
               <div className="border border-border rounded-lg">
-                <table className="w-full text-left border-separate border-spacing-0">
+                <table className="w-full text-left">
                   <thead className="sticky -top-5 z-20">
                     <tr>
                       <th className="py-2.5 px-4 text-xs font-bold text-muted-foreground bg-muted border-b border-border rounded-tl-lg">Módulo</th>
