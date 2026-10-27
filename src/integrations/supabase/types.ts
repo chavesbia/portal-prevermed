@@ -6831,23 +6831,29 @@ export type Database = {
       }
       socnet_empresas: {
         Row: {
+          ativo: boolean
           cnpj: string
           created_at: string
           razao_social: string
+          sincronizado_em: string | null
           soc_code: string
           updated_at: string
         }
         Insert: {
+          ativo?: boolean
           cnpj: string
           created_at?: string
           razao_social: string
+          sincronizado_em?: string | null
           soc_code: string
           updated_at?: string
         }
         Update: {
+          ativo?: boolean
           cnpj?: string
           created_at?: string
           razao_social?: string
+          sincronizado_em?: string | null
           soc_code?: string
           updated_at?: string
         }
