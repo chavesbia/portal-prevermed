@@ -218,6 +218,13 @@
       "when": 1793103871169,
       "tag": "0030_sync_contract_clientes_contato",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793106451304,
+      "tag": "0031_socnet_empresas",
+      "breakpoints": true
     }
   ]
 }

@@ -6829,6 +6829,30 @@ export type Database = {
           },
         ]
       }
+      socnet_empresas: {
+        Row: {
+          cnpj: string
+          created_at: string
+          razao_social: string
+          soc_code: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          razao_social: string
+          soc_code: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          razao_social?: string
+          soc_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tipos_laudo: {
         Row: {
           ativo: boolean
