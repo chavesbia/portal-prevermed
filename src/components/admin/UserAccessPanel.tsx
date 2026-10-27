@@ -210,14 +210,14 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
         )}
       </div>
 
-      <ScrollArea className="flex-1 mt-3 pr-2">
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-muted/50 border-b border-border sticky top-0 z-10 bg-muted">
+      <div className="flex-1 min-h-0 mt-3 pr-2 overflow-y-auto">
+        <div className="border border-border rounded-lg">
+          <table className="w-full text-left border-separate border-spacing-0">
+            <thead className="sticky top-0 z-20">
               <tr>
-                <th className="py-2 px-3 text-xs font-bold text-muted-foreground">Módulo</th>
+                <th className="py-2 px-3 text-xs font-bold text-muted-foreground bg-muted border-b border-border rounded-tl-lg">Módulo</th>
                 {ACTIONS.map(a => (
-                  <th key={a.key} className="py-2 px-2 text-center text-xs font-bold text-muted-foreground w-20">{a.label}</th>
+                  <th key={a.key} className="py-2 px-2 text-center text-xs font-bold text-muted-foreground w-20 bg-muted border-b border-border">{a.label}</th>
                 ))}
               </tr>
             </thead>
