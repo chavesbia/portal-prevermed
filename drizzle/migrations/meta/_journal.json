@@ -225,6 +225,13 @@
       "when": 1793106451304,
       "tag": "0031_socnet_empresas",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793111052294,
+      "tag": "0032_socnet_empresas_indices",
+      "breakpoints": true
     }
   ]
 }
