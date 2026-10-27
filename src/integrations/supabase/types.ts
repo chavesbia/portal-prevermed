@@ -6829,6 +6829,90 @@ export type Database = {
           },
         ]
       }
+      soc_exames_pendentes: {
+        Row: {
+          assessoria_nome: string | null
+          cpf: string
+          data_ficha: string | null
+          data_resultado: string | null
+          empresa_codigo: string | null
+          empresa_nome: string | null
+          exame_codigo: string | null
+          exame_nome: string
+          funcionario_nome: string | null
+          id: string
+          origem: string
+          prestador_codigo: string | null
+          prestador_nome: string | null
+          resolvido_em: string | null
+          sequencial_ficha: string
+          sincronizado_em: string
+          tipo_ficha: string | null
+        }
+        Insert: {
+          assessoria_nome?: string | null
+          cpf: string
+          data_ficha?: string | null
+          data_resultado?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          exame_codigo?: string | null
+          exame_nome: string
+          funcionario_nome?: string | null
+          id: string
+          origem: string
+          prestador_codigo?: string | null
+          prestador_nome?: string | null
+          resolvido_em?: string | null
+          sequencial_ficha: string
+          sincronizado_em?: string
+          tipo_ficha?: string | null
+        }
+        Update: {
+          assessoria_nome?: string | null
+          cpf?: string
+          data_ficha?: string | null
+          data_resultado?: string | null
+          empresa_codigo?: string | null
+          empresa_nome?: string | null
+          exame_codigo?: string | null
+          exame_nome?: string
+          funcionario_nome?: string | null
+          id?: string
+          origem?: string
+          prestador_codigo?: string | null
+          prestador_nome?: string | null
+          resolvido_em?: string | null
+          sequencial_ficha?: string
+          sincronizado_em?: string
+          tipo_ficha?: string | null
+        }
+        Relationships: []
+      }
+      soc_exames_pendentes_contatos: {
+        Row: {
+          created_at: string
+          id: string
+          sequencial_ficha: string
+          texto: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sequencial_ficha: string
+          texto: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sequencial_ficha?: string
+          texto?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       soc_pedidos_socnet: {
         Row: {
           assessoria_codigo: string | null
