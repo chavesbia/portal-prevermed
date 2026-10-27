@@ -212,7 +212,7 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
 
       <div className="flex-1 min-h-0 mt-3 pr-2 overflow-y-auto">
         <div className="border border-border rounded-lg">
-          <table className="w-full text-left border-separate border-spacing-0">
+          <table className="w-full text-left">
             <thead className="sticky top-0 z-20">
               <tr>
                 <th className="py-2 px-3 text-xs font-bold text-muted-foreground bg-muted border-b border-border rounded-tl-lg">Módulo</th>
