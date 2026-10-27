@@ -15,7 +15,7 @@ type Prestador = {
   email: string | null; tipo_atendimento: string | null; socnet: boolean; ativo: boolean; unidade_responsavel: string | null;
   sincronizado_em: string;
 };
-const UNIDADES: Record<string, string> = { lapa: "Unidade Lapa", osasco: "Unidade Osasco" };
+const UNIDADES: Record<string, string> = { lapa: "Unidade Lapa", osasco: "Unidade Osasco", ambas: "Lapa e Osasco" };
 const sel = "h-8 rounded-md border border-input bg-background px-2 text-xs";
 const titulo = (t: string | null) => (t ?? "").toLowerCase().replace(/(^|\s|\()\S/g, (c) => c.toUpperCase());
 const db = supabase as any;
@@ -48,13 +48,17 @@ export default function AdminPrestadores() {
     const q = busca.trim().toUpperCase();
     return data.filter((p) =>
       (situacao === "todos" || (situacao === "ativos" ? p.ativo : !p.ativo)) &&
-      (filtro === "todos" || (filtro === "externo" ? !p.unidade_responsavel : p.unidade_responsavel === filtro)) &&
+      (filtro === "todos" || (filtro === "externo" ? !p.unidade_responsavel
+        : filtro === "ambas" ? p.unidade_responsavel === "ambas"
+        : p.unidade_responsavel === filtro || p.unidade_responsavel === "ambas")) &&
       (!q || p.nome.includes(q) || p.codigo.includes(q) || (p.cidade ?? "").includes(q)));
   }, [data, busca, filtro, situacao]);
 
+  // Lapa/Osasco contam também os vinculados às duas unidades
   const contagem = useMemo(() => ({
-    lapa: data.filter((p) => p.unidade_responsavel === "lapa").length,
-    osasco: data.filter((p) => p.unidade_responsavel === "osasco").length,
+    lapa: data.filter((p) => p.unidade_responsavel === "lapa" || p.unidade_responsavel === "ambas").length,
+    osasco: data.filter((p) => p.unidade_responsavel === "osasco" || p.unidade_responsavel === "ambas").length,
+    ambas: data.filter((p) => p.unidade_responsavel === "ambas").length,
   }), [data]);
 
   const classificar = async (p: Prestador, unidade: string) => {
@@ -99,9 +103,13 @@ export default function AdminPrestadores() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {[["Unidade Lapa", contagem.lapa], ["Unidade Osasco", contagem.osasco], ["Total no SOC", data.length]].map(([l, n]) => (
-          <Card key={l as string}><CardContent className="p-3"><p className="text-xs text-muted-foreground">{l}</p><p className="text-xl font-semibold">{n}</p></CardContent></Card>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {([["lapa", "Unidade Lapa", contagem.lapa], ["osasco", "Unidade Osasco", contagem.osasco], ["ambas", "Lapa e Osasco", contagem.ambas], ["todos", "Total no SOC", data.length]] as const).map(([k, l, n]) => (
+          <button key={k} type="button" onClick={() => setParam("f", k === "todos" || filtro === k ? "" : k)} className="text-left">
+            <Card className={`transition-colors hover:border-primary/60 ${filtro === k ? "border-primary ring-1 ring-primary" : ""}`}>
+              <CardContent className="p-3"><p className="text-xs text-muted-foreground whitespace-nowrap">{l}</p><p className="text-xl font-semibold">{n}</p></CardContent>
+            </Card>
+          </button>
         ))}
       </div>
 
@@ -115,8 +123,9 @@ export default function AdminPrestadores() {
             </div>
             <select className={sel} value={filtro} onChange={(e) => setParam("f", e.target.value === "todos" ? "" : e.target.value)}>
               <option value="todos">Todas as vinculações</option>
-              <option value="lapa">Unidade Lapa</option>
-              <option value="osasco">Unidade Osasco</option>
+              <option value="lapa">Atende Lapa</option>
+              <option value="osasco">Atende Osasco</option>
+              <option value="ambas">Lapa e Osasco</option>
               <option value="externo">Rede externa (sem vínculo)</option>
             </select>
             <select className={sel} value={situacao} onChange={(e) => setParam("s", e.target.value === "ativos" ? "" : e.target.value)}>
@@ -140,26 +149,26 @@ export default function AdminPrestadores() {
                 {isLoading && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
                 {!isLoading && !data.length && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum prestador ainda. Clique em "Buscar no SOC agora".</td></tr>}
                 {lista.map((p) => (
-                  <tr key={p.codigo} className="hover:bg-muted/40">
-                    <td className="sticky left-0 bg-background px-3 py-2 font-mono text-xs w-[72px]">{p.codigo}</td>
-                    <td className="sticky left-[72px] bg-background px-3 py-2">
-                      <div className="font-medium">{titulo(p.nome)}</div>
-                      <div className="flex gap-1 mt-0.5">
-                        {p.socnet && <Badge variant="secondary" className="whitespace-nowrap text-[10px]">SOCNET</Badge>}
-                        {!p.ativo && <Badge variant="outline" className="whitespace-nowrap text-[10px]">Inativo</Badge>}
+                  <tr key={p.codigo} className="hover:bg-muted/40 whitespace-nowrap">
+                    <td className="sticky left-0 bg-background px-3 py-1.5 font-mono text-xs w-[72px]">{p.codigo}</td>
+                    <td className="sticky left-[72px] bg-background px-3 py-1.5 max-w-[320px]">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-medium truncate" title={titulo(p.nome)}>{titulo(p.nome)}</span>
+                        {p.socnet && <Badge variant="secondary" className="whitespace-nowrap text-[10px] shrink-0">SOCNET</Badge>}
+                        {!p.ativo && <Badge variant="outline" className="whitespace-nowrap text-[10px] shrink-0">Inativo</Badge>}
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">{titulo(p.cidade)}{p.uf ? `/${p.uf}` : ""}</td>
-                    <td className="px-3 py-2 text-xs">
-                      <div className="whitespace-nowrap">{[p.telefone, p.celular].filter(Boolean).join(" · ") || "—"}</div>
-                      {p.email && <div className="text-muted-foreground">{p.email}</div>}
+                    <td className="px-3 py-1.5">{titulo(p.cidade)}{p.uf ? `/${p.uf}` : ""}</td>
+                    <td className="px-3 py-1.5 text-xs max-w-[260px] truncate" title={[p.telefone, p.celular, p.email].filter(Boolean).join(" · ")}>
+                      {[p.telefone, p.celular, p.email].filter(Boolean).join(" · ") || "—"}
                     </td>
-                    <td className="px-3 py-2 text-xs whitespace-nowrap">{p.tipo_atendimento ?? "—"}</td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-1.5 text-xs max-w-[160px] truncate" title={p.tipo_atendimento ?? ""}>{p.tipo_atendimento ?? "—"}</td>
+                    <td className="px-3 py-1.5">
                       <select className={sel} value={p.unidade_responsavel ?? ""} onChange={(e) => classificar(p, e.target.value)}>
                         <option value="">Rede externa</option>
                         <option value="lapa">Unidade Lapa</option>
                         <option value="osasco">Unidade Osasco</option>
+                        <option value="ambas">Lapa e Osasco</option>
                       </select>
                     </td>
                   </tr>
