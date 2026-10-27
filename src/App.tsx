@@ -56,6 +56,7 @@ const AdminLaudosServicos = lazy(() => import("./pages/admin/AdminLaudosServicos
 const AdminSigningDoctors = lazy(() => import("./pages/admin/AdminSigningDoctors"));
 const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
 const AdminAgenda = lazy(() => import("./pages/admin/AdminAgenda"));
+const AdminPrestadores = lazy(() => import("./pages/admin/AdminPrestadores"));
 const Agendamentos = lazy(() => import("./pages/Agendamentos"));
 
 // Cache global: evita recarregar tudo a cada troca de aba/janela.
@@ -138,6 +139,7 @@ const App = () => (
                 <Route path="/admin/medicos-aso" element={<AdminMasterRoute><AdminSigningDoctors /></AdminMasterRoute>} />
                 <Route path="/admin/empresas" element={<AdminMasterRoute><AdminEmpresas /></AdminMasterRoute>} />
                 <Route path="/admin/agenda" element={<AdminMasterRoute><AdminAgenda /></AdminMasterRoute>} />
+                <Route path="/admin/prestadores" element={<AdminMasterRoute><AdminPrestadores /></AdminMasterRoute>} />
                 <Route path="/admin/soc-agenda" element={<Navigate to="/admin/agenda?tab=soc" replace />} />
 
 

@@ -9,6 +9,7 @@ const ENDPOINTS = [
   'soc-responsaveis-pcmso-sync',
   'socnet-empresas-sync',
   'soc-pedidos-sync',
+  'soc-prestadores-sync',
 ] as const;
 
 function json(body: unknown, status = 200) {
