@@ -97,7 +97,7 @@ export default function AgendamentoPublico() {
   const cpf = dig(f.colaboradorCpf);
   const cpfValido = isValidCPF(cpf);
   const buscarPedido = async () => {
-    const { data } = await supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "socnet", cpf } });
+    const { data } = await supabase.functions.invoke("soc-agenda-lookup", { body: { acao: "socnet", cpf, cnpj } });
     const p: Pedido | undefined = data?.pedidos?.[0];
     if (!p) {
       const guia = data?.guias?.[0];
