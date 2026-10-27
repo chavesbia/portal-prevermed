@@ -246,6 +246,13 @@
       "when": 1793137532370,
       "tag": "0034_soc_prestadores",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793140827970,
+      "tag": "0035_prestadores_unidade_ambas",
+      "breakpoints": true
     }
   ]
 }
