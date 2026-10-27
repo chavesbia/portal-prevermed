@@ -136,6 +136,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithDetails | null>(null);
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editTab, setEditTab] = useState<'dados' | 'acessos'>('dados');
   const [isNewUserDialogOpen, setIsNewUserDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -280,6 +281,7 @@ export default function AdminUsers() {
       direct_leader_id: user.direct_leader_id || '',
       direct_manager_id: user.direct_manager_id || '',
     });
+    setEditTab('dados');
     setIsEditDialogOpen(true);
   };
 
@@ -932,7 +934,7 @@ export default function AdminUsers() {
 
       {/* Edit User Dialog - Unified with all fields */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-4xl h-[92vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
@@ -943,7 +945,15 @@ export default function AdminUsers() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <Tabs value={editTab} onValueChange={v => setEditTab(v as 'dados' | 'acessos')} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="self-start">
+            <TabsTrigger value="dados">Dados e Lotação</TabsTrigger>
+            <TabsTrigger value="acessos">Acessos aos Módulos</TabsTrigger>
+          </TabsList>
+          <TabsContent value="acessos" className="flex-1 overflow-hidden mt-3 data-[state=inactive]:hidden">
+            {selectedUser && <UserAccessPanel userId={selectedUser.user_id} />}
+          </TabsContent>
+          <TabsContent value="dados" className="flex-1 flex flex-col overflow-hidden mt-3 data-[state=inactive]:hidden">
           <div className="flex-1 overflow-y-auto pr-2 space-y-6">
             {/* Photo Upload */}
             <div className="flex items-center gap-4">
@@ -1289,7 +1299,8 @@ export default function AdminUsers() {
               )}
             </Button>
           </div>
-          </div>
+          </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

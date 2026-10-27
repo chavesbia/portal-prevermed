@@ -70,7 +70,9 @@ interface UserPermission {
 
 // Legacy tab values → new location
 const TAB_ALIASES: Record<string, { tab: string; sub?: string }> = {
-  'user-perms': { tab: 'manage' },
+  'user-perms': { tab: 'usuarios' },
+  'manage': { tab: 'usuarios' },
+  'dept-modules': { tab: 'usuarios' },
   'overview': { tab: 'auditoria', sub: 'visao-geral' },
   'revisao-permissoes': { tab: 'auditoria', sub: 'revisao-permissoes' },
   'revisao-vinculos': { tab: 'auditoria', sub: 'revisao-vinculos' },
@@ -230,13 +232,9 @@ export default function AdminPermissions() {
             Gerenciamento de Usuários e Permissões
           </h1>
           <p className="text-muted-foreground">
-            Gerencie usuários, módulos por departamento e permissões
+            Gerencie usuários e seus acessos em uma única ficha
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAllData} disabled={isLoading}>
-          <RefreshCw className={cn('h-4 w-4 mr-2', isLoading && 'animate-spin')} />
-          Atualizar
-        </Button>
       </div>
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
@@ -245,17 +243,9 @@ export default function AdminPermissions() {
             <Users className="h-4 w-4" />
             Usuários
           </TabsTrigger>
-          <TabsTrigger value="manage" className="gap-2">
-            <LayoutGrid className="h-4 w-4" />
-            Permissões por Usuário
-          </TabsTrigger>
           <TabsTrigger value="auditoria" className="gap-2">
             <ClipboardCheck className="h-4 w-4" />
             Auditoria
-          </TabsTrigger>
-          <TabsTrigger value="dept-modules" className="gap-2">
-            <Building2 className="h-4 w-4" />
-            Módulos por Departamento
           </TabsTrigger>
         </TabsList>
 
@@ -263,9 +253,6 @@ export default function AdminPermissions() {
           <AdminUsers />
         </TabsContent>
 
-        <TabsContent value="manage">
-          <PermissionsMasterDetail />
-        </TabsContent>
 
         {/* ===== Tab: Auditoria (nested sub-tabs) ===== */}
         <TabsContent value="auditoria">

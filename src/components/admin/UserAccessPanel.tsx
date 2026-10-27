@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { ChevronRight, Package, CheckCheck, Save, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -47,7 +47,7 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [pending, setPending] = useState<Record<string, Partial<Record<ActionKey, boolean>>>>({});
   const [saving, setSaving] = useState(false);
-  const [activeDept, setActiveDept] = useState<string>(ALL_KEY);
+  const [moduleSearch, setModuleSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => { fetchAll(); /* eslint-disable-next-line */ }, [userId]);
@@ -74,22 +74,12 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
     return m;
   }, [permissions]);
 
-  const modulesByDept = useMemo(() => {
-    const map = new Map<string, Module[]>();
-    for (const dm of deptModules) {
-      const mod = modules.find(m => m.id === dm.module_id);
-      if (!mod) continue;
-      if (!map.has(dm.department_id)) map.set(dm.department_id, []);
-      const arr = map.get(dm.department_id)!;
-      if (!arr.find(x => x.id === mod.id)) arr.push(mod);
-    }
-    return map;
-  }, [deptModules, modules]);
-
   const modulesForTab = useMemo(() => {
-    if (activeDept === ALL_KEY) return [...modules].sort((a, b) => a.name.localeCompare(b.name));
-    return (modulesByDept.get(activeDept) || []).sort((a, b) => a.name.localeCompare(b.name));
-  }, [activeDept, modules, modulesByDept]);
+    const q = moduleSearch.trim().toLowerCase();
+    return [...modules]
+      .filter(m => !q || m.name.toLowerCase().includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [moduleSearch, modules]);
 
   const groupedModules = useMemo(() => {
     const list = modulesForTab;
@@ -206,14 +196,12 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between gap-3 pb-3 border-b">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Filtrar por departamento:</span>
-          <Select value={activeDept} onValueChange={setActiveDept}>
-            <SelectTrigger className="h-8 text-xs w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_KEY}>Todos os módulos</SelectItem>
-              {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <Input
+            value={moduleSearch}
+            onChange={e => setModuleSearch(e.target.value)}
+            placeholder="Buscar módulo..."
+            className="h-8 text-xs w-56"
+          />
         </div>
         {changesCount > 0 && (
           <Badge variant="outline" className="border-primary/40 text-primary">
@@ -225,7 +213,7 @@ export function UserAccessPanel({ userId, onSaved }: Props) {
       <ScrollArea className="flex-1 mt-3 pr-2">
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-left">
-            <thead className="bg-muted/50 border-b border-border sticky top-0 z-10">
+            <thead className="bg-muted/50 border-b border-border sticky top-0 z-10 bg-muted">
               <tr>
                 <th className="py-2 px-3 text-xs font-bold text-muted-foreground">Módulo</th>
                 {ACTIONS.map(a => (
