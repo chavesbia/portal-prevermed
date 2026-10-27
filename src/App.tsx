@@ -58,6 +58,7 @@ const AdminEmpresas = lazy(() => import("./pages/admin/AdminEmpresas"));
 const AdminAgenda = lazy(() => import("./pages/admin/AdminAgenda"));
 const AdminPrestadores = lazy(() => import("./pages/admin/AdminPrestadores"));
 const Agendamentos = lazy(() => import("./pages/Agendamentos"));
+const ExamesPendentes = lazy(() => import("./pages/ExamesPendentes"));
 
 // Cache global: evita recarregar tudo a cada troca de aba/janela.
 // Telas que precisam de dados ao vivo usam realtime/invalidateQueries.
@@ -123,6 +124,7 @@ const App = () => (
                 <Route path="/painel-cliente/:companyId" element={<ProtectedModuleRoute route="/painel-cliente"><PainelCliente /></ProtectedModuleRoute>} />
 
                 <Route path="/agendamentos" element={<ProtectedModuleRoute route="/agendamentos"><Agendamentos /></ProtectedModuleRoute>} />
+                <Route path="/exames-pendentes" element={<ProtectedModuleRoute route="/exames-pendentes"><ExamesPendentes /></ProtectedModuleRoute>} />
                 <Route path="/notificacoes" element={<Notificacoes />} />
                 <Route path="/departamentos/*" element={<Index />} />
 

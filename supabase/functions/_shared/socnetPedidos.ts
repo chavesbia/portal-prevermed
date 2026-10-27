@@ -1,9 +1,9 @@
 // Varredura dos pedidos SOCNET (Exporta 221785) direcionados à PreverMed.
 // Usada pela rotina soc-pedidos-sync (grava a cópia local) e, em contingência, pela soc-agenda-lookup.
 const SOC_URL = 'https://ws1.soc.com.br/WebSoc/exportadados';
-type Row = Record<string, unknown>;
+export type Row = Record<string, unknown>;
 
-const pick = (r: Row, keys: string[]) => {
+export const pick = (r: Row, keys: string[]) => {
   const map: Record<string, unknown> = {};
   for (const k of Object.keys(r)) map[k.toUpperCase().replace(/[^A-Z]/g, '')] = r[k];
   for (const k of keys) { const v = map[k]; if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim(); }
@@ -32,7 +32,7 @@ export type FichaSocnet = {
 };
 
 // O relatório devolve um único dia por chamada; o SOC aceita no máximo 5 chamadas simultâneas: fila de 4 com nova tentativa.
-export async function varrerPedidosSocnet(diasAtras = 15, diasFrente = 15): Promise<{ fichas: FichaSocnet[]; falhas: number } | null> {
+export async function varrerPedidosSocnet(diasAtras = 15, diasFrente = 15): Promise<{ fichas: FichaSocnet[]; falhas: number; linhas: Row[]; diasSemResposta: string[] } | null> {
   const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
   const codigo = Deno.env.get('SOC_CODIGO_EXPORTA_SOCNET_PEDIDOS');
   const chave = Deno.env.get('SOC_CHAVE_EXPORTA_SOCNET_PEDIDOS');
@@ -69,7 +69,8 @@ export async function varrerPedidosSocnet(diasAtras = 15, diasFrente = 15): Prom
     if (nome && !f.exames.includes(nome)) f.exames.push(nome);
     if (!pick(r, ['DATARESULTADO'])) f.pendentes++;
   }
-  return { fichas: [...fichas.values()], falhas };
+  const diasSemResposta = dias.filter((_, i) => lotes[i] === null).map(fmtBR);
+  return { fichas: [...fichas.values()], falhas, linhas: lotes.flatMap((l) => l ?? []), diasSemResposta };
 }
 
 // Formato que a tela/robô já consomem
