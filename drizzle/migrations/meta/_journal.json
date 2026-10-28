@@ -267,6 +267,13 @@
       "when": 1793223409444,
       "tag": "0037_exames_pendentes_funcionario_codigo",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793223730693,
+      "tag": "0038_exames_pendentes_carteira_propria",
+      "breakpoints": true
     }
   ]
 }
