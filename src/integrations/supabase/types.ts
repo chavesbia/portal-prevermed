@@ -6849,6 +6849,7 @@ export type Database = {
           sequencial_ficha: string
           sincronizado_em: string
           tipo_ficha: string | null
+          verificado_em: string | null
         }
         Insert: {
           assessoria_nome?: string | null
@@ -6869,6 +6870,7 @@ export type Database = {
           sequencial_ficha: string
           sincronizado_em?: string
           tipo_ficha?: string | null
+          verificado_em?: string | null
         }
         Update: {
           assessoria_nome?: string | null
@@ -6889,6 +6891,7 @@ export type Database = {
           sequencial_ficha?: string
           sincronizado_em?: string
           tipo_ficha?: string | null
+          verificado_em?: string | null
         }
         Relationships: []
       }
@@ -7027,6 +7030,24 @@ export type Database = {
           tipo_atendimento?: string | null
           uf?: string | null
           unidade_responsavel?: string | null
+        }
+        Relationships: []
+      }
+      soc_sync_estado: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          valor: Json
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          valor?: Json
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          valor?: Json
         }
         Relationships: []
       }

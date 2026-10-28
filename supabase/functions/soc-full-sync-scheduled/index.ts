@@ -10,6 +10,7 @@ const ENDPOINTS = [
   'socnet-empresas-sync',
   'soc-pedidos-sync',
   'soc-prestadores-sync',
+  'soc-exames-proprios-sync',
 ] as const;
 
 function json(body: unknown, status = 200) {
