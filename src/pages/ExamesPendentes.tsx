@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 type Exame = {
   id: string; origem: string; sequencial_ficha: string; data_ficha: string | null; tipo_ficha: string | null;
-  cpf: string; funcionario_nome: string | null; empresa_codigo: string | null; empresa_nome: string | null;
+  cpf: string; funcionario_nome: string | null; funcionario_codigo: string | null; empresa_codigo: string | null; empresa_nome: string | null;
   assessoria_nome: string | null; exame_nome: string; prestador_codigo: string | null; prestador_nome: string | null;
 };
 type Contato = { id: string; texto: string; user_id: string; created_at: string };
@@ -46,7 +46,7 @@ async function carregar(): Promise<Exame[]> {
   const out: Exame[] = [];
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
-      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
+      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
       .is("data_resultado", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     out.push(...data);
@@ -100,7 +100,7 @@ export default function ExamesPendentes() {
     { k: "l", label: "Unidade Lapa", v: cont.lapa, on: unidade === "lapa", click: () => setParam("u", unidade === "lapa" ? "" : "lapa") },
     { k: "os", label: "Unidade Osasco", v: cont.osasco, on: unidade === "osasco", click: () => setParam("u", unidade === "osasco" ? "" : "osasco") },
     { k: "s", label: "SOCNET", v: cont.socnet, on: origem === "socnet", click: () => setParam("o", origem === "socnet" ? "" : "socnet") },
-    { k: "a", label: "Atrasados (+5 dias)", v: cont.atrasado, on: faixaF === "atrasado", click: () => setParam("f", faixaF === "atrasado" ? "" : "atrasado") },
+    { k: "a", label: "Espera", v: cont.atrasado, on: faixaF === "atrasado", click: () => setParam("f", faixaF === "atrasado" ? "" : "atrasado") },
   ];
 
   const fichaAberta = aberto ? enriquecidos.filter((e) => e.sequencial_ficha === aberto) : [];
@@ -111,7 +111,7 @@ export default function ExamesPendentes() {
         <FlaskConical className="h-6 w-6 text-primary" />
         <div>
           <h1 className="text-xl font-semibold">Exames Pendentes</h1>
-          <p className="text-xs text-muted-foreground">Exames já pedidos e ainda sem data de resultado no SOC. Atualizado pela rotina do SOC.</p>
+          <p className="text-xs text-muted-foreground">Exames sem data de resultado no sistema SOC.</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ export default function ExamesPendentes() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
-                  {["Espera", "Colaborador", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                  {["Colaborador", "Espera", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
                     <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
                   ))}
                 </tr>
@@ -164,8 +164,8 @@ export default function ExamesPendentes() {
                 {!isLoading && lista.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum exame pendente com esses filtros.</td></tr>}
                 {lista.map((e) => (
                   <tr key={e.id} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
-                    <td className="sticky left-0 bg-card px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
-                    <td className="max-w-48 px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
+                    <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
+                    <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.exame_nome)}>{titulo(e.exame_nome)}</td>
                     <td className="max-w-56 truncate px-2" title={titulo(e.prestador_nome)}>{titulo(e.prestador_nome) || "—"}</td>
@@ -229,6 +229,7 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
       <SheetHeader><SheetTitle>{titulo(e.funcionario_nome)}</SheetTitle></SheetHeader>
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div><span className="text-muted-foreground">CPF</span><div>{e.cpf}</div></div>
+        <div><span className="text-muted-foreground">Código do funcionário</span><div>{e.funcionario_codigo ?? "—"}</div></div>
         <div><span className="text-muted-foreground">Ficha</span><div>{seq} · {e.tipo_ficha ?? "—"}</div></div>
         <div className="col-span-2"><span className="text-muted-foreground">Empresa</span><div>{titulo(e.empresa_nome)} {e.empresa_codigo ? `(${e.empresa_codigo})` : ""}</div></div>
         {e.assessoria_nome && <div className="col-span-2"><span className="text-muted-foreground">Base SOCNET de origem</span><div>{titulo(e.assessoria_nome)}</div></div>}

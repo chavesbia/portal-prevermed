@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     const id = `socnet:${pick(r, ['SEQUENCIARESULTADOEXAME']) ?? `${seq}:${codExame ?? exame}`}`;
     exames.set(id, {
       id, origem: 'socnet', sequencial_ficha: seq, data_ficha: iso(pick(r, ['DATAFICHA'])), tipo_ficha: TIPO[pick(r, ['TIPOEXAME']) ?? ''] ?? null,
-      cpf: (pick(r, ['CPF']) ?? '').replace(/\D/g, '').padStart(11, '0'), funcionario_nome: pick(r, ['NOME']),
+      cpf: (pick(r, ['CPF']) ?? '').replace(/\D/g, '').padStart(11, '0'), funcionario_nome: pick(r, ['NOME']), funcionario_codigo: pick(r, ['CODIGOFUNCIONARIO']),
       empresa_codigo: pick(r, ['CODIGOEMPRESA']), empresa_nome: pick(r, ['NOMEEMPRESA']), assessoria_nome: pick(r, ['NOMEEMPRESAREPASSE']),
       exame_codigo: codExame, exame_nome: exame.toUpperCase(),
       prestador_codigo: pick(r, ['CODIGOPRESTADORREFERENCIA']), prestador_nome: pick(r, ['NOMEPRESTADORREFERENCIA']),
