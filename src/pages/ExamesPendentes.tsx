@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 type Exame = {
   id: string; origem: string; sequencial_ficha: string; data_ficha: string | null; tipo_ficha: string | null;
-  cpf: string; funcionario_nome: string | null; empresa_codigo: string | null; empresa_nome: string | null;
+  cpf: string; funcionario_nome: string | null; funcionario_codigo: string | null; empresa_codigo: string | null; empresa_nome: string | null;
   assessoria_nome: string | null; exame_nome: string; prestador_codigo: string | null; prestador_nome: string | null;
 };
 type Contato = { id: string; texto: string; user_id: string; created_at: string };
