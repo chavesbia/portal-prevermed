@@ -6839,6 +6839,7 @@ export type Database = {
           empresa_nome: string | null
           exame_codigo: string | null
           exame_nome: string
+          funcionario_codigo: string | null
           funcionario_nome: string | null
           id: string
           origem: string
@@ -6858,6 +6859,7 @@ export type Database = {
           empresa_nome?: string | null
           exame_codigo?: string | null
           exame_nome: string
+          funcionario_codigo?: string | null
           funcionario_nome?: string | null
           id: string
           origem: string
@@ -6877,6 +6879,7 @@ export type Database = {
           empresa_nome?: string | null
           exame_codigo?: string | null
           exame_nome?: string
+          funcionario_codigo?: string | null
           funcionario_nome?: string | null
           id?: string
           origem?: string
