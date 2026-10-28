@@ -47,7 +47,7 @@ async function carregar(): Promise<Exame[]> {
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
       .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
-      .is("data_resultado", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
+      .is("data_resultado", null).is("resolvido_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     out.push(...data);
     if (data.length < 1000) return out;
