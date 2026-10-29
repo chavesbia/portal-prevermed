@@ -124,14 +124,13 @@ Deno.serve(async (req) => {
   let gravados = 0; let falhasFicha = 0;
   const verificadas = await fila(aVerificar, inicio + ORCAMENTO_TOTAL_MS, async (m) => {
     const dataBR = m.data ? m.data.split('-').reverse().join('/') : '';
-    const [linhas, pedido] = await Promise.all([
-      exporta({ empresa: empresaPrincipal, codigo: '220115', chave: chaveFicha, empresaTrabalho: m.empresa, sequencial: m.seq }),
+    const linhas = await exporta({ empresa: empresaPrincipal, codigo: '220115', chave: chaveFicha, empresaTrabalho: m.empresa, sequencial: m.seq });
+    if (!linhas) { falhasFicha++; return; }
+    const pedido = await (
       // Exporta 223012 (Pedido Exame): prestador de cada exame; chamado com a própria empresa cliente + data da ficha
       chavePedido && dataBR
         ? exporta({ empresa: m.empresa, codigo: codigoPedido, chave: chavePedido, paramSequencial: '1', sequenciaFicha: m.seq, dataInicio: dataBR, dataFim: dataBR, funcionarioInicio: '1', funcionarioFim: '99999999' })
-        : Promise.resolve(null),
-    ]);
-    if (!linhas) { falhasFicha++; return; }
+        : Promise.resolve(null));
     const prestPorExame = new Map<string, { codigo: string; nome: string }>();
     for (const p of (pedido ?? [])) {
       if (s(p.SEQUENCIAFICHA) && s(p.SEQUENCIAFICHA) !== m.seq) continue;
