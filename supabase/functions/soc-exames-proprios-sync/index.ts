@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
   const empresaPrincipal = Deno.env.get('SOC_CODIGO_EMPRESA');
   const chaveRealizados = Deno.env.get('SOC_CHAVE_EXPORTA_EXAMES_REALIZADOS');
   const chaveFicha = Deno.env.get('SOC_CHAVE_EXPORTA_PEDIDO_FICHA');
+  const chavePedido = Deno.env.get('SOC_CHAVE_EXPORTA_PEDIDO_EXAME');
+  const codigoPedido = Deno.env.get('SOC_CODIGO_EXPORTA_PEDIDO_EXAME') || '223012';
   if (!empresaPrincipal || !chaveRealizados || !chaveFicha) return json({ error: 'Configuração SOC ausente' }, 500);
 
   // Carteira própria ativa com vidas
@@ -121,18 +123,36 @@ Deno.serve(async (req) => {
   ];
   let gravados = 0; let falhasFicha = 0;
   const verificadas = await fila(aVerificar, inicio + ORCAMENTO_TOTAL_MS, async (m) => {
-    const linhas = await exporta({ empresa: empresaPrincipal, codigo: '220115', chave: chaveFicha, empresaTrabalho: m.empresa, sequencial: m.seq });
+    const dataBR = m.data ? m.data.split('-').reverse().join('/') : '';
+    const [linhas, pedido] = await Promise.all([
+      exporta({ empresa: empresaPrincipal, codigo: '220115', chave: chaveFicha, empresaTrabalho: m.empresa, sequencial: m.seq }),
+      // Exporta 223012 (Pedido Exame): prestador de cada exame; chamado com a própria empresa cliente + data da ficha
+      chavePedido && dataBR
+        ? exporta({ empresa: m.empresa, codigo: codigoPedido, chave: chavePedido, paramSequencial: '1', sequenciaFicha: m.seq, dataInicio: dataBR, dataFim: dataBR, funcionarioInicio: '1', funcionarioFim: '99999999' })
+        : Promise.resolve(null),
+    ]);
     if (!linhas) { falhasFicha++; return; }
+    const prestPorExame = new Map<string, { codigo: string; nome: string }>();
+    for (const p of (pedido ?? [])) {
+      if (s(p.SEQUENCIAFICHA) && s(p.SEQUENCIAFICHA) !== m.seq) continue;
+      const pc = s(p.CODIGOPRESTADOR); if (!pc) continue;
+      const v = { codigo: pc, nome: s(p.NOMEPRESTADOR) };
+      for (const k of [s(p.CODIGOINTERNOEXAME), s(p.NOMEEXAME).toUpperCase()]) if (k) prestPorExame.set(k, v);
+    }
+    const unicos = [...new Map([...prestPorExame.values()].map((v) => [v.codigo, v])).values()];
     const agora = new Date().toISOString();
     const ids: string[] = [];
     const rows = linhas.map((r) => {
       const res = s(r.SEQUENCIALRESULTADO); const cod = s(r.CODIGOEXAME);
       const id = `propria:${res || `${m.seq}:${cod}`}`; ids.push(id);
+      const nomeEx = nomesExame.get(cod) ?? cod;
+      const prest = prestPorExame.get(cod) ?? prestPorExame.get(nomeEx.toUpperCase()) ?? (unicos.length === 1 ? unicos[0] : null);
       return {
         id, origem: 'propria', sequencial_ficha: m.seq, data_ficha: iso(s(r.DATAFICHA)) ?? m.data, tipo_ficha: TIPO[s(r.TIPOFICHA)] ?? m.tipo,
         cpf: m.cpf, funcionario_nome: s(r.NOMEFUNCIONARIO) || m.nome, funcionario_codigo: s(r.CODIGOFUNCIONARIO) || m.cod,
         empresa_codigo: m.empresa, empresa_nome: nomeEmpresa.get(m.empresa) ?? null,
-        exame_codigo: cod || null, exame_nome: nomesExame.get(cod) ?? cod,
+        exame_codigo: cod || null, exame_nome: nomeEx,
+        ...(prest ? { prestador_codigo: prest.codigo, prestador_nome: prest.nome || null } : {}),
         data_resultado: iso(s(r.DATARESULTADO)), resolvido_em: null, sincronizado_em: agora, verificado_em: agora,
       };
     });
