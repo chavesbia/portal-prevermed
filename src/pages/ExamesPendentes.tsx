@@ -41,15 +41,24 @@ const FAIXA_COR: Record<string, string> = {
 };
 const UNID: Record<string, string> = { lapa: "Lapa", osasco: "Osasco" };
 
+// Carteira própria: só entram prestadores classificados como Lapa/Osasco/Ambas em Admin > Prestadores
+// (credenciados e In Loco ficam fora). SOCNET mantém a regra pelo nome do prestador da base de origem.
 async function carregar(): Promise<Exame[]> {
   const hoje = new Date().toISOString().slice(0, 10);
+  const { data: prs, error: ep } = await db.from("soc_prestadores").select("codigo,unidade_responsavel").not("unidade_responsavel", "is", null);
+  if (ep) throw ep;
+  const mapa = new Map<string, string>((prs ?? []).map((p: any) => [String(p.codigo), p.unidade_responsavel]));
   const out: Exame[] = [];
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
       .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
       .is("data_resultado", null).is("resolvido_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
-    out.push(...data);
+    for (const e of data) {
+      if (e.origem === "socnet") { out.push(e); continue; }
+      const u = mapa.get(String(e.prestador_codigo ?? ""));
+      if (u) out.push({ ...e, unidade_cadastro: u });
+    }
     if (data.length < 1000) return out;
   }
 }
@@ -69,7 +78,9 @@ export default function ExamesPendentes() {
 
   const enriquecidos = useMemo(() => data.map((e) => {
     const dias = diasEspera(e.data_ficha);
-    return { ...e, dias, faixa: faixa(dias), unidade: unidadeDoPrestador(e.prestador_nome) };
+    const uc = (e as any).unidade_cadastro as string | undefined;
+    const u = uc === "ambas" ? unidadeDoPrestador(e.prestador_nome) : (uc as "lapa" | "osasco" | undefined) ?? unidadeDoPrestador(e.prestador_nome);
+    return { ...e, dias, faixa: faixa(dias), unidade: u };
   }), [data]);
 
   const prestadores = useMemo(() => [...new Set(enriquecidos.map((e) => e.prestador_nome ?? ""))].filter(Boolean).sort(), [enriquecidos]);
