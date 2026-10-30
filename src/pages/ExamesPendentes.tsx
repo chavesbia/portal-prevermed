@@ -251,6 +251,8 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
   const qc = useQueryClient();
   const [texto, setTexto] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [obsNc, setObsNc] = useState("");
+  const [salvandoNc, setSalvandoNc] = useState(false);
   const e = exames[0];
   const { data: contatos = [] } = useQuery({
     queryKey: ["exames-pendentes-contatos", seq],
