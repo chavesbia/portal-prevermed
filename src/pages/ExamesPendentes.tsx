@@ -317,19 +317,21 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
           </li>
         ))}</ul>
       </div>
-      <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success("Texto de cobrança copiado."); }}>
-        <Copy className="mr-1 h-4 w-4" /> Copiar texto de cobrança
-      </Button>
       <div className="space-y-2 rounded-md border border-destructive/30 p-3">
         <div className="text-xs font-medium">Não Compareceu</div>
         <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha inteira sai do painel.</p>
         <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
-        <Button size="sm" variant="destructive" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Marcar como Não Compareceu</Button>
+        <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
       </div>
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
         <Textarea value={texto} onChange={(ev) => setTexto(ev.target.value)} maxLength={1000} placeholder="Ex.: Cobrado por e-mail com a Carla" className="text-xs" />
-        <Button size="sm" onClick={registrar} disabled={salvando || !texto.trim()}>Registrar contato</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" className="h-7 px-3 text-xs" onClick={registrar} disabled={salvando || !texto.trim()}>Registrar contato</Button>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success("Texto de cobrança copiado."); }}>
+            <Copy className="mr-1 h-3 w-3" /> Copiar texto de cobrança
+          </Button>
+        </div>
         <ul className="space-y-2">
           {contatos.map((c: any) => (
             <li key={c.id} className="rounded border p-2 text-xs">
