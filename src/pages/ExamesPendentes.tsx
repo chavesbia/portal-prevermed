@@ -268,6 +268,18 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
 
   const mensagem = `Olá! Poderiam verificar o resultado dos exames abaixo?\n\nColaborador: ${titulo(e.funcionario_nome)} (CPF ${e.cpf})\nEmpresa: ${titulo(e.empresa_nome)}\nFicha: ${seq} de ${br(e.data_ficha)}\nExames sem resultado:\n${exames.map((x) => `- ${titulo(x.exame_nome)}`).join("\n")}\n\nObrigado, PreverMed.`;
 
+  const naoCompareceu = async () => {
+    const t = obsNc.trim();
+    if (!t || !confirm("Confirmar que o colaborador não compareceu? Todos os exames desta ficha sairão do painel.")) return;
+    setSalvandoNc(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_nao_compareceu", { _sequencial: seq, _obs: t });
+    setSalvandoNc(false);
+    if (error) return toast.error("Não foi possível marcar. Verifique sua permissão de edição neste módulo.");
+    setObsNc("");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
+    toast.success("Ficha marcada como Não Compareceu.");
+  };
+
   const registrar = async () => {
     const t = texto.trim();
     if (!t) return;
@@ -296,11 +308,22 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
       </div>
       <div>
         <div className="mb-1 text-xs font-medium">Exames sem resultado ({exames.length})</div>
-        <ul className="space-y-1 text-xs">{exames.map((x) => <li key={x.id} className="truncate rounded border px-2 py-1">{titulo(x.exame_nome)}</li>)}</ul>
+        <ul className="space-y-1 text-xs">{exames.map((x) => (
+          <li key={x.id} className="rounded border px-2 py-1">
+            <div className="truncate font-medium">{titulo(x.exame_nome)}</div>
+            <div className="truncate text-[10px] text-muted-foreground">{titulo(x.prestador_nome) || "Sem prestador"} · {x.dias} dias</div>
+          </li>
+        ))}</ul>
       </div>
       <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success("Texto de cobrança copiado."); }}>
         <Copy className="mr-1 h-4 w-4" /> Copiar texto de cobrança
       </Button>
+      <div className="space-y-2 rounded-md border border-destructive/30 p-3">
+        <div className="text-xs font-medium">Não Compareceu</div>
+        <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha inteira sai do painel.</p>
+        <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
+        <Button size="sm" variant="destructive" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Marcar como Não Compareceu</Button>
+      </div>
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
         <Textarea value={texto} onChange={(ev) => setTexto(ev.target.value)} maxLength={1000} placeholder="Ex.: Cobrado por e-mail com a Carla" className="text-xs" />
