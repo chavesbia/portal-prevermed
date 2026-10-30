@@ -6842,6 +6842,9 @@ export type Database = {
           funcionario_codigo: string | null
           funcionario_nome: string | null
           id: string
+          nao_compareceu_em: string | null
+          nao_compareceu_obs: string | null
+          nao_compareceu_por: string | null
           origem: string
           prestador_codigo: string | null
           prestador_nome: string | null
@@ -6863,6 +6866,9 @@ export type Database = {
           funcionario_codigo?: string | null
           funcionario_nome?: string | null
           id: string
+          nao_compareceu_em?: string | null
+          nao_compareceu_obs?: string | null
+          nao_compareceu_por?: string | null
           origem: string
           prestador_codigo?: string | null
           prestador_nome?: string | null
@@ -6884,6 +6890,9 @@ export type Database = {
           funcionario_codigo?: string | null
           funcionario_nome?: string | null
           id?: string
+          nao_compareceu_em?: string | null
+          nao_compareceu_obs?: string | null
+          nao_compareceu_por?: string | null
           origem?: string
           prestador_codigo?: string | null
           prestador_nome?: string | null
@@ -7963,6 +7972,10 @@ export type Database = {
       dashboard_guias_agregado: {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
+      }
+      exames_pendentes_nao_compareceu: {
+        Args: { _obs: string; _sequencial: string }
+        Returns: number
       }
       fb_is_gestor_de: {
         Args: { _colaborador_id: string; _user_id: string }
