@@ -52,7 +52,7 @@ async function carregar(): Promise<Exame[]> {
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
       .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
-      .is("data_resultado", null).is("resolvido_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
+      .is("data_resultado", null).is("resolvido_em", null).is("nao_compareceu_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     for (const e of data) {
       if (e.origem === "socnet") { out.push(e); continue; }
@@ -97,6 +97,17 @@ export default function ExamesPendentes() {
         || e.sequencial_ficha.includes(q) || (qd.length >= 3 && e.cpf.includes(qd))))
       .sort((a, b) => b.dias - a.dias);
   }, [enriquecidos, busca, unidade, origem, prest, exameF, faixaF]);
+
+  const visao = sp.get("v") ?? "";
+  const fichas = useMemo(() => {
+    const m = new Map<string, typeof lista>();
+    for (const e of lista) { const a = m.get(e.sequencial_ficha); a ? a.push(e) : m.set(e.sequencial_ficha, [e]); }
+    return [...m.values()].map((itens) => ({
+      e: itens[0], itens,
+      prestadores: [...new Set(itens.map((x) => x.prestador_nome ?? ""))].filter(Boolean),
+      unidades: [...new Set(itens.map((x) => x.unidade).filter(Boolean))] as string[],
+    }));
+  }, [lista]);
 
   const cont = useMemo(() => ({
     total: enriquecidos.length,
@@ -157,11 +168,45 @@ export default function ExamesPendentes() {
             <select className={sel} value={faixaF} onChange={(e) => setParam("f", e.target.value)}>
               <option value="">Qualquer espera</option><option value="recente">Até 2 dias</option><option value="atencao">3 a 5 dias</option><option value="atrasado">Mais de 5 dias</option>
             </select>
-            <span className="ml-auto whitespace-nowrap text-xs font-normal text-muted-foreground">{lista.length} exames</span>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="flex rounded-md border p-0.5">
+                {[["", "Por exame"], ["ficha", "Por atendimento"]].map(([k, l]) => (
+                  <button key={k} onClick={() => setParam("v", k)} className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-normal ${visao === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>{l}</button>
+                ))}
+              </div>
+              <span className="whitespace-nowrap text-xs font-normal text-muted-foreground">{visao === "ficha" ? `${fichas.length} atendimentos · ` : ""}{lista.length} exames</span>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="max-h-[calc(100vh-320px)] overflow-auto">
+            {visao === "ficha" ? (
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 z-10 bg-muted">
+                <tr className="text-left">
+                  {["Colaborador", "Maior espera", "Empresa", "Exames pendentes", "Prestadores", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                    <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && fichas.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum atendimento pendente com esses filtros.</td></tr>}
+                {fichas.map(({ e, itens, prestadores: ps, unidades }) => (
+                  <tr key={e.sequencial_ficha} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
+                    <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
+                    <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
+                    <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
+                    <td className="max-w-56 truncate px-2" title={itens.map((x) => titulo(x.exame_nome)).join(", ")}><span className="font-medium">{itens.length}</span> · {itens.map((x) => titulo(x.exame_nome)).join(", ")}</td>
+                    <td className="max-w-56 truncate px-2" title={ps.map(titulo).join(", ")}>{ps.length > 1 ? `${ps.length} prestadores` : titulo(ps[0]) || "—"}</td>
+                    <td className="whitespace-nowrap px-2">{unidades.length ? unidades.map((u) => <Badge key={u} variant="secondary" className="mr-1 whitespace-nowrap">{UNID[u]}</Badge>) : <span className="text-muted-foreground">Não identificada</span>}</td>
+                    <td className="px-2"><Badge variant="outline" className="whitespace-nowrap">{e.origem === "socnet" ? "SOCNET" : "Própria"}</Badge></td>
+                    <td className="whitespace-nowrap px-2">{br(e.data_ficha)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            ) : (
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
@@ -187,6 +232,7 @@ export default function ExamesPendentes() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -205,6 +251,8 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
   const qc = useQueryClient();
   const [texto, setTexto] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [obsNc, setObsNc] = useState("");
+  const [salvandoNc, setSalvandoNc] = useState(false);
   const e = exames[0];
   const { data: contatos = [] } = useQuery({
     queryKey: ["exames-pendentes-contatos", seq],
@@ -221,6 +269,18 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
   if (!e) return <SheetHeader><SheetTitle>Ficha {seq}</SheetTitle><p className="text-sm text-muted-foreground">Esta ficha não tem mais exames pendentes.</p></SheetHeader>;
 
   const mensagem = `Olá! Poderiam verificar o resultado dos exames abaixo?\n\nColaborador: ${titulo(e.funcionario_nome)} (CPF ${e.cpf})\nEmpresa: ${titulo(e.empresa_nome)}\nFicha: ${seq} de ${br(e.data_ficha)}\nExames sem resultado:\n${exames.map((x) => `- ${titulo(x.exame_nome)}`).join("\n")}\n\nObrigado, PreverMed.`;
+
+  const naoCompareceu = async () => {
+    const t = obsNc.trim();
+    if (!t || !confirm("Confirmar que o colaborador não compareceu? Todos os exames desta ficha sairão do painel.")) return;
+    setSalvandoNc(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_nao_compareceu", { _sequencial: seq, _obs: t });
+    setSalvandoNc(false);
+    if (error) return toast.error("Não foi possível marcar. Verifique sua permissão de edição neste módulo.");
+    setObsNc("");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
+    toast.success("Ficha marcada como Não Compareceu.");
+  };
 
   const registrar = async () => {
     const t = texto.trim();
@@ -250,11 +310,22 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
       </div>
       <div>
         <div className="mb-1 text-xs font-medium">Exames sem resultado ({exames.length})</div>
-        <ul className="space-y-1 text-xs">{exames.map((x) => <li key={x.id} className="truncate rounded border px-2 py-1">{titulo(x.exame_nome)}</li>)}</ul>
+        <ul className="space-y-1 text-xs">{exames.map((x) => (
+          <li key={x.id} className="rounded border px-2 py-1">
+            <div className="truncate font-medium">{titulo(x.exame_nome)}</div>
+            <div className="truncate text-[10px] text-muted-foreground">{titulo(x.prestador_nome) || "Sem prestador"} · {x.dias} dias</div>
+          </li>
+        ))}</ul>
       </div>
       <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(mensagem); toast.success("Texto de cobrança copiado."); }}>
         <Copy className="mr-1 h-4 w-4" /> Copiar texto de cobrança
       </Button>
+      <div className="space-y-2 rounded-md border border-destructive/30 p-3">
+        <div className="text-xs font-medium">Não Compareceu</div>
+        <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha inteira sai do painel.</p>
+        <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
+        <Button size="sm" variant="destructive" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Marcar como Não Compareceu</Button>
+      </div>
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
         <Textarea value={texto} onChange={(ev) => setTexto(ev.target.value)} maxLength={1000} placeholder="Ex.: Cobrado por e-mail com a Carla" className="text-xs" />
