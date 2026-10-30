@@ -21,7 +21,7 @@ type Contato = { id: string; texto: string; user_id: string; created_at: string 
 
 const db = supabase as any;
 const sel = "h-8 rounded-md border border-input bg-background px-2 text-xs";
-const titulo = (t: string | null) => (t ?? "").toLowerCase().replace(/(^|\s|\()\S/g, (c) => c.toUpperCase());
+const titulo = (t: string | null) => (t ?? "").toUpperCase();
 const br = (d: string | null) => (d ? d.split("-").reverse().join("/") : "—");
 const cpfMask = (c: string) => `${c.slice(0, 3)}.***.***-${c.slice(9)}`;
 // Prestador de referência vem da base de origem (SOCNET), sem código nosso: unidade é deduzida pelo nome
@@ -42,7 +42,7 @@ const FAIXA_COR: Record<string, string> = {
 const UNID: Record<string, string> = { lapa: "Lapa", osasco: "Osasco" };
 
 // Carteira própria: só entram prestadores classificados como Lapa/Osasco/Ambas em Admin > Prestadores
-// (credenciados e In Loco ficam fora). SOCNET mantém a regra pelo nome do prestador da base de origem.
+// (credenciados e In Loco ficam fora). SOCNET: só entra quando o prestador de referência é PreverMed (Lapa/Osasco); Imtep, Focus etc. ficam fora.
 async function carregar(): Promise<Exame[]> {
   const hoje = new Date().toISOString().slice(0, 10);
   const { data: prs, error: ep } = await db.from("soc_prestadores").select("codigo,unidade_responsavel").not("unidade_responsavel", "is", null);
@@ -55,7 +55,7 @@ async function carregar(): Promise<Exame[]> {
       .is("data_resultado", null).is("resolvido_em", null).is("nao_compareceu_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     for (const e of data) {
-      if (e.origem === "socnet") { out.push(e); continue; }
+      if (e.origem === "socnet") { if (/PREVER/i.test(e.prestador_nome ?? "")) out.push(e); continue; }
       const u = mapa.get(String(e.prestador_codigo ?? ""));
       if (u) out.push({ ...e, unidade_cadastro: u });
     }
@@ -313,7 +313,6 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
         <ul className="space-y-1 text-xs">{exames.map((x) => (
           <li key={x.id} className="rounded border px-2 py-1">
             <div className="truncate font-medium">{titulo(x.exame_nome)}</div>
-            <div className="truncate text-[10px] text-muted-foreground">{titulo(x.prestador_nome) || "Sem prestador"} · {x.dias} dias</div>
           </li>
         ))}</ul>
       </div>
