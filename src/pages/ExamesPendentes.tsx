@@ -48,6 +48,15 @@ async function carregar(): Promise<Exame[]> {
   const { data: prs, error: ep } = await db.from("soc_prestadores").select("codigo,unidade_responsavel").not("unidade_responsavel", "is", null);
   if (ep) throw ep;
   const mapa = new Map<string, string>((prs ?? []).map((p: any) => [String(p.codigo), p.unidade_responsavel]));
+  // Atendimento já concluído na carteira própria: CPF -> data da ficha mais recente com resultado.
+  const atendido = new Map<string, string>();
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await db.from("soc_exames_pendentes").select("cpf,data_ficha")
+      .eq("origem", "propria").not("data_resultado", "is", null).order("id").range(de, de + 999);
+    if (error) throw error;
+    for (const r of data) if (r.data_ficha && (atendido.get(r.cpf) ?? "") < r.data_ficha) atendido.set(r.cpf, r.data_ficha);
+    if (data.length < 1000) break;
+  }
   const out: Exame[] = [];
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
@@ -55,7 +64,13 @@ async function carregar(): Promise<Exame[]> {
       .is("data_resultado", null).is("resolvido_em", null).is("nao_compareceu_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     for (const e of data) {
-      if (e.origem === "socnet") { if (/PREVER/i.test(e.prestador_nome ?? "")) out.push(e); continue; }
+      if (e.origem === "socnet") {
+        if (!/PREVER/i.test(e.prestador_nome ?? "")) continue;
+        // Pedido SOCNET órfão: colaborador já atendido depois na carteira própria.
+        const a = atendido.get(e.cpf);
+        if (a && e.data_ficha && a >= e.data_ficha) continue;
+        out.push(e); continue;
+      }
       const u = mapa.get(String(e.prestador_codigo ?? ""));
       if (u) out.push({ ...e, unidade_cadastro: u });
     }
@@ -304,7 +319,7 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
         <div><span className="text-muted-foreground">Ficha</span><div>{seq} · {e.tipo_ficha ?? "—"}</div></div>
         <div className="col-span-2"><span className="text-muted-foreground">Empresa</span><div>{titulo(e.empresa_nome)} {e.empresa_codigo ? `(${e.empresa_codigo})` : ""}</div></div>
         {e.assessoria_nome && <div className="col-span-2"><span className="text-muted-foreground">Base SOCNET de origem</span><div>{titulo(e.assessoria_nome)}</div></div>}
-        <div className="col-span-2"><span className="text-muted-foreground">Prestador</span><div>{titulo(e.prestador_nome) || "—"}</div></div>
+        <div className="col-span-2"><span className="text-muted-foreground">Unidade de atendimento</span><div>{(e as any).unidade ? `PreverMed ${UNID[(e as any).unidade]}` : "Não identificada"}</div></div>
         <div><span className="text-muted-foreground">Data da ficha</span><div>{br(e.data_ficha)}</div></div>
         <div><span className="text-muted-foreground">Espera</span><div>{e.dias} dias</div></div>
       </div>
