@@ -50,6 +50,8 @@ export default function AgendamentoPublico() {
   const [docsExig, setDocsExig] = useState<{ tipo_exame: string; nome: string; obrigatorio: boolean }[]>([]);
   const [docs, setDocs] = useState<Record<string, File | null>>({});
   const [motivoRetorno, setMotivoRetorno] = useState("");
+  const [outrosDocs, setOutrosDocs] = useState<File[]>([]);
+  const [sol, setSol] = useState({ nome: "", email: "", celular: "" });
   const [aguardandoAprov, setAguardandoAprov] = useState(false);
   const [dia, setDia] = useState("");
   const [hora, setHora] = useState("");
@@ -271,10 +273,16 @@ export default function AgendamentoPublico() {
 
   const retorno = f.tipoExame === "Retorno ao Trabalho";
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
+  // Assinatura simples para pegar o mesmo arquivo anexado em dois campos
+  const docsRetSel = retorno ? [...Object.values(docs).filter(Boolean) as File[], ...outrosDocs] : [];
+  const docDuplicado = docsRetSel.some((a, i) => docsRetSel.findIndex((b) => b.name === a.name && b.size === a.size) !== i);
+  const precisaContato = retorno || !!pedidoEng;
+  const celSol = sol.celular.replace(/\D/g, "");
+  const contatoOk = !precisaContato || (sol.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sol.email.trim()) && (celSol.length === 10 || celSol.length === 11));
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
     cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && !func.encontrado && !!func.indisponivel && !!f.cargo.trim()) || (!!func && func.encontrado && !inativoLivre && (inativo || lotConfirmada) && !cadAberto) || (!!pedidoEng && !cadAberto)),
-    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]))) && !buscandoPcmso,
+    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]) && !docDuplicado)) && contatoOk && !buscandoPcmso,
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -288,7 +296,8 @@ export default function AgendamentoPublico() {
     const guiaPayload = primeira ? { nome: primeira.name.slice(0, 120), tipo: primeira.type, base64: await toB64(primeira) } : undefined;
     const extras = await Promise.all(demais.map(async (g) => ({ tipoDocumento: "Guia/Kit", nome: g.name.slice(0, 120), tipo: g.type, base64: await toB64(g) })));
     const docsRet = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v?.name.slice(0, 120), tipo: v?.type, base64: v ? await toB64(v) : "" }))) : [];
-    const documentos = [...docsRet, ...extras].slice(0, 10);
+    const outros = retorno ? await Promise.all(outrosDocs.map(async (o) => ({ tipoDocumento: "Outros", nome: o.name.slice(0, 120), tipo: o.type, base64: await toB64(o) }))) : [];
+    const documentos = [...docsRet, ...outros, ...extras].slice(0, 10);
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
         unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
@@ -296,6 +305,7 @@ export default function AgendamentoPublico() {
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
         tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
         exames: pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
+        solicitante: precisaContato ? { nome: sol.nome.trim(), email: sol.email.trim(), celular: celSol } : undefined,
         documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
         estruturaNova: pedidoEng ? {
           unidade: pedidoEng.unidade.trim(), setor: pedidoEng.setor.trim(), cargo: pedidoEng.cargo.trim(), atividades: pedidoEng.atividades.trim() || undefined,
@@ -509,7 +519,7 @@ export default function AgendamentoPublico() {
                           </select></div>
                       ))}
                       {!engAberto ? (
-                        <button type="button" className="text-xs text-primary underline" onClick={() => setEngAberto(true)}>Não encontrei a unidade, o setor ou o cargo</button>
+                        <button type="button" className="text-xs text-primary underline" onClick={() => setEngAberto(true)}>Não localizou a unidade, o setor ou o cargo na lista? Clique aqui para solicitar a inclusão pela nossa equipe técnica</button>
                       ) : (
                         <div className="space-y-2 rounded-md bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Informe como é na empresa. O horário fica reservado e nossa equipe técnica confere antes de confirmar.</p>
@@ -716,6 +726,35 @@ export default function AgendamentoPublico() {
                         <Input type="file" accept="application/pdf,image/png,image/jpeg"
                           onChange={(e) => { const file = e.target.files?.[0] ?? null; if (file && file.size > 5 * 1024 * 1024) { setErro("Arquivo maior que 5 MB."); e.target.value = ""; return; } setErro(""); setDocs((p) => ({ ...p, [d.nome]: file })); }} /></div>
                     ))}
+                    {outrosDocs.length > 0 && (
+                      <ul className="space-y-1 text-xs">
+                        {outrosDocs.map((o, i) => (
+                          <li key={i} className="flex items-center justify-between gap-2 rounded border px-2 py-1">
+                            <span className="truncate">{o.name}</span>
+                            <button type="button" className="text-destructive" onClick={() => setOutrosDocs((p) => p.filter((_, j) => j !== i))}>remover</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {outrosDocs.length < 4 && (
+                      <label className="inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary hover:underline whitespace-nowrap">
+                        <Plus className="h-3 w-3" /> Adicionar outros documentos (opcional)
+                        <input type="file" className="hidden" accept="application/pdf,image/png,image/jpeg"
+                          onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (!file) return; if (file.size > 5 * 1024 * 1024) return setErro("Arquivo maior que 5 MB."); setErro(""); setOutrosDocs((p) => [...p, file]); }} />
+                      </label>
+                    )}
+                    {docDuplicado && <p className="text-xs text-destructive">O mesmo arquivo foi anexado em mais de um campo. Anexe cada documento separadamente (ex.: a Alta Médica e a Decisão do INSS são documentos diferentes).</p>}
+                  </div>
+                )}
+                {precisaContato && (
+                  <div className="space-y-2 rounded-md border p-3">
+                    <p className="text-sm font-medium">Quem está agendando</p>
+                    <p className="text-xs text-muted-foreground">Este agendamento passa por análise da nossa equipe. Usaremos estes contatos para avisar a liberação ou pedir algum ajuste.</p>
+                    <div><Label>Nome *</Label><Input value={sol.nome} maxLength={120} onChange={(e) => setSol({ ...sol, nome: e.target.value })} /></div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div><Label>E-mail *</Label><Input type="email" value={sol.email} maxLength={160} onChange={(e) => setSol({ ...sol, email: e.target.value })} /></div>
+                      <div><Label>WhatsApp/Celular *</Label><Input inputMode="tel" value={sol.celular} maxLength={16} placeholder="(11) 90000-0000" onChange={(e) => setSol({ ...sol, celular: e.target.value })} /></div>
+                    </div>
                   </div>
                 )}
                 <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
@@ -756,6 +795,9 @@ export default function AgendamentoPublico() {
                 )}
               </>)}
 
+              {passo === 3 && precisaContato && (
+                <p className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">Horário pré-reservado: o agendamento só é confirmado após a análise e liberação da nossa equipe {pedidoEng ? "técnica" : "de saúde"}.</p>
+              )}
               {erro && <p className="text-sm text-destructive">{erro}</p>}
 
               <div className="flex justify-between pt-2">
