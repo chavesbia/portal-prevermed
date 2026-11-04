@@ -158,14 +158,14 @@ export default function ExamesPendentes() {
   }), [enriquecidos]);
 
   const cards: { k: string; label: string; v: number; on: boolean; click: () => void }[] = [
-    { k: "t", label: "Total pendente", v: cont.total, on: !unidade && !origem && !faixaF, click: () => setSp(new URLSearchParams(), { replace: true }) },
+    { k: "t", label: aba === "nc" ? "Total não compareceu" : "Total pendente", v: cont.total, on: !unidade && !origem && !faixaF, click: () => setSp(new URLSearchParams(aba ? { aba } : {}), { replace: true }) },
     { k: "l", label: "Unidade Lapa", v: cont.lapa, on: unidade === "lapa", click: () => setParam("u", unidade === "lapa" ? "" : "lapa") },
     { k: "os", label: "Unidade Osasco", v: cont.osasco, on: unidade === "osasco", click: () => setParam("u", unidade === "osasco" ? "" : "osasco") },
     { k: "s", label: "SOCNET", v: cont.socnet, on: origem === "socnet", click: () => setParam("o", origem === "socnet" ? "" : "socnet") },
     { k: "a", label: "Espera", v: cont.atrasado, on: faixaF === "atrasado", click: () => setParam("f", faixaF === "atrasado" ? "" : "atrasado") },
   ];
 
-  const fichaAberta = aberto ? enriquecidos.filter((e) => e.sequencial_ficha === aberto) : [];
+  const fichaAberta = aberto ? todos.filter((e) => e.sequencial_ficha === aberto) : [];
 
   return (
     <div className="space-y-4 p-4">
@@ -175,6 +175,13 @@ export default function ExamesPendentes() {
           <h1 className="text-xl font-semibold">Exames Pendentes</h1>
           <p className="text-xs text-muted-foreground">Exames sem data de resultado no sistema SOC.</p>
         </div>
+      </div>
+
+      <div className="flex gap-1 border-b">
+        {[["", "Pendentes"], ["nc", `Não Compareceram (${fichasNc})`]].map(([k, l]) => (
+          <button key={k} onClick={() => setSp(new URLSearchParams(k ? { aba: k } : {}), { replace: true })}
+            className={`whitespace-nowrap border-b-2 px-3 py-1.5 text-sm ${aba === k ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{l}</button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -199,6 +206,12 @@ export default function ExamesPendentes() {
             <select className={sel} value={origem} onChange={(e) => setParam("o", e.target.value)}>
               <option value="">Todas as origens</option><option value="propria">Carteira própria</option><option value="socnet">SOCNET</option>
             </select>
+            {aba !== "nc" && (
+              <select className={sel} value={motivoF} onChange={(e) => setParam("m", e.target.value)}>
+                <option value="">Todos os motivos</option><option value="sem">Sem motivo</option>
+                {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            )}
             <select className={`${sel} max-w-56`} value={prest} onChange={(e) => setParam("p", e.target.value)}>
               <option value="">Todos os prestadores</option>{prestadores.map((p) => <option key={p} value={p}>{titulo(p)}</option>)}
             </select>
