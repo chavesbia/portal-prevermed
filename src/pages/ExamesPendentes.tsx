@@ -350,13 +350,13 @@ function DetalheFicha({ seq, exames, motivo }: { seq: string; exames: (Exame & {
   const quando = (d: string) => new Date(d).toLocaleString("pt-BR");
 
   const naoCompareceu = async () => {
-    const t = obsNc.trim();
+    const t = motivoObs.trim();
     if (!t || !confirm("Confirmar que o colaborador não compareceu? A ficha vai para a aba Não Compareceram.")) return;
     setSalvandoNc(true);
     const { error } = await (supabase.rpc as any)("exames_pendentes_nao_compareceu", { _sequencial: seq, _obs: t });
     setSalvandoNc(false);
     if (error) return toast.error("Não foi possível marcar. Verifique sua permissão de edição neste módulo.");
-    setObsNc("");
+    setMotivoObs(""); setMotivoSel(motivo?.motivo ?? "");
     qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
     toast.success("Ficha movida para Não Compareceram.");
   };
@@ -432,24 +432,20 @@ function DetalheFicha({ seq, exames, motivo }: { seq: string; exames: (Exame & {
           <Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={reabrir} disabled={salvandoNc || !obsReabrir.trim()}>Reabrir ficha</Button>
         </div>
       ) : (
-        <>
-          <div className="space-y-2 rounded-md border p-3">
-            <div className="text-xs font-medium">Motivo da pendência</div>
-            {motivo && <div className="text-[10px] text-muted-foreground">Última atualização: {titulo(nomes.get(motivo.atualizado_por) ?? "—")} · {quando(motivo.atualizado_em)}</div>}
-            <select className={`${sel} w-full`} value={motivoSel} onChange={(ev) => setMotivoSel(ev.target.value)}>
-              <option value="">Selecione…</option>
-              {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-            </select>
-            <Textarea value={motivoObs} onChange={(ev) => setMotivoObs(ev.target.value)} maxLength={1000} placeholder={motivoSel === "outro" ? "Justificativa obrigatória" : "Justificativa (ex.: empresa não enviou a avaliação psicossocial)"} className="text-xs" />
-            <Button size="sm" className="h-7 px-3 text-xs" onClick={salvarMotivo} disabled={salvando || !motivoSel}>Salvar motivo</Button>
-          </div>
-          <div className="space-y-2 rounded-md border border-destructive/30 p-3">
-            <div className="text-xs font-medium">Não Compareceu</div>
-            <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha vai para a aba Não Compareceram e pode ser reaberta.</p>
-            <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
-            <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
-          </div>
-        </>
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="text-xs font-medium">Motivo da pendência</div>
+          {motivo && <div className="text-[10px] text-muted-foreground">Última atualização: {titulo(nomes.get(motivo.atualizado_por) ?? "—")} · {quando(motivo.atualizado_em)}</div>}
+          <select className={`${sel} w-full`} value={motivoSel} onChange={(ev) => setMotivoSel(ev.target.value)}>
+            <option value="">Selecione…</option>
+            {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            <option value="__nc">Não Compareceu</option>
+          </select>
+          {motivoSel === "__nc" && <p className="text-[10px] text-muted-foreground">A ficha sai dos Pendentes e vai para a aba Não Compareceram. Pode ser reaberta depois.</p>}
+          <Textarea value={motivoObs} onChange={(ev) => setMotivoObs(ev.target.value)} maxLength={1000} placeholder={motivoSel === "__nc" ? "Observação obrigatória (ex.: recepção confirmou que não houve atendimento)" : motivoSel === "outro" ? "Justificativa obrigatória" : "Justificativa (ex.: empresa não enviou a avaliação psicossocial)"} className="text-xs" />
+          {motivoSel === "__nc"
+            ? <Button size="sm" variant="destructive" className="h-7 px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !motivoObs.trim()}>Mover para Não Compareceram</Button>
+            : <Button size="sm" className="h-7 px-3 text-xs" onClick={salvarMotivo} disabled={salvando || !motivoSel}>Salvar motivo</Button>}
+        </div>
       )}
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
