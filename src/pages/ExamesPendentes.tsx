@@ -294,7 +294,7 @@ export default function ExamesPendentes() {
 
       <Sheet open={!!aberto} onOpenChange={(o) => !o && setParam("ficha", "")}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {aberto && <DetalheFicha seq={aberto} exames={fichaAberta} motivo={motivos.get(aberto)} />}
+          {aberto && <DetalheFicha key={aberto + (motivos.get(aberto)?.atualizado_em ?? "")} seq={aberto} exames={fichaAberta} motivo={motivos.get(aberto)} />}
         </SheetContent>
       </Sheet>
     </div>
