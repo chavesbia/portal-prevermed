@@ -108,14 +108,19 @@ export default function ExamesPendentes() {
   const aberto = sp.get("ficha");
   const setParam = (k: string, v: string) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n, { replace: true }); };
 
+  const aba = sp.get("aba") === "nc" ? "nc" : "";
+  const motivoF = sp.get("m") ?? "";
   const { data = [], isLoading } = useQuery({ queryKey: ["exames-pendentes"], queryFn: carregar });
+  const { data: motivos = new Map<string, Motivo>() } = useQuery({ queryKey: ["exames-pendentes-motivos"], queryFn: carregarMotivos });
 
-  const enriquecidos = useMemo(() => data.map((e) => {
+  const todos = useMemo(() => data.map((e) => {
     const dias = diasEspera(e.data_ficha);
     const uc = (e as any).unidade_cadastro as string | undefined;
     const u = uc === "ambas" ? unidadeDoPrestador(e.prestador_nome) : (uc as "lapa" | "osasco" | undefined) ?? unidadeDoPrestador(e.prestador_nome);
-    return { ...e, dias, faixa: faixa(dias), unidade: u };
-  }), [data]);
+    return { ...e, dias, faixa: faixa(dias), unidade: u, motivo: motivos.get(e.sequencial_ficha)?.motivo ?? "" };
+  }), [data, motivos]);
+  const fichasNc = useMemo(() => new Set(todos.filter((e) => e.nao_compareceu_em).map((e) => e.sequencial_ficha)).size, [todos]);
+  const enriquecidos = useMemo(() => todos.filter((e) => (aba === "nc") === !!e.nao_compareceu_em), [todos, aba]);
 
   const prestadores = useMemo(() => [...new Set(enriquecidos.map((e) => e.prestador_nome ?? ""))].filter(Boolean).sort(), [enriquecidos]);
   const examesLista = useMemo(() => [...new Set(enriquecidos.map((e) => e.exame_nome))].sort(), [enriquecidos]);
@@ -127,10 +132,11 @@ export default function ExamesPendentes() {
       (!unidade || (unidade === "nd" ? !e.unidade : e.unidade === unidade)) &&
       (!origem || e.origem === origem) && (!prest || e.prestador_nome === prest) &&
       (!exameF || e.exame_nome === exameF) && (!faixaF || e.faixa === faixaF) &&
+      (!motivoF || (motivoF === "sem" ? !e.motivo : e.motivo === motivoF)) &&
       (!q || (e.funcionario_nome ?? "").toUpperCase().includes(q) || (e.empresa_nome ?? "").toUpperCase().includes(q)
         || e.sequencial_ficha.includes(q) || (qd.length >= 3 && e.cpf.includes(qd))))
       .sort((a, b) => b.dias - a.dias);
-  }, [enriquecidos, busca, unidade, origem, prest, exameF, faixaF]);
+  }, [enriquecidos, busca, unidade, origem, prest, exameF, faixaF, motivoF]);
 
   const visao = sp.get("v") ?? "";
   const fichas = useMemo(() => {
