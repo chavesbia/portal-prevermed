@@ -6928,6 +6928,30 @@ export type Database = {
         }
         Relationships: []
       }
+      soc_exames_pendentes_motivos: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string
+          motivo: string
+          observacao: string | null
+          sequencial_ficha: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por: string
+          motivo: string
+          observacao?: string | null
+          sequencial_ficha: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string
+          motivo?: string
+          observacao?: string | null
+          sequencial_ficha?: string
+        }
+        Relationships: []
+      }
       soc_pedidos_socnet: {
         Row: {
           assessoria_codigo: string | null
@@ -7973,7 +7997,15 @@ export type Database = {
         Args: { _periodo_fim?: string; _periodo_ini?: string }
         Returns: Json
       }
+      exames_pendentes_definir_motivo: {
+        Args: { _motivo: string; _obs: string; _sequencial: string }
+        Returns: undefined
+      }
       exames_pendentes_nao_compareceu: {
+        Args: { _obs: string; _sequencial: string }
+        Returns: number
+      }
+      exames_pendentes_reabrir: {
         Args: { _obs: string; _sequencial: string }
         Returns: number
       }

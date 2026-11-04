@@ -16,8 +16,19 @@ type Exame = {
   id: string; origem: string; sequencial_ficha: string; data_ficha: string | null; tipo_ficha: string | null;
   cpf: string; funcionario_nome: string | null; funcionario_codigo: string | null; empresa_codigo: string | null; empresa_nome: string | null;
   assessoria_nome: string | null; exame_nome: string; prestador_codigo: string | null; prestador_nome: string | null;
+  nao_compareceu_em: string | null; nao_compareceu_por: string | null; nao_compareceu_obs: string | null;
+  atendido_depois?: string | null;
 };
 type Contato = { id: string; texto: string; user_id: string; created_at: string };
+type Motivo = { sequencial_ficha: string; motivo: string; observacao: string | null; atualizado_por: string; atualizado_em: string };
+
+export const MOTIVOS: Record<string, { label: string; cor: string }> = {
+  aguardando_laudo: { label: "Aguardando Laudo", cor: "bg-primary/10 text-primary border-primary/30" },
+  aguardando_empresa: { label: "Aguardando Empresa", cor: "bg-warning/15 text-warning border-warning/30" },
+  aguardando_colaborador: { label: "Aguardando Colaborador", cor: "bg-accent text-accent-foreground border-border" },
+  em_analise_medica: { label: "Em Análise Médica", cor: "bg-success/15 text-success border-success/30" },
+  outro: { label: "Outro", cor: "bg-muted text-muted-foreground border-border" },
+};
 
 const db = supabase as any;
 const sel = "h-8 rounded-md border border-input bg-background px-2 text-xs";
@@ -43,12 +54,12 @@ const UNID: Record<string, string> = { lapa: "Lapa", osasco: "Osasco" };
 
 // Carteira própria: só entram prestadores classificados como Lapa/Osasco/Ambas em Admin > Prestadores
 // (credenciados e In Loco ficam fora). SOCNET: só entra quando o prestador de referência é PreverMed (Lapa/Osasco); Imtep, Focus etc. ficam fora.
+// Nada sai do painel sozinho: atendimento posterior na carteira própria vira só um aviso (atendido_depois).
 async function carregar(): Promise<Exame[]> {
   const hoje = new Date().toISOString().slice(0, 10);
   const { data: prs, error: ep } = await db.from("soc_prestadores").select("codigo,unidade_responsavel").not("unidade_responsavel", "is", null);
   if (ep) throw ep;
   const mapa = new Map<string, string>((prs ?? []).map((p: any) => [String(p.codigo), p.unidade_responsavel]));
-  // Atendimento já concluído na carteira própria: CPF -> data da ficha mais recente com resultado.
   const atendido = new Map<string, string>();
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes").select("cpf,data_ficha")
@@ -60,21 +71,29 @@ async function carregar(): Promise<Exame[]> {
   const out: Exame[] = [];
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
-      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
-      .is("data_resultado", null).is("resolvido_em", null).is("nao_compareceu_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
+      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome,nao_compareceu_em,nao_compareceu_por,nao_compareceu_obs")
+      .is("data_resultado", null).is("resolvido_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     for (const e of data) {
       if (e.origem === "socnet") {
         if (!/PREVER/i.test(e.prestador_nome ?? "")) continue;
-        // Pedido SOCNET órfão: colaborador já atendido depois na carteira própria.
         const a = atendido.get(e.cpf);
-        if (a && e.data_ficha && a >= e.data_ficha) continue;
-        out.push(e); continue;
+        out.push({ ...e, atendido_depois: a && e.data_ficha && a > e.data_ficha ? a : null }); continue;
       }
       const u = mapa.get(String(e.prestador_codigo ?? ""));
       if (u) out.push({ ...e, unidade_cadastro: u });
     }
     if (data.length < 1000) return out;
+  }
+}
+
+async function carregarMotivos(): Promise<Map<string, Motivo>> {
+  const m = new Map<string, Motivo>();
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await db.from("soc_exames_pendentes_motivos").select("*").range(de, de + 999);
+    if (error) throw error;
+    for (const r of data) m.set(r.sequencial_ficha, r);
+    if (data.length < 1000) return m;
   }
 }
 
@@ -89,14 +108,19 @@ export default function ExamesPendentes() {
   const aberto = sp.get("ficha");
   const setParam = (k: string, v: string) => { const n = new URLSearchParams(sp); v ? n.set(k, v) : n.delete(k); setSp(n, { replace: true }); };
 
+  const aba = sp.get("aba") === "nc" ? "nc" : "";
+  const motivoF = sp.get("m") ?? "";
   const { data = [], isLoading } = useQuery({ queryKey: ["exames-pendentes"], queryFn: carregar });
+  const { data: motivos = new Map<string, Motivo>() } = useQuery({ queryKey: ["exames-pendentes-motivos"], queryFn: carregarMotivos });
 
-  const enriquecidos = useMemo(() => data.map((e) => {
+  const todos = useMemo(() => data.map((e) => {
     const dias = diasEspera(e.data_ficha);
     const uc = (e as any).unidade_cadastro as string | undefined;
     const u = uc === "ambas" ? unidadeDoPrestador(e.prestador_nome) : (uc as "lapa" | "osasco" | undefined) ?? unidadeDoPrestador(e.prestador_nome);
-    return { ...e, dias, faixa: faixa(dias), unidade: u };
-  }), [data]);
+    return { ...e, dias, faixa: faixa(dias), unidade: u, motivo: motivos.get(e.sequencial_ficha)?.motivo ?? "" };
+  }), [data, motivos]);
+  const fichasNc = useMemo(() => new Set(todos.filter((e) => e.nao_compareceu_em).map((e) => e.sequencial_ficha)).size, [todos]);
+  const enriquecidos = useMemo(() => todos.filter((e) => (aba === "nc") === !!e.nao_compareceu_em), [todos, aba]);
 
   const prestadores = useMemo(() => [...new Set(enriquecidos.map((e) => e.prestador_nome ?? ""))].filter(Boolean).sort(), [enriquecidos]);
   const examesLista = useMemo(() => [...new Set(enriquecidos.map((e) => e.exame_nome))].sort(), [enriquecidos]);
@@ -108,10 +132,11 @@ export default function ExamesPendentes() {
       (!unidade || (unidade === "nd" ? !e.unidade : e.unidade === unidade)) &&
       (!origem || e.origem === origem) && (!prest || e.prestador_nome === prest) &&
       (!exameF || e.exame_nome === exameF) && (!faixaF || e.faixa === faixaF) &&
+      (!motivoF || (motivoF === "sem" ? !e.motivo : e.motivo === motivoF)) &&
       (!q || (e.funcionario_nome ?? "").toUpperCase().includes(q) || (e.empresa_nome ?? "").toUpperCase().includes(q)
         || e.sequencial_ficha.includes(q) || (qd.length >= 3 && e.cpf.includes(qd))))
       .sort((a, b) => b.dias - a.dias);
-  }, [enriquecidos, busca, unidade, origem, prest, exameF, faixaF]);
+  }, [enriquecidos, busca, unidade, origem, prest, exameF, faixaF, motivoF]);
 
   const visao = sp.get("v") ?? "";
   const fichas = useMemo(() => {
@@ -133,14 +158,14 @@ export default function ExamesPendentes() {
   }), [enriquecidos]);
 
   const cards: { k: string; label: string; v: number; on: boolean; click: () => void }[] = [
-    { k: "t", label: "Total pendente", v: cont.total, on: !unidade && !origem && !faixaF, click: () => setSp(new URLSearchParams(), { replace: true }) },
+    { k: "t", label: aba === "nc" ? "Total não compareceu" : "Total pendente", v: cont.total, on: !unidade && !origem && !faixaF, click: () => setSp(new URLSearchParams(aba ? { aba } : {}), { replace: true }) },
     { k: "l", label: "Unidade Lapa", v: cont.lapa, on: unidade === "lapa", click: () => setParam("u", unidade === "lapa" ? "" : "lapa") },
     { k: "os", label: "Unidade Osasco", v: cont.osasco, on: unidade === "osasco", click: () => setParam("u", unidade === "osasco" ? "" : "osasco") },
     { k: "s", label: "SOCNET", v: cont.socnet, on: origem === "socnet", click: () => setParam("o", origem === "socnet" ? "" : "socnet") },
     { k: "a", label: "Espera", v: cont.atrasado, on: faixaF === "atrasado", click: () => setParam("f", faixaF === "atrasado" ? "" : "atrasado") },
   ];
 
-  const fichaAberta = aberto ? enriquecidos.filter((e) => e.sequencial_ficha === aberto) : [];
+  const fichaAberta = aberto ? todos.filter((e) => e.sequencial_ficha === aberto) : [];
 
   return (
     <div className="space-y-4 p-4">
@@ -150,6 +175,13 @@ export default function ExamesPendentes() {
           <h1 className="text-xl font-semibold">Exames Pendentes</h1>
           <p className="text-xs text-muted-foreground">Exames sem data de resultado no sistema SOC.</p>
         </div>
+      </div>
+
+      <div className="flex gap-1 border-b">
+        {[["", "Pendentes"], ["nc", `Não Compareceram (${fichasNc})`]].map(([k, l]) => (
+          <button key={k} onClick={() => setSp(new URLSearchParams(k ? { aba: k } : {}), { replace: true })}
+            className={`whitespace-nowrap border-b-2 px-3 py-1.5 text-sm ${aba === k ? "border-primary font-medium text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>{l}</button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
@@ -174,6 +206,12 @@ export default function ExamesPendentes() {
             <select className={sel} value={origem} onChange={(e) => setParam("o", e.target.value)}>
               <option value="">Todas as origens</option><option value="propria">Carteira própria</option><option value="socnet">SOCNET</option>
             </select>
+            {aba !== "nc" && (
+              <select className={sel} value={motivoF} onChange={(e) => setParam("m", e.target.value)}>
+                <option value="">Todos os motivos</option><option value="sem">Sem motivo</option>
+                {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+            )}
             <select className={`${sel} max-w-56`} value={prest} onChange={(e) => setParam("p", e.target.value)}>
               <option value="">Todos os prestadores</option>{prestadores.map((p) => <option key={p} value={p}>{titulo(p)}</option>)}
             </select>
@@ -199,18 +237,19 @@ export default function ExamesPendentes() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
-                  {["Colaborador", "Maior espera", "Empresa", "Exames pendentes", "Prestadores", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                  {["Colaborador", "Maior espera", "Situação", "Empresa", "Exames pendentes", "Prestadores", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
                     <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
-                {!isLoading && fichas.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum atendimento pendente com esses filtros.</td></tr>}
+                {isLoading && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && fichas.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum atendimento com esses filtros.</td></tr>}
                 {fichas.map(({ e, itens, prestadores: ps, unidades }) => (
                   <tr key={e.sequencial_ficha} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
                     <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
                     <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
+                    <td className="px-2"><Situacao e={e} obs={motivos.get(e.sequencial_ficha)?.observacao} /></td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
                     <td className="max-w-56 truncate px-2" title={itens.map((x) => titulo(x.exame_nome)).join(", ")}><span className="font-medium">{itens.length}</span> · {itens.map((x) => titulo(x.exame_nome)).join(", ")}</td>
                     <td className="max-w-56 truncate px-2" title={ps.map(titulo).join(", ")}>{ps.length > 1 ? `${ps.length} prestadores` : titulo(ps[0]) || "—"}</td>
@@ -225,18 +264,19 @@ export default function ExamesPendentes() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
-                  {["Colaborador", "Espera", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                  {["Colaborador", "Espera", "Situação", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
                     <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
-                {!isLoading && lista.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum exame pendente com esses filtros.</td></tr>}
+                {isLoading && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && lista.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum exame com esses filtros.</td></tr>}
                 {lista.map((e) => (
                   <tr key={e.id} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
                     <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
                     <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
+                    <td className="px-2"><Situacao e={e} obs={motivos.get(e.sequencial_ficha)?.observacao} /></td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.exame_nome)}>{titulo(e.exame_nome)}</td>
                     <td className="max-w-56 truncate px-2" title={titulo(e.prestador_nome)}>{titulo(e.prestador_nome) || "—"}</td>
@@ -254,21 +294,44 @@ export default function ExamesPendentes() {
 
       <Sheet open={!!aberto} onOpenChange={(o) => !o && setParam("ficha", "")}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {aberto && <DetalheFicha seq={aberto} exames={fichaAberta} />}
+          {aberto && <DetalheFicha key={aberto + (motivos.get(aberto)?.atualizado_em ?? "")} seq={aberto} exames={fichaAberta} motivo={motivos.get(aberto)} />}
         </SheetContent>
       </Sheet>
     </div>
   );
 }
 
-function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: number })[] }) {
+function Situacao({ e, obs }: { e: Exame & { motivo?: string }; obs?: string | null }) {
+  if (e.nao_compareceu_em) return <Badge variant="outline" className="whitespace-nowrap border-destructive/30 bg-destructive/10 text-destructive" title={e.nao_compareceu_obs ?? ""}>Não Compareceu</Badge>;
+  const m = e.motivo ? MOTIVOS[e.motivo] : null;
+  return (
+    <div className="flex items-center gap-1">
+      {m ? <Badge variant="outline" className={`whitespace-nowrap ${m.cor}`} title={obs ?? ""}>{m.label}</Badge> : <span className="whitespace-nowrap text-muted-foreground">Sem motivo</span>}
+      {e.atendido_depois && <Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/10 text-primary" title="Colaborador atendido depois na carteira própria — confira e dê baixa se for o caso">Atendido {br(e.atendido_depois)}</Badge>}
+    </div>
+  );
+}
+
+function DetalheFicha({ seq, exames, motivo }: { seq: string; exames: (Exame & { dias: number })[]; motivo?: Motivo }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [texto, setTexto] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [obsNc, setObsNc] = useState("");
   const [salvandoNc, setSalvandoNc] = useState(false);
+  const [motivoSel, setMotivoSel] = useState(motivo?.motivo ?? "");
+  const [motivoObs, setMotivoObs] = useState(motivo?.observacao ?? "");
+  const [obsReabrir, setObsReabrir] = useState("");
   const e = exames[0];
+  const autores = [motivo?.atualizado_por, e?.nao_compareceu_por].filter(Boolean) as string[];
+  const { data: nomes = new Map<string, string>() } = useQuery({
+    queryKey: ["exames-pendentes-autores", autores.join(",")],
+    enabled: autores.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name").in("id", autores);
+      return new Map((data ?? []).map((p: any) => [p.id, p.full_name as string]));
+    },
+  });
   const { data: contatos = [] } = useQuery({
     queryKey: ["exames-pendentes-contatos", seq],
     queryFn: async () => {
@@ -284,17 +347,41 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
   if (!e) return <SheetHeader><SheetTitle>Ficha {seq}</SheetTitle><p className="text-sm text-muted-foreground">Esta ficha não tem mais exames pendentes.</p></SheetHeader>;
 
   const mensagem = `Olá! Poderiam verificar o resultado dos exames abaixo?\n\nColaborador: ${titulo(e.funcionario_nome)} (CPF ${e.cpf})\nEmpresa: ${titulo(e.empresa_nome)}\nFicha: ${seq} de ${br(e.data_ficha)}\nExames sem resultado:\n${exames.map((x) => `- ${titulo(x.exame_nome)}`).join("\n")}\n\nObrigado, PreverMed.`;
+  const quando = (d: string) => new Date(d).toLocaleString("pt-BR");
 
   const naoCompareceu = async () => {
     const t = obsNc.trim();
-    if (!t || !confirm("Confirmar que o colaborador não compareceu? Todos os exames desta ficha sairão do painel.")) return;
+    if (!t || !confirm("Confirmar que o colaborador não compareceu? A ficha vai para a aba Não Compareceram.")) return;
     setSalvandoNc(true);
     const { error } = await (supabase.rpc as any)("exames_pendentes_nao_compareceu", { _sequencial: seq, _obs: t });
     setSalvandoNc(false);
     if (error) return toast.error("Não foi possível marcar. Verifique sua permissão de edição neste módulo.");
     setObsNc("");
     qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
-    toast.success("Ficha marcada como Não Compareceu.");
+    toast.success("Ficha movida para Não Compareceram.");
+  };
+
+  const reabrir = async () => {
+    const t = obsReabrir.trim();
+    if (!t) return;
+    setSalvandoNc(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_reabrir", { _sequencial: seq, _obs: t });
+    setSalvandoNc(false);
+    if (error) return toast.error("Não foi possível reabrir. Somente quem tem permissão de aprovação neste módulo pode reabrir.");
+    setObsReabrir("");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
+    toast.success("Ficha reaberta e de volta aos Pendentes.");
+  };
+
+  const salvarMotivo = async () => {
+    if (!motivoSel) return;
+    if (motivoSel === "outro" && !motivoObs.trim()) return toast.error("Para \"Outro\" a justificativa é obrigatória.");
+    setSalvando(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_definir_motivo", { _sequencial: seq, _motivo: motivoSel, _obs: motivoObs.trim() });
+    setSalvando(false);
+    if (error) return toast.error("Não foi possível salvar. Verifique sua permissão de edição neste módulo.");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes-motivos"] });
+    toast.success("Motivo da pendência salvo.");
   };
 
   const registrar = async () => {
@@ -323,6 +410,11 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
         <div><span className="text-muted-foreground">Data da ficha</span><div>{br(e.data_ficha)}</div></div>
         <div><span className="text-muted-foreground">Espera</span><div>{e.dias} dias</div></div>
       </div>
+      {e.atendido_depois && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-xs text-primary">
+          Este colaborador tem atendimento com resultado na carteira própria em {br(e.atendido_depois)}. Confira no SOC; se este pedido não foi usado, marque "Não Compareceu".
+        </div>
+      )}
       <div>
         <div className="mb-1 text-xs font-medium">Exames sem resultado ({exames.length})</div>
         <ul className="space-y-1 text-xs">{exames.map((x) => (
@@ -331,12 +423,34 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
           </li>
         ))}</ul>
       </div>
-      <div className="space-y-2 rounded-md border border-destructive/30 p-3">
-        <div className="text-xs font-medium">Não Compareceu</div>
-        <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha inteira sai do painel.</p>
-        <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
-        <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
-      </div>
+      {e.nao_compareceu_em ? (
+        <div className="space-y-2 rounded-md border border-destructive/30 p-3 text-xs">
+          <div className="font-medium">Marcada como Não Compareceu</div>
+          <div className="text-muted-foreground">{titulo(nomes.get(e.nao_compareceu_por ?? "") ?? "—")} · {quando(e.nao_compareceu_em)}</div>
+          <div className="whitespace-pre-wrap">{e.nao_compareceu_obs}</div>
+          <Textarea value={obsReabrir} onChange={(ev) => setObsReabrir(ev.target.value)} maxLength={1000} placeholder="Motivo da reabertura (ex.: cliente informou que o colaborador compareceu)" className="text-xs" />
+          <Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={reabrir} disabled={salvandoNc || !obsReabrir.trim()}>Reabrir ficha</Button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="text-xs font-medium">Motivo da pendência</div>
+            {motivo && <div className="text-[10px] text-muted-foreground">Última atualização: {titulo(nomes.get(motivo.atualizado_por) ?? "—")} · {quando(motivo.atualizado_em)}</div>}
+            <select className={`${sel} w-full`} value={motivoSel} onChange={(ev) => setMotivoSel(ev.target.value)}>
+              <option value="">Selecione…</option>
+              {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <Textarea value={motivoObs} onChange={(ev) => setMotivoObs(ev.target.value)} maxLength={1000} placeholder={motivoSel === "outro" ? "Justificativa obrigatória" : "Justificativa (ex.: empresa não enviou a avaliação psicossocial)"} className="text-xs" />
+            <Button size="sm" className="h-7 px-3 text-xs" onClick={salvarMotivo} disabled={salvando || !motivoSel}>Salvar motivo</Button>
+          </div>
+          <div className="space-y-2 rounded-md border border-destructive/30 p-3">
+            <div className="text-xs font-medium">Não Compareceu</div>
+            <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha vai para a aba Não Compareceram e pode ser reaberta.</p>
+            <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
+            <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
+          </div>
+        </>
+      )}
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
         <Textarea value={texto} onChange={(ev) => setTexto(ev.target.value)} maxLength={1000} placeholder="Ex.: Cobrado por e-mail com a Carla" className="text-xs" />
