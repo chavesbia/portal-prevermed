@@ -294,21 +294,44 @@ export default function ExamesPendentes() {
 
       <Sheet open={!!aberto} onOpenChange={(o) => !o && setParam("ficha", "")}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-          {aberto && <DetalheFicha seq={aberto} exames={fichaAberta} />}
+          {aberto && <DetalheFicha seq={aberto} exames={fichaAberta} motivo={motivos.get(aberto)} />}
         </SheetContent>
       </Sheet>
     </div>
   );
 }
 
-function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: number })[] }) {
+function Situacao({ e, obs }: { e: Exame & { motivo?: string }; obs?: string | null }) {
+  if (e.nao_compareceu_em) return <Badge variant="outline" className="whitespace-nowrap border-destructive/30 bg-destructive/10 text-destructive" title={e.nao_compareceu_obs ?? ""}>Não Compareceu</Badge>;
+  const m = e.motivo ? MOTIVOS[e.motivo] : null;
+  return (
+    <div className="flex items-center gap-1">
+      {m ? <Badge variant="outline" className={`whitespace-nowrap ${m.cor}`} title={obs ?? ""}>{m.label}</Badge> : <span className="whitespace-nowrap text-muted-foreground">Sem motivo</span>}
+      {e.atendido_depois && <Badge variant="outline" className="whitespace-nowrap border-primary/30 bg-primary/10 text-primary" title="Colaborador atendido depois na carteira própria — confira e dê baixa se for o caso">Atendido {br(e.atendido_depois)}</Badge>}
+    </div>
+  );
+}
+
+function DetalheFicha({ seq, exames, motivo }: { seq: string; exames: (Exame & { dias: number })[]; motivo?: Motivo }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [texto, setTexto] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [obsNc, setObsNc] = useState("");
   const [salvandoNc, setSalvandoNc] = useState(false);
+  const [motivoSel, setMotivoSel] = useState(motivo?.motivo ?? "");
+  const [motivoObs, setMotivoObs] = useState(motivo?.observacao ?? "");
+  const [obsReabrir, setObsReabrir] = useState("");
   const e = exames[0];
+  const autores = [motivo?.atualizado_por, e?.nao_compareceu_por].filter(Boolean) as string[];
+  const { data: nomes = new Map<string, string>() } = useQuery({
+    queryKey: ["exames-pendentes-autores", autores.join(",")],
+    enabled: autores.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id,full_name").in("id", autores);
+      return new Map((data ?? []).map((p: any) => [p.id, p.full_name as string]));
+    },
+  });
   const { data: contatos = [] } = useQuery({
     queryKey: ["exames-pendentes-contatos", seq],
     queryFn: async () => {
@@ -324,17 +347,41 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
   if (!e) return <SheetHeader><SheetTitle>Ficha {seq}</SheetTitle><p className="text-sm text-muted-foreground">Esta ficha não tem mais exames pendentes.</p></SheetHeader>;
 
   const mensagem = `Olá! Poderiam verificar o resultado dos exames abaixo?\n\nColaborador: ${titulo(e.funcionario_nome)} (CPF ${e.cpf})\nEmpresa: ${titulo(e.empresa_nome)}\nFicha: ${seq} de ${br(e.data_ficha)}\nExames sem resultado:\n${exames.map((x) => `- ${titulo(x.exame_nome)}`).join("\n")}\n\nObrigado, PreverMed.`;
+  const quando = (d: string) => new Date(d).toLocaleString("pt-BR");
 
   const naoCompareceu = async () => {
     const t = obsNc.trim();
-    if (!t || !confirm("Confirmar que o colaborador não compareceu? Todos os exames desta ficha sairão do painel.")) return;
+    if (!t || !confirm("Confirmar que o colaborador não compareceu? A ficha vai para a aba Não Compareceram.")) return;
     setSalvandoNc(true);
     const { error } = await (supabase.rpc as any)("exames_pendentes_nao_compareceu", { _sequencial: seq, _obs: t });
     setSalvandoNc(false);
     if (error) return toast.error("Não foi possível marcar. Verifique sua permissão de edição neste módulo.");
     setObsNc("");
     qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
-    toast.success("Ficha marcada como Não Compareceu.");
+    toast.success("Ficha movida para Não Compareceram.");
+  };
+
+  const reabrir = async () => {
+    const t = obsReabrir.trim();
+    if (!t) return;
+    setSalvandoNc(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_reabrir", { _sequencial: seq, _obs: t });
+    setSalvandoNc(false);
+    if (error) return toast.error("Não foi possível reabrir. Somente quem tem permissão de aprovação neste módulo pode reabrir.");
+    setObsReabrir("");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes"] });
+    toast.success("Ficha reaberta e de volta aos Pendentes.");
+  };
+
+  const salvarMotivo = async () => {
+    if (!motivoSel) return;
+    if (motivoSel === "outro" && !motivoObs.trim()) return toast.error("Para \"Outro\" a justificativa é obrigatória.");
+    setSalvando(true);
+    const { error } = await (supabase.rpc as any)("exames_pendentes_definir_motivo", { _sequencial: seq, _motivo: motivoSel, _obs: motivoObs.trim() });
+    setSalvando(false);
+    if (error) return toast.error("Não foi possível salvar. Verifique sua permissão de edição neste módulo.");
+    qc.invalidateQueries({ queryKey: ["exames-pendentes-motivos"] });
+    toast.success("Motivo da pendência salvo.");
   };
 
   const registrar = async () => {
@@ -363,6 +410,11 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
         <div><span className="text-muted-foreground">Data da ficha</span><div>{br(e.data_ficha)}</div></div>
         <div><span className="text-muted-foreground">Espera</span><div>{e.dias} dias</div></div>
       </div>
+      {e.atendido_depois && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-xs text-primary">
+          Este colaborador tem atendimento com resultado na carteira própria em {br(e.atendido_depois)}. Confira no SOC; se este pedido não foi usado, marque "Não Compareceu".
+        </div>
+      )}
       <div>
         <div className="mb-1 text-xs font-medium">Exames sem resultado ({exames.length})</div>
         <ul className="space-y-1 text-xs">{exames.map((x) => (
@@ -371,12 +423,34 @@ function DetalheFicha({ seq, exames }: { seq: string; exames: (Exame & { dias: n
           </li>
         ))}</ul>
       </div>
-      <div className="space-y-2 rounded-md border border-destructive/30 p-3">
-        <div className="text-xs font-medium">Não Compareceu</div>
-        <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha inteira sai do painel.</p>
-        <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
-        <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
-      </div>
+      {e.nao_compareceu_em ? (
+        <div className="space-y-2 rounded-md border border-destructive/30 p-3 text-xs">
+          <div className="font-medium">Marcada como Não Compareceu</div>
+          <div className="text-muted-foreground">{titulo(nomes.get(e.nao_compareceu_por ?? "") ?? "—")} · {quando(e.nao_compareceu_em)}</div>
+          <div className="whitespace-pre-wrap">{e.nao_compareceu_obs}</div>
+          <Textarea value={obsReabrir} onChange={(ev) => setObsReabrir(ev.target.value)} maxLength={1000} placeholder="Motivo da reabertura (ex.: cliente informou que o colaborador compareceu)" className="text-xs" />
+          <Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={reabrir} disabled={salvandoNc || !obsReabrir.trim()}>Reabrir ficha</Button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="text-xs font-medium">Motivo da pendência</div>
+            {motivo && <div className="text-[10px] text-muted-foreground">Última atualização: {titulo(nomes.get(motivo.atualizado_por) ?? "—")} · {quando(motivo.atualizado_em)}</div>}
+            <select className={`${sel} w-full`} value={motivoSel} onChange={(ev) => setMotivoSel(ev.target.value)}>
+              <option value="">Selecione…</option>
+              {Object.entries(MOTIVOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+            <Textarea value={motivoObs} onChange={(ev) => setMotivoObs(ev.target.value)} maxLength={1000} placeholder={motivoSel === "outro" ? "Justificativa obrigatória" : "Justificativa (ex.: empresa não enviou a avaliação psicossocial)"} className="text-xs" />
+            <Button size="sm" className="h-7 px-3 text-xs" onClick={salvarMotivo} disabled={salvando || !motivoSel}>Salvar motivo</Button>
+          </div>
+          <div className="space-y-2 rounded-md border border-destructive/30 p-3">
+            <div className="text-xs font-medium">Não Compareceu</div>
+            <p className="text-[10px] text-muted-foreground">Use quando a recepção confirmar que o colaborador não esteve na clínica. A ficha vai para a aba Não Compareceram e pode ser reaberta.</p>
+            <Textarea value={obsNc} onChange={(ev) => setObsNc(ev.target.value)} maxLength={1000} placeholder="Observação obrigatória (ex.: recepção da Lapa confirmou que não houve atendimento)" className="text-xs" />
+            <Button size="sm" variant="destructive" className="h-7 w-auto self-start px-3 text-xs" onClick={naoCompareceu} disabled={salvandoNc || !obsNc.trim()}>Não Compareceu</Button>
+          </div>
+        </>
+      )}
       <div className="space-y-2">
         <div className="text-xs font-medium">Registro de contatos</div>
         <Textarea value={texto} onChange={(ev) => setTexto(ev.target.value)} maxLength={1000} placeholder="Ex.: Cobrado por e-mail com a Carla" className="text-xs" />
