@@ -237,18 +237,19 @@ export default function ExamesPendentes() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
-                  {["Colaborador", "Maior espera", "Empresa", "Exames pendentes", "Prestadores", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                  {["Colaborador", "Maior espera", "Situação", "Empresa", "Exames pendentes", "Prestadores", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
                     <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
-                {!isLoading && fichas.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum atendimento pendente com esses filtros.</td></tr>}
+                {isLoading && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && fichas.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum atendimento com esses filtros.</td></tr>}
                 {fichas.map(({ e, itens, prestadores: ps, unidades }) => (
                   <tr key={e.sequencial_ficha} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
                     <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
                     <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
+                    <td className="px-2"><Situacao e={e} obs={motivos.get(e.sequencial_ficha)?.observacao} /></td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
                     <td className="max-w-56 truncate px-2" title={itens.map((x) => titulo(x.exame_nome)).join(", ")}><span className="font-medium">{itens.length}</span> · {itens.map((x) => titulo(x.exame_nome)).join(", ")}</td>
                     <td className="max-w-56 truncate px-2" title={ps.map(titulo).join(", ")}>{ps.length > 1 ? `${ps.length} prestadores` : titulo(ps[0]) || "—"}</td>
@@ -263,18 +264,19 @@ export default function ExamesPendentes() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-muted">
                 <tr className="text-left">
-                  {["Colaborador", "Espera", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
+                  {["Colaborador", "Espera", "Situação", "Empresa", "Exame", "Prestador", "Unidade", "Origem", "Data da ficha"].map((h, i) => (
                     <th key={h} className={`whitespace-nowrap px-2 py-2 font-medium ${i === 0 ? "sticky left-0 bg-muted" : ""}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {isLoading && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
-                {!isLoading && lista.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum exame pendente com esses filtros.</td></tr>}
+                {isLoading && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>}
+                {!isLoading && lista.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum exame com esses filtros.</td></tr>}
                 {lista.map((e) => (
                   <tr key={e.id} onClick={() => setParam("ficha", e.sequencial_ficha)} className="h-9 cursor-pointer border-t hover:bg-muted/50">
                     <td className="sticky left-0 max-w-48 bg-card px-2"><div className="truncate" title={titulo(e.funcionario_nome)}>{titulo(e.funcionario_nome)}</div><div className="whitespace-nowrap text-[10px] text-muted-foreground">{cpfMask(e.cpf)}</div></td>
                     <td className="px-2"><Badge variant="outline" className={`whitespace-nowrap ${FAIXA_COR[e.faixa]}`}>{e.dias} {e.dias === 1 ? "dia" : "dias"}</Badge></td>
+                    <td className="px-2"><Situacao e={e} obs={motivos.get(e.sequencial_ficha)?.observacao} /></td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.empresa_nome)}>{titulo(e.empresa_nome)}</td>
                     <td className="max-w-48 truncate px-2" title={titulo(e.exame_nome)}>{titulo(e.exame_nome)}</td>
                     <td className="max-w-56 truncate px-2" title={titulo(e.prestador_nome)}>{titulo(e.prestador_nome) || "—"}</td>
