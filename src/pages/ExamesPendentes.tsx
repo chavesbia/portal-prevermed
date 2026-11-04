@@ -16,8 +16,19 @@ type Exame = {
   id: string; origem: string; sequencial_ficha: string; data_ficha: string | null; tipo_ficha: string | null;
   cpf: string; funcionario_nome: string | null; funcionario_codigo: string | null; empresa_codigo: string | null; empresa_nome: string | null;
   assessoria_nome: string | null; exame_nome: string; prestador_codigo: string | null; prestador_nome: string | null;
+  nao_compareceu_em: string | null; nao_compareceu_por: string | null; nao_compareceu_obs: string | null;
+  atendido_depois?: string | null;
 };
 type Contato = { id: string; texto: string; user_id: string; created_at: string };
+type Motivo = { sequencial_ficha: string; motivo: string; observacao: string | null; atualizado_por: string; atualizado_em: string };
+
+export const MOTIVOS: Record<string, { label: string; cor: string }> = {
+  aguardando_laudo: { label: "Aguardando Laudo", cor: "bg-primary/10 text-primary border-primary/30" },
+  aguardando_empresa: { label: "Aguardando Empresa", cor: "bg-warning/15 text-warning border-warning/30" },
+  aguardando_colaborador: { label: "Aguardando Colaborador", cor: "bg-accent text-accent-foreground border-border" },
+  em_analise_medica: { label: "Em Análise Médica", cor: "bg-success/15 text-success border-success/30" },
+  outro: { label: "Outro", cor: "bg-muted text-muted-foreground border-border" },
+};
 
 const db = supabase as any;
 const sel = "h-8 rounded-md border border-input bg-background px-2 text-xs";
@@ -43,12 +54,12 @@ const UNID: Record<string, string> = { lapa: "Lapa", osasco: "Osasco" };
 
 // Carteira própria: só entram prestadores classificados como Lapa/Osasco/Ambas em Admin > Prestadores
 // (credenciados e In Loco ficam fora). SOCNET: só entra quando o prestador de referência é PreverMed (Lapa/Osasco); Imtep, Focus etc. ficam fora.
+// Nada sai do painel sozinho: atendimento posterior na carteira própria vira só um aviso (atendido_depois).
 async function carregar(): Promise<Exame[]> {
   const hoje = new Date().toISOString().slice(0, 10);
   const { data: prs, error: ep } = await db.from("soc_prestadores").select("codigo,unidade_responsavel").not("unidade_responsavel", "is", null);
   if (ep) throw ep;
   const mapa = new Map<string, string>((prs ?? []).map((p: any) => [String(p.codigo), p.unidade_responsavel]));
-  // Atendimento já concluído na carteira própria: CPF -> data da ficha mais recente com resultado.
   const atendido = new Map<string, string>();
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes").select("cpf,data_ficha")
@@ -60,21 +71,29 @@ async function carregar(): Promise<Exame[]> {
   const out: Exame[] = [];
   for (let de = 0; ; de += 1000) {
     const { data, error } = await db.from("soc_exames_pendentes")
-      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome")
-      .is("data_resultado", null).is("resolvido_em", null).is("nao_compareceu_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
+      .select("id,origem,sequencial_ficha,data_ficha,tipo_ficha,cpf,funcionario_nome,funcionario_codigo,empresa_codigo,empresa_nome,assessoria_nome,exame_nome,prestador_codigo,prestador_nome,nao_compareceu_em,nao_compareceu_por,nao_compareceu_obs")
+      .is("data_resultado", null).is("resolvido_em", null).lte("data_ficha", hoje).order("data_ficha").range(de, de + 999);
     if (error) throw error;
     for (const e of data) {
       if (e.origem === "socnet") {
         if (!/PREVER/i.test(e.prestador_nome ?? "")) continue;
-        // Pedido SOCNET órfão: colaborador já atendido depois na carteira própria.
         const a = atendido.get(e.cpf);
-        if (a && e.data_ficha && a >= e.data_ficha) continue;
-        out.push(e); continue;
+        out.push({ ...e, atendido_depois: a && e.data_ficha && a > e.data_ficha ? a : null }); continue;
       }
       const u = mapa.get(String(e.prestador_codigo ?? ""));
       if (u) out.push({ ...e, unidade_cadastro: u });
     }
     if (data.length < 1000) return out;
+  }
+}
+
+async function carregarMotivos(): Promise<Map<string, Motivo>> {
+  const m = new Map<string, Motivo>();
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await db.from("soc_exames_pendentes_motivos").select("*").range(de, de + 999);
+    if (error) throw error;
+    for (const r of data) m.set(r.sequencial_ficha, r);
+    if (data.length < 1000) return m;
   }
 }
 
