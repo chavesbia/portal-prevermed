@@ -451,6 +451,7 @@ export default function Agendamentos() {
               <dt className="text-muted-foreground">Subgrupo</dt><dd>{subgrupoDe(detalhe)}</dd>
               <dt className="text-muted-foreground">Tipo</dt><dd>{detalhe.tipo_exame}</dd>
               <dt className="text-muted-foreground">Exames</dt><dd>{(detalhe.exames ?? []).join(", ") || "-"}</dd>
+              {detalhe.solicitante && (<><dt className="text-muted-foreground">Solicitante</dt><dd>{toTitleCase(detalhe.solicitante.nome ?? "")} · {detalhe.solicitante.email} · {detalhe.solicitante.celular}</dd></>)}
               {detalhe.motivo_retorno && (<><dt className="text-muted-foreground">Motivo do retorno</dt><dd className="whitespace-pre-wrap">{detalhe.motivo_retorno}</dd></>)}
               {detalhe.observacoes && (<><dt className="text-muted-foreground">Observações</dt><dd className="whitespace-pre-wrap">{detalhe.observacoes}</dd></>)}
               {detalhe.soc_erro && (<><dt className="text-muted-foreground">Erro SOC</dt><dd className="text-destructive">{detalhe.soc_erro}</dd></>)}
