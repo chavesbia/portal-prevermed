@@ -43,6 +43,10 @@ const Body = z.object({
     nascimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), sexo: z.enum(['MASCULINO', 'FEMININO']).optional(),
     admissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).optional(),
+  // Contato de quem agenda: exigido só quando há devolutiva da equipe (retorno/estrutura nova)
+  solicitante: z.object({
+    nome: z.string().trim().min(3).max(120), email: z.string().trim().email().max(160), celular: z.string().regex(/^\d{10,11}$/),
+  }).optional(),
 });
 
 // Reconfere no SOC o pedido SOCNET (não confia no que veio da tela/robô)
@@ -112,7 +116,13 @@ Deno.serve(async (req) => {
       const faltam = (exig ?? []).map((e: any) => e.nome).filter((n: string) => !enviados.has(n));
       if (faltam.length) return json({ error: `Anexe: ${faltam.join(', ')}.` }, 400);
       if (!b.documentos.length) return json({ error: 'Anexe a documentação do retorno ao trabalho.' }, 400);
+      // Mesmo arquivo em dois campos (ex.: Alta Médica = Decisão do INSS) não vale como documento distinto
+      const vistos = new Set<string>();
+      for (const d of b.documentos) { const k = `${d.base64.length}:${d.base64.slice(0, 2000)}:${d.base64.slice(-2000)}`; if (vistos.has(k)) return json({ error: 'O mesmo arquivo foi anexado em mais de um campo. Anexe cada documento separadamente.' }, 400); vistos.add(k); }
     }
+    // Pela página (sem robô WhatsApp, que já tem o número) quem agenda precisa deixar contato quando há devolutiva
+    if ((retorno || (!!b.estruturaNova && b.origem === 'cliente')) && !b.solicitadoPor && !b.solicitante)
+      return json({ error: 'Informe nome, e-mail e celular de quem está agendando para recebermos a devolutiva.' }, 400);
 
     // Cadastro inativo: só Demissional no vínculo existente; Admissional exige novo cadastro antes
     const sit = b.origem === 'cliente' ? await situacaoSoc(b.codigoEmpresaSoc!, b.colaboradorCpf) : null;
@@ -147,6 +157,7 @@ Deno.serve(async (req) => {
       aprovacao_status: retorno || eng ? 'pendente' : null,
       fila_aprovacao: eng ? 'engenharia' : 'saude',
       estrutura_solicitada: eng ? b.estruturaNova : null,
+      solicitante: b.solicitante ?? null,
     }).select('id, protocolo').single();
     if (error) return json({ error: 'Não foi possível registrar' }, 500);
     if (anexos.length) await admin.from('soc_agendamento_anexos').insert(anexos.map((a) => ({ ...a, agendamento_id: data.id })));

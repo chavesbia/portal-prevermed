@@ -6754,6 +6754,7 @@ export type Database = {
           protocolo: string
           soc_erro: string | null
           soc_retorno: Json | null
+          solicitante: Json | null
           status: string
           tipo_exame: string
           unidade_id: string | null
@@ -6784,6 +6785,7 @@ export type Database = {
           protocolo?: string
           soc_erro?: string | null
           soc_retorno?: Json | null
+          solicitante?: Json | null
           status?: string
           tipo_exame: string
           unidade_id?: string | null
@@ -6814,6 +6816,7 @@ export type Database = {
           protocolo?: string
           soc_erro?: string | null
           soc_retorno?: Json | null
+          solicitante?: Json | null
           status?: string
           tipo_exame?: string
           unidade_id?: string | null

@@ -1,0 +1,2 @@
+ALTER TABLE public.soc_agendamentos ADD COLUMN IF NOT EXISTS solicitante jsonb;
+COMMENT ON COLUMN public.soc_agendamentos.solicitante IS 'Contato de quem agendou (nome, email, celular) — exigido só quando há devolutiva (aprovação de retorno ou estrutura nova).';
