@@ -429,7 +429,7 @@ export default function Agendamentos() {
       <Sheet open={!!detalhe} onOpenChange={(o) => !o && setDetalhe(null)}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {detalhe && (<>
-            <SheetHeader><SheetTitle className="text-lg">{toTitleCase(detalhe.colaborador_nome)}</SheetTitle></SheetHeader>
+            <SheetHeader><SheetTitle className="text-lg">{detalhe.fila_aprovacao === "engenharia" ? "Solicitação de estrutura" : toTitleCase(detalhe.colaborador_nome)}</SheetTitle></SheetHeader>
             <div className="mt-2 flex flex-wrap gap-2">
               <Badge className="whitespace-nowrap">{nomeUnidade(detalhe)}</Badge>
               <Badge variant="secondary" className="whitespace-nowrap">{subgrupoDe(detalhe)}</Badge>
@@ -437,7 +437,7 @@ export default function Agendamentos() {
             </div>
             <dl className="mt-4 grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Protocolo</dt><dd className="font-mono">{detalhe.protocolo}</dd>
-              <dt className="text-muted-foreground">CPF</dt><dd>{fmtCpf(detalhe.colaborador_cpf)}</dd>
+              {detalhe.fila_aprovacao !== "engenharia" && (<><dt className="text-muted-foreground">CPF</dt><dd>{fmtCpf(detalhe.colaborador_cpf)}</dd></>)}
               <dt className="text-muted-foreground">Emitido em</dt><dd>{fmtDataHora(detalhe.created_at)}</dd>
               {canal(detalhe) === "WhatsApp" && (<><dt className="text-muted-foreground">Solicitante</dt><dd>
                 {!isAdmMaster ? <span className="text-muted-foreground">Via WhatsApp (contato visível para ADM Master)</span>
@@ -459,11 +459,11 @@ export default function Agendamentos() {
               {detalhe.estrutura_solicitada && (<>
                 <dt className="text-muted-foreground">Estrutura informada</dt>
                 <dd>{[detalhe.estrutura_solicitada.unidade, detalhe.estrutura_solicitada.setor, detalhe.estrutura_solicitada.cargo].map((x: string) => toTitleCase(x)).join(" · ")}</dd>
-                {detalhe.estrutura_solicitada.atividades && (<><dt className="text-muted-foreground">Atividades</dt><dd>{detalhe.estrutura_solicitada.atividades}</dd></>)}
-                {detalhe.estrutura_solicitada.nascimento && (<><dt className="text-muted-foreground">Pré-cadastro</dt><dd>Nasc. {fmtData(detalhe.estrutura_solicitada.nascimento)} · {toTitleCase(detalhe.estrutura_solicitada.sexo ?? "")} · Admissão {fmtData(detalhe.estrutura_solicitada.admissao ?? "")}</dd></>)}
+                {detalhe.estrutura_solicitada.atividades && (<><dt className="text-muted-foreground">Atividades do cargo</dt><dd className="whitespace-pre-wrap rounded-md bg-muted p-2">{detalhe.estrutura_solicitada.atividades}</dd></>)}
+                {detalhe.fila_aprovacao !== "engenharia" && detalhe.estrutura_solicitada.nascimento && (<><dt className="text-muted-foreground">Pré-cadastro</dt><dd>Nasc. {fmtData(detalhe.estrutura_solicitada.nascimento)} · {toTitleCase(detalhe.estrutura_solicitada.sexo ?? "")} · Admissão {fmtData(detalhe.estrutura_solicitada.admissao ?? "")}</dd></>)}
               </>)}
             </dl>
-            <div className="mt-4 space-y-2">
+            {detalhe.fila_aprovacao !== "engenharia" && <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Kit e documentos</p>
               {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
               {podeEditar && temKitAgenda(detalhe) && <button type="button" disabled={enviando} onClick={marcarKit} className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"><Printer className="h-3 w-3" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar como impresso"}</button>}
@@ -472,7 +472,7 @@ export default function Agendamentos() {
                   <FileText className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{x.tipo_documento}{x.nome_arquivo ? `: ${x.nome_arquivo}` : ""}</span><span className="ml-auto text-xs text-muted-foreground">{new Date(x.enviado_em).toLocaleDateString("pt-BR")}</span>
                 </Button>
               )) : <p className="text-sm text-muted-foreground">Nenhum arquivo enviado.</p>}
-            </div>
+            </div>}
             {podeAprovar && detalhe.aprovacao_status === "pendente" && (
               <div className="mt-6 space-y-2 rounded-md border p-3">
                 <p className="text-sm font-medium">{detalhe.fila_aprovacao === "engenharia" ? "Decisão da Engenharia" : "Decisão da equipe de saúde"}</p>
