@@ -105,8 +105,10 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
     const unidadeId = (ordem as any).unidade_id as string | undefined;
     if (!open || !unidadeId) { setUnidadeNome((ordem as any).unidade_nome || null); return; }
     (async () => {
-      const { data } = await supabase.from('units').select('name').eq('id', unidadeId).maybeSingle();
-      setUnidadeNome((data as any)?.name || (ordem as any).unidade_nome || null);
+      const { data } = await supabase.from('company_units').select('name, razao_social').eq('id', unidadeId).maybeSingle();
+      let nome = (data as any)?.name || (data as any)?.razao_social;
+      if (!nome) { const r = await supabase.from('units').select('name').eq('id', unidadeId).maybeSingle(); nome = (r.data as any)?.name; }
+      setUnidadeNome(nome || (ordem as any).unidade_nome || null);
     })();
   }, [open, (ordem as any).unidade_id]);
 
