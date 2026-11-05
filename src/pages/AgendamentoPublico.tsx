@@ -505,26 +505,46 @@ export default function AgendamentoPublico() {
                     {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
                     {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
                     {hier && !hier.indisponivel && !livre && (<>
-                      <p className="text-xs text-muted-foreground">Selecione a unidade, o setor e o cargo já existentes da empresa (conforme os laudos).</p>
-                      {[
-                        { k: "unidade", label: "Unidade *", lista: hier.unidades, reset: { setor: "", cargo: "" } },
-                        { k: "setor", label: "Setor *", lista: uSel?.setores ?? [], reset: { cargo: "" } },
-                        { k: "cargo", label: "Cargo *", lista: sSel?.cargos ?? [], reset: {} },
-                      ].map(({ k, label, lista, reset }) => (
-                        <div key={k}><Label>{label}</Label>
-                          <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50" disabled={lista.length === 0}
-                            value={cad[k as "unidade"]} onChange={(e) => setCad({ ...cad, ...reset, [k]: e.target.value })}>
-                            <option value="">{lista.length ? "Selecione" : "—"}</option>
-                            {lista.map((i) => <option key={i.codigo} value={i.codigo}>{i.nome}</option>)}
-                          </select></div>
-                      ))}
+                      <p className="text-xs text-muted-foreground">Comece pelo cargo: mostramos só os setores e unidades onde ele existe (conforme os laudos).</p>
+                      {(() => {
+                        // Combinações válidas da hierarquia, para filtrar a partir do cargo
+                        const trios = hier.unidades.flatMap((u) => u.setores.flatMap((s) => s.cargos.map((c) => ({ u, s, c }))));
+                        const unicos = (l: Item[]) => [...new Map(l.map((i) => [i.codigo, i])).values()].sort((a, b) => a.nome.localeCompare(b.nome));
+                        const cargos = unicos(trios.map((t) => t.c));
+                        const comCargo = trios.filter((t) => t.c.codigo === cad.cargo);
+                        const setores = cad.cargo ? unicos(comCargo.map((t) => t.s)) : [];
+                        const unidadesDe = (setor: string) => unicos(comCargo.filter((t) => t.s.codigo === setor).map((t) => t.u));
+                        const unids = cad.setor ? unidadesDe(cad.setor) : [];
+                        const escolher = (k: string, v: string) => {
+                          if (k === "cargo") {
+                            const ss = unicos(trios.filter((t) => t.c.codigo === v).map((t) => t.s));
+                            const setor = ss.length === 1 ? ss[0].codigo : "";
+                            const us = setor ? unicos(trios.filter((t) => t.c.codigo === v && t.s.codigo === setor).map((t) => t.u)) : [];
+                            return setCad({ ...cad, cargo: v, setor, unidade: us.length === 1 ? us[0].codigo : "" });
+                          }
+                          if (k === "setor") { const us = unidadesDe(v); return setCad({ ...cad, setor: v, unidade: us.length === 1 ? us[0].codigo : "" }); }
+                          setCad({ ...cad, unidade: v });
+                        };
+                        return [
+                          { k: "cargo", label: "Cargo *", lista: cargos },
+                          { k: "setor", label: "Setor *", lista: setores },
+                          { k: "unidade", label: "Unidade *", lista: unids },
+                        ].map(({ k, label, lista }) => (
+                          <div key={k}><Label>{label}</Label>
+                            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50" disabled={lista.length === 0}
+                              value={cad[k as "unidade"]} onChange={(e) => escolher(k, e.target.value)}>
+                              <option value="">{lista.length ? "Selecione" : "—"}</option>
+                              {lista.map((i) => <option key={i.codigo} value={i.codigo}>{i.nome}</option>)}
+                            </select></div>
+                        ));
+                      })()}
                       {!engAberto ? (
                         <button type="button" className="text-xs text-primary underline" onClick={() => setEngAberto(true)}>Não localizou a unidade, o setor ou o cargo na lista? Clique aqui para solicitar a inclusão pela nossa equipe técnica</button>
                       ) : (
                         <div className="space-y-2 rounded-md bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Informe como é na empresa. O horário fica reservado e nossa equipe técnica confere antes de confirmar.</p>
                           <div className="grid gap-2 sm:grid-cols-3">
-                            {(["unidade", "setor", "cargo"] as const).map((k) => (
+                            {(["cargo", "setor", "unidade"] as const).map((k) => (
                               <div key={k}><Label className="capitalize">{k} *</Label><Input value={eng[k]} maxLength={120} onChange={(e) => setEng({ ...eng, [k]: e.target.value })} /></div>
                             ))}
                           </div>
@@ -543,9 +563,9 @@ export default function AgendamentoPublico() {
                     {hier && !hier.indisponivel && livre && (<>
                       <p className="text-xs text-muted-foreground">Escolha uma opção existente ou digite uma nova.</p>
                       {[
-                        { k: "unidade", label: "Unidade *", lista: hier.unidades },
-                        { k: "setor", label: "Setor *", lista: hier.setores ?? [] },
                         { k: "cargo", label: "Cargo *", lista: hier.cargos ?? [] },
+                        { k: "setor", label: "Setor *", lista: hier.setores ?? [] },
+                        { k: "unidade", label: "Unidade *", lista: hier.unidades },
                       ].map(({ k, label, lista }) => (
                         <div key={k}><Label>{label}</Label>
                           <Input list={`lista-${k}`} value={cad[k as "unidade"]} maxLength={120} onChange={(e) => setCad({ ...cad, [k]: e.target.value })} />
