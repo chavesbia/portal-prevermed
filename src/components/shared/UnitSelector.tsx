@@ -48,7 +48,6 @@ export function UnitSelector({
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['company-units-selector', companyId],
@@ -62,6 +61,7 @@ export function UnitSelector({
           .from('company_units')
           .select('id, name, razao_social, soc_unit_code, cidade, estado, logradouro, numero, bairro, cnpj, is_active')
           .eq('company_id', companyId!)
+          .eq('is_active', true)
           .order('name')
           .range(from, from + step - 1);
         if (error) throw error;
@@ -80,14 +80,13 @@ export function UnitSelector({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const qd = q.replace(/\D/g, '');
-    const base = showInactive ? units : units.filter(u => u.is_active !== false);
+    const base = units;
     if (!q) return base.slice(0, 100);
     return base
       .filter(u => `${unitLabel(u)} ${unitSubtitle(u)}`.toLowerCase().includes(q)
         || (qd.length >= 4 && (u.cnpj || '').replace(/\D/g, '').includes(qd)))
       .slice(0, 100);
-  }, [units, search, showInactive]);
-  const inactiveCount = useMemo(() => units.filter(u => u.is_active === false).length, [units]);
+  }, [units, search]);
 
   const isDisabled = disabled || !companyId;
 
@@ -128,12 +127,6 @@ export function UnitSelector({
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[380px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar por nome, endereço, código ou CNPJ…" value={search} onValueChange={setSearch} />
-          {inactiveCount > 0 && (
-            <label className="flex items-center gap-2 border-b px-3 py-1.5 text-xs text-muted-foreground cursor-pointer">
-              <input type="checkbox" checked={showInactive} onChange={e => setShowInactive(e.target.checked)} />
-              Incluir inativas ({inactiveCount})
-            </label>
-          )}
           <CommandList>
             <CommandEmpty>
               {isLoading ? 'Carregando unidades…' : 'Nenhuma unidade encontrada para esta empresa.'}
@@ -149,7 +142,6 @@ export function UnitSelector({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="truncate font-medium">{unitLabel(u)}</span>
-                      {u.is_active === false && <span className="shrink-0 whitespace-nowrap rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Inativa</span>}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">{unitSubtitle(u) || 'Sem endereço cadastrado'}</div>
                   </div>
