@@ -64,7 +64,7 @@ export default function AgendamentoCompletar() {
           <Card>
             <CardHeader><CardTitle className="text-base">{ag.colaborador_nome}</CardTitle></CardHeader>
             <CardContent className="space-y-4 text-sm">
-              <p>{ag.empresa_nome} — {ag.tipo_exame} em {ag.data_agendada.split("-").reverse().join("/")} às {ag.hora_agendada.slice(0, 5)}</p>
+              <p>{ag.empresa_nome} — {ag.tipo_exame} {ag.data_agendada ? ` em ${ag.data_agendada.split("-").reverse().join("/")} às ${ag.hora_agendada?.slice(0, 5)}` : ""}</p>
               {ag.aprovacao_status === "pendente" && <p className="rounded-md bg-muted p-3">Documentação em análise pela equipe de saúde. O horário será confirmado após a aprovação.</p>}
               {ag.aprovacao_status === "devolvido" && <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3"><strong>Documentação devolvida:</strong> {ag.devolucao_motivo}. Envie os documentos corrigidos abaixo para nova análise.</p>}
               {ag.aprovacao_status === "aprovado" && <p className="flex items-center gap-2 text-primary"><CheckCircle2 className="h-4 w-4" />Documentação aprovada.</p>}

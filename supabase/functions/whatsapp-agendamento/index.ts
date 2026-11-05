@@ -262,7 +262,7 @@ function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
   const mais = lista.length > MAX_OP ? `\n\n_Mostrando ${MAX_OP} de ${lista.length}. Digite parte do nome para buscar._` : '';
   const instr = d.cad.livre
     ? (lista.length ? `Digite o *número* de uma opção, parte do *nome* para buscar, ou o nome de um(a) novo(a) ${nivel}:` : `Digite o *nome* do(a) ${nivel}:`)
-    : `Digite o *número* da opção ou parte do *nome* para buscar:`;
+    : `Digite o *número* da opção ou parte do *nome* para buscar.\n\n_Não localizou a unidade, o setor ou o cargo? Digite *INCLUIR* para solicitar o cadastro à nossa Engenharia._`;
   return { etapa, dados: d, resposta: `${rot} do colaborador\n\n${mostra.length ? menu(mostra.map((x) => titulo(x.nome))) + mais + '\n\n' : ''}${instr}${RODAPE}` };
 }
 const MAX_OP = 10;
@@ -481,6 +481,11 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       const lista = opcoesNivel(d, nivel);
       const vis: Item[] = d.filtro ?? lista.slice(0, MAX_OP);
       const nomeNivel = { unidade: 'unidade', setor: 'setor', cargo: 'cargo' }[nivel];
+      // Empresa com laudos sem a estrutura no SOC: mesmo fluxo da página — só chamado para a Engenharia, sem data/horário
+      if (!d.cad.livre && semAcento(t) === 'incluir') {
+        delete d.filtro; d.eng = {};
+        return { etapa: 'ENG_CARGO', dados: d, resposta: `📝 *Solicitação de cadastro de estrutura*\n\nA solicitação vai para a área técnica de Engenharia da PreverMed, que cadastra a estrutura e a grade de exames no SOC. O agendamento é feito depois desse cadastro.\n\nDigite o *cargo* como é na empresa:${RODAPE}` };
+      }
       if (/^\d+$/.test(t)) {
         const i = escolha(t, vis.length);
         if (i < 0) return { etapa, dados: d, resposta: `Esse número não está na lista. Digite o *número* de uma opção ou parte do *nome* para buscar.${RODAPE}` };
@@ -504,7 +509,37 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         d.pend = { nivel, ref: { nome: t.toUpperCase() } };
         return { etapa: 'CAD_CONF_NIVEL', dados: d, resposta: `Não há ${nomeNivel} com esse nome. Deseja cadastrar ${nivel === 'unidade' ? 'a nova' : 'o novo'} ${nomeNivel}:\n\n${ROT[nivel]}: *${titulo(t)}*\n\n*1* - Sim, confirmar\n*2* - Buscar novamente${RODAPE}` };
       }
-      return { etapa, dados: d, resposta: `❌ Não encontramos ${nivel === 'unidade' ? 'essa unidade' : nivel === 'setor' ? 'esse setor vinculado à unidade selecionada' : 'esse cargo vinculado ao setor selecionado'}. Digite o *número* da lista ou outra parte do *nome*.${RODAPE}` };
+      return { etapa, dados: d, resposta: `❌ Não encontramos ${nivel === 'unidade' ? 'essa unidade' : nivel === 'setor' ? 'esse setor vinculado à unidade selecionada' : 'esse cargo vinculado ao setor selecionado'}. Digite o *número* da lista ou outra parte do *nome*.\n\n_Se não existe na lista, digite *INCLUIR* para solicitar o cadastro à nossa Engenharia._${RODAPE}` };
+    }
+    case 'ENG_CARGO': case 'ENG_SETOR': case 'ENG_UNIDADE': {
+      const k = etapa === 'ENG_CARGO' ? 'cargo' : etapa === 'ENG_SETOR' ? 'setor' : 'unidade';
+      if (t.length < 2 || t.length > 120) return { etapa, dados: d, resposta: `Digite o *${k}* (de 2 a 120 caracteres):${RODAPE}` };
+      d.eng = { ...(d.eng ?? {}), [k]: t.toUpperCase() };
+      if (k === 'cargo') return { etapa: 'ENG_SETOR', dados: d, resposta: `Digite o *setor* como é na empresa:${RODAPE}` };
+      if (k === 'setor') return { etapa: 'ENG_UNIDADE', dados: d, resposta: `Digite a *unidade* (local de trabalho) como é na empresa:${RODAPE}` };
+      return { etapa: 'ENG_ATIV', dados: d, resposta: `Descreva brevemente as *atividades do cargo* (ajuda a Engenharia a definir os riscos), ou digite *1* para pular:${RODAPE}` };
+    }
+    case 'ENG_ATIV': {
+      if (t !== '1') d.eng.atividades = t.slice(0, 800);
+      const e = d.eng;
+      return { etapa: 'ENG_CONF', dados: d, resposta: `📝 *Confira a solicitação:*\n\n🏢 Empresa: *${titulo(d.empresaNome)}*\n💼 Cargo: *${titulo(e.cargo)}*\n📂 Setor: *${titulo(e.setor)}*\n🏭 Unidade: *${titulo(e.unidade)}*${e.atividades ? `\n🛠️ Atividades: ${e.atividades}` : ''}\n\n*1* - Enviar para a Engenharia\n*2* - Corrigir${RODAPE}` };
+    }
+    case 'ENG_CONF': {
+      const i = escolha(t, 2);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para enviar ou *2* para corrigir.${RODAPE}` };
+      if (i === 1) { d.eng = {}; return { etapa: 'ENG_CARGO', dados: d, resposta: `Digite o *cargo* como é na empresa:${RODAPE}` }; }
+      const nomeColab = d.colaboradorNome || d.cad?.nome;
+      const { ok, data } = await chamar('soc-agenda-solicitar', {
+        empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode, origem: 'cliente',
+        colaboradorNome: nomeColab, colaboradorCpf: d.cpf, tipoExame: 'Admissional', exames: [],
+        solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
+        estruturaNova: { unidade: d.eng.unidade, setor: d.eng.setor, cargo: d.eng.cargo, atividades: d.eng.atividades },
+      });
+      if (!ok) return { etapa: 'FINALIZADO', dados: {}, resposta: `⚠️ Não foi possível enviar: ${data?.error ?? 'erro inesperado'}\n\nDigite *1* para iniciar um novo atendimento.` };
+      await registrar(ctx, 'agendamento', { ...d, colaboradorNome: nomeColab, lotCargo: d.eng.cargo, lotSetor: d.eng.setor, lotUnidade: d.eng.unidade }, data.protocolo, { solicitacaoEstrutura: true });
+      const mesmaEmpresa = { cnpj: d.cnpj, empresaNome: d.empresaNome, socCode: d.socCode, externo: d.externo, livre: d.livre, termoAceito: d.termoAceito };
+      return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo, mesmaEmpresa }, resposta:
+        `✅ *Solicitação enviada*\n\n🔖 Protocolo: *${data.protocolo}*\n\nSolicitação enviada para a área técnica de Engenharia da PreverMed. Assim que a estrutura e a grade de exames forem cadastradas no sistema SOC, você receberá um aviso *por este número* para realizar o agendamento.\n\nPrecisa de outro atendimento?\n*1* - Nova empresa\n*2* - Outro colaborador de *${titulo(d.empresaNome)}*` };
     }
     case 'CAD_CONF_NIVEL': {
       const i = escolha(t, 2);

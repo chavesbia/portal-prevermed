@@ -15,7 +15,7 @@ const Arquivo = z.object({
   base64: z.string().max(7_000_000),
 });
 const Body = z.object({
-  unidadeId: z.string().uuid(),
+  unidadeId: z.string().uuid().optional(),
   empresaNome: z.string().trim().min(2).max(200),
   empresaCnpj: z.string().regex(/^\d{14}$/),
   codigoEmpresaSoc: z.string().regex(/^\d{1,12}$/).optional(),
@@ -25,8 +25,8 @@ const Body = z.object({
   colaboradorNome: z.string().trim().min(3).max(200),
   colaboradorCpf: z.string().regex(/^\d{11}$/),
   tipoExame: z.enum(['Admissional', 'Periódico', 'Demissional', 'Retorno ao Trabalho', 'Mudança de Risco', 'Monitoração Pontual', 'Consulta', 'Consulta Assistencial']),
-  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  hora: z.string().regex(/^\d{2}:\d{2}$/),
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  hora: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   observacoes: z.string().max(1000).optional(),
   mudancaRisco: z.string().max(800).optional(),
   motivoRetorno: z.string().trim().max(1000).optional(),
@@ -68,8 +68,16 @@ Deno.serve(async (req) => {
     const b = parsed.data;
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-    const { data: unid } = await admin.from('soc_agenda_unidades').select('id, ativo, codigo_agenda').eq('id', b.unidadeId).maybeSingle();
-    if (!unid?.ativo) return json({ error: 'Unidade indisponível' }, 400);
+    // Empresa com laudos sem a estrutura no SOC: só abre chamado para a Engenharia, sem data/horário nem exames
+    // (sem hierarquia não há grade de exames; psicossocial e exames com limite exigiriam reagendar depois)
+    const eng = !!b.estruturaNova && b.origem === 'cliente';
+    let unid: { id: string; ativo: boolean; codigo_agenda: string } | null = null;
+    if (!eng) {
+      if (!b.unidadeId || !b.data || !b.hora) return json({ error: 'Escolha a unidade, a data e o horário.' }, 400);
+      const { data: u } = await admin.from('soc_agenda_unidades').select('id, ativo, codigo_agenda').eq('id', b.unidadeId).maybeSingle();
+      if (!u?.ativo) return json({ error: 'Unidade indisponível' }, 400);
+      unid = u;
+    }
 
     let empresaNome = '';
     let codigoEmpresa = b.codigoEmpresaSoc ?? null;
@@ -99,13 +107,16 @@ Deno.serve(async (req) => {
     const retorno = b.tipoExame === 'Retorno ao Trabalho' && b.origem !== 'socnet';
 
     // Regras da Agenda conferidas no servidor (mesmas da tela)
-    if (b.data <= hojeSP()) return json({ error: 'Escolha uma data a partir de amanhã.' }, 400);
-    const regras = await carregarRegras(admin, b.unidadeId);
-    const bloqueio = bloqueioUnidade(regras, b.data, b.hora) ?? bloqueioExames(regras, b.data, b.hora, b.exames);
-    if (bloqueio) return json({ error: `${bloqueio} Escolha outra data ou horário.` }, 400);
-    const lim = limiteDia(regras, b.data, b.tipoExame);
-    if (lim !== null && (await contarDia(admin, b.unidadeId, b.data, b.tipoExame)) >= lim) {
-      return json({ error: `Limite diário de ${b.tipoExame} atingido nesta data. Escolha outro dia.` }, 400);
+    if (!eng) {
+      const dataAg = b.data!, horaAg = b.hora!;
+      if (dataAg <= hojeSP()) return json({ error: 'Escolha uma data a partir de amanhã.' }, 400);
+      const regras = await carregarRegras(admin, b.unidadeId!);
+      const bloqueio = bloqueioUnidade(regras, dataAg, horaAg) ?? bloqueioExames(regras, dataAg, horaAg, b.exames);
+      if (bloqueio) return json({ error: `${bloqueio} Escolha outra data ou horário.` }, 400);
+      const lim = limiteDia(regras, dataAg, b.tipoExame);
+      if (lim !== null && (await contarDia(admin, b.unidadeId!, dataAg, b.tipoExame)) >= lim) {
+        return json({ error: `Limite diário de ${b.tipoExame} atingido nesta data. Escolha outro dia.` }, 400);
+      }
     }
 
     // Retorno ao Trabalho: motivo e documentos obrigatórios
@@ -132,25 +143,35 @@ Deno.serve(async (req) => {
         : 'Não é possível agendar este tipo de exame para colaborador com cadastro inativo.' }, 400);
     }
 
-    const { data: dup } = await admin.from('soc_agendamentos').select('id')
-      .eq('colaborador_cpf', b.colaboradorCpf).eq('data_agendada', b.data)
-      .in('status', ['agendado_soc', 'aguardando_aprovacao']).limit(1);
-    if (dup?.length) return json({ error: 'Este colaborador já tem agendamento nesta data.' }, 409);
+    if (eng) {
+      // Evita chamado duplicado da mesma estrutura para o mesmo colaborador
+      const { data: dupEng } = await admin.from('soc_agendamentos').select('protocolo')
+        .eq('colaborador_cpf', b.colaboradorCpf).eq('codigo_empresa_soc', codigoEmpresa!).eq('fila_aprovacao', 'engenharia')
+        .eq('aprovacao_status', 'pendente').limit(1);
+      if (dupEng?.length) return json({ error: `Já existe uma solicitação de estrutura em análise para este colaborador (protocolo ${dupEng[0].protocolo}).` }, 409);
+    } else {
+      // Mesmo CPF pode ter exame em empresas diferentes no mesmo dia
+      let qDup = admin.from('soc_agendamentos').select('id')
+        .eq('colaborador_cpf', b.colaboradorCpf).eq('data_agendada', b.data!)
+        .in('status', ['agendado_soc', 'aguardando_aprovacao']);
+      qDup = codigoEmpresa ? qDup.eq('codigo_empresa_soc', codigoEmpresa) : qDup.eq('empresa_cnpj', b.empresaCnpj);
+      const { data: dup } = await qDup.limit(1);
+      if (dup?.length) return json({ error: 'Este colaborador já tem agendamento nesta data nesta empresa.' }, 409);
+    }
 
     let guiaPath: string | null = null;
     const anexos: { tipo_documento: string; nome_arquivo: string; path: string }[] = [];
     try {
-      if (b.guia) { guiaPath = await salvarArquivo(admin, b.data, b.guia); anexos.push({ tipo_documento: b.tipoAnexo ?? 'Guia', nome_arquivo: b.guia.nome, path: guiaPath }); }
-      for (const d of b.documentos) anexos.push({ tipo_documento: d.tipoDocumento, nome_arquivo: d.nome, path: await salvarArquivo(admin, b.data, d) });
+      if (b.guia) { guiaPath = await salvarArquivo(admin, b.data ?? hojeSP(), b.guia); anexos.push({ tipo_documento: b.tipoAnexo ?? 'Guia', nome_arquivo: b.guia.nome, path: guiaPath }); }
+      for (const d of b.documentos) anexos.push({ tipo_documento: d.tipoDocumento, nome_arquivo: d.nome, path: await salvarArquivo(admin, b.data ?? hojeSP(), d) });
     } catch (e) { return json({ error: (e as Error).message }, 400); }
-    const eng = !!b.estruturaNova && b.origem === 'cliente';
-    const exames = [...new Set(b.exames.map((e) => e.toUpperCase()))];
+    const exames = eng ? [] : [...new Set(b.exames.map((e) => e.toUpperCase()))];
 
     const { data, error } = await admin.from('soc_agendamentos').insert({
-      exames, guia_path: guiaPath, unidade_id: b.unidadeId,
+      exames, guia_path: guiaPath, unidade_id: eng ? null : b.unidadeId,
       empresa_nome: empresaNome, empresa_cnpj: b.empresaCnpj, codigo_empresa_soc: codigoEmpresa,
       colaborador_nome: b.colaboradorNome.toUpperCase(), colaborador_cpf: b.colaboradorCpf,
-      tipo_exame: b.tipoExame, data_agendada: b.data, hora_agendada: b.hora,
+      tipo_exame: b.tipoExame, data_agendada: eng ? null : b.data, hora_agendada: eng ? null : b.hora,
       observacoes: [origemTxt, b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
       motivo_retorno: retorno ? b.motivoRetorno : null,
       status: retorno || eng ? 'aguardando_aprovacao' : 'solicitado',
@@ -168,8 +189,8 @@ Deno.serve(async (req) => {
     if (b.origem === 'externo' || !codigoEmpresa) return json({ protocolo: data.protocolo, agendadoSoc: false, pendenteEquipe: true });
 
     const soc = await incluirAgendamentoSoc({
-      codigoEmpresa, cpf: b.colaboradorCpf, codigoAgenda: unid.codigo_agenda,
-      data: b.data, hora: b.hora, tipoExame: b.tipoExame,
+      codigoEmpresa, cpf: b.colaboradorCpf, codigoAgenda: unid!.codigo_agenda,
+      data: b.data!, hora: b.hora!, tipoExame: b.tipoExame,
       codigoFuncionarioSoc: codFuncSocnet ?? (sit?.inativo ? sit.codigo ?? undefined : undefined),
       detalhes: [
         `PROTOCOLO: ${data.protocolo}`,

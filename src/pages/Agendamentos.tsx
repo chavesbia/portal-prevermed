@@ -30,6 +30,7 @@ const STATUS: Record<string, { label: string; variant: "default" | "secondary" |
   solicitado: { label: "Pendente no SOC", variant: "destructive" },
   aguardando_aprovacao: { label: "Aguardando aprovação", variant: "secondary" },
   documentacao_devolvida: { label: "Documentação devolvida", variant: "outline" },
+  estrutura_cadastrada: { label: "Estrutura cadastrada", variant: "default" },
 };
 
 const fmtDataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -204,7 +205,7 @@ export default function Agendamentos() {
         (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
     }).sort((a: any, b: any) => {
       const [campo, dir] = ordem.split(":");
-      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada} ${x.hora_agendada}`;
+      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada ?? ""} ${x.hora_agendada ?? ""}`;
       return String(val(a)).localeCompare(String(val(b))) * (dir === "desc" ? -1 : 1);
     });
   }, [lista, busca, filtroCanal, kit, ordem]);
@@ -343,7 +344,7 @@ export default function Agendamentos() {
                       return (
                         <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                           <TableCell className="whitespace-nowrap">{fmtDataHora(a.created_at)}{novo(a) && <Badge className="ml-2 whitespace-nowrap">Novo</Badge>}</TableCell>
-                          <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)} {a.hora_agendada.slice(0, 5)}</TableCell>
+                          <TableCell className="whitespace-nowrap">{a.data_agendada ? `${fmtData(a.data_agendada)} ${a.hora_agendada?.slice(0, 5) ?? ""}` : "Sem data (estrutura)"}</TableCell>
                           <TableCell className="max-w-[220px]"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="text-xs text-muted-foreground">{a.tipo_exame}</p></TableCell>
                           <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                           <TableCell className="whitespace-nowrap">{nomeUnidade(a)}</TableCell>
@@ -446,7 +447,7 @@ export default function Agendamentos() {
                   : <span className="text-muted-foreground">Não localizado</span>}
               </dd></>)}
               <dt className="text-muted-foreground">Empresa</dt><dd>{toTitleCase(detalhe.empresa_nome)}{detalhe.codigo_empresa_soc ? <span className="text-xs text-muted-foreground"> · SOC {detalhe.codigo_empresa_soc}</span> : null}</dd>
-              <dt className="text-muted-foreground">Data</dt><dd>{fmtData(detalhe.data_agendada)} às {detalhe.hora_agendada.slice(0, 5)}</dd>
+              {detalhe.data_agendada && (<><dt className="text-muted-foreground">Data</dt><dd>{fmtData(detalhe.data_agendada)} às {detalhe.hora_agendada?.slice(0, 5)}</dd></>)}
               <dt className="text-muted-foreground">Unidade</dt><dd>{nomeUnidade(detalhe)}</dd>
               <dt className="text-muted-foreground">Subgrupo</dt><dd>{subgrupoDe(detalhe)}</dd>
               <dt className="text-muted-foreground">Tipo</dt><dd>{detalhe.tipo_exame}</dd>
@@ -479,7 +480,7 @@ export default function Agendamentos() {
                 <Textarea placeholder={detalhe.fila_aprovacao === "engenharia" ? "Motivo da devolução (obrigatório para devolver). Ex.: cargo já existe com outro nome, informar atividades." : "Motivo da devolução (obrigatório para devolver). Ex.: laudo ilegível, falta alta médica."} value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={1000} />
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" disabled={enviando || motivo.trim().length < 5} onClick={() => decidir("devolver")}>Devolver</Button>
-                  <Button disabled={enviando} onClick={() => decidir("aprovar")}>{enviando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Aprovar e agendar</Button>
+                  <Button disabled={enviando} onClick={() => decidir("aprovar")}>{enviando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{detalhe.fila_aprovacao === "engenharia" && !detalhe.data_agendada ? "Confirmar cadastro no SOC" : "Aprovar e agendar"}</Button>
                 </div>
               </div>
             )}

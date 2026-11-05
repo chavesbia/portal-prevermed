@@ -6737,7 +6737,7 @@ export type Database = {
           colaborador_cpf: string
           colaborador_nome: string
           created_at: string
-          data_agendada: string
+          data_agendada: string | null
           devolucao_motivo: string | null
           empresa_cnpj: string | null
           empresa_nome: string | null
@@ -6745,7 +6745,7 @@ export type Database = {
           exames: Json
           fila_aprovacao: string
           guia_path: string | null
-          hora_agendada: string
+          hora_agendada: string | null
           id: string
           kit_impresso_em: string | null
           kit_impresso_por: string | null
@@ -6768,7 +6768,7 @@ export type Database = {
           colaborador_cpf: string
           colaborador_nome: string
           created_at?: string
-          data_agendada: string
+          data_agendada?: string | null
           devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
@@ -6776,7 +6776,7 @@ export type Database = {
           exames?: Json
           fila_aprovacao?: string
           guia_path?: string | null
-          hora_agendada: string
+          hora_agendada?: string | null
           id?: string
           kit_impresso_em?: string | null
           kit_impresso_por?: string | null
@@ -6799,7 +6799,7 @@ export type Database = {
           colaborador_cpf?: string
           colaborador_nome?: string
           created_at?: string
-          data_agendada?: string
+          data_agendada?: string | null
           devolucao_motivo?: string | null
           empresa_cnpj?: string | null
           empresa_nome?: string | null
@@ -6807,7 +6807,7 @@ export type Database = {
           exames?: Json
           fila_aprovacao?: string
           guia_path?: string | null
-          hora_agendada?: string
+          hora_agendada?: string | null
           id?: string
           kit_impresso_em?: string | null
           kit_impresso_por?: string | null
