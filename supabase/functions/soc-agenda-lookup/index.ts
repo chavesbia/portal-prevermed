@@ -129,10 +129,17 @@ const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5);
 // Sem registro local (ex.: pedido emitido após a última rotina), varre o SOC ao vivo e grava tudo o que vier.
 async function pedidosSocnet(cpf: string) {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: locais } = await admin.from('soc_pedidos_socnet').select('*').eq('cpf', cpf).gt('pendentes', 0);
-  if (locais?.length) {
-    const pedidos = (locais as FichaSocnet[]).map(fichaParaPedido);
-    return { pedidos, socnet: true, origemDados: 'portal' };
+  const { data: locaisRaw } = await admin.from('soc_pedidos_socnet').select('*').eq('cpf', cpf).gt('pendentes', 0);
+  // Só pedidos dentro da janela da rotina (45 dias atrás / 30 à frente), do mais recente para o mais antigo.
+  const ts = (d: string | null) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(d ?? ''); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1]) : NaN; };
+  const ini = Date.now() - 45 * 864e5, fim = Date.now() + 30 * 864e5;
+  const locais = ((locaisRaw ?? []) as (FichaSocnet & { sincronizado_em?: string })[])
+    .filter((f) => { const t = ts(f.data_ficha); return t >= ini && t <= fim; })
+    .sort((a, b) => ts(b.data_ficha) - ts(a.data_ficha));
+  // Cópia local só vale se foi conferida no SOC há pouco (6h); senão pode haver pedido novo ou resultado já lançado.
+  const recente = locais.some((f) => f.sincronizado_em && Date.now() - new Date(f.sincronizado_em).getTime() < 6 * 36e5);
+  if (locais.length && recente) {
+    return { pedidos: locais.map(fichaParaPedido), socnet: true, origemDados: 'portal' };
   }
   const res = await varrerPedidosSocnet(15, 15);
   if (!res) return { pedidos: [], indisponivel: true };
@@ -143,7 +150,8 @@ async function pedidosSocnet(cpf: string) {
       .upsert(res.fichas.map((f) => ({ ...f, sincronizado_em: agora })), { onConflict: 'sequencial_ficha' });
     if (error) console.error('cache socnet', error);
   }
-  const pedidos = res.fichas.filter((f) => f.cpf === cpf && f.pendentes > 0).map(fichaParaPedido);
+  const pedidos = res.fichas.filter((f) => f.cpf === cpf && f.pendentes > 0)
+    .sort((a, b) => ts(b.data_ficha) - ts(a.data_ficha)).map(fichaParaPedido);
   return { pedidos, socnet: pedidos.length > 0, origemDados: 'soc' };
 }
 
