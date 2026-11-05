@@ -150,9 +150,12 @@ Deno.serve(async (req) => {
         .eq('aprovacao_status', 'pendente').limit(1);
       if (dupEng?.length) return json({ error: `Já existe uma solicitação de estrutura em análise para este colaborador (protocolo ${dupEng[0].protocolo}).` }, 409);
     } else {
-      const { data: dup } = await admin.from('soc_agendamentos').select('id')
-        .eq('colaborador_cpf', b.colaboradorCpf).eq('data_agendada', b.data!).eq('codigo_empresa_soc', codigoEmpresa ?? '')
-        .in('status', ['agendado_soc', 'aguardando_aprovacao']).limit(1);
+      // Mesmo CPF pode ter exame em empresas diferentes no mesmo dia
+      let qDup = admin.from('soc_agendamentos').select('id')
+        .eq('colaborador_cpf', b.colaboradorCpf).eq('data_agendada', b.data!)
+        .in('status', ['agendado_soc', 'aguardando_aprovacao']);
+      qDup = codigoEmpresa ? qDup.eq('codigo_empresa_soc', codigoEmpresa) : qDup.eq('empresa_cnpj', b.empresaCnpj);
+      const { data: dup } = await qDup.limit(1);
       if (dup?.length) return json({ error: 'Este colaborador já tem agendamento nesta data nesta empresa.' }, 409);
     }
 
