@@ -300,16 +300,15 @@ export default function AgendamentoPublico() {
     const documentos = [...docsRet, ...outros, ...extras].slice(0, 10);
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
-        unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
+        unidadeId: pedidoEng ? undefined : unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
         origem: pedido ? "socnet" : semPedido ? "externo" : "cliente", sequencialFicha: pedido?.sequencialFicha,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
-        tipoExame: f.tipoExame, data: toIso(dia), hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
-        exames: pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
+        tipoExame: f.tipoExame, data: pedidoEng ? undefined : toIso(dia), hora: pedidoEng ? undefined : hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
+        exames: pedidoEng ? [] : pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
         solicitante: precisaContato ? { nome: sol.nome.trim(), email: sol.email.trim(), celular: celSol } : undefined,
         documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
         estruturaNova: pedidoEng ? {
           unidade: pedidoEng.unidade.trim(), setor: pedidoEng.setor.trim(), cargo: pedidoEng.cargo.trim(), atividades: pedidoEng.atividades.trim() || undefined,
-          ...(alterandoLot ? {} : { nascimento: cad.nascimento || undefined, sexo: cad.sexo || undefined, admissao: cad.admissao || undefined }),
         } : undefined,
       },
     });
@@ -337,7 +336,21 @@ export default function AgendamentoPublico() {
           <h1 className="text-2xl font-semibold">Agendamento de Exames</h1>
         </div>
 
-        {protocolo ? (
+        {protocolo && pedidoEng ? (
+          <Card>
+            <CardContent className="space-y-5 py-8 text-center">
+              <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
+              <p className="text-lg font-semibold">Solicitação enviada</p>
+              <p className="text-sm">Solicitação enviada para a área técnica de Engenharia da PreverMed. Assim que a estrutura e a grade de exames forem cadastradas no sistema SOC, você receberá um aviso para realizar o agendamento.</p>
+              <p className="font-mono text-2xl">{protocolo}</p>
+              <p className="text-xs text-muted-foreground">Guarde este número de protocolo.</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>
+                <Button variant="outline" onClick={() => window.location.assign(window.location.pathname)}>Nova empresa</Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : protocolo ? (
           <Card>
             <CardContent className="space-y-5 py-8">
               <div className="space-y-2 text-center">
@@ -491,21 +504,21 @@ export default function AgendamentoPublico() {
                   <div className="space-y-3 rounded-md border p-3">
                     <p className="text-sm font-medium">{alterandoLot ? "Corrigir cargo, setor e unidade" : "Pré-cadastro do colaborador"}</p>
                     {!alterandoLot && <><div><Label>Nome completo *</Label><Input value={f.colaboradorNome} onChange={set("colaboradorNome")} maxLength={120} /></div>
-                    <div className="grid gap-2 sm:grid-cols-3">
+                    {!engAberto && <div className="grid gap-2 sm:grid-cols-3">
                       <div><Label>Nascimento *</Label><Input type="date" value={cad.nascimento} onChange={(e) => setCad({ ...cad, nascimento: e.target.value })} /></div>
                       <div><Label>Sexo *</Label>
                         <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={cad.sexo} onChange={(e) => setCad({ ...cad, sexo: e.target.value })}>
                           <option value="">Selecione</option><option value="MASCULINO">Masculino</option><option value="FEMININO">Feminino</option>
                         </select></div>
                       <div><Label>Admissão *</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>
-                    </div>
+                    </div>}
                     </>}
                     {reativ && <div className="sm:w-1/3"><Label>Admissão</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>}
                     {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
                     {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
                     {hier && !hier.indisponivel && !livre && (<>
-                      <p className="text-xs text-muted-foreground">Comece pelo cargo: mostramos só os setores e unidades onde ele existe (conforme os laudos).</p>
-                      {(() => {
+                      {!engAberto && <p className="text-xs text-muted-foreground">Comece pelo cargo: mostramos só os setores e unidades onde ele existe (conforme os laudos).</p>}
+                      {!engAberto && (() => {
                         // Combinações válidas da hierarquia, para filtrar a partir do cargo
                         const trios = hier.unidades.flatMap((u) => u.setores.flatMap((s) => s.cargos.map((c) => ({ u, s, c }))));
                         const unicos = (l: Item[]) => [...new Map(l.map((i) => [i.codigo, i])).values()].sort((a, b) => a.nome.localeCompare(b.nome));
@@ -538,10 +551,10 @@ export default function AgendamentoPublico() {
                         ));
                       })()}
                       {!engAberto ? (
-                        <button type="button" className="text-xs text-primary underline" onClick={() => setEngAberto(true)}>Não localizou a unidade, o setor ou o cargo na lista? Clique aqui para solicitar a inclusão pela nossa equipe técnica</button>
+                        <button type="button" className="text-xs text-primary underline" onClick={() => { setEngAberto(true); setCad((p) => ({ ...p, unidade: "", setor: "", cargo: "" })); }}>Não localizou a unidade, o setor ou o cargo na lista? Clique aqui para solicitar a inclusão pela nossa equipe técnica</button>
                       ) : (
                         <div className="space-y-2 rounded-md bg-muted/50 p-3">
-                          <p className="text-xs text-muted-foreground">Informe como é na empresa. O horário fica reservado e nossa equipe técnica confere antes de confirmar.</p>
+                          <p className="text-xs text-muted-foreground">Informe a unidade, o setor e o cargo como são na empresa. A solicitação vai para a área técnica de Engenharia da PreverMed, que cadastra a estrutura e a grade de exames no SOC. O agendamento é feito depois desse cadastro.</p>
                           <div className="grid gap-2 sm:grid-cols-3">
                             {(["cargo", "setor", "unidade"] as const).map((k) => (
                               <div key={k}><Label className="capitalize">{k} *</Label><Input value={eng[k]} maxLength={120} onChange={(e) => setEng({ ...eng, [k]: e.target.value })} /></div>
@@ -549,10 +562,10 @@ export default function AgendamentoPublico() {
                           </div>
                           <div><Label>Atividades do cargo</Label><Textarea rows={2} maxLength={800} value={eng.atividades} onChange={(e) => setEng({ ...eng, atividades: e.target.value })} /></div>
                           <div className="flex justify-end gap-2">
-                            <Button type="button" variant="ghost" size="sm" onClick={() => setEngAberto(false)}>Voltar</Button>
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEngAberto(false)}>Voltar para a lista</Button>
                             <Button type="button" size="sm"
-                              disabled={eng.unidade.trim().length < 2 || eng.setor.trim().length < 2 || eng.cargo.trim().length < 2 || (!alterandoLot && (f.colaboradorNome.trim().length < 3 || !cad.nascimento || !cad.sexo || !cad.admissao))}
-                              onClick={() => { setPedidoEng({ ...eng }); setF((p) => ({ ...p, cargo: eng.cargo.trim().toUpperCase(), tipoExame: alterandoLot ? "Mudança de Risco" : "Admissional" })); setCadAberto(false); setEngAberto(false); }}>
+                              disabled={eng.unidade.trim().length < 2 || eng.setor.trim().length < 2 || eng.cargo.trim().length < 2 || f.colaboradorNome.trim().length < 3}
+                              onClick={() => { setPedidoEng({ ...eng }); setF((p) => ({ ...p, cargo: eng.cargo.trim().toUpperCase(), tipoExame: alterandoLot ? "Mudança de Risco" : "Admissional" })); setCadAberto(false); setEngAberto(false); setPasso(2); }}>
                               Continuar
                             </Button>
                           </div>
@@ -572,19 +585,19 @@ export default function AgendamentoPublico() {
                       ))}
                     </>)}
                     {cadErro && <p className="text-sm text-destructive">{cadErro}</p>}
-                    <div className="flex justify-end gap-2">
+                    {!engAberto && <div className="flex justify-end gap-2">
                       <Button type="button" variant="ghost" size="sm" onClick={() => { setCadAberto(false); setAlterandoLot(false); setReativ(false); }}>Cancelar</Button>
                       <Button type="button" size="sm" disabled={!cadOk || cadastrando} onClick={cadastrar}>
                         {cadastrando && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}{alterandoLot ? "Confirmar e atualizar no SOC" : "Pré-cadastrar no SOC"}
                       </Button>
-                    </div>
+                    </div>}
                   </div>
                 )}
               </>)}
               {passo === 1 && pedidoEng && !cadAberto && (
                 <div className="rounded-md border p-3 text-sm">
                   <p><strong>{pedidoEng.cargo.toUpperCase()}</strong> · {pedidoEng.setor.toUpperCase()} · {pedidoEng.unidade.toUpperCase()}</p>
-                  <p className="text-xs text-muted-foreground">Nossa equipe técnica vai conferir antes de confirmar o horário.</p>
+                  <p className="text-xs text-muted-foreground">Solicitação de cadastro de estrutura para a Engenharia. Não há escolha de data nesta etapa.</p>
                   <button type="button" className="text-xs text-primary underline" onClick={() => setPedidoEng(null)}>Corrigir</button>
                 </div>
               )}
@@ -596,7 +609,27 @@ export default function AgendamentoPublico() {
                   <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
                 </div>
               )}
-              {passo === 2 && !pedido && (<>
+              {passo === 2 && pedidoEng && (
+                <div className="space-y-3">
+                  <div className="rounded-md border p-3 text-sm">
+                    <p className="font-medium">Estrutura solicitada</p>
+                    <p><strong>{pedidoEng.cargo.toUpperCase()}</strong> · {pedidoEng.setor.toUpperCase()} · {pedidoEng.unidade.toUpperCase()}</p>
+                    {pedidoEng.atividades.trim() && <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{pedidoEng.atividades}</p>}
+                    <button type="button" className="text-xs text-primary underline" onClick={() => { setPedidoEng(null); setPasso(1); setCadAberto(true); setEngAberto(true); }}>Corrigir</button>
+                  </div>
+                  <div className="space-y-2 rounded-md border p-3">
+                    <p className="text-sm font-medium">Quem está solicitando</p>
+                    <p className="text-xs text-muted-foreground">Usaremos estes contatos para avisar quando a estrutura estiver cadastrada e o agendamento puder ser feito.</p>
+                    <div><Label>Nome *</Label><Input value={sol.nome} maxLength={120} onChange={(e) => setSol({ ...sol, nome: e.target.value })} /></div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div><Label>E-mail *</Label><Input type="email" value={sol.email} maxLength={160} onChange={(e) => setSol({ ...sol, email: e.target.value })} /></div>
+                      <div><Label>WhatsApp/Celular *</Label><Input inputMode="tel" value={sol.celular} maxLength={16} placeholder="(11) 90000-0000" onChange={(e) => setSol({ ...sol, celular: e.target.value })} /></div>
+                    </div>
+                  </div>
+                  <div><Label>Observações (opcional)</Label><Textarea value={f.observacoes} onChange={set("observacoes")} maxLength={1000} /></div>
+                </div>
+              )}
+              {passo === 2 && !pedido && !pedidoEng && (<>
                 {inativo && (
                   <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                     <AlertTriangle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
@@ -821,7 +854,9 @@ export default function AgendamentoPublico() {
 
               <div className="flex justify-between pt-2">
                 <Button variant="ghost" disabled={passo === 0} onClick={() => setPasso(passo - 1)}>Voltar</Button>
-                {passo < 3 ? (
+                {passo === 2 && pedidoEng ? (
+                  <Button disabled={!contatoOk || carregando} onClick={enviar}>{carregando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Enviar solicitação</Button>
+                ) : passo < 3 ? (
                   <Button disabled={!valido[passo]} onClick={() => setPasso(passo + 1)}>Continuar</Button>
                 ) : (
                   <Button disabled={!valido[3] || carregando} onClick={enviar}>Confirmar agendamento</Button>
