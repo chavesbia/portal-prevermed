@@ -409,7 +409,7 @@ export default function AgendamentoPublico() {
                   <div key={p} className={`h-1.5 flex-1 rounded ${i <= passo ? "bg-primary" : "bg-muted"}`} />
                 ))}
               </div>
-              <CardTitle className="pt-2 text-lg">{passo + 1}. {PASSOS[passo]}</CardTitle>
+              <CardTitle className="pt-2 text-lg">{passo + 1}. {passo === 2 && pedidoEng ? "Solicitação de estrutura" : PASSOS[passo]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {passo === 0 && (<>
