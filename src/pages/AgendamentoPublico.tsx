@@ -362,8 +362,7 @@ export default function AgendamentoPublico() {
               </dl>
               {aguardandoAprov && (
                 <div className="rounded-md border border-primary/40 bg-primary/5 p-4 text-sm">
-                  {pedidoEng ? "Nossa equipe técnica vai conferir a unidade, o setor e o cargo informados. O horário fica reservado e só é confirmado após essa conferência." : "Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação."}
-                  Acompanhe ou envie documentos pelo link abaixo, com o protocolo e o CPF.
+                  {pedidoEng ? "Nossa equipe técnica vai conferir a unidade, o setor e o cargo informados. O horário fica reservado e só é confirmado após essa conferência." : "Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação."} Nossa equipe entrará em contato em breve pelos contatos informados.
                 </div>
               )}
               <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
@@ -710,7 +709,7 @@ export default function AgendamentoPublico() {
                     </p>
                   )}
                 </div>
-                {(semPedido || !!pedido || !!empSel?.podeCriar) && (
+                {(semPedido || ((!!pedido || !!empSel?.podeCriar) && !retorno)) && (
                 <div className="space-y-2">
                   <Label>Kit de atendimento / Guia ({semPedido ? "obrigatório" : "opcional"} — PDF ou imagem, até 5 MB cada, máx. 8 arquivos)</Label>
                   <Input type="file" multiple accept="application/pdf,image/png,image/jpeg"
@@ -737,7 +736,7 @@ export default function AgendamentoPublico() {
                 {retorno && (
                   <div className="space-y-3 rounded-md border p-3">
                     <p className="text-sm font-medium">Documentação do retorno ao trabalho</p>
-                    <p className="text-xs text-muted-foreground">O agendamento só é confirmado após a nossa equipe de saúde conferir os documentos (completos e legíveis), para o colaborador não perder tempo na clínica.</p>
+                    <p className="text-xs text-muted-foreground">Para agendar esse tipo de atendimento a documentação passa por análise da nossa equipe. Estes dados de contato serão utilizados para avisar sobre liberação ou solicitação de documentação complementar.</p>
                     <div><Label>Motivo do retorno *</Label>
                       <Textarea value={motivoRetorno} onChange={(e) => setMotivoRetorno(e.target.value)} maxLength={1000} placeholder="Ex.: afastamento por cirurgia no joelho de 01/08 a 30/09, alta do INSS em 01/10." />
                       {motivoRetorno.trim().length > 0 && motivoRetorno.trim().length < 10 && <p className="mt-1 text-xs text-destructive">Descreva um pouco mais (mínimo 10 caracteres).</p>}</div>
@@ -816,7 +815,7 @@ export default function AgendamentoPublico() {
               </>)}
 
               {passo === 3 && precisaContato && (
-                <p className="rounded-md border border-primary/40 bg-primary/5 p-2 text-xs">Horário pré-reservado: o agendamento só é confirmado após a análise e liberação da nossa equipe {pedidoEng ? "técnica" : "de saúde"}.</p>
+                <p className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs">Horário pré-reservado: o agendamento só é confirmado após a análise e liberação da nossa equipe {pedidoEng ? "técnica" : "de saúde"}.</p>
               )}
               {erro && <p className="text-sm text-destructive">{erro}</p>}
 
