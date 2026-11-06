@@ -18,3 +18,7 @@
 
 ## Solicitação atual
 - Executar os itens em aberto acima, exceto OCR; não expor chaves do SOC no chat.
+
+## OS 12369
+- [x] Conferir a unidade no SOC: hierarquia retornou lista vazia e sincronização de unidades concluída sem erros; nenhuma unidade da Studio Retrofit foi recebida.
+- [ ] Recuperar e vincular a unidade confirmada à OS com auditoria e validar sua seleção na finalização, sem encerrar o PPP pela equipe — bloqueado: falta confirmação do cadastro e código real na Tela 231 do SOC; não criar Matriz 001 presumida.

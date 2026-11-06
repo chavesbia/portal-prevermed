@@ -7921,6 +7921,10 @@ export type Database = {
       }
     }
     Functions: {
+      agenda_excluir_protocolo: {
+        Args: { _agendamento_id: string }
+        Returns: undefined
+      }
       agenda_marcar_kit_impresso: {
         Args: { _agendamento_id: string; _impresso: boolean }
         Returns: undefined
