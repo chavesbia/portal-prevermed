@@ -247,6 +247,11 @@ function opcoesNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Item[] {
   if (d.cad.livre) return (nivel === 'setor' ? h.setores : h.cargos) ?? [];
   const u = (h.unidades ?? []).find((x: any) => x.codigo === d.cad.unidade?.codigo);
   if (nivel === 'setor') return u?.setores ?? [];
+  if (!d.cad.unidade) { // hierarquia reversa: começa pelo cargo (todos os cargos da empresa, sem repetir)
+    const m = new Map<string, Item>();
+    for (const un of h.unidades ?? []) for (const se of un.setores ?? []) for (const c of se.cargos ?? []) if (!m.has(c.codigo)) m.set(c.codigo, c);
+    return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome));
+  }
   return u?.setores?.find((x: any) => x.codigo === d.cad.setor?.codigo)?.cargos ?? [];
 }
 function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
@@ -254,7 +259,7 @@ function pedirNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo'): Res {
   const etapa = nivel === 'unidade' ? 'CAD_UNIDADE' : nivel === 'setor' ? 'CAD_SETOR' : 'CAD_CARGO';
   const rot = { unidade: '🏢 Unidade', setor: '📂 Setor', cargo: '💼 Cargo' }[nivel];
   delete d.filtro;
-  if (!d.cad.livre && !lista.length) {
+  if (!d.cad.livre && !lista.length && d.cad.unidade) {
     d.cad[nivel === 'cargo' ? 'setor' : 'unidade'] = undefined;
     return { ...pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade'), resposta: `Não há ${nivel === 'cargo' ? 'cargos ativos neste setor' : 'setores ativos nesta unidade'}. Escolha outra opção.\n\n` + pedirNivel(d, nivel === 'cargo' ? 'setor' : 'unidade').resposta };
   }
@@ -272,7 +277,17 @@ function aplicarNivel(d: Dados, nivel: 'unidade' | 'setor' | 'cargo', ref: { cod
   d.cad[nivel] = ref;
   if (nivel === 'unidade') { d.cad.setor = undefined; d.cad.cargo = undefined; return pedirNivel(d, 'setor'); }
   if (nivel === 'setor') { d.cad.cargo = undefined; return pedirNivel(d, 'cargo'); }
+  if (!d.cad.livre && !d.cad.unidade) return mostrarCombos(d);
   return confirmarCad(d);
+}
+// Hierarquia reversa: mostra ao agendador onde o cargo existe (mesmo se for uma só) para ele conferir unidade/setor
+function mostrarCombos(d: Dados): Res {
+  const combos: any[] = [];
+  for (const un of d.hier?.unidades ?? []) for (const se of un.setores ?? []) if ((se.cargos ?? []).some((c: any) => c.codigo === d.cad.cargo?.codigo))
+    combos.push({ unidade: { codigo: un.codigo, nome: un.nome }, setor: { codigo: se.codigo, nome: se.nome } });
+  d.combos = combos;
+  const linhas = combos.map((c, i) => `*${i + 1}* - 🏢 ${titulo(c.unidade.nome)}\n      📂 ${titulo(c.setor.nome)}`).join('\n');
+  return { etapa: 'CAD_COMBO', dados: d, resposta: `💼 Cargo: *${titulo(d.cad.cargo.nome)}*\n\nEste cargo está cadastrado no SOC nesta(s) hierarquia(s):\n\n${linhas}\n\nDigite o *número* da hierarquia correta.\n\nSe a unidade ou o setor do colaborador for outro:\n• *TROCAR* - voltar e escolher outro cargo\n• *INCLUIR* - solicitar o cadastro da estrutura à Engenharia${RODAPE}` };
 }
 // ---- Confirmação da lotação atual (empresa da carteira, cadastro ativo) ----
 const pedirConfLot = (d: Dados): Res => ({ etapa: 'LOT_CONF', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*\n\n📌 *Confira a lotação atual no SOC:*\n${lotacao(d) || '_(sem lotação informada)_'}\n\nOs riscos e exames do ASO seguem esta lotação.\n\n*1* - Confirmar lotação\n*2* - Alterar lotação${RODAPE}` });
@@ -474,7 +489,16 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       d.cad.livre = !!data.podeCriar;
       d.hier = data;
       if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa ainda não possui unidades, setores e cargos ativos para o pré-cadastro.');
-      return pedirNivel(d, 'unidade');
+      return pedirNivel(d, d.cad.livre ? 'unidade' : 'cargo');
+    }
+    case 'CAD_COMBO': {
+      const combos: any[] = d.combos ?? [];
+      if (semAcento(t) === 'incluir') { delete d.combos; d.eng = {}; return { etapa: 'ENG_CARGO', dados: d, resposta: `📝 *Solicitação de cadastro de estrutura*\n\nA solicitação vai para a área técnica de Engenharia da PreverMed, que cadastra a estrutura e a grade de exames no SOC. O agendamento é feito depois desse cadastro.\n\nDigite o *cargo* como é na empresa:${RODAPE}` }; }
+      if (semAcento(t) === 'trocar') { delete d.combos; d.cad.cargo = undefined; return pedirNivel(d, 'cargo'); }
+      const i = escolha(t, combos.length);
+      if (i < 0) return { etapa, dados: d, resposta: `Digite o *número* da hierarquia correta, *TROCAR* para escolher outro cargo ou *INCLUIR* para solicitar o cadastro à Engenharia.${RODAPE}` };
+      d.cad.unidade = combos[i].unidade; d.cad.setor = combos[i].setor; delete d.combos;
+      return confirmarCad(d);
     }
     case 'CAD_UNIDADE': case 'CAD_SETOR': case 'CAD_CARGO': {
       const nivel = etapa === 'CAD_UNIDADE' ? 'unidade' : etapa === 'CAD_SETOR' ? 'setor' : 'cargo';
