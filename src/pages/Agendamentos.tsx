@@ -130,6 +130,14 @@ export default function Agendamentos() {
   }, [qc]);
 
   const [detalhe, setDetalhe] = useState<any | null>(null);
+  const excluirProtocolo = async () => {
+    if (!detalhe || !window.confirm(`Excluir definitivamente o protocolo ${detalhe.protocolo}?`)) return;
+    const { error } = await (supabase as any).rpc("agenda_excluir_protocolo", { _agendamento_id: detalhe.id });
+    if (error) return toast.error(error.message);
+    toast.success(`Protocolo ${detalhe.protocolo} excluído`);
+    setDetalhe(null);
+    qc.invalidateQueries({ queryKey: ["agendamentos"] }); qc.invalidateQueries({ queryKey: ["agendamentos-pendentes"] });
+  };
   const conf = sp.get("conf") ?? "todos";
   const setConf = (v: string) => { const n = new URLSearchParams(sp); n.set("conf", v); setSp(n, { replace: true }); };
   const [agora, setAgora] = useState(() => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
@@ -325,7 +333,7 @@ export default function Agendamentos() {
           <TabsTrigger value="calendario">Calendário</TabsTrigger>
           <TabsTrigger value="conferencia">Conferência</TabsTrigger>
         </TabsList>
-        {aba !== "calendario" && (
+        {aba !== "calendario" && aba !== "aprovacao" && (
           <div className="mt-3 flex flex-wrap items-end gap-2">
             {aba === "lista" && <>
               <div className="min-w-[200px] flex-1 space-y-2"><Label htmlFor="busca-agenda" className="block">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
@@ -533,6 +541,13 @@ export default function Agendamentos() {
                   <Button variant="outline" disabled={enviando || motivo.trim().length < 5} onClick={() => decidir("devolver")}>Devolver</Button>
                   <Button disabled={enviando} onClick={() => decidir("aprovar")}>{enviando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}{detalhe.fila_aprovacao === "engenharia" && !detalhe.data_agendada ? "Confirmar cadastro no SOC" : "Aprovar e agendar"}</Button>
                 </div>
+              </div>
+            )}
+            {isAdmMaster && (
+              <div className="mt-6 rounded-md border border-destructive/40 p-3">
+                <p className="text-sm font-medium text-destructive">Área ADM Master</p>
+                <p className="mb-2 text-xs text-muted-foreground">Exclui definitivamente este protocolo (uso para testes). A ação fica registrada no log de auditoria.</p>
+                <Button variant="destructive" size="sm" disabled={enviando} onClick={excluirProtocolo}>Excluir protocolo</Button>
               </div>
             )}
           </>)}
