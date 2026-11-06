@@ -245,7 +245,7 @@ export default function Agendamentos() {
             return (
               <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                 <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)}</TableCell>
-                <TableCell>{a.hora_agendada.slice(0, 5)}</TableCell>
+                <TableCell>{a.hora_agendada?.slice(0, 5) ?? "—"}</TableCell>
                 <TableCell className="sticky left-0 z-10 max-w-[220px] bg-background"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="whitespace-nowrap text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
