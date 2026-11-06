@@ -98,7 +98,7 @@ export default function Agendamentos() {
     queryKey: ["agendamentos-pendentes"],
     queryFn: async () => {
       const { data, error } = await db.from("soc_agendamentos").select("*, soc_agenda_unidades(nome), soc_agendamento_anexos(id, tipo_documento, nome_arquivo, path, enviado_em)")
-        .in("aprovacao_status", ["pendente", "devolvido"]).order("data_agendada");
+        .or("aprovacao_status.in.(pendente,devolvido),and(fila_aprovacao.eq.engenharia,aprovacao_status.eq.aprovado)").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -149,7 +149,8 @@ export default function Agendamentos() {
     let msg = data?.error;
     if (error && !msg) { try { msg = (await (error as any).context?.json())?.error; } catch { /* */ } }
     if (error || msg) return toast.error(msg ?? "Não foi possível concluir");
-    if (data?.erro) toast.warning(data.erro); else toast.success(decisao === "aprovar" ? "Aprovado e agendado no SOC" : "Documentação devolvida ao cliente");
+    const eng = detalhe.fila_aprovacao === "engenharia";
+    if (data?.erro) toast.warning(data.erro); else toast.success(decisao === "aprovar" ? (eng ? "Cadastro de estrutura confirmado no SOC" : "Aprovado e agendado no SOC") : (eng ? "Solicitação devolvida ao cliente" : "Documentação devolvida ao cliente"));
     setDetalhe(null); setMotivo("");
     qc.invalidateQueries({ queryKey: ["agendamentos"] }); qc.invalidateQueries({ queryKey: ["agendamentos-pendentes"] });
   };
@@ -251,6 +252,40 @@ export default function Agendamentos() {
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{temKitAgenda(a) ? <span className="inline-flex items-center gap-1" title={a.kit_impresso_em ? "Kit impresso" : "Kit anexado, não impresso"}><Paperclip className="h-3 w-3" />{a.kit_impresso_em && <Printer className="h-3 w-3 text-primary" />}</span> : "-"}</TableCell>
+                <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  const fmtEmissao = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
+  const SIT_ENG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+    pendente: { label: "Pendente", variant: "destructive" },
+    devolvido: { label: "Devolvido", variant: "outline" },
+    aprovado: { label: "Realizado", variant: "default" },
+  };
+  const LinhasEng = ({ itens }: { itens: any[] }) => (
+    <div className="max-h-[60vh] overflow-auto">
+      <Table>
+        <TableHeader className="sticky top-0 bg-background">
+          <TableRow>
+            <TableHead className="sticky left-0 z-20 whitespace-nowrap bg-background">Emitido em</TableHead><TableHead>Empresa</TableHead>
+            <TableHead className="whitespace-nowrap">Estrutura solicitada</TableHead><TableHead>Solicitante</TableHead><TableHead>Situação</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {itens.map((a) => {
+            const es = a.estrutura_solicitada ?? {};
+            const st = SIT_ENG[a.aprovacao_status] ?? { label: a.aprovacao_status, variant: "secondary" as const };
+            return (
+              <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
+                <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-background">{fmtEmissao(a.created_at)}<p className="font-mono text-xs text-muted-foreground">{a.protocolo}</p></TableCell>
+                <TableCell className="max-w-[220px] truncate">{toTitleCase(a.empresa_nome)}</TableCell>
+                <TableCell className="max-w-[260px] text-sm">{[es.unidade, es.setor, es.cargo].filter(Boolean).map((x: string) => toTitleCase(x)).join(" / ") || "—"}</TableCell>
+                <TableCell className="max-w-[220px]"><p className="truncate">{toTitleCase(a.solicitante?.nome ?? "") || "—"}</p><p className="truncate text-xs text-muted-foreground">{a.solicitante?.email ?? ""}</p></TableCell>
                 <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
               </TableRow>
             );
@@ -370,7 +405,12 @@ export default function Agendamentos() {
             const fila = sp.get("fila") === "engenharia" ? "engenharia" : "saude";
             const daFila = (k: string) => pendentes.filter((p: any) => (p.fila_aprovacao ?? "saude") === k);
             const n = (k: string) => daFila(k).filter((p: any) => p.aprovacao_status === "pendente").length;
-            const itens = daFila(fila);
+            const sit = sp.get("sit") === "realizado" ? "realizado" : "pendente";
+            const norm = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            const qEng = norm((sp.get("beng") ?? "").trim());
+            const itens = fila === "saude" ? daFila("saude").filter((p: any) => p.aprovacao_status !== "aprovado")
+              : daFila("engenharia").filter((p: any) => (sit === "realizado") === (p.aprovacao_status === "aprovado"))
+                .filter((p: any) => !qEng || norm([p.empresa_nome, p.protocolo, p.solicitante?.nome, p.solicitante?.email].join(" ")).includes(qEng));
             return (
               <Tabs value={fila} onValueChange={(v) => setFiltro({ fila: v })}>
                 <TabsList>
@@ -380,8 +420,18 @@ export default function Agendamentos() {
                 <Card className="mt-3"><CardContent className="pt-4 space-y-2">
                   <p className="text-sm text-muted-foreground">{fila === "saude"
                     ? "Documentação de saúde (Retorno ao Trabalho e outras): confira se está completa e legível. Ao aprovar, o horário é gravado no SOC; ao devolver, o cliente vê o motivo e reenvia pelo protocolo."
-                    : "Unidade, setor ou cargo que não existem no SOC. Cadastre a estrutura e o colaborador no SOC, depois aprove para gravar o horário. Até lá o agendamento fica travado."}</p>
-                  {itens.length ? <Linhas itens={itens} /> : <p className="text-sm text-muted-foreground">Nada aguardando nesta fila.</p>}
+                    : "Solicitações de inclusão de unidade, setor ou cargo. Cadastre a estrutura no SOC e clique em \"Confirmar cadastro no SOC\". O cliente agenda depois que a estrutura existir."}</p>
+                  {fila === "engenharia" && (
+                    <div className="flex flex-wrap items-end gap-2">
+                      <div className="min-w-[220px] flex-1"><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Buscar solicitação" className="pl-9" placeholder="Empresa, protocolo, solicitante ou e-mail" value={sp.get("beng") ?? ""} onChange={(e) => setFiltro({ beng: e.target.value })} /></div></div>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant={sit === "pendente" ? "default" : "outline"} onClick={() => setFiltro({ sit: "pendente" })}>Pendentes{n("engenharia") ? ` (${n("engenharia")})` : ""}</Button>
+                        <Button size="sm" variant={sit === "realizado" ? "default" : "outline"} onClick={() => setFiltro({ sit: "realizado" })}>Realizados</Button>
+                      </div>
+                    </div>
+                  )}
+                  {itens.length ? (fila === "engenharia" ? <LinhasEng itens={itens} /> : <Linhas itens={itens} />)
+                    : <p className="text-sm text-muted-foreground">{fila === "engenharia" && sit === "realizado" ? "Nenhuma solicitação realizada encontrada." : "Nada aguardando nesta fila."}</p>}
                 </CardContent></Card>
               </Tabs>
             );
