@@ -396,7 +396,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
         if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter os dados.${RODAPE}` };
         d.cad = { alterando: true, reativar: true, livre: true }; d.hier = data;
-        return pedirNivel(d, 'unidade');
+        return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo');
       }
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'reativar', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf });
       if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar o cadastro: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Corrigir dados${RODAPE}` };
@@ -412,13 +412,13 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter a lotação.${RODAPE}` };
       d.cad = { alterando: true, livre: !!data.podeCriar }; d.hier = data;
       if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa não possui unidades, setores e cargos ativos para alteração de lotação.');
-      return pedirNivel(d, 'unidade');
+      return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo');
     }
     case 'LOT_SALVAR': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para escolher novamente.${RODAPE}` };
       const c = d.cad;
-      if (i === 1) { c.unidade = undefined; c.setor = undefined; c.cargo = undefined; return pedirNivel(d, 'unidade'); }
+      if (i === 1) { c.unidade = undefined; c.setor = undefined; c.cargo = undefined; return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo'); }
       const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: c.reativar ? 'reativar' : 'alterarLotacao', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo) });
       if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar a lotação: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Escolher novamente${RODAPE}` };
@@ -568,7 +568,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
     case 'CAD_CONF_NIVEL': {
       const i = escolha(t, 2);
       const p = d.pend;
-      if (!p) return pedirNivel(d, 'unidade');
+      if (!p) return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo');
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para buscar novamente.${RODAPE}` };
       delete d.pend; delete d.filtro;
       if (i === 1) return pedirNivel(d, p.nivel);
@@ -584,7 +584,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i === 2) return { etapa: 'CAD_SEXO', dados: d, resposta: `Sexo do colaborador:\n\n*1* - ♂️ Masculino\n*2* - ♀️ Feminino${RODAPE}` };
       if (i === 3) return pedirAdmissao(d);
       d.cad.unidade = undefined; d.cad.setor = undefined; d.cad.cargo = undefined;
-      return pedirNivel(d, 'unidade');
+      return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo');
     }
     case 'CAD_CONFIRMAR': {
       const i = escolha(t, 2);
