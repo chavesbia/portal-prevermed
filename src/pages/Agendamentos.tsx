@@ -481,16 +481,16 @@ export default function Agendamentos() {
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {detalhe && (<>
             <SheetHeader><SheetTitle className="text-lg">{detalhe.fila_aprovacao === "engenharia" ? "Solicitação de estrutura" : toTitleCase(detalhe.colaborador_nome)}</SheetTitle></SheetHeader>
-            <div className="mt-2 flex flex-wrap gap-2">
+            {detalhe.fila_aprovacao !== "engenharia" && <div className="mt-2 flex flex-wrap gap-2">
               <Badge className="whitespace-nowrap">{nomeUnidade(detalhe)}</Badge>
               <Badge variant="secondary" className="whitespace-nowrap">{subgrupoDe(detalhe)}</Badge>
               <Badge variant="outline" className="whitespace-nowrap">{canal(detalhe)}</Badge>
-            </div>
+            </div>}
             <dl className="mt-4 grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Protocolo</dt><dd className="font-mono">{detalhe.protocolo}</dd>
               {detalhe.fila_aprovacao !== "engenharia" && (<><dt className="text-muted-foreground">CPF</dt><dd>{fmtCpf(detalhe.colaborador_cpf)}</dd></>)}
-              <dt className="text-muted-foreground">Emitido em</dt><dd>{fmtDataHora(detalhe.created_at)}</dd>
-              {canal(detalhe) === "WhatsApp" && (<><dt className="text-muted-foreground">Solicitante</dt><dd>
+              <dt className="text-muted-foreground">Emitido em</dt><dd>{detalhe.fila_aprovacao === "engenharia" ? fmtEmissao(detalhe.created_at) : fmtDataHora(detalhe.created_at)}</dd>
+              {detalhe.fila_aprovacao !== "engenharia" && canal(detalhe) === "WhatsApp" && (<><dt className="text-muted-foreground">Solicitante</dt><dd>
                 {!isAdmMaster ? <span className="text-muted-foreground">Via WhatsApp (contato visível para ADM Master)</span>
                   : solicitante ? (<div className="space-y-1"><p>{solicitante.nome_whatsapp || "Sem nome no WhatsApp"}</p>
                     <a className="inline-flex items-center gap-1 text-primary underline" href={`https://wa.me/${solicitante.telefone}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-3 w-3" />{solicitante.telefone}</a></div>)
@@ -498,24 +498,25 @@ export default function Agendamentos() {
               </dd></>)}
               <dt className="text-muted-foreground">Empresa</dt><dd>{toTitleCase(detalhe.empresa_nome)}{detalhe.codigo_empresa_soc ? <span className="text-xs text-muted-foreground"> · SOC {detalhe.codigo_empresa_soc}</span> : null}</dd>
               {detalhe.data_agendada && (<><dt className="text-muted-foreground">Data</dt><dd>{fmtData(detalhe.data_agendada)} às {detalhe.hora_agendada?.slice(0, 5)}</dd></>)}
-              <dt className="text-muted-foreground">Unidade</dt><dd>{nomeUnidade(detalhe)}</dd>
+              {detalhe.fila_aprovacao !== "engenharia" && (<><dt className="text-muted-foreground">Unidade</dt><dd>{nomeUnidade(detalhe)}</dd>
               <dt className="text-muted-foreground">Subgrupo</dt><dd>{subgrupoDe(detalhe)}</dd>
               <dt className="text-muted-foreground">Tipo</dt><dd>{detalhe.tipo_exame}</dd>
-              <dt className="text-muted-foreground">Exames</dt><dd>{(detalhe.exames ?? []).join(", ") || "-"}</dd>
-              {detalhe.solicitante && (<><dt className="text-muted-foreground">Solicitante</dt><dd>{toTitleCase(detalhe.solicitante.nome ?? "")} · {detalhe.solicitante.email} · {detalhe.solicitante.celular}</dd></>)}
+              <dt className="text-muted-foreground">Exames</dt><dd>{(detalhe.exames ?? []).join(", ") || "-"}</dd></>)}
+              {detalhe.solicitante && detalhe.fila_aprovacao !== "engenharia" && (<><dt className="text-muted-foreground">Solicitante</dt><dd>{toTitleCase(detalhe.solicitante.nome ?? "")} · {detalhe.solicitante.email} · {detalhe.solicitante.celular}</dd></>)}
               {detalhe.motivo_retorno && (<><dt className="text-muted-foreground">Motivo do retorno</dt><dd className="whitespace-pre-wrap">{detalhe.motivo_retorno}</dd></>)}
               {detalhe.observacoes && (<><dt className="text-muted-foreground">Observações</dt><dd className="whitespace-pre-wrap">{detalhe.observacoes}</dd></>)}
               {detalhe.soc_erro && (<><dt className="text-muted-foreground">Erro SOC</dt><dd className="text-destructive">{detalhe.soc_erro}</dd></>)}
               {detalhe.devolucao_motivo && (<><dt className="text-muted-foreground">Devolvido</dt><dd>{detalhe.devolucao_motivo}</dd></>)}
               {detalhe.estrutura_solicitada && (<>
-                <dt className="text-muted-foreground">Estrutura informada</dt>
+                <dt className="text-muted-foreground">Estrutura solicitada</dt>
                 <dd>{[detalhe.estrutura_solicitada.unidade, detalhe.estrutura_solicitada.setor, detalhe.estrutura_solicitada.cargo].map((x: string) => toTitleCase(x)).join(" · ")}</dd>
                 {detalhe.estrutura_solicitada.atividades && (<><dt className="text-muted-foreground">Atividades do cargo</dt><dd className="whitespace-pre-wrap rounded-md bg-muted p-2">{detalhe.estrutura_solicitada.atividades}</dd></>)}
                 {detalhe.fila_aprovacao !== "engenharia" && detalhe.estrutura_solicitada.nascimento && (<><dt className="text-muted-foreground">Pré-cadastro</dt><dd>Nasc. {fmtData(detalhe.estrutura_solicitada.nascimento)} · {toTitleCase(detalhe.estrutura_solicitada.sexo ?? "")} · Admissão {fmtData(detalhe.estrutura_solicitada.admissao ?? "")}</dd></>)}
               </>)}
+              {detalhe.fila_aprovacao === "engenharia" && (<><dt className="text-muted-foreground">Solicitante</dt><dd className="space-y-0.5"><p>{toTitleCase(detalhe.solicitante?.nome ?? "") || "—"}</p><p className="text-muted-foreground">{detalhe.solicitante?.email ?? "—"}</p><p className="text-muted-foreground">{detalhe.solicitante?.celular ?? "—"}</p></dd></>)}
             </dl>
             {detalhe.fila_aprovacao !== "engenharia" && <div className="mt-4 space-y-2">
-              <p className="text-sm font-medium">Kit e documentos</p>
+              <p className="text-sm font-medium">Anexos</p>
               {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
               {podeEditar && temKitAgenda(detalhe) && <button type="button" disabled={enviando} onClick={marcarKit} className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"><Printer className="h-3 w-3" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar como impresso"}</button>}
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
