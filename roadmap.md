@@ -18,3 +18,7 @@
 
 ## Solicitação atual
 - Executar os itens em aberto acima, exceto OCR; não expor chaves do SOC no chat.
+
+## OS 12369
+- [ ] Conferir a unidade real no SOC e recuperar o cadastro ausente, sem inventar código de Matriz.
+- [ ] Vincular a unidade confirmada à OS com auditoria e validar sua seleção na finalização, sem encerrar o PPP pela equipe.
