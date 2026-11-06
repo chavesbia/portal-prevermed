@@ -288,6 +288,13 @@
       "when": 1793921756074,
       "tag": "0040_agenda_solicitacao_estrutura_sem_data",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794004874984,
+      "tag": "0041_agenda_excluir_protocolo",
+      "breakpoints": true
     }
   ]
 }
