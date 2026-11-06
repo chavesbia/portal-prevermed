@@ -21,7 +21,7 @@ import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional
 import { AgendaGraficos } from "@/components/agenda/AgendaGraficos";
 
 const db = supabase as any;
-const fmtData = (d: string) => d.split("-").reverse().join("/");
+const fmtData = (d?: string | null) => (d ? d.split("-").reverse().join("/") : "—");
 const fmtCpf = (c: string) => c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 const hojeIso = () => new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10);
 const LS_KEY = "agendamentos:filtro";
@@ -245,7 +245,7 @@ export default function Agendamentos() {
             return (
               <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
                 <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)}</TableCell>
-                <TableCell>{a.hora_agendada.slice(0, 5)}</TableCell>
+                <TableCell>{a.hora_agendada?.slice(0, 5) ?? "—"}</TableCell>
                 <TableCell className="sticky left-0 z-10 max-w-[220px] bg-background"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="whitespace-nowrap text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>

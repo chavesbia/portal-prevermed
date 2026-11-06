@@ -180,6 +180,12 @@ Deno.serve(async (req) => {
       estrutura_solicitada: eng ? b.estruturaNova : null,
       solicitante: b.solicitante ?? null,
     }).select('id, protocolo').single();
+    // Solicitação de estrutura usa protocolo próprio (INC-), separado dos agendamentos (AG-)
+    if (!error && data && eng && data.protocolo?.startsWith('AG-')) {
+      const inc = 'INC-' + data.protocolo.slice(3);
+      const { error: e2 } = await admin.from('soc_agendamentos').update({ protocolo: inc }).eq('id', data.id);
+      if (!e2) data.protocolo = inc;
+    }
     if (error) return json({ error: 'Não foi possível registrar' }, 500);
     if (anexos.length) await admin.from('soc_agendamento_anexos').insert(anexos.map((a) => ({ ...a, agendamento_id: data.id })));
 
