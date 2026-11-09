@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       if (!code) { semCodigo++; continue; }
       if (!byCompany.has(code)) {
         byCompany.set(code, {
-          subgrupo: s(pick(row, ['nomeSubgrupo', 'NOMESUBGRUPO'])),
+          // subgrupo NÃO vem daqui: fonte oficial é soc-subgrupos-sync (Exporta 218427, carteira inteira)
           vidas_ativas: int(pick(row, ['vidasAtivasUltimaContagem', 'VIDASATIVASULTIMACONTAGEM'])),
           classificacao_cliente: s(pick(row, ['classificacaoCliente', 'CLASSIFICACAOCLIENTE'])),
           cliente_inadimplente: bool(pick(row, ['flagClienteInadimplente', 'FLAGCLIENTEINADIMPLENTE'])),
