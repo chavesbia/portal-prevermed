@@ -22,3 +22,9 @@
 ## OS 12369
 - [x] Conferir a unidade no SOC: hierarquia retornou lista vazia e sincronização de unidades concluída sem erros; nenhuma unidade da Studio Retrofit foi recebida.
 - [ ] Recuperar e vincular a unidade confirmada à OS com auditoria e validar sua seleção na finalização, sem encerrar o PPP pela equipe — bloqueado: falta confirmação do cadastro e código real na Tela 231 do SOC; não criar Matriz 001 presumida.
+
+## Subgrupos (09/11)
+- [x] Subgrupo oficial de toda a carteira via Exporta 218427 (rotina SOC + botão Sincronizar em Admin > Empresas)
+- [x] 0003 Por Uso na esteira da Engenharia (só 0002/0004/0010 livres)
+- [ ] Primeira carga real — aguardando a Bia clicar em Sincronizar (sem sessão ADM Master no ambiente de teste)
+- [ ] Painel Gestor — plano guardado no histórico, complementar com a Bia

@@ -295,6 +295,13 @@
       "when": 1794004874984,
       "tag": "0041_agenda_excluir_protocolo",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794262876181,
+      "tag": "0042_companies_subgrupo_codigo",
+      "breakpoints": true
     }
   ]
 }

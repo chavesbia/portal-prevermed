@@ -39,11 +39,14 @@ const Body = z.discriminatedUnion('acao', [
   z.object({ acao: z.literal('reativar'), ...Pessoa, unidade: Ref.optional(), setor: Ref.optional(), cargo: Ref.optional(), dataAdmissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }),
 ]);
 
-// Subgrupos com laudos (PGR/PCMSO): só podem selecionar unidade/setor/cargo existentes.
-// Pontual/Parceiras: podem criar. Sem subgrupo → regra restrita (mais segura).
-const SUBGRUPOS_LIVRES = ['000000004', '000000010', '000000002', 'PARCEIRAS COM PRONTUARIO', 'PARCEIRAS VIA SOCNET', 'PONTUAL - EXAMES'];
+// Livres (criam estrutura e agendam): só 0002 Pontual, 0004 Parceiras c/ prontuário, 0010 Parceiras SOCNET.
+// Todos os demais — 0003 Por Uso, 0007, 0008, 0011, Cancelado e sem subgrupo — seguem a esteira da Engenharia.
+// Decisão pelo CÓDIGO oficial do SOC (soc-subgrupos-sync); o nome é só fallback enquanto a sync não rodou.
+const CODIGOS_LIVRES = ['0002', '0004', '0010'];
+const NOMES_LIVRES = ['PARCEIRAS COM PRONTUARIO', 'PARCEIRAS VIA SOCNET', 'PONTUAL - EXAMES'];
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
-const podeCriar = (subgrupo: string | null) => !!subgrupo && SUBGRUPOS_LIVRES.includes(norm(subgrupo));
+const podeCriar = (e: { subgrupo?: string | null; subgrupo_codigo?: string | null }) =>
+  e.subgrupo_codigo ? CODIGOS_LIVRES.includes(e.subgrupo_codigo) : !!e.subgrupo && NOMES_LIVRES.includes(norm(e.subgrupo));
 
 async function hierarquia(socCode: string, livre: boolean) {
   const empresa = Deno.env.get('SOC_CODIGO_EMPRESA');
@@ -203,11 +206,11 @@ Deno.serve(async (req) => {
     }
 
     const { data: empresas } = await admin.from('companies')
-      .select('soc_code, razao_social, nome_abreviado, cidade, estado, subgrupo')
+      .select('soc_code, razao_social, nome_abreviado, cidade, estado, subgrupo, subgrupo_codigo')
       .eq('cnpj', b.cnpj).eq('is_active', true).order('razao_social');
 
     if (b.acao === 'empresa') {
-      const lista = (empresas ?? []).map(({ subgrupo, ...e }) => ({ ...e, podeCriar: podeCriar(subgrupo) }));
+      const lista = (empresas ?? []).map(({ subgrupo, subgrupo_codigo, ...e }) => ({ ...e, podeCriar: podeCriar({ subgrupo, subgrupo_codigo }) }));
       if (lista.length) return json({ empresas: lista });
       // Fora da carteira (ex.: cliente de assessoria parceira via SOCNET): só identifica a razão social na Receita
       let externa: { razao_social: string } | null = null;
@@ -221,7 +224,7 @@ Deno.serve(async (req) => {
     // Só consulta colaborador de empresa ativa vinculada ao CNPJ informado
     const emp = empresas?.find((e) => e.soc_code === b.socCode);
     if (!emp) return json({ error: 'Empresa inválida' }, 400);
-    const livre = podeCriar(emp.subgrupo);
+    const livre = podeCriar(emp);
 
     if (b.acao === 'guias') {
       const fmtBR = (dias: number) => { const d = new Date(Date.now() + dias * 864e5); return `${String(d.getUTCDate()).padStart(2, '0')}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${d.getUTCFullYear()}`; };

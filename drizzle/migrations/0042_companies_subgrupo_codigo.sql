@@ -1,0 +1,2 @@
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS subgrupo_codigo text, ADD COLUMN IF NOT EXISTS subgrupo_synced_at timestamptz;
+COMMENT ON COLUMN public.companies.subgrupo_codigo IS 'Código oficial do subgrupo no SOC (Exporta 218427, base própria). Fonte única do subgrupo.';
