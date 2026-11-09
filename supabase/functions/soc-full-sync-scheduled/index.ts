@@ -6,6 +6,7 @@ const ENDPOINTS = [
   'soc-unidades-sync',
   'soc-contatos-sync',
   'soc-preco-sync',
+  'soc-subgrupos-sync', // depois do preço: o subgrupo oficial vem do 218427
   'soc-responsaveis-pcmso-sync',
   'socnet-empresas-sync',
   'soc-pedidos-sync',
