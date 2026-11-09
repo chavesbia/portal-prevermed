@@ -333,6 +333,10 @@ export default function AdminEmpresas() {
       const { data, error } = await supabase.functions.invoke("soc-empresas-sync");
       if (error) throw error;
       if (data?.ok) {
+        // Subgrupo oficial (Exporta 218427) logo após o cadastro geral
+        const sg = await supabase.functions.invoke("soc-subgrupos-sync");
+        if (sg.error || sg.data?.error) toast.error(`Subgrupos não atualizados: ${sg.data?.error ?? sg.error?.message}`);
+        else toast.success(`Subgrupos atualizados em ${sg.data?.atualizadas ?? 0} empresas`);
         {
           const p = data.principal ?? {};
           const sn = data.socnet ?? {};
