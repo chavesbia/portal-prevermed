@@ -1798,6 +1798,8 @@ export type Database = {
           razao_social: string
           soc_code: string
           subgrupo: string | null
+          subgrupo_codigo: string | null
+          subgrupo_synced_at: string | null
           synced_at: string | null
           tipo_contagem: string | null
           tipo_relatorio_fatura: string | null
@@ -1829,6 +1831,8 @@ export type Database = {
           razao_social: string
           soc_code: string
           subgrupo?: string | null
+          subgrupo_codigo?: string | null
+          subgrupo_synced_at?: string | null
           synced_at?: string | null
           tipo_contagem?: string | null
           tipo_relatorio_fatura?: string | null
@@ -1860,6 +1864,8 @@ export type Database = {
           razao_social?: string
           soc_code?: string
           subgrupo?: string | null
+          subgrupo_codigo?: string | null
+          subgrupo_synced_at?: string | null
           synced_at?: string | null
           tipo_contagem?: string | null
           tipo_relatorio_fatura?: string | null
