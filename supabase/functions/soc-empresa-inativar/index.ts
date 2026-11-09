@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   if (!uid) return json({ error: 'Unauthorized' }, 401);
   const { data: ok } = await client.rpc('is_adm_master');
   if (!ok) {
-    await client.rpc('log_unauthorized_access', { _action: 'soc_empresa_inativar', _details: {} }).then(() => {}, () => {});
+    await client.rpc('log_unauthorized_access', { _resource: 'soc-empresa-inativar', _source: 'edge', _method: 'POST', _details: {} }).then(() => {}, () => {});
     return json({ error: 'Forbidden' }, 403);
   }
   const parsed = Body.safeParse(await req.json().catch(() => null));
