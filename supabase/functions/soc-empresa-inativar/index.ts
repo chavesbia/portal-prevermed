@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   if (!user || !senha || !resp || !principal) return json({ error: 'Credenciais do Web Service SOC ausentes' }, 500);
   const codUser = user.replace(/^U/i, '');
 
-  const { data: emps } = await admin.from('companies').select('id, soc_code, razao_social, subgrupo_codigo, vidas_ativas').in('soc_code', parsed.data.codigos);
+  const { data: emps } = await admin.from('companies').select('id, soc_code, razao_social, nome_abreviado, subgrupo_codigo, vidas_ativas').in('soc_code', parsed.data.codigos);
   const resultados: unknown[] = [];
   for (const codigo of parsed.data.codigos) {
     const e = emps?.find((x) => x.soc_code === codigo);
@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
 <soap:Body><ser:alterarEmpresa><AlterarEmpresaWsVo>
 <identificacaoWsVo><codigoEmpresaPrincipal>${esc(principal)}</codigoEmpresaPrincipal><codigoResponsavel>${esc(resp)}</codigoResponsavel><codigoUsuario>${esc(codUser)}</codigoUsuario></identificacaoWsVo>
 <codigo>${codigo}</codigo><tipoBusca>CODIGO_SOC</tipoBusca><ativo>false</ativo>
+<dadosEmpresaWsVo><nomeAbreviado>${esc(String(e.nome_abreviado ?? e.razao_social ?? '').trim().slice(0, 60))}</nomeAbreviado><razaoSocial>${esc(String(e.razao_social ?? '').trim())}</razaoSocial><codigoSubGrupo>0001</codigoSubGrupo></dadosEmpresaWsVo>
 </AlterarEmpresaWsVo></ser:alterarEmpresa></soap:Body></soap:Envelope>`;
     let r: { codigo: string; ok: boolean; erro?: string | null; resposta?: string };
     try {
@@ -72,6 +73,7 @@ Deno.serve(async (req) => {
       const sucesso = h.ok && !fault && (!erroFlag || erroFlag === 'false' || erroFlag === '0');
       r = { codigo, ok: sucesso, erro: sucesso ? null : (fault ?? msg ?? `HTTP ${h.status}`), resposta: txt.slice(0, 1500) };
     } catch (err) { r = { codigo, ok: false, erro: String(err) }; }
+    if (r.ok) await admin.from('companies').update({ is_active: false }).eq('id', e.id);
     await admin.from('audit_log').insert({ user_id: uid, action_type: r.ok ? 'soc_empresa_inativada' : 'soc_empresa_inativar_falha', object_type: 'company', object_id: e.id, details: { codigo, razao_social: e.razao_social, erro: r.erro ?? null } });
     resultados.push(r);
   }
