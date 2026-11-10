@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Timer, ChevronDown, ChevronRight, Layers, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -43,6 +44,7 @@ interface OSDashboardViewProps {
 
 export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: OSDashboardViewProps) {
   const { profissionais } = useProfissionais();
+  const { isAdmMaster } = useAuth();
   const encerradas = ordens.filter(o => o.status_os === 'Encerrado');
   const slaDias = encerradas
     .map(o => o.data_emissao ? differenceInDays(new Date(o.updated_at), new Date(o.data_registro)) : null)
@@ -133,7 +135,7 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
         <TabsList>
           <TabsTrigger value="geral">Geral</TabsTrigger>
           <TabsTrigger value="executivo">Executivo</TabsTrigger>
-          <TabsTrigger value="sla">SLA</TabsTrigger>
+          {isAdmMaster && <TabsTrigger value="sla">SLA</TabsTrigger>}
         </TabsList>
         <TabsContent value="geral" className="mt-6 space-y-6">
 
@@ -146,7 +148,7 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
         <OSKPICard title="Em Andamento" value={stats.emAndamento} subtitle="Em execução" icon={Clock} variant="warning" />
         <OSKPICard title="Finalizadas" value={stats.encerradas} subtitle="Concluídas" icon={CheckCircle} variant="success" />
         <OSKPICard title="Novos" value={stats.novos} subtitle="Serviços novos" icon={TrendingUp} />
-        <OSKPICard title="SLA Médio" value={`${stats.slaMedio}d`} subtitle="Tempo de conclusão" icon={Timer} />
+        {isAdmMaster && <OSKPICard title="SLA Médio" value={`${stats.slaMedio}d`} subtitle="Tempo de conclusão" icon={Timer} />}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -319,7 +321,7 @@ export function OSDashboardView({ ordens, filters, setFilters, responsaveis }: O
         </TabsContent>
 
         <TabsContent value="sla" className="mt-6">
-          <OSSLAView ordens={ordens} />
+          {isAdmMaster && <OSSLAView ordens={ordens} />}
         </TabsContent>
       </Tabs>
     </div>

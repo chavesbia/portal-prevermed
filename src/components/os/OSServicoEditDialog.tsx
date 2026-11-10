@@ -27,7 +27,7 @@ interface Props {
 }
 
 export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSaved, onRequestFinalizar }: Props) {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmMaster } = useAuth();
   const { tipos: tiposServicoDB } = useTiposServicoOS();
   const [status, setStatus] = useState<StatusServico>(servico.status);
   const [responsavelId, setResponsavelId] = useState<string | null>(servico.responsavel_id);
@@ -66,8 +66,8 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
         toast({ title: 'Atenção', description: 'Selecione o Executor para alterar o status.', variant: 'destructive' });
         return;
       }
-      if (!dataInicio) {
-        toast({ title: 'Atenção', description: 'Informe a Data de início para alterar o status.', variant: 'destructive' });
+      if (servico.status === 'Não iniciado' && status === 'Encerrado' && !isAdmMaster) {
+        toast({ title: 'Atenção', description: 'Inicie o serviço antes de finalizar.', variant: 'destructive' });
         return;
       }
     }
@@ -76,8 +76,10 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
       const { error } = await supabase.from('servicos_os').update({
         status,
         responsavel_id: responsavelId,
-        data_inicio: dataInicio ? format(dataInicio, 'yyyy-MM-dd') : null,
-        data_conclusao: dataConclusao ? format(dataConclusao, 'yyyy-MM-dd') : null,
+        ...(isAdmMaster ? {
+          data_inicio: dataInicio ? format(dataInicio, 'yyyy-MM-dd') : null,
+          data_conclusao: dataConclusao ? format(dataConclusao, 'yyyy-MM-dd') : null,
+        } : {}),
         observacoes: observacoes || null,
       } as any).eq('id', servico.id);
       if (error) throw error;
@@ -131,7 +133,7 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
             <Select value={status} onValueChange={(v) => setStatus(v as StatusServico)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {STATUS_SERVICO_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {STATUS_SERVICO_OPTIONS.filter(o => isAdmMaster || !(servico.status === 'Não iniciado' && o === 'Encerrado')).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
             {isEncerrar && (
@@ -147,9 +149,10 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
             <ProfissionalSelector value={responsavelId} onChange={setResponsavelId} onlyExecutores />
           </div>
 
+          {isAdmMaster ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Início {statusChanged && <span className="text-destructive">*</span>}</Label>
+              <Label>Início (ajuste ADM Master)</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !dataInicio && 'text-muted-foreground')}>
@@ -177,6 +180,13 @@ export function OSServicoEditDialog({ open, onOpenChange, ordem, servico, onSave
               </Popover>
             </div>
           </div>
+
+          ) : (
+            <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground space-y-1">
+              <p><strong>Início:</strong> {servico.data_inicio ? format(parseISO(servico.data_inicio), 'dd/MM/yyyy') : 'registrado automaticamente ao iniciar'}</p>
+              <p><strong>Conclusão:</strong> {servico.data_conclusao ? format(parseISO(servico.data_conclusao), 'dd/MM/yyyy') : 'registrada automaticamente ao finalizar'}</p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Observações</Label>

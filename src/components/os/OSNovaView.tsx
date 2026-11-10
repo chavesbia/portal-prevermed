@@ -187,7 +187,28 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
     return () => { active = false; clearTimeout(t); };
   }, [numeroOS]);
 
+  // Unidade: obrigatória quando a empresa tem unidades ativas; com uma só, já vem selecionada.
+  const companyIdWatch = form.watch('companyId');
+  const [unidadesAtivas, setUnidadesAtivas] = useState<string[]>([]);
+  useEffect(() => {
+    let active = true;
+    setUnidadesAtivas([]);
+    if (!companyIdWatch) return;
+    supabase.from('company_units').select('id').eq('company_id', companyIdWatch).eq('is_active', true).limit(2)
+      .then(({ data }) => {
+        if (!active) return;
+        const ids = (data || []).map((u: any) => u.id);
+        setUnidadesAtivas(ids);
+        if (ids.length === 1 && !form.getValues('unidadeId')) form.setValue('unidadeId', ids[0]);
+      });
+    return () => { active = false; };
+  }, [companyIdWatch]);
+
   const handleSubmit = async (data: FormData) => {
+    if (unidadesAtivas.length > 0 && !data.unidadeId) {
+      toast.error('Selecione a unidade do serviço.');
+      return;
+    }
     setSubmitting(true);
     const existing = await findExisting(data.numeroOS);
     if (existing) {
@@ -307,7 +328,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
 
             <FormField control={form.control} name="unidadeId" render={({ field }) => (
               <FormItem className="md:col-span-2">
-                <FormLabel>Unidade (opcional)</FormLabel>
+                <FormLabel>Unidade {unidadesAtivas.length > 0 ? '*' : '(empresa sem unidade cadastrada)'}</FormLabel>
                 <FormControl>
                   <UnitSelector
                     companyId={form.watch('companyId')}
@@ -316,7 +337,7 @@ export function OSNovaView({ onSubmit, embedded, onDone }: OSNovaViewProps) {
                   />
                 </FormControl>
                 <p className="text-xs text-muted-foreground">
-                  Se ainda não souber a unidade, deixe em branco — a Engenharia confirmará na finalização do serviço.
+                  Obrigatória quando a empresa tem unidade cadastrada. Se a empresa não tiver nenhuma, peça o cadastro da unidade no SOC.
                 </p>
                 <FormMessage />
               </FormItem>

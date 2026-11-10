@@ -33,3 +33,6 @@
 - [x] Preparar o serviço gerenciado e os seis modelos de autenticação em português com identidade PreverMed.
 - [x] Implantar o auth-email-hook; conferência confirmou a remoção do bloqueio por função ausente.
 - [ ] Ativação do domínio notify.portal.prevermed.com.br — aguardando verificação DNS automática; envio real ainda não testado.
+- [x] Onda 1 OS: carimbo automático, trava PGR→PCMSO, SLA só ADM Master, unidade obrigatória, sem custos na finalização
+- [ ] Onda 2 OS: Kanban por fases, laudo Vigente/Substituído, aviso Engenharia→Saúde, checklist gerando oportunidades
+- [ ] Onda 3 OS: renovação 90/60/30, gatilho de faturamento, produtividade por técnico

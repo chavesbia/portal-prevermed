@@ -302,6 +302,13 @@
       "when": 1794262876181,
       "tag": "0042_companies_subgrupo_codigo",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1794324587267,
+      "tag": "0043_os_onda1_carimbo_automatico",
+      "breakpoints": true
     }
   ]
 }

@@ -168,8 +168,8 @@ export function OSListView({
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden lg:table-cell">Data de Emissão</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground hidden md:table-cell">Serviços</th>
                     <th className="pb-3 text-left font-medium text-muted-foreground">Status OS</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>
-                    <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Tempo Total</th>
+                    {isAdmMaster && <th className="pb-3 text-left font-medium text-muted-foreground">SLA</th>}
+                    {isAdmMaster && <th className="pb-3 text-left font-medium text-muted-foreground hidden xl:table-cell">Tempo Total</th>}
                     <th className="pb-3 text-right font-medium text-muted-foreground">Ações</th>
                   </tr>
                 </thead>
@@ -203,8 +203,8 @@ export function OSListView({
                           </td>
                           <td className="py-3 hidden md:table-cell text-muted-foreground">{concluidos}/{svcs.length} encerrados</td>
                           <td className="py-3"><Badge className={statusOSColors[ordem.status_os] || 'bg-muted'}>{ordem.status_os}</Badge></td>
-                          <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>
-                          <td className="py-3 hidden xl:table-cell text-muted-foreground">{calcularTempoTotalOS(ordem)}</td>
+                          {isAdmMaster && <td className="py-3"><Badge variant="outline" className={slaStatusColors[sla.status]}>{sla.label}</Badge></td>}
+                          {isAdmMaster && <td className="py-3 hidden xl:table-cell text-muted-foreground">{calcularTempoTotalOS(ordem)}</td>}
                           <td className="py-3 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -240,7 +240,7 @@ export function OSListView({
                         {isExpanded && (
                           <tr className="bg-muted/30 border-b">
                             <td className="py-2" />
-                            <td colSpan={8} className="py-2 pl-4 text-sm">
+                            <td colSpan={isAdmMaster ? 8 : 6} className="py-2 pl-4 text-sm">
                               <span className="text-muted-foreground">Unidade: </span>
                               <span className="font-medium">
                                 {(ordem as any).unidade_id
@@ -274,7 +274,7 @@ export function OSListView({
                               {' → '}
                               {servico.data_conclusao ? format(parseISO(servico.data_conclusao), 'dd/MM/yy', { locale: ptBR }) : 'Aberto'}
                             </td>
-                            <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>
+                            {isAdmMaster && <td className="py-2 hidden xl:table-cell text-muted-foreground text-xs">{calcTempoServico(servico.data_inicio, servico.data_conclusao)}</td>}
                             <td className="py-2 text-right">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>

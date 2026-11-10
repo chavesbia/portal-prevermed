@@ -60,7 +60,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
 
   const [servicos, setServicos] = useState<ServicoOS[]>([]);
   const { getModulePermissions } = useModulePermissions();
-  const { user } = useAuth();
+  const { user, isAdmMaster } = useAuth();
   
   const permissions = getModulePermissions('/gestao-os');
   const hasGlobalEdit = permissions?.can_edit ?? false;
@@ -264,6 +264,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
                 </div>
               )}
 
+              {isAdmMaster && (
               <div className="border-t pt-4 space-y-3">
                 <h4 className="font-semibold flex items-center gap-2">
                   <Timer className="h-4 w-4 text-primary" /> Cronômetro
@@ -303,7 +304,7 @@ export function OSDetailDialog({ ordem, open, onOpenChange, onAddComentario }: O
                   </div>
                 )}
               </div>
-
+              )}
 
               <div className="border-t pt-4 space-y-4">
                 <h4 className="font-semibold">Registrar Comentário</h4>

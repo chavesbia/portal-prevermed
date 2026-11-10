@@ -43,7 +43,7 @@ type CustoLinha = {
 const CUSTO_VAZIO: CustoLinha = { tipo: 'deslocamento', descricao: '', valor: '', fornecedor: '' };
 
 export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, onFinalized }: Props) {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmMaster } = useAuth();
   const { responsaveis, refresh: refreshResponsaveis } = useResponsaveisTecnicos();
   const { tiposLaudo } = useTiposLaudo();
 
@@ -142,12 +142,8 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       if (!form.artNumero.trim()) { toast({ title: 'Atenção', description: 'Informe o número da ART.', variant: 'destructive' }); return; }
       if (!form.artValidade) { toast({ title: 'Atenção', description: 'Informe a validade da ART.', variant: 'destructive' }); return; }
     }
-    for (let i = 0; i < custos.length; i++) {
-      const c = custos[i];
-      if (!c.descricao.trim() || !c.valor || Number(c.valor) <= 0) {
-        toast({ title: 'Atenção', description: `Custo #${i + 1}: preencha descrição e valor.`, variant: 'destructive' });
-        return;
-      }
+    if (servico.status === 'Não iniciado' && !isAdmMaster) {
+      toast({ title: 'Atenção', description: 'Inicie o serviço antes de finalizar. O início é registrado automaticamente.', variant: 'destructive' }); return;
     }
 
     setSaving(true);
@@ -164,7 +160,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
       // Encerrar serviço
       const { error: svcErr } = await supabase
         .from('servicos_os')
-        .update({ status: 'Encerrado', responsavel_id: executorId, data_inicio: servico.data_inicio ?? new Date().toISOString().split('T')[0], data_conclusao: new Date().toISOString().split('T')[0] } as any)
+        .update({ status: 'Encerrado', responsavel_id: executorId } as any)
         .eq('id', servico.id);
       if (svcErr) throw svcErr;
 
@@ -264,7 +260,7 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
         servico_afetado: servico.tipo,
       });
 
-      toast({ title: 'Serviço encerrado', description: 'Laudo, ART e custos registrados.' });
+      toast({ title: 'Serviço encerrado', description: 'Laudo e ART registrados.' });
 
       // Reset
       setForm({ tipoLaudoId: '', responsavelTecnicoId: '', possuiVigencia: true, dataValidade: null, justificativaSemVigencia: '', observacoes: '', possuiArt: false, artNumero: '', artValidade: null, artFile: null });
@@ -293,8 +289,8 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
           <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
             <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium">Registro obrigatório de laudo, ART (se aplicável) e custos reais</p>
-              <p className="text-muted-foreground">Para encerrar o serviço, informe os dados do laudo emitido, ART quando houver, e os custos reais incorridos.</p>
+              <p className="font-medium">Registro obrigatório de laudo e ART (se aplicável)</p>
+              <p className="text-muted-foreground">Para encerrar o serviço, informe os dados do laudo emitido e a ART quando houver. A data de conclusão é registrada automaticamente.</p>
             </div>
           </div>
 
@@ -457,57 +453,6 @@ export function OSFinalizarServicoDialog({ open, onOpenChange, ordem, servico, o
             )}
           </div>
 
-          <Separator />
-
-          {/* ==================== CUSTOS REAIS ==================== */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Custos Reais do Serviço
-              </h4>
-              <Button type="button" variant="outline" size="sm" onClick={addCustoLinha}>
-                <Plus className="h-4 w-4 mr-1" />Adicionar custo
-              </Button>
-            </div>
-            {custos.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">
-                Nenhum custo lançado. Adicione deslocamento, alimentação, aluguel de equipamento, profissionais externos, análises químicas, etc.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {custos.map((c, i) => (
-                  <div key={i} className="grid grid-cols-12 gap-2 items-end p-3 border rounded-md bg-muted/30">
-                    <div className="col-span-3 space-y-1">
-                      <Label className="text-xs">Tipo</Label>
-                      <Select value={c.tipo} onValueChange={(v) => updCustoLinha(i, { tipo: v as OSCustoTipo })}>
-                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {OS_CUSTO_TIPO_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-4 space-y-1">
-                      <Label className="text-xs">Descrição *</Label>
-                      <Input className="h-9" value={c.descricao} onChange={e => updCustoLinha(i, { descricao: e.target.value })} placeholder="Ex: Combustível SP → Campinas" />
-                    </div>
-                    <div className="col-span-2 space-y-1">
-                      <Label className="text-xs">Valor (R$) *</Label>
-                      <Input className="h-9" type="number" step="0.01" min="0" value={c.valor} onChange={e => updCustoLinha(i, { valor: e.target.value })} />
-                    </div>
-                    <div className="col-span-2 space-y-1">
-                      <Label className="text-xs">Fornecedor</Label>
-                      <Input className="h-9" value={c.fornecedor} onChange={e => updCustoLinha(i, { fornecedor: e.target.value })} />
-                    </div>
-                    <div className="col-span-1">
-                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => rmCustoLinha(i)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <DialogFooter>

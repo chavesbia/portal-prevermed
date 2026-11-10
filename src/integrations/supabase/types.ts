@@ -6604,10 +6604,12 @@ export type Database = {
       }
       servicos_os: {
         Row: {
+          concluido_em: string | null
           created_at: string
           data_conclusao: string | null
           data_inicio: string | null
           id: string
+          iniciado_em: string | null
           observacoes: string | null
           ordem_id: string
           responsavel_id: string | null
@@ -6617,10 +6619,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          concluido_em?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_inicio?: string | null
           id?: string
+          iniciado_em?: string | null
           observacoes?: string | null
           ordem_id: string
           responsavel_id?: string | null
@@ -6630,10 +6634,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          concluido_em?: string | null
           created_at?: string
           data_conclusao?: string | null
           data_inicio?: string | null
           id?: string
+          iniciado_em?: string | null
           observacoes?: string | null
           ordem_id?: string
           responsavel_id?: string | null
