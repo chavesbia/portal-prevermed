@@ -38,6 +38,7 @@ export function AgendaInteligenteLab() {
         const msg = await (error as any).context?.json?.().then((j: any) => j.error).catch(() => null);
         throw new Error(msg ?? error.message);
       }
+      if (data?.error) throw new Error(data.error);
       setRes(data);
     } catch (e) { toast.error(e instanceof Error ? e.message : "Falha na leitura"); }
     finally { setCarregando(false); }

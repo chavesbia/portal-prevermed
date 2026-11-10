@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
     return json({ dados, empresa: empresa ? { ...empresa, livre } : null, faltando: faltando.map((c) => ROTULO[c]), lotacaoFaltando: lotFaltando.map((c) => ROTULO[c]), alertas, resposta });
   } catch (e) {
     const status = (e as { status?: number }).status;
+    if (status === 503 || status === 429) return json({ error: e instanceof Error ? e.message : 'Erro', temporario: true });
     return json({ error: e instanceof Error ? e.message : 'Erro' }, status && status >= 400 && status < 600 ? status : 500);
   }
 });
