@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { incluirAgendamentoSoc } from '../_shared/socAgendamento.ts';
 import { emailAgenda } from '../_shared/agendaEmails.ts';
+import { whatsappAgenda } from '../_shared/agendaWhatsapp.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -51,6 +52,7 @@ Deno.serve(async (req) => {
       await admin.from('soc_agendamentos').update({ aprovacao_status: 'devolvido', status: 'documentacao_devolvida', devolucao_motivo: b.motivo, aprovado_por: uid, aprovado_em: new Date().toISOString() }).eq('id', ag.id);
       await audit('agenda_documentacao_devolvida', { protocolo: ag.protocolo, motivo: b.motivo, fila: ag.fila_aprovacao });
       await emailAgenda(admin, ag.id, 'agenda-devolvido');
+      await whatsappAgenda(admin, ag.id, 'devolvido');
       return json({ ok: true });
     }
 
@@ -59,6 +61,7 @@ Deno.serve(async (req) => {
       await admin.from('soc_agendamentos').update({ aprovacao_status: 'aprovado', status: 'estrutura_cadastrada', aprovado_por: uid, aprovado_em: new Date().toISOString(), devolucao_motivo: null }).eq('id', ag.id);
       await audit('agenda_estrutura_cadastrada', { protocolo: ag.protocolo });
       await emailAgenda(admin, ag.id, 'agenda-estrutura-engenharia', { concluido: true });
+      await whatsappAgenda(admin, ag.id, 'estrutura');
       return json({ ok: true, agendadoSoc: false });
     }
 
@@ -73,7 +76,7 @@ Deno.serve(async (req) => {
       status: soc.ok ? 'agendado_soc' : 'solicitado',
       soc_retorno: { codigoAgendamento: soc.codigoAgendamento ?? null, resposta: soc.resposta }, soc_erro: soc.ok ? null : soc.erro,
     }).eq('id', ag.id);
-    if (soc.ok) await emailAgenda(admin, ag.id, 'agenda-confirmado');
+    if (soc.ok) { await emailAgenda(admin, ag.id, 'agenda-confirmado'); await whatsappAgenda(admin, ag.id, 'confirmado'); }
     await audit('agenda_documentacao_aprovada', { protocolo: ag.protocolo, fila: ag.fila_aprovacao, agendadoSoc: soc.ok, erro: soc.ok ? null : soc.erro });
     return json({ ok: true, agendadoSoc: soc.ok, erro: soc.ok ? null : `Aprovado, mas o SOC recusou o horário: ${soc.erro}. Combine outro horário com o cliente.` });
   } catch (e) {
