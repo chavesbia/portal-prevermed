@@ -49,16 +49,21 @@ async function extrair(texto: string, arquivo?: z.infer<typeof Body>['arquivo'])
   if (!key) throw Object.assign(new Error('Chave do Gemini não configurada.'), { status: 500 });
   const parts: unknown[] = [{ text: texto ? `Mensagem do agendador:\n${texto}` : 'Extraia os dados do documento anexo (leia todas as páginas).' }];
   if (arquivo) parts.push({ inline_data: { mime_type: arquivo.mime, data: arquivo.base64 } });
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: INSTR }] },
-      contents: [{ role: 'user', parts }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: gSchema, temperature: 0 },
-    }),
+  const req = JSON.stringify({
+    systemInstruction: { parts: [{ text: INSTR }] },
+    contents: [{ role: 'user', parts }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: gSchema, temperature: 0 },
   });
-  const t = await r.text();
+  // Plano gratuito oscila (503/429): tenta modelos alternativos antes de desistir.
+  const modelos = ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
+  let r!: Response; let t = '';
+  for (const m of modelos) {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: req,
+    });
+    t = await r.text();
+    if (r.ok || ![429, 500, 503, 404].includes(r.status)) break;
+  }
   if (!r.ok) {
     let msg = 'Falha na leitura inteligente.';
     try { msg = JSON.parse(t)?.error?.message ?? msg; } catch { /* */ }
