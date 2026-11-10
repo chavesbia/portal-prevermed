@@ -21,3 +21,4 @@
 
 - Authentication email sending uses the scaffolded managed email SDK handler; do not add queue infrastructure because this project uses platform-managed delivery.
 - OS: service start/finish dates (`servicos_os.data_inicio/data_conclusao/iniciado_em/concluido_em`) are stamped by DB triggers on status change and only ADM Master may adjust them; a service cannot jump from "Não iniciado" to "Encerrado", and PCMSO cannot start while the same OS has an unfinished PGR — the team was faking dates, so the screen is not trusted.
+- Security: confidential tables/buckets (rescisões, contratos, preços, anexos OS/PPP, prestadores) gate reads by module route via `can_view_module_route`; history/audit inserts require author = auth.uid() plus module access — catalog tables stay readable to every signed-in user because menus/forms depend on them.

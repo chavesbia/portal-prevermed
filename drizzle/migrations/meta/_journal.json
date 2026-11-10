@@ -309,6 +309,13 @@
       "when": 1794324587267,
       "tag": "0043_os_onda1_carimbo_automatico",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794326676126,
+      "tag": "0044_security_hardening_wave",
+      "breakpoints": true
     }
   ]
 }
