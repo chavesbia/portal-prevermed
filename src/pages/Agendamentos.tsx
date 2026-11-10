@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpDown, CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search, Stethoscope, HardHat } from "lucide-react";
+import { ArrowUpDown, CalendarCheck, FileText, Loader2, Paperclip, MessageCircle, Printer, Search, Send, Stethoscope, HardHat } from "lucide-react";
 import { toast } from "sonner";
 import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { toTitleCase } from "@/lib/guias/blocklist";
@@ -526,6 +526,12 @@ export default function Agendamentos() {
             {detalhe.fila_aprovacao !== "engenharia" && <div className="mt-4 space-y-2">
               <p className="text-sm font-medium">Anexos</p>
               {detalhe.kit_impresso_em && <p className="text-sm text-primary">Kit marcado como impresso em {fmtDataHora(detalhe.kit_impresso_em)}</p>}
+              {detalhe.data_agendada && <button type="button" onClick={async () => {
+                const email = window.prompt("Enviar comprovante para qual e-mail?", detalhe.solicitante?.email ?? "");
+                if (!email) return;
+                const { data, error } = await supabase.functions.invoke("agenda-enviar-comprovante", { body: { protocolo: detalhe.protocolo, cpf: detalhe.colaborador_cpf, email: email.trim() } });
+                window.alert(error || data?.error ? (data?.error ?? "Não foi possível enviar agora.") : `Comprovante enviado para ${email.trim()}.`);
+              }} className="mr-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"><Send className="h-3 w-3" />Enviar comprovante por e-mail</button>}
               {podeEditar && temKitAgenda(detalhe) && <button type="button" disabled={enviando} onClick={marcarKit} className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50"><Printer className="h-3 w-3" />{detalhe.kit_impresso_em ? "Desmarcar impressão" : "Marcar como impresso"}</button>}
               {detalhe.soc_agendamento_anexos?.length ? detalhe.soc_agendamento_anexos.map((x: any) => (
                 <Button key={x.id} variant="outline" size="sm" className="w-full justify-start min-w-0" onClick={() => abrirArquivo(x.path)}>

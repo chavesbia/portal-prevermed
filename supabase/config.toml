@@ -14,3 +14,6 @@ project_id = "woqyhugzztdjpkfwkolu"
 
 [functions.preview-transactional-email]
 verify_jwt = false
+
+[functions.agenda-enviar-comprovante]
+verify_jwt = false

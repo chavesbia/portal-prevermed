@@ -23,3 +23,5 @@
 - OS: service start/finish dates (`servicos_os.data_inicio/data_conclusao/iniciado_em/concluido_em`) are stamped by DB triggers on status change and only ADM Master may adjust them; a service cannot jump from "Não iniciado" to "Encerrado", and PCMSO cannot start while the same OS has an unfinished PGR — the team was faking dates, so the screen is not trusted.
 - Security: confidential tables/buckets (rescisões, contratos, preços, anexos OS/PPP, prestadores) gate reads by module route via `can_view_module_route`; history/audit inserts require author = auth.uid() plus module access — catalog tables stay readable to every signed-in user because menus/forms depend on them.
 - Agenda emails: sent only from `soc-agenda-solicitar`/`agenda-aprovacao` via `_shared/agendaEmails.ts`, recipient read from the saved `solicitante` — never from the browser; email failures are logged and never block the booking.
+
+- Agenda: comprovante sob demanda sai só por `agenda-enviar-comprovante` (modelo fixo, exige protocolo + CPF, 1 envio/hora por e-mail); Reply-To por setor é decidido em `_shared/agendaEmails.ts` — evita uso do envio como disparo aberto.

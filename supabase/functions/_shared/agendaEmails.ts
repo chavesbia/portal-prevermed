@@ -3,17 +3,25 @@
 import { sendTemplateEmail } from './transactional-email-templates/send-email.ts'
 import { preparosDosExames } from './preparosExames.ts'
 
-export async function emailAgenda(admin: any, agendamentoId: string, modelo: 'agenda-protocolo-aberto' | 'agenda-confirmado' | 'agenda-estrutura-engenharia' | 'agenda-devolvido', extra: Record<string, unknown> = {}) {
+// Respostas do cliente caem na caixa Zoho do setor responsável
+export function replyToDe(ag: any, modelo: string) {
+  if (modelo === 'agenda-estrutura-engenharia' || ag?.fila_aprovacao === 'engenharia') return 'engenharia@prevermed.com.br'
+  if (ag?.fila_aprovacao === 'saude' || /retorno/i.test(ag?.tipo_exame ?? '') || /consulta/i.test(ag?.tipo_exame ?? '')) return 'saude@prevermed.com.br'
+  return 'agenda@prevermed.com.br'
+}
+
+export async function emailAgenda(admin: any, agendamentoId: string, modelo: 'agenda-protocolo-aberto' | 'agenda-confirmado' | 'agenda-estrutura-engenharia' | 'agenda-devolvido', extra: Record<string, unknown> = {}, para?: string) {
   try {
     const { data: ag } = await admin.from('soc_agendamentos')
-      .select('protocolo, solicitante, colaborador_nome, empresa_nome, tipo_exame, data_agendada, hora_agendada, exames, estrutura_solicitada, devolucao_motivo, soc_agenda_unidades(nome)')
+      .select('protocolo, solicitante, colaborador_nome, empresa_nome, tipo_exame, data_agendada, hora_agendada, exames, estrutura_solicitada, devolucao_motivo, fila_aprovacao, soc_agenda_unidades(nome)')
       .eq('id', agendamentoId).maybeSingle()
-    const email = ag?.solicitante?.email
-    if (!email) return
+    const email = para ?? ag?.solicitante?.email
+    if (!email) return { sent: false }
     const exames: string[] = ag.exames ?? []
     const est = ag.estrutura_solicitada ?? {}
-    await sendTemplateEmail(modelo, email, {
-      idempotencyKey: `${modelo}-${agendamentoId}${extra.concluido ? '-ok' : ''}`,
+    return await sendTemplateEmail(modelo, email, {
+      replyTo: replyToDe(ag, modelo),
+      idempotencyKey: `${modelo}-${agendamentoId}${extra.concluido ? '-ok' : ''}${para ? `-${para}-${extra.idem ?? ''}` : ''}`,
       templateData: {
         protocolo: ag.protocolo, nome: String(ag.solicitante?.nome ?? '').split(' ')[0],
         colaborador: ag.colaborador_nome, empresa: ag.empresa_nome, tipoExame: ag.tipo_exame,
@@ -25,5 +33,6 @@ export async function emailAgenda(admin: any, agendamentoId: string, modelo: 'ag
     })
   } catch (e) {
     console.error('[agenda-email]', modelo, agendamentoId, String(e))
+    return { sent: false, erro: String(e) }
   }
 }

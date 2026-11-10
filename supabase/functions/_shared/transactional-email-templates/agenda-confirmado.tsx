@@ -6,9 +6,9 @@ import { Dados, Layout, P, dataBR } from './agenda-layout.tsx'
 interface Props { protocolo?: string; nome?: string; colaborador?: string; empresa?: string; tipoExame?: string; data?: string; hora?: string; unidade?: string; exames?: string[]; preparos?: { nome: string; texto: string }[] }
 
 const Email = (p: Props) => (
-  <Layout preview={`Agendamento confirmado ${dataBR(p.data) ?? ''} ${p.hora ?? ''}`} titulo="Agendamento confirmado">
+  <Layout preview={`Pré-agendamento confirmado ${dataBR(p.data) ?? ''} ${p.hora ?? ''}`} titulo="Pré-agendamento confirmado">
     <P>{p.nome ? `Olá, ${p.nome}.` : 'Olá.'}</P>
-    <P>O agendamento abaixo está confirmado. Chegue com 15 minutos de antecedência e traga documento oficial com foto.</P>
+    <P>O pré-agendamento abaixo está confirmado. O horário é uma previsão de chegada para agilizar a abertura da ficha na recepção — o atendimento segue a ordem de acolhimento e não ocorre exatamente no horário marcado. Chegue com 15 minutos de antecedência e traga documento oficial com foto.</P>
     <Dados linhas={[['Protocolo', p.protocolo], ['Colaborador', p.colaborador], ['Empresa', p.empresa], ['Tipo de exame', p.tipoExame], ['Data', dataBR(p.data)], ['Horário', p.hora], ['Unidade', p.unidade], ['Exames', p.exames?.length ? p.exames.join(', ') : undefined]]} />
     {p.preparos?.length ? (<>
       <P><strong>Preparo dos exames</strong></P>
@@ -23,7 +23,7 @@ const Email = (p: Props) => (
 
 export const template = {
   component: Email,
-  subject: (d: Record<string, any>) => `Agendamento confirmado – ${d.data ? dataBR(d.data) : ''} ${d.hora ?? ''} – protocolo ${d.protocolo ?? ''}`,
-  displayName: 'Agenda – Agendamento confirmado',
+  subject: (d: Record<string, any>) => `Pré-agendamento confirmado – ${d.data ? dataBR(d.data) : ''} ${d.hora ?? ''} – protocolo ${d.protocolo ?? ''}`,
+  displayName: 'Agenda – Pré-agendamento confirmado',
   previewData: { protocolo: 'AG-20261110-7E5425', nome: 'Maria', colaborador: 'JOÃO DA SILVA', empresa: 'EMPRESA EXEMPLO LTDA', tipoExame: 'Retorno ao Trabalho', data: '2026-11-12', hora: '08:30', unidade: 'Lapa', exames: ['AUDIOMETRIA'], preparos: [{ nome: 'AUDIOMETRIA', texto: '* Estar com os ouvidos limpos.' }] },
 } satisfies TemplateEntry

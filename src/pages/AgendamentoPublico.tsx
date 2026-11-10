@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Info, Loader2, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, CalendarCheck, Check, CheckCircle2, Info, Loader2, Plus, RotateCcw, Send } from "lucide-react";
 import logo from "@/assets/logo-prevermed.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EXAMES_SOC } from "@/data/examesSoc";
@@ -53,6 +53,9 @@ export default function AgendamentoPublico() {
   const [outrosDocs, setOutrosDocs] = useState<File[]>([]);
   const [sol, setSol] = useState({ nome: "", email: "", celular: "" });
   const [aguardandoAprov, setAguardandoAprov] = useState(false);
+  const [emailComp, setEmailComp] = useState("");
+  const [enviandoComp, setEnviandoComp] = useState(false);
+  const [msgComp, setMsgComp] = useState("");
   const [dia, setDia] = useState("");
   const [hora, setHora] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -394,6 +397,15 @@ export default function AgendamentoPublico() {
                   ))}
                 </section>
               )}
+              <div className="flex flex-wrap items-end justify-center gap-2 rounded-md border p-3 print:hidden">
+                <div className="min-w-[220px] flex-1"><Label>Receber comprovante por e-mail</Label><Input type="email" value={emailComp || sol.email} maxLength={160} placeholder="seu@email.com.br" onChange={(e) => setEmailComp(e.target.value)} /></div>
+                <Button aria-label="Enviar comprovante por e-mail" disabled={enviandoComp || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((emailComp || sol.email).trim())} onClick={async () => {
+                  setEnviandoComp(true); setMsgComp("");
+                  const { data, error } = await supabase.functions.invoke("agenda-enviar-comprovante", { body: { protocolo, cpf, email: (emailComp || sol.email).trim() } });
+                  setEnviandoComp(false); setMsgComp(error || data?.error ? (data?.error ?? "Não foi possível enviar agora.") : "Comprovante enviado. Confira também a caixa de spam.");
+                }}>{enviandoComp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar</Button>
+                {msgComp && <p className="w-full text-center text-xs text-muted-foreground">{msgComp}</p>}
+              </div>
               <div className="flex flex-wrap justify-center gap-2 print:hidden">
                 <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
                 <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>
