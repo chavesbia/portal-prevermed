@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CalendarDays, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { RegrasExames } from "@/components/agenda/RegrasExames";
+import { AgendaInteligenteLab } from "@/components/agenda/AgendaInteligenteLab";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const TIPOS = ["Admissional", "Periódico", "Demissional", "Retorno ao Trabalho", "Mudança de Risco", "Monitoração Pontual", "Consulta", "Consulta Assistencial"];
@@ -83,6 +84,7 @@ export default function AdminAgenda() {
           <TabsTrigger value="documentos">Documentos exigidos</TabsTrigger>
           <TabsTrigger value="soc">Integração SOC</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          <TabsTrigger value="inteligente">Agenda Inteligente (teste)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="calendario" className="grid gap-3 md:grid-cols-2">
@@ -259,6 +261,7 @@ export default function AdminAgenda() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="inteligente"><AgendaInteligenteLab /></TabsContent>
       </Tabs>
     </div>
   );
