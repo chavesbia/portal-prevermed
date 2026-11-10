@@ -6,7 +6,7 @@ interface Props { protocolo?: string; nome?: string; colaborador?: string; empre
 
 const Email = (p: Props) => (
   <Layout preview={`Solicitação ${p.protocolo ?? ''} precisa de ajuste`} titulo="Solicitação devolvida">
-    <P>{p.nome ? `Olá, ${p.nome}.` : 'Olá.'}</P>
+    {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
     <P>Não foi possível seguir com a solicitação abaixo. Veja o motivo apontado pela nossa equipe e faça uma nova solicitação com as correções.</P>
     <Dados linhas={[['Protocolo', p.protocolo], ['Colaborador', p.colaborador], ['Empresa', p.empresa], ['Tipo de exame', p.tipoExame], ['Motivo', p.motivo]]} />
   </Layout>

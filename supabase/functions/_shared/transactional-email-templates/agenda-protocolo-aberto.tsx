@@ -6,7 +6,7 @@ interface Props { protocolo?: string; nome?: string; colaborador?: string; empre
 
 const Email = (p: Props) => (
   <Layout preview={`Recebemos sua solicitação ${p.protocolo ?? ''}`} titulo="Solicitação recebida">
-    <P>{p.nome ? `Olá, ${p.nome}.` : 'Olá.'}</P>
+    {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
     <P>Recebemos sua solicitação de agendamento. {p.motivo ?? 'Nossa equipe vai conferir as informações e você receberá a confirmação por e-mail.'}</P>
     <Dados linhas={[['Protocolo', p.protocolo], ['Colaborador', p.colaborador], ['Empresa', p.empresa], ['Tipo de exame', p.tipoExame], ['Data pretendida', dataBR(p.data)], ['Horário', p.hora], ['Unidade', p.unidade]]} />
     <P>Atenção: o atendimento só está garantido após a confirmação.</P>

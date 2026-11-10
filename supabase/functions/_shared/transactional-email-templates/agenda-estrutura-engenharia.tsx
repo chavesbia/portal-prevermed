@@ -6,7 +6,7 @@ interface Props { protocolo?: string; nome?: string; colaborador?: string; empre
 
 const Email = (p: Props) => (
   <Layout preview={p.concluido ? 'Estrutura cadastrada: já pode agendar' : 'Solicitação enviada à Engenharia'} titulo={p.concluido ? 'Estrutura cadastrada – já pode agendar' : 'Solicitação em análise pela Engenharia'}>
-    <P>{p.nome ? `Olá, ${p.nome}.` : 'Olá.'}</P>
+    {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
     <P>{p.concluido
       ? 'Nossa Engenharia concluiu o cadastro da unidade/setor/cargo. Agora você já pode fazer o agendamento do exame pelo Portal ou WhatsApp.'
       : 'A empresa possui programas (PGR/PCMSO) sob responsabilidade da PreverMed e a unidade, setor ou cargo informado ainda não existe no cadastro. Nossa Engenharia vai analisar e incluir a estrutura antes da escolha da data. Avisaremos por e-mail quando estiver liberado.'}</P>

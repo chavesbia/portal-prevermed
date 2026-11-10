@@ -11,10 +11,10 @@ export const Layout = ({ preview, titulo, children }: { preview: string; titulo:
       <Container style={{ maxWidth: '600px', margin: '0 auto' }}>
         <Section style={{ padding: '28px 28px 8px', textAlign: 'center' }}>
           <Img src={LOGO} alt="PreverMed" width="180" style={{ margin: '0 auto', height: 'auto' }} />
-          <Text style={{ color: '#0b4f8a', fontSize: '18px', fontWeight: 600, margin: '12px 0 0' }}>Agendamento de Exames</Text>
+          <Text style={{ color: '#0b4f8a', fontSize: '15px', fontWeight: 600, margin: '12px 0 0' }}>Agendamento de Exames</Text>
         </Section>
         <Section style={{ padding: '24px 28px' }}>
-          <Heading style={{ color: '#0b4f8a', fontSize: '20px', margin: '0 0 16px', textAlign: 'center' }}>{titulo}</Heading>
+          <Heading style={{ color: '#0b4f8a', fontSize: '17px', margin: '0 0 16px', textAlign: 'center' }}>{titulo}</Heading>
           {children}
         </Section>
         <Hr style={{ borderColor: '#e2e8f0', margin: '0 28px' }} />
@@ -27,13 +27,13 @@ export const Layout = ({ preview, titulo, children }: { preview: string; titulo:
 )
 
 export const P = ({ children }: { children: React.ReactNode }) => (
-  <Text style={{ color: '#1e293b', fontSize: '14px', lineHeight: '22px', margin: '0 0 12px' }}>{children}</Text>
+  <Text style={{ color: '#1e293b', fontSize: '13px', lineHeight: '20px', margin: '0 0 12px' }}>{children}</Text>
 )
 
 export const Dados = ({ linhas }: { linhas: [string, string | undefined | null][] }) => (
   <Section style={{ backgroundColor: '#f1f6fb', borderRadius: '8px', padding: '12px 16px', margin: '8px 0 16px' }}>
     {linhas.filter(([, v]) => v).map(([k, v]) => (
-      <Text key={k} style={{ fontSize: '14px', color: '#1e293b', margin: '4px 0' }}>
+      <Text key={k} style={{ fontSize: '13px', color: '#1e293b', margin: '4px 0' }}>
         <strong style={{ color: '#0b4f8a' }}>{k}:</strong> {v}
       </Text>
     ))}
@@ -45,7 +45,7 @@ export const dataBR = (iso?: string | null) => (iso ? iso.slice(0, 10).split('-'
 // Protocolo em destaque, como no comprovante do portal
 export const Protocolo = ({ valor }: { valor?: string }) => valor ? (
   <Section style={{ textAlign: 'center', margin: '0 0 16px' }}>
-    <Text style={{ fontFamily: 'Courier New, monospace', fontSize: '24px', color: '#0f172a', margin: 0 }}>{valor}</Text>
+    <Text style={{ fontFamily: 'Courier New, monospace', fontSize: '20px', color: '#0f172a', margin: 0 }}>{valor}</Text>
     <Text style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>Guarde este número de protocolo.</Text>
   </Section>
 ) : null

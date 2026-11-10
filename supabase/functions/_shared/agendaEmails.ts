@@ -6,7 +6,7 @@ import { preparosDosExames } from './preparosExames.ts'
 // Respostas do cliente caem na caixa Zoho do setor responsável
 export function replyToDe(ag: any, modelo: string) {
   if (modelo === 'agenda-estrutura-engenharia' || ag?.fila_aprovacao === 'engenharia') return 'engenharia@prevermed.com.br'
-  if (ag?.fila_aprovacao === 'saude' || /retorno/i.test(ag?.tipo_exame ?? '') || /consulta/i.test(ag?.tipo_exame ?? '')) return 'saude@prevermed.com.br'
+  if (/retorno/i.test(ag?.tipo_exame ?? '') || /consulta/i.test(ag?.tipo_exame ?? '')) return 'saude@prevermed.com.br'
   return 'agenda@prevermed.com.br'
 }
 

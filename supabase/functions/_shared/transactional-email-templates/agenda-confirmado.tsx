@@ -8,11 +8,11 @@ interface Props { protocolo?: string; nome?: string; colaborador?: string; empre
 const Email = (p: Props) => (
   <Layout preview={`Pré-agendamento confirmado ${dataBR(p.data) ?? ''} ${p.hora ?? ''}`} titulo="Pré-agendamento confirmado">
     <Protocolo valor={p.protocolo} />
-    <P>{p.nome ? `Olá, ${p.nome}.` : 'Olá.'}</P>
-    <Dados linhas={[['Empresa', p.empresa], ['Colaborador', p.colaborador], ['Tipo de exame', p.tipoExame], ['Exames', p.exames?.length ? p.exames.join(', ') : undefined], ['Local de atendimento', [p.unidade, enderecoDe(p.unidade)].filter(Boolean).join(' — ') || undefined], ['Data', dataBR(p.data)], ['Horário', p.hora ? `${p.hora}h` : undefined]]} />
+    {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
+    <Dados linhas={[['Empresa', p.empresa], ['Colaborador', p.colaborador], ['Tipo de exame', p.tipoExame], ['Exames', p.exames?.length ? p.exames.join(', ') : undefined], ['Local de atendimento', [p.unidade, enderecoDe(p.unidade)].filter(Boolean).join(', ') || undefined], ['Data', dataBR(p.data)], ['Horário', p.hora ? `${p.hora}h` : undefined]]} />
     <Section style={{ backgroundColor: '#f1f5f9', borderRadius: '8px', padding: '12px 16px', margin: '0 0 16px' }}>
-      <Text style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600, margin: '0 0 6px' }}>Leve um documento oficial de identificação com foto.</Text>
-      <Text style={{ fontSize: '13px', color: '#475569', margin: 0 }}>Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado — o atendimento segue a ordem de acolhimento.</Text>
+      <Text style={{ fontSize: '13px', color: '#0f172a', fontWeight: 600, margin: '0 0 6px' }}>Leve um documento oficial de identificação com foto.</Text>
+      <Text style={{ fontSize: '13px', color: '#475569', margin: 0 }}>Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado, o atendimento segue a ordem de acolhimento.</Text>
     </Section>
     <P><strong>Preparo dos exames</strong></P>
     {p.preparos?.length ? p.preparos.map((x) => (
