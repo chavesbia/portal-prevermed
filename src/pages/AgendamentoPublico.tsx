@@ -381,6 +381,15 @@ export default function AgendamentoPublico() {
                   {pedidoEng ? "Nossa equipe técnica vai conferir a unidade, o setor e o cargo informados. O horário fica reservado e só é confirmado após essa conferência." : "Nossa equipe de saúde vai conferir a documentação do retorno ao trabalho. O horário só fica confirmado após a aprovação."} Nossa equipe entrará em contato em breve pelos contatos informados.
                 </div>
               )}
+              <div className="flex flex-wrap items-end justify-center gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 print:hidden">
+                <div className="min-w-[220px] flex-1"><Label className="flex items-center gap-1"><Send className="h-4 w-4 text-primary" />Receber este comprovante por e-mail</Label><Input type="email" value={emailComp || sol.email} maxLength={160} placeholder="seu@email.com.br" onChange={(e) => setEmailComp(e.target.value)} /></div>
+                <Button aria-label="Enviar comprovante por e-mail" disabled={enviandoComp || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((emailComp || sol.email).trim())} onClick={async () => {
+                  setEnviandoComp(true); setMsgComp("");
+                  const { data, error } = await supabase.functions.invoke("agenda-enviar-comprovante", { body: { protocolo, cpf, email: (emailComp || sol.email).trim() } });
+                  setEnviandoComp(false); setMsgComp(error || data?.error ? (data?.error ?? "Não foi possível enviar agora.") : "Comprovante enviado. Confira também a caixa de spam.");
+                }}>{enviandoComp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}Enviar por e-mail</Button>
+                {msgComp && <p className="w-full text-center text-xs text-muted-foreground">{msgComp}</p>}
+              </div>
               <div className="space-y-2 rounded-md bg-muted/60 p-4 text-sm">
                 <p className="font-medium">Leve um documento oficial de identificação com foto.</p>
                 <p className="text-muted-foreground">Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado.</p>
@@ -397,15 +406,6 @@ export default function AgendamentoPublico() {
                   ))}
                 </section>
               )}
-              <div className="flex flex-wrap items-end justify-center gap-2 rounded-md border p-3 print:hidden">
-                <div className="min-w-[220px] flex-1"><Label>Receber comprovante por e-mail</Label><Input type="email" value={emailComp || sol.email} maxLength={160} placeholder="seu@email.com.br" onChange={(e) => setEmailComp(e.target.value)} /></div>
-                <Button aria-label="Enviar comprovante por e-mail" disabled={enviandoComp || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((emailComp || sol.email).trim())} onClick={async () => {
-                  setEnviandoComp(true); setMsgComp("");
-                  const { data, error } = await supabase.functions.invoke("agenda-enviar-comprovante", { body: { protocolo, cpf, email: (emailComp || sol.email).trim() } });
-                  setEnviandoComp(false); setMsgComp(error || data?.error ? (data?.error ?? "Não foi possível enviar agora.") : "Comprovante enviado. Confira também a caixa de spam.");
-                }}>{enviandoComp ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar</Button>
-                {msgComp && <p className="w-full text-center text-xs text-muted-foreground">{msgComp}</p>}
-              </div>
               <div className="flex flex-wrap justify-center gap-2 print:hidden">
                 <Button variant="outline" onClick={() => window.print()}>Imprimir comprovante</Button>
                 <Button onClick={() => window.location.assign(`${window.location.pathname}?cnpj=${cnpj}${socCode ? `&soc=${socCode}` : ""}`)}>Outro colaborador desta empresa</Button>

@@ -185,6 +185,9 @@ const pedirAnexo = (d: Dados): Res => d.externo && !d.socnet
   : d.livre
     ? { etapa: 'ANEXO', dados: d, resposta: `📎 *Kit de atendimento / Guia*\n\nEnvie a foto ou PDF do kit (guia, ficha clínica e ASO), ou digite *1* para continuar sem anexo.\n\n${AVISO_KIT}${RODAPE}` }
     : { etapa: 'ANEXO', dados: d, resposta: `📎 Deseja anexar algum documento?\n\nEnvie o arquivo ou foto agora, ou digite *1* para continuar sem anexo.${RODAPE}` };
+const pedirDocRet = (d: Dados, prefixo = ''): Res => d.docsRet.length >= d.retDocs.length
+  ? pedirExtras(d)
+  : { etapa: 'RET_DOC', dados: d, resposta: `${prefixo}📎 Envie agora a *foto ou PDF* do documento: *${d.retDocs[d.docsRet.length]}* (${d.docsRet.length + 1} de ${d.retDocs.length}).${RODAPE}` };
 const AVISO_KIT = '⚠️ *Atenção:* O atendimento no balcão depende da apresentação do kit (guia, ficha clínica e ASO) para realização do atendimento.';
 
 function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
@@ -290,11 +293,11 @@ function mostrarCombos(d: Dados): Res {
   return { etapa: 'CAD_COMBO', dados: d, resposta: `💼 Cargo: *${titulo(d.cad.cargo.nome)}*\n\nEste cargo está cadastrado no SOC nesta(s) hierarquia(s):\n\n${linhas}\n\nDigite o *número* da hierarquia correta.\n\nSe a unidade ou o setor do colaborador for outro:\n• *TROCAR* - voltar e escolher outro cargo\n• *INCLUIR* - solicitar o cadastro da estrutura à Engenharia${RODAPE}` };
 }
 // ---- Confirmação da lotação atual (empresa da carteira, cadastro ativo) ----
-const pedirConfLot = (d: Dados): Res => ({ etapa: 'LOT_CONF', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*\n\n📌 *Confira a lotação atual no SOC:*\n${lotacao(d) || '_(sem lotação informada)_'}\n\nOs riscos e exames do ASO seguem esta lotação.\n\n*1* - Confirmar lotação\n*2* - Alterar lotação${RODAPE}` });
+const pedirConfLot = (d: Dados): Res => ({ etapa: 'LOT_CONF', dados: d, resposta: `👤 Colaborador: *${titulo(d.colaboradorNome)}*\n\n📌 *Confira a unidade, o setor e o cargo atuais no SOC:*\n${lotacao(d) || '_(sem dados informados)_'}\n\nOs riscos e exames do ASO seguem estes dados.\n\n*1* - Confirmar\n*2* - Alterar unidade, setor ou cargo${RODAPE}` });
 const menuTipos = (d: Dados, prefixo = ''): Res => { d.tipos = TIPOS_ATIVO; return { etapa: 'ESCOLHENDO_TIPO', dados: d, resposta: `${prefixo}👤 Colaborador: *${titulo(d.colaboradorNome)}*${lotacao(d) ? `\n${lotacao(d)}` : ''}\n\nQual o tipo de exame?\n\n${menu(d.tipos)}${RODAPE}` }; };
 function confirmarLot(d: Dados): Res {
   const c = d.cad;
-  return { etapa: 'LOT_SALVAR', dados: d, resposta: `Confira a *nova lotação*:\n\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\nAo confirmar, a lotação será atualizada no SOC e os exames seguirão os riscos da nova função.\n\n*1* - Confirmar e atualizar\n*2* - Escolher novamente${RODAPE}` };
+  return { etapa: 'LOT_SALVAR', dados: d, resposta: `Confira os *novos dados*:\n\n🏢 Unidade: *${titulo(c.unidade.nome)}*\n📂 Setor: *${titulo(c.setor.nome)}*\n💼 Cargo: *${titulo(c.cargo.nome)}*\n\nAo confirmar, a unidade, o setor e o cargo serão atualizados no SOC e os exames seguirão os riscos da nova função.\n\n*1* - Confirmar e atualizar\n*2* - Escolher novamente${RODAPE}` };
 }
 function confirmarCad(d: Dados): Res {
   if (d.cad?.alterando) return confirmarLot(d);
@@ -406,12 +409,12 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
     }
     case 'LOT_CONF': {
       const i = escolha(t, 2);
-      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para alterar a lotação.${RODAPE}` };
+      if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para confirmar ou *2* para alterar a unidade, o setor ou o cargo.${RODAPE}` };
       if (i === 0) return menuTipos(d);
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: 'hierarquia', cnpj: d.cnpj, socCode: d.socCode });
-      if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter a lotação.${RODAPE}` };
+      if (!ok || data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar a estrutura da empresa agora. Digite *2* novamente em instantes ou *1* para manter os dados atuais.${RODAPE}` };
       d.cad = { alterando: true, livre: !!data.podeCriar }; d.hier = data;
-      if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa não possui unidades, setores e cargos ativos para alteração de lotação.');
+      if (!d.cad.livre && !data.unidades?.length) return portal('Esta empresa não possui unidades, setores e cargos ativos para alteração.');
       return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo');
     }
     case 'LOT_SALVAR': {
@@ -421,7 +424,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i === 1) { c.unidade = undefined; c.setor = undefined; c.cargo = undefined; return pedirNivel(d, d.cad?.livre ? 'unidade' : 'cargo'); }
       const refEnvio = (r: { codigo?: string; nome?: string }) => r.codigo ? { codigo: r.codigo } : { nome: r.nome };
       const { ok, data } = await chamar('soc-agenda-lookup', { acao: c.reativar ? 'reativar' : 'alterarLotacao', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf, unidade: refEnvio(c.unidade), setor: refEnvio(c.setor), cargo: refEnvio(c.cargo) });
-      if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar a lotação: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Escolher novamente${RODAPE}` };
+      if (!ok || !data?.ok) return { etapa, dados: d, resposta: `Não foi possível atualizar a unidade, o setor e o cargo: ${data?.error ?? 'erro inesperado'}\n\n*1* - Tentar novamente\n*2* - Escolher novamente${RODAPE}` };
       const antes = `${d.lotUnidade || '-'} / ${d.lotSetor || '-'} / ${d.lotCargo || '-'}`;
       d.lotUnidade = c.unidade.nome; d.lotSetor = c.setor.nome; d.lotCargo = c.cargo.nome;
       d.lotAlterada = `LOTAÇÃO ATUALIZADA NO SOC VIA AGENDAMENTO — DE: ${antes} — PARA: ${d.lotUnidade} / ${d.lotSetor} / ${d.lotCargo}`.toUpperCase();
@@ -607,7 +610,6 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (i < 0) return { etapa, dados: d, resposta: `Digite apenas o *número* da opção.${RODAPE}` };
       const tipo = d.tipos[i];
       if (tipo.startsWith('Novo vínculo')) return iniciarCadastro(d);
-      if (tipo === 'Retorno ao Trabalho') return portal('O Retorno ao Trabalho exige motivo, documentos e aprovação da nossa equipe de saúde.');
       const ex = await chamar('soc-agenda-lookup', { acao: 'exames', cnpj: d.cnpj, socCode: d.socCode, cpf: d.cpf });
       if (!ex.ok || ex.data?.indisponivel) return { etapa, dados: d, resposta: `Não consegui consultar os exames do PCMSO agora. Digite o número do tipo de exame novamente em instantes.${RODAPE}` };
       d.tipoExame = TIPO_SISTEMA[tipo] ?? tipo; d.tipoLabel = tipo; d.tiposAnt = d.tipos; delete d.tipos;
@@ -619,9 +621,33 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       d.examesBase = [...d.exames];
       // Empresas de Gestão/Uso precisam ter PCMSO; sem exames = risco de ASO errado → validação técnica
       if (!d.livre && !d.examesBase.length && !['Monitoração Pontual', 'Consulta Ocupacional'].includes(tipo)) return bloqueioPcmso(d);
-      if (tipo === 'Mudança de Risco') {
-        return { etapa: 'CONFIRMANDO_LOTACAO', dados: d, resposta: `⚠️ Para *Mudança de Risco*, a nova lotação (setor/cargo) precisa estar atualizada no SOC *antes* do atendimento.\n\nA lotação já foi atualizada?\n\n*1* - Sim\n*2* - Não${RODAPE}` };
+      if (tipo === 'Retorno ao Trabalho') {
+        const { data: exig } = await ctx.admin.from('agenda_documentos_exigidos').select('nome').eq('tipo_exame', 'Retorno ao Trabalho').eq('obrigatorio', true).order('ordem');
+        d.retDocs = (exig ?? []).map((x: any) => x.nome); d.docsRet = [];
+        return { etapa: 'RET_MOTIVO', dados: d, resposta: `🩺 *Retorno ao Trabalho*\n\nEste atendimento passa por análise da nossa equipe de saúde.\n\nDescreva o *motivo do afastamento* (ex.: cirurgia no joelho de 01/08 a 30/09, alta do INSS em 01/10).${RODAPE}` };
       }
+      if (tipo === 'Mudança de Risco') {
+        return { etapa: 'CONFIRMANDO_LOTACAO', dados: d, resposta: `⚠️ Para *Mudança de Risco*, o novo setor e cargo precisam estar atualizados no SOC *antes* do atendimento.\n\nO setor e o cargo já foram atualizados?\n\n*1* - Sim\n*2* - Não${RODAPE}` };
+      }
+      return pedirExtras(d);
+    }
+    case 'RET_MOTIVO': {
+      if (arquivo) return { etapa, dados: d, resposta: `Primeiro descreva o *motivo do afastamento* em texto. Os documentos você envia em seguida.${RODAPE}` };
+      if (t.length < 10) return { etapa, dados: d, resposta: `Descreva um pouco mais o motivo do afastamento (mínimo 10 caracteres).${RODAPE}` };
+      d.motivoRetorno = t.slice(0, 1000);
+      return pedirDocRet(d);
+    }
+    case 'RET_DOC': {
+      const nomeDoc = d.retDocs[d.docsRet.length];
+      if (!arquivo) return { etapa, dados: d, resposta: t === '[midia]' ? `Não consegui abrir o arquivo 😕 Envie novamente como *foto* ou *PDF* (até 5 MB).${RODAPE}` : `Envie a *foto ou PDF* do documento *${nomeDoc}*.${RODAPE}` };
+      const tipoA = arquivo.tipo.split(';')[0].trim().toLowerCase();
+      const ext = MIMES[tipoA];
+      if (!ext) return { etapa, dados: d, resposta: `Esse tipo de arquivo não é aceito. Envie *foto* (JPG/PNG) ou *PDF*.${RODAPE}` };
+      if (arquivo.base64.length > 6_800_000) return { etapa, dados: d, resposta: `Arquivo muito grande (máx. 5 MB). Envie outro.${RODAPE}` };
+      const b64 = arquivo.base64.replace(/^data:[^,]+,/, '');
+      if (d.docsRet.some((x: any) => x.base64.length === b64.length && x.base64.slice(0, 2000) === b64.slice(0, 2000))) return { etapa, dados: d, resposta: `Este arquivo é o mesmo do documento anterior. Envie o *${nomeDoc}* separadamente.${RODAPE}` };
+      d.docsRet.push({ nome: `${semAcento(nomeDoc).replace(/[^A-Z0-9]+/g, '_')}.${ext}`, tipo: tipoA === 'image/jpg' ? 'image/jpeg' : tipoA, base64: b64, tipoDocumento: nomeDoc });
+      if (d.docsRet.length < d.retDocs.length) return pedirDocRet(d, `✅ *${nomeDoc}* recebido!\n\n`);
       return pedirExtras(d);
     }
     case 'PCMSO_BLOQUEIO': {
@@ -640,7 +666,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
     case 'CONFIRMANDO_LOTACAO': {
       const i = escolha(t, 2);
       if (i < 0) return { etapa, dados: d, resposta: `Digite *1* para Sim ou *2* para Não.${RODAPE}` };
-      if (i === 1) return portal('Atualize primeiro a nova lotação do colaborador e depois retorne para agendar.');
+      if (i === 1) return portal('Atualize primeiro o novo setor e cargo do colaborador e depois retorne para agendar.');
       d.mudancaRisco = 'Mudança de Risco: lotação informada como atualizada no SOC';
       return pedirExtras(d);
     }
@@ -769,7 +795,8 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: d.tipoExame,
         data: isoDe(d.data), hora: d.hora, exames: d.exames ?? [], mudancaRisco: [d.lotAlterada, d.mudancaRisco].filter(Boolean).join(' · ') || undefined,
         observacoes: d.obs || undefined, examesAdicionais: adicionais(d), solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`,
-        documentos: listaAnexos(d).map((a: any) => ({ ...a, tipoDocumento: 'Anexo WhatsApp' })),
+        motivoRetorno: d.motivoRetorno,
+        documentos: [...(d.docsRet ?? []), ...listaAnexos(d).map((a: any) => ({ ...a, tipoDocumento: 'Anexo WhatsApp' }))],
       });
       if (!ok) {
         let det = '';

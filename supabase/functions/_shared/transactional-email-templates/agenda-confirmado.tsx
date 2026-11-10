@@ -10,17 +10,17 @@ const Email = (p: Props) => (
     <Protocolo valor={p.protocolo} />
     {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
     <Dados linhas={[['Empresa', p.empresa], ['Colaborador', p.colaborador], ['Tipo de exame', p.tipoExame], ['Exames', p.exames?.length ? p.exames.join(', ') : undefined], ['Local de atendimento', [p.unidade, enderecoDe(p.unidade)].filter(Boolean).join(', ') || undefined], ['Data', dataBR(p.data)], ['Horário', p.hora ? `${p.hora}h` : undefined]]} />
-    <Section style={{ backgroundColor: '#f1f5f9', borderRadius: '8px', padding: '12px 16px', margin: '0 0 16px' }}>
-      <Text style={{ fontSize: '13px', color: '#0f172a', fontWeight: 600, margin: '0 0 6px' }}>Leve um documento oficial de identificação com foto.</Text>
-      <Text style={{ fontSize: '13px', color: '#475569', margin: 0 }}>Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado, o atendimento segue a ordem de acolhimento.</Text>
+    <Section style={{ backgroundColor: '#f6f8fa', borderRadius: '8px', padding: '10px 14px', margin: '0 0 16px' }}>
+      <Text style={{ fontSize: '12px', color: '#0f172a', fontWeight: 600, margin: '0 0 6px' }}>Leve um documento oficial de identificação com foto.</Text>
+      <Text style={{ fontSize: '12px', color: '#475569', margin: 0 }}>Este é um pré-agendamento, feito para agilizar a abertura da ficha na recepção. O horário é uma previsão de chegada e não garante atendimento exatamente no horário marcado, o atendimento segue a ordem de acolhimento.</Text>
     </Section>
     <P><strong>Preparo dos exames</strong></P>
     {p.preparos?.length ? p.preparos.map((x) => (
-      <Text key={x.nome} style={{ fontSize: '13px', color: '#1e293b', margin: '0 0 10px', whiteSpace: 'pre-line', borderLeft: '3px solid #0b4f8a', paddingLeft: '10px' }}>
+      <Text key={x.nome} style={{ fontSize: '12px', color: '#1e293b', margin: '0 0 10px', whiteSpace: 'pre-line', borderLeft: '3px solid #0b4f8a', paddingLeft: '10px' }}>
         <strong>{x.nome}</strong>{'\n'}{x.texto.replace(/\r/g, '').trim()}
       </Text>
     )) : (
-      <Text style={{ fontSize: '13px', color: '#475569', margin: '0 0 10px' }}>Os exames deste atendimento não exigem preparo prévio especial. Compareça com documento oficial com foto e, se houver, relatórios médicos anteriores.</Text>
+      <Text style={{ fontSize: '12px', color: '#475569', margin: '0 0 10px' }}>Os exames deste atendimento não exigem preparo prévio especial. Compareça com documento oficial com foto e, se houver, relatórios médicos anteriores.</Text>
     )}
   </Layout>
 )

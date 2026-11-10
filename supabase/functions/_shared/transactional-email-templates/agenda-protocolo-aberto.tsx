@@ -1,15 +1,15 @@
 import * as React from 'npm:react@18.3.1'
 import type { TemplateEntry } from './registry.ts'
-import { Dados, Layout, P, dataBR } from './agenda-layout.tsx'
+import { Aviso, Dados, Layout, P, Protocolo, dataBR, enderecoDe } from './agenda-layout.tsx'
 
 interface Props { protocolo?: string; nome?: string; colaborador?: string; empresa?: string; tipoExame?: string; data?: string; hora?: string; unidade?: string; motivo?: string }
 
 const Email = (p: Props) => (
   <Layout preview={`Recebemos sua solicitação ${p.protocolo ?? ''}`} titulo="Solicitação recebida">
+    <Protocolo valor={p.protocolo} />
     {p.nome ? <P>{`Olá, ${p.nome}.`}</P> : null}
-    <P>Recebemos sua solicitação de agendamento. {p.motivo ?? 'Nossa equipe vai conferir as informações e você receberá a confirmação por e-mail.'}</P>
-    <Dados linhas={[['Protocolo', p.protocolo], ['Colaborador', p.colaborador], ['Empresa', p.empresa], ['Tipo de exame', p.tipoExame], ['Data pretendida', dataBR(p.data)], ['Horário', p.hora], ['Unidade', p.unidade]]} />
-    <P>Atenção: o atendimento só está garantido após a confirmação.</P>
+    <Dados linhas={[['Empresa', p.empresa], ['Colaborador', p.colaborador], ['Tipo de exame', p.tipoExame], ['Local de atendimento', [p.unidade, enderecoDe(p.unidade)].filter(Boolean).join(', ') || undefined], ['Data', dataBR(p.data)], ['Horário', p.hora ? `${p.hora}h` : undefined]]} />
+    <Aviso>{p.motivo ?? 'Nossa equipe vai conferir as informações e você receberá a confirmação por e-mail.'} O horário só fica confirmado após a aprovação.</Aviso>
   </Layout>
 )
 

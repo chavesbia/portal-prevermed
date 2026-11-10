@@ -36,3 +36,10 @@
 - [x] Onda 1 OS: carimbo automático, trava PGR→PCMSO, SLA só ADM Master, unidade obrigatória, sem custos na finalização
 - [ ] Onda 2 OS: Kanban por fases, laudo Vigente/Substituído, aviso Engenharia→Saúde, checklist gerando oportunidades
 - [ ] Onda 3 OS: renovação 90/60/30, gatilho de faturamento, produtividade por técnico
+
+## WhatsApp / E-mail (10/11)
+- [x] Trocar "lotação" por unidade/setor/cargo nas mensagens do WhatsApp
+- [x] Retorno ao Trabalho pelo WhatsApp (motivo + documentos obrigatórios, um por vez)
+- [x] Aviso de aprovação por WhatsApp também para pedidos feitos pela página (celular informado)
+- [x] E-mails com o visual do comprovante do portal; botão de envio por e-mail em destaque
+- [ ] Remover "Laudo do Especialista" e "Atestado (com CID)" — feito pela Bia em Admin > Agenda > Documentos (sem permissão de escrita aqui)
