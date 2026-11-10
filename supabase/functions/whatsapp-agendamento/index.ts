@@ -188,6 +188,19 @@ const pedirAnexo = (d: Dados): Res => d.externo && !d.socnet
 const pedirDocRet = (d: Dados, prefixo = ''): Res => d.docsRet.length >= d.retDocs.length
   ? pedirExtras(d)
   : { etapa: 'RET_DOC', dados: d, resposta: `${prefixo}📎 Envie agora a *foto ou PDF* do documento: *${d.retDocs[d.docsRet.length]}* (${d.docsRet.length + 1} de ${d.retDocs.length}).${RODAPE}` };
+// Retorno ao Trabalho (Modelo B): 1ª etapa só envia motivo + documentos à Saúde, sem data/horário/kit
+async function enviarRetDocs(ctx: Ctx, d: Dados, nome?: string | null): Promise<Res> {
+  const { ok, data } = await chamar('soc-agenda-solicitar', {
+    empresaNome: d.empresaNome, empresaCnpj: d.cnpj, codigoEmpresaSoc: d.socCode, origem: 'cliente',
+    colaboradorNome: d.colaboradorNome, colaboradorCpf: d.cpf, tipoExame: 'Retorno ao Trabalho', exames: [],
+    solicitadoPor: `WHATSAPP${nome ? ` POR ${nome}` : ''}`, motivoRetorno: d.motivoRetorno, documentos: d.docsRet ?? [],
+  });
+  if (!ok) return { etapa: 'FINALIZADO', dados: {}, resposta: `⚠️ Não foi possível enviar: ${data?.error ?? 'erro inesperado'}\n\nDigite *1* para iniciar um novo atendimento.` };
+  await registrar(ctx, 'agendamento', d, data.protocolo, { retornoDocumentacao: true });
+  const mesmaEmpresa = { cnpj: d.cnpj, empresaNome: d.empresaNome, socCode: d.socCode, externo: d.externo, livre: d.livre, termoAceito: d.termoAceito };
+  return { semVolta: true, etapa: 'FINALIZADO', dados: { protocolo: data.protocolo, mesmaEmpresa }, resposta:
+    `✅ *Documentação enviada*\n\n🔖 Protocolo: *${data.protocolo}*\n\nNossa equipe de Saúde vai analisar a documentação do Retorno ao Trabalho. Assim que for aprovada, você receberá um aviso *por este número* para escolher a unidade, o dia e o horário.\n\nPrecisa de outro atendimento?\n*1* - Nova empresa\n*2* - Outro colaborador de *${titulo(d.empresaNome)}*` };
+}
 const AVISO_KIT = '⚠️ *Atenção:* O atendimento no balcão depende da apresentação do kit (guia, ficha clínica e ASO) para realização do atendimento.';
 
 function receberAnexo(etapa: string, d: Dados, arquivo: { nome?: string; tipo: string; base64: string }): Res {
@@ -622,6 +635,10 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       // Empresas de Gestão/Uso precisam ter PCMSO; sem exames = risco de ASO errado → validação técnica
       if (!d.livre && !d.examesBase.length && !['Monitoração Pontual', 'Consulta Ocupacional'].includes(tipo)) return bloqueioPcmso(d);
       if (tipo === 'Retorno ao Trabalho') {
+        const st = await chamar('soc-agenda-solicitar', { acao: 'retornoStatus', cpf: d.cpf, codigoEmpresaSoc: d.socCode });
+        if (!st.ok) return { etapa, dados: d, resposta: `Não consegui consultar a documentação agora. Digite o número do tipo de exame novamente em instantes.${RODAPE}` };
+        if (st.data?.pendente) return { semVolta: true, etapa: 'FINALIZADO', dados: {}, resposta: `⏳ A documentação do Retorno ao Trabalho deste colaborador já está em análise pela nossa equipe de Saúde (protocolo *${st.data.pendente.protocolo}*).\n\nAssim que for aprovada, avisaremos *por este número* para escolher o dia e o horário.\n\nSe precisar de outro atendimento, digite *1*.` };
+        if (st.data?.liberado) { d.retLiberado = st.data.liberado.protocolo; return pedirExtras(d); }
         const { data: exig } = await ctx.admin.from('agenda_documentos_exigidos').select('nome').eq('tipo_exame', 'Retorno ao Trabalho').eq('obrigatorio', true).order('ordem');
         d.retDocs = (exig ?? []).map((x: any) => x.nome); d.docsRet = [];
         return { etapa: 'RET_MOTIVO', dados: d, resposta: `🩺 *Retorno ao Trabalho*\n\nEste atendimento passa por análise da nossa equipe de saúde.\n\nDescreva o *motivo do afastamento* (ex.: cirurgia no joelho de 01/08 a 30/09, alta do INSS em 01/10).${RODAPE}` };
@@ -635,6 +652,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (arquivo) return { etapa, dados: d, resposta: `Primeiro descreva o *motivo do afastamento* em texto. Os documentos você envia em seguida.${RODAPE}` };
       if (t.length < 10) return { etapa, dados: d, resposta: `Descreva um pouco mais o motivo do afastamento (mínimo 10 caracteres).${RODAPE}` };
       d.motivoRetorno = t.slice(0, 1000);
+      if (!d.retDocs.length) return await enviarRetDocs(ctx, d, nome);
       return pedirDocRet(d);
     }
     case 'RET_DOC': {
@@ -648,7 +666,7 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
       if (d.docsRet.some((x: any) => x.base64.length === b64.length && x.base64.slice(0, 2000) === b64.slice(0, 2000))) return { etapa, dados: d, resposta: `Este arquivo é o mesmo do documento anterior. Envie o *${nomeDoc}* separadamente.${RODAPE}` };
       d.docsRet.push({ nome: `${semAcento(nomeDoc).replace(/[^A-Z0-9]+/g, '_')}.${ext}`, tipo: tipoA === 'image/jpg' ? 'image/jpeg' : tipoA, base64: b64, tipoDocumento: nomeDoc });
       if (d.docsRet.length < d.retDocs.length) return pedirDocRet(d, `✅ *${nomeDoc}* recebido!\n\n`);
-      return pedirExtras(d);
+      return await enviarRetDocs(ctx, d, nome);
     }
     case 'PCMSO_BLOQUEIO': {
       const i = escolha(t, 3);
@@ -762,7 +780,8 @@ async function processar(ctx: Ctx, etapa: string, d: Dados, texto: string, nome?
         d.obs = t.slice(0, 900);
       }
       d.obsFeita = true;
-      return pedirAnexo(d);
+      // Retorno já liberado pela Saúde: documentos já estão no protocolo, não pede kit
+      return d.retLiberado ? resumo(d) : pedirAnexo(d);
     }
     case 'ANEXO': {
       if (arquivo) return receberAnexo(etapa, d, arquivo);

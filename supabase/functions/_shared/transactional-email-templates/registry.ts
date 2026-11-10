@@ -20,12 +20,14 @@ export interface TemplateEntry {
 import { template as agendaProtocoloAberto } from './agenda-protocolo-aberto.tsx'
 import { template as agendaConfirmado } from './agenda-confirmado.tsx'
 import { template as agendaEstruturaEngenharia } from './agenda-estrutura-engenharia.tsx'
+import { template as agendaRetornoSaude } from './agenda-retorno-saude.tsx'
 import { template as agendaDevolvido } from './agenda-devolvido.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'agenda-protocolo-aberto': agendaProtocoloAberto,
   'agenda-confirmado': agendaConfirmado,
   'agenda-estrutura-engenharia': agendaEstruturaEngenharia,
+  'agenda-retorno-saude': agendaRetornoSaude,
   'agenda-devolvido': agendaDevolvido,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,

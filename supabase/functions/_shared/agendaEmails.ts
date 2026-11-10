@@ -10,7 +10,7 @@ export function replyToDe(ag: any, modelo: string) {
   return 'agenda@prevermed.com.br'
 }
 
-export async function emailAgenda(admin: any, agendamentoId: string, modelo: 'agenda-protocolo-aberto' | 'agenda-confirmado' | 'agenda-estrutura-engenharia' | 'agenda-devolvido', extra: Record<string, unknown> = {}, para?: string) {
+export async function emailAgenda(admin: any, agendamentoId: string, modelo: 'agenda-protocolo-aberto' | 'agenda-confirmado' | 'agenda-estrutura-engenharia' | 'agenda-retorno-saude' | 'agenda-devolvido', extra: Record<string, unknown> = {}, para?: string) {
   try {
     const { data: ag } = await admin.from('soc_agendamentos')
       .select('protocolo, solicitante, colaborador_nome, empresa_nome, tipo_exame, data_agendada, hora_agendada, exames, estrutura_solicitada, devolucao_motivo, fila_aprovacao, soc_agenda_unidades(nome)')

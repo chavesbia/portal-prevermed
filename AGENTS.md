@@ -25,3 +25,4 @@
 - Agenda emails: sent only from `soc-agenda-solicitar`/`agenda-aprovacao` via `_shared/agendaEmails.ts`, recipient read from the saved `solicitante` — never from the browser; email failures are logged and never block the booking.
 
 - Agenda: comprovante sob demanda sai só por `agenda-enviar-comprovante` (modelo fixo, exige protocolo + CPF, 1 envio/hora por e-mail); Reply-To por setor é decidido em `_shared/agendaEmails.ts` — evita uso do envio como disparo aberto.
+- Agenda: Retorno ao Trabalho runs in two steps on portal and WhatsApp alike: motivo + documents first (RET- protocol, no date/slot/kit), Health approval sets `documentacao_aprovada` (valid 15 days), then the client books and the server reuses that row — no slot is held while documents await review.

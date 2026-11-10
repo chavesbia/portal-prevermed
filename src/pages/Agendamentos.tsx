@@ -31,6 +31,7 @@ const STATUS: Record<string, { label: string; variant: "default" | "secondary" |
   aguardando_aprovacao: { label: "Aguardando aprovação", variant: "secondary" },
   documentacao_devolvida: { label: "Documentação devolvida", variant: "outline" },
   estrutura_cadastrada: { label: "Estrutura cadastrada", variant: "default" },
+  documentacao_aprovada: { label: "Documentação aprovada", variant: "default" },
 };
 
 const fmtDataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });

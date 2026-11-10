@@ -65,6 +65,15 @@ Deno.serve(async (req) => {
       return json({ ok: true, agendadoSoc: false });
     }
 
+    // Retorno ao Trabalho (Modelo B): a Saúde libera a documentação; o cliente escolhe dia/horário depois
+    if (ag.fila_aprovacao === 'saude' && !ag.data_agendada) {
+      await admin.from('soc_agendamentos').update({ aprovacao_status: 'aprovado', status: 'documentacao_aprovada', aprovado_por: uid, aprovado_em: new Date().toISOString(), devolucao_motivo: null }).eq('id', ag.id);
+      await audit('agenda_documentacao_aprovada', { protocolo: ag.protocolo, fila: 'saude', liberadoParaAgendar: true });
+      await emailAgenda(admin, ag.id, 'agenda-retorno-saude', { concluido: true });
+      await whatsappAgenda(admin, ag.id, 'liberado');
+      return json({ ok: true, agendadoSoc: false, liberado: true });
+    }
+
     const soc = await incluirAgendamentoSoc({
       codigoEmpresa: ag.codigo_empresa_soc, cpf: ag.colaborador_cpf,
       codigoAgenda: (ag.soc_agenda_unidades as any)?.codigo_agenda, data: ag.data_agendada, hora: String(ag.hora_agendada).slice(0, 5),

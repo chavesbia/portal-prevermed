@@ -275,17 +275,30 @@ export default function AgendamentoPublico() {
   };
 
   const retorno = f.tipoExame === "Retorno ao Trabalho";
+  // Retorno ao Trabalho (Modelo B): 1º a Saúde aprova a documentação; depois o cliente escolhe dia/horário
+  const [retLib, setRetLib] = useState<{ liberado: { protocolo: string } | null; pendente: { protocolo: string } | null } | null>(null);
+  const [retEnviado, setRetEnviado] = useState(false);
+  const consultaRet = retorno && !pedido && !semPedido && !!socCode && cpfValido;
+  useEffect(() => {
+    setRetLib(null);
+    if (!consultaRet) return;
+    let vivo = true;
+    supabase.functions.invoke("soc-agenda-solicitar", { body: { acao: "retornoStatus", cpf, codigoEmpresaSoc: socCode } })
+      .then(({ data }) => { if (vivo) setRetLib(data && !data.error ? data : { liberado: null, pendente: null }); });
+    return () => { vivo = false; };
+  }, [consultaRet, cpf, socCode]);
+  const retDocs = retorno && !retLib?.liberado;
   const docsRetorno = docsExig.filter((d) => d.tipo_exame === f.tipoExame);
   // Assinatura simples para pegar o mesmo arquivo anexado em dois campos
   const docsRetSel = retorno ? [...Object.values(docs).filter(Boolean) as File[], ...outrosDocs] : [];
   const docDuplicado = docsRetSel.some((a, i) => docsRetSel.findIndex((b) => b.name === a.name && b.size === a.size) !== i);
-  const precisaContato = retorno || !!pedidoEng;
+  const precisaContato = retDocs || !!pedidoEng;
   const celSol = sol.celular.replace(/\D/g, "");
   const contatoOk = !precisaContato || (sol.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sol.email.trim()) && (celSol.length === 10 || celSol.length === 11));
   const valido = [
     (!!socCode || !!externa) && cnpj.length === 14,
     cpfValido && f.colaboradorNome.trim().length >= 3 && (!!pedido || semPedido || (!!func && !func.encontrado && !!func.indisponivel && !!f.cargo.trim()) || (!!func && func.encontrado && !inativoLivre && (inativo || lotConfirmada) && !cadAberto) || (!!pedidoEng && !cadAberto)),
-    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]) && !docDuplicado)) && contatoOk && !buscandoPcmso,
+    pedido ? true : semPedido ? !!f.tipoExame && guias.length > 0 : !!f.tipoExame && (!inativo || tipoPermitidoInativo) && (!retorno || (consultaRet && !!retLib && !retLib.pendente)) && (!retDocs || (motivoRetorno.trim().length >= 10 && docsRetorno.length > 0 && docsRetorno.filter((d) => d.obrigatorio).every((d) => docs[d.nome]) && docsRetorno.some((d) => docs[d.nome]) && !docDuplicado)) && contatoOk && !buscandoPcmso,
     !!unidadeId && !!dia && !!hora,
   ];
 
@@ -298,18 +311,18 @@ export default function AgendamentoPublico() {
     const [primeira, ...demais] = guias;
     const guiaPayload = primeira ? { nome: primeira.name.slice(0, 120), tipo: primeira.type, base64: await toB64(primeira) } : undefined;
     const extras = await Promise.all(demais.map(async (g) => ({ tipoDocumento: "Guia/Kit", nome: g.name.slice(0, 120), tipo: g.type, base64: await toB64(g) })));
-    const docsRet = retorno ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v?.name.slice(0, 120), tipo: v?.type, base64: v ? await toB64(v) : "" }))) : [];
-    const outros = retorno ? await Promise.all(outrosDocs.map(async (o) => ({ tipoDocumento: "Outros", nome: o.name.slice(0, 120), tipo: o.type, base64: await toB64(o) }))) : [];
+    const docsRet = retDocs ? await Promise.all(Object.entries(docs).filter(([, v]) => v).map(async ([k, v]) => ({ tipoDocumento: k, nome: v?.name.slice(0, 120), tipo: v?.type, base64: v ? await toB64(v) : "" }))) : [];
+    const outros = retDocs ? await Promise.all(outrosDocs.map(async (o) => ({ tipoDocumento: "Outros", nome: o.name.slice(0, 120), tipo: o.type, base64: await toB64(o) }))) : [];
     const documentos = [...docsRet, ...outros, ...extras].slice(0, 10);
     const { data, error } = await supabase.functions.invoke("soc-agenda-solicitar", {
       body: {
-        unidadeId: pedidoEng ? undefined : unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
+        unidadeId: pedidoEng || retDocs ? undefined : unidadeId, empresaNome: f.empresaNome, empresaCnpj: cnpj, codigoEmpresaSoc: pedido || semPedido ? undefined : socCode,
         origem: pedido ? "socnet" : semPedido ? "externo" : "cliente", sequencialFicha: pedido?.sequencialFicha,
         colaboradorNome: f.colaboradorNome, colaboradorCpf: cpf,
-        tipoExame: f.tipoExame, data: pedidoEng ? undefined : toIso(dia), hora: pedidoEng ? undefined : hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
-        exames: pedidoEng ? [] : pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
+        tipoExame: f.tipoExame, data: pedidoEng || retDocs ? undefined : toIso(dia), hora: pedidoEng || retDocs ? undefined : hora, observacoes: f.observacoes.trim().slice(0, 1000) || undefined, mudancaRisco: mudancaRisco?.slice(0, 400),
+        exames: pedidoEng || retDocs ? [] : pedido ? pedido.exames : [...(temPcmso ? [] : [CLINICO]), ...(usaGradePcmso ? ["CONFORME PCMSO"] : exames)], guia: guiaPayload,
         solicitante: precisaContato ? { nome: sol.nome.trim(), email: sol.email.trim(), celular: celSol } : undefined,
-        documentos, motivoRetorno: retorno ? motivoRetorno.trim() : undefined,
+        documentos, motivoRetorno: retDocs ? motivoRetorno.trim() : undefined,
         estruturaNova: pedidoEng ? {
           unidade: pedidoEng.unidade.trim(), setor: pedidoEng.setor.trim(), cargo: pedidoEng.cargo.trim(), atividades: pedidoEng.atividades.trim() || undefined,
         } : undefined,
@@ -321,6 +334,7 @@ export default function AgendamentoPublico() {
       try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
       return setErro(msg ?? "Não foi possível concluir. Tente novamente.");
     }
+    if (data?.retornoDocs) { setRetEnviado(true); return setProtocolo(data.protocolo); }
     if (data?.aguardandoAprovacao) { setAguardandoAprov(true); return setProtocolo(data.protocolo); }
     if (data?.pendenteEquipe) { setPendenteEquipe(true); return setProtocolo(data.protocolo); }
     if (!data?.agendadoSoc) {
@@ -339,12 +353,12 @@ export default function AgendamentoPublico() {
           <h1 className="text-2xl font-semibold">Agendamento de Exames</h1>
         </div>
 
-        {protocolo && pedidoEng ? (
+        {protocolo && (pedidoEng || retEnviado) ? (
           <Card>
             <CardContent className="space-y-5 py-8 text-center">
               <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
               <p className="text-lg font-semibold">Solicitação enviada</p>
-              <p className="text-sm">Solicitação enviada para a área técnica de Engenharia da PreverMed. Assim que a estrutura e a grade de exames forem cadastradas no sistema SOC, você receberá um aviso para realizar o agendamento.</p>
+              <p className="text-sm">{retEnviado ? "Documentação enviada para análise da nossa equipe de Saúde. Assim que for aprovada, você receberá um aviso por e-mail e WhatsApp para escolher a unidade, o dia e o horário (basta informar o CPF do colaborador novamente)." : "Solicitação enviada para a área técnica de Engenharia da PreverMed. Assim que a estrutura e a grade de exames forem cadastradas no sistema SOC, você receberá um aviso para realizar o agendamento."}</p>
               <p className="font-mono text-2xl">{protocolo}</p>
               <p className="text-xs text-muted-foreground">Guarde este número de protocolo.</p>
               <div className="flex flex-wrap justify-center gap-2">
@@ -778,7 +792,10 @@ export default function AgendamentoPublico() {
                   )}
                 </div>
                 )}
-                {retorno && (
+                {retorno && consultaRet && !retLib && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" />Verificando a documentação do retorno...</p>}
+                {retorno && retLib?.pendente && <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">A documentação deste colaborador já está em análise pela nossa equipe de Saúde (protocolo {retLib.pendente.protocolo}). Assim que for aprovada, avisaremos para escolher o dia e o horário.</p>}
+                {retorno && retLib?.liberado && <p className="rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">Documentação aprovada pela nossa equipe de Saúde (protocolo {retLib.liberado.protocolo}). Continue para escolher a unidade, o dia e o horário.</p>}
+                {retDocs && !retLib?.pendente && (
                   <div className="space-y-3 rounded-md border p-3">
                     <p className="text-sm font-medium">Documentação do retorno ao trabalho</p>
                     <p className="text-xs text-muted-foreground">Para agendar esse tipo de atendimento a documentação passa por análise da nossa equipe. Estes dados de contato serão utilizados para avisar sobre liberação ou solicitação de documentação complementar.</p>
@@ -866,8 +883,8 @@ export default function AgendamentoPublico() {
 
               <div className="flex justify-between pt-2">
                 <Button variant="ghost" disabled={passo === 0} onClick={() => setPasso(passo - 1)}>Voltar</Button>
-                {passo === 2 && pedidoEng ? (
-                  <Button disabled={!contatoOk || carregando} onClick={enviar}>{carregando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Enviar solicitação</Button>
+                {passo === 2 && (pedidoEng || retDocs) ? (
+                  <Button disabled={(pedidoEng ? !contatoOk : !valido[2]) || carregando} onClick={enviar}>{carregando && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}Enviar solicitação</Button>
                 ) : passo < 3 ? (
                   <Button disabled={!valido[passo]} onClick={() => setPasso(passo + 1)}>Continuar</Button>
                 ) : (

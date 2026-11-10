@@ -61,10 +61,29 @@ async function pedidoSocnet(cpf: string, seq: string) {
   return ((d?.pedidos ?? []) as any[]).find((p) => p.sequencialFicha === seq) ?? null;
 }
 
+// Liberação vale 15 dias a partir da aprovação da Saúde
+const VALIDADE_LIBERACAO_DIAS = 15;
+async function retornoStatus(admin: any, cpf: string, codigoEmpresa: string) {
+  const base = () => admin.from('soc_agendamentos').select('id, protocolo, aprovado_em')
+    .eq('colaborador_cpf', cpf).eq('codigo_empresa_soc', codigoEmpresa).eq('tipo_exame', 'Retorno ao Trabalho').eq('fila_aprovacao', 'saude').is('data_agendada', null);
+  const desde = new Date(Date.now() - VALIDADE_LIBERACAO_DIAS * 864e5).toISOString();
+  const { data: lib } = await base().eq('status', 'documentacao_aprovada').gte('aprovado_em', desde).order('aprovado_em', { ascending: false }).limit(1).maybeSingle();
+  const { data: pend } = await base().eq('aprovacao_status', 'pendente').limit(1).maybeSingle();
+  return { liberado: lib ? { id: lib.id, protocolo: lib.protocolo } : null, pendente: pend ? { protocolo: pend.protocolo } : null };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
-    const parsed = Body.safeParse(await req.json().catch(() => ({})));
+    const raw = await req.json().catch(() => ({}));
+    // Consulta da liberação do Retorno ao Trabalho (Modelo B): mesma resposta para página e robô
+    if (raw?.acao === 'retornoStatus') {
+      const cpf = String(raw.cpf ?? ''), soc = String(raw.codigoEmpresaSoc ?? '');
+      if (!/^\d{11}$/.test(cpf) || !/^\d{1,12}$/.test(soc)) return json({ error: 'Dados inválidos' }, 400);
+      const adm = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      return json(await retornoStatus(adm, cpf, soc));
+    }
+    const parsed = Body.safeParse(raw);
     if (!parsed.success) return json({ error: 'Dados inválidos', campos: parsed.error.flatten().fieldErrors }, 400);
     const b = parsed.data;
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -72,8 +91,10 @@ Deno.serve(async (req) => {
     // Empresa com laudos sem a estrutura no SOC: só abre chamado para a Engenharia, sem data/horário nem exames
     // (sem hierarquia não há grade de exames; psicossocial e exames com limite exigiriam reagendar depois)
     const eng = !!b.estruturaNova && b.origem === 'cliente';
+    // Retorno ao Trabalho sem data = 1ª etapa (só documentação para a Saúde); com data = agendar após liberação
+    const retDocs = b.tipoExame === 'Retorno ao Trabalho' && b.origem === 'cliente' && !b.data;
     let unid: { id: string; ativo: boolean; codigo_agenda: string } | null = null;
-    if (!eng) {
+    if (!eng && !retDocs) {
       if (!b.unidadeId || !b.data || !b.hora) return json({ error: 'Escolha a unidade, a data e o horário.' }, 400);
       const { data: u } = await admin.from('soc_agenda_unidades').select('id, ativo, codigo_agenda').eq('id', b.unidadeId).maybeSingle();
       if (!u?.ativo) return json({ error: 'Unidade indisponível' }, 400);
@@ -106,9 +127,15 @@ Deno.serve(async (req) => {
       origemTxt = 'PARCEIRO/AVULSO SEM PEDIDO SOCNET — CONFERIR GUIA ANEXA';
     }
     const retorno = b.tipoExame === 'Retorno ao Trabalho' && b.origem !== 'socnet';
+    if (retorno && b.origem !== 'cliente') return json({ error: 'Retorno ao Trabalho sem pedido SOCNET deve ser tratado com nossa equipe.' }, 400);
+    let liberado: { id: string; protocolo: string } | null = null;
+    if (retorno && !retDocs) {
+      liberado = (await retornoStatus(admin, b.colaboradorCpf, codigoEmpresa!)).liberado;
+      if (!liberado) return json({ error: 'Retorno ao Trabalho: envie primeiro o motivo e a documentação para análise da nossa equipe de Saúde. Após a aprovação, você escolhe o dia e o horário.' }, 400);
+    }
 
     // Regras da Agenda conferidas no servidor (mesmas da tela)
-    if (!eng) {
+    if (!eng && !retDocs) {
       const dataAg = b.data!, horaAg = b.hora!;
       if (dataAg <= hojeSP()) return json({ error: 'Escolha uma data a partir de amanhã.' }, 400);
       const regras = await carregarRegras(admin, b.unidadeId!);
@@ -121,7 +148,7 @@ Deno.serve(async (req) => {
     }
 
     // Retorno ao Trabalho: motivo e documentos obrigatórios
-    if (retorno) {
+    if (retDocs) {
       if (!b.motivoRetorno || b.motivoRetorno.length < 10) return json({ error: 'Explique brevemente o motivo do retorno ao trabalho.' }, 400);
       const { data: exig } = await admin.from('agenda_documentos_exigidos').select('nome').eq('tipo_exame', b.tipoExame).eq('obrigatorio', true);
       const enviados = new Set(b.documentos.map((d) => d.tipoDocumento));
@@ -133,7 +160,7 @@ Deno.serve(async (req) => {
       for (const d of b.documentos) { const k = `${d.base64.length}:${d.base64.slice(0, 2000)}:${d.base64.slice(-2000)}`; if (vistos.has(k)) return json({ error: 'O mesmo arquivo foi anexado em mais de um campo. Anexe cada documento separadamente.' }, 400); vistos.add(k); }
     }
     // Pela página (sem robô WhatsApp, que já tem o número) quem agenda precisa deixar contato quando há devolutiva
-    if ((retorno || (!!b.estruturaNova && b.origem === 'cliente')) && !b.solicitadoPor && !b.solicitante)
+    if ((retDocs || (!!b.estruturaNova && b.origem === 'cliente')) && !b.solicitadoPor && !b.solicitante)
       return json({ error: 'Informe nome, e-mail e celular de quem está agendando para recebermos a devolutiva.' }, 400);
 
     // Cadastro inativo: só Demissional no vínculo existente; Admissional exige novo cadastro antes
@@ -150,6 +177,10 @@ Deno.serve(async (req) => {
         .eq('colaborador_cpf', b.colaboradorCpf).eq('codigo_empresa_soc', codigoEmpresa!).eq('fila_aprovacao', 'engenharia')
         .eq('aprovacao_status', 'pendente').limit(1);
       if (dupEng?.length) return json({ error: `Já existe uma solicitação de estrutura em análise para este colaborador (protocolo ${dupEng[0].protocolo}).` }, 409);
+    } else if (retDocs) {
+      const st = await retornoStatus(admin, b.colaboradorCpf, codigoEmpresa!);
+      if (st.pendente) return json({ error: `A documentação deste colaborador já está em análise pela Saúde (protocolo ${st.pendente.protocolo}).` }, 409);
+      if (st.liberado) return json({ error: `A documentação deste colaborador já foi aprovada (protocolo ${st.liberado.protocolo}). Agora é só escolher o dia e o horário.` }, 409);
     } else {
       // Mesmo CPF pode ter exame em empresas diferentes no mesmo dia
       let qDup = admin.from('soc_agendamentos').select('id')
@@ -168,22 +199,24 @@ Deno.serve(async (req) => {
     } catch (e) { return json({ error: (e as Error).message }, 400); }
     const exames = eng ? [] : [...new Set(b.exames.map((e) => e.toUpperCase()))];
 
-    const { data, error } = await admin.from('soc_agendamentos').insert({
+    const { data, error } = liberado ? await admin.from('soc_agendamentos').update({
+      unidade_id: b.unidadeId, data_agendada: b.data, hora_agendada: b.hora, exames, status: 'solicitado',
+    }).eq('id', liberado.id).eq('status', 'documentacao_aprovada').select('id, protocolo').single() : await admin.from('soc_agendamentos').insert({
       exames, guia_path: guiaPath, unidade_id: eng ? null : b.unidadeId,
       empresa_nome: empresaNome, empresa_cnpj: b.empresaCnpj, codigo_empresa_soc: codigoEmpresa,
       colaborador_nome: b.colaboradorNome.toUpperCase(), colaborador_cpf: b.colaboradorCpf,
       tipo_exame: b.tipoExame, data_agendada: eng ? null : b.data, hora_agendada: eng ? null : b.hora,
       observacoes: [origemTxt, b.mudancaRisco, b.observacoes, b.solicitadoPor && `Solicitado via ${b.solicitadoPor}`].filter(Boolean).join('\n') || null,
       motivo_retorno: retorno ? b.motivoRetorno : null,
-      status: retorno || eng ? 'aguardando_aprovacao' : 'solicitado',
-      aprovacao_status: retorno || eng ? 'pendente' : null,
+      status: retDocs || eng ? 'aguardando_aprovacao' : 'solicitado',
+      aprovacao_status: retDocs || eng ? 'pendente' : null,
       fila_aprovacao: eng ? 'engenharia' : 'saude',
       estrutura_solicitada: eng ? b.estruturaNova : null,
       solicitante: b.solicitante ?? null,
     }).select('id, protocolo').single();
     // Solicitação de estrutura usa protocolo próprio (INC-), separado dos agendamentos (AG-)
-    if (!error && data && eng && data.protocolo?.startsWith('AG-')) {
-      const inc = 'INC-' + data.protocolo.slice(3);
+    if (!error && data && (eng || retDocs) && data.protocolo?.startsWith('AG-')) {
+      const inc = (eng ? 'INC-' : 'RET-') + data.protocolo.slice(3);
       const { error: e2 } = await admin.from('soc_agendamentos').update({ protocolo: inc }).eq('id', data.id);
       if (!e2) data.protocolo = inc;
     }
@@ -191,9 +224,9 @@ Deno.serve(async (req) => {
     if (anexos.length) await admin.from('soc_agendamento_anexos').insert(anexos.map((a) => ({ ...a, agendamento_id: data.id })));
 
     // Retorno ao Trabalho só vai para o SOC após aprovação da equipe de saúde
-    if (retorno || eng) {
-      await emailAgenda(admin, data.id, eng ? 'agenda-estrutura-engenharia' : 'agenda-protocolo-aberto', eng ? {} : { motivo: 'A documentação do Retorno ao Trabalho será analisada pela nossa equipe de Saúde antes da confirmação.' });
-      return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true, engenharia: eng });
+    if (retDocs || eng) {
+      await emailAgenda(admin, data.id, eng ? 'agenda-estrutura-engenharia' : 'agenda-retorno-saude');
+      return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true, engenharia: eng, retornoDocs: retDocs });
     }
     // Sem pedido SOCNET não há cadastro no SOC: a equipe confere a guia e lança a reserva
     if (b.origem === 'externo' || !codigoEmpresa) {
