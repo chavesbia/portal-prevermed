@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { CompanySelector, formatCompanyCnpj } from '@/components/shared/CompanySelector';
 import { X } from 'lucide-react';
+import { UnitSelector } from '@/components/shared/UnitSelector';
 
 interface OSEditDialogProps {
   ordem: OrdemServico;
@@ -47,6 +48,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
   const [contatoEmail, setContatoEmail] = useState<string>((ordem as any).contato_email || '');
   const [contatoTelefone, setContatoTelefone] = useState<string>((ordem as any).contato_telefone || '');
   const [companyId, setCompanyId] = useState<string | null>((ordem as any).company_id || null);
+  const [unidadeId, setUnidadeId] = useState<string | null>((ordem as any).unidade_id || null);
   const [empresaCnpj, setEmpresaCnpj] = useState<string | null>(null);
   const [companyContacts, setCompanyContacts] = useState<{ nome: string; email_1: string | null; telefone_1: string | null }[]>([]);
   const [statusOS, setStatusOS] = useState<StatusOS>(ordem.status_os as StatusOS);
@@ -74,6 +76,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
     setContatoEmail((ordem as any).contato_email || '');
     setContatoTelefone((ordem as any).contato_telefone || '');
     setCompanyId((ordem as any).company_id || null);
+    setUnidadeId((ordem as any).unidade_id || null);
     setStatusOS(ordem.status_os as StatusOS);
     setDataEmissao(ordem.data_emissao ? parseISO(ordem.data_emissao) : (ordem.data_registro ? parseISO(ordem.data_registro) : undefined));
     setPrazoAcordado(ordem.prazo_acordado ? parseISO(ordem.prazo_acordado) : undefined);
@@ -130,6 +133,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
       numero_os: numeroOS,
       empresa_cliente: empresaCliente,
       company_id: companyId,
+      unidade_id: unidadeId,
       contato_cliente: contatoCliente || null,
       contato_email: contatoEmail.trim() || null,
       contato_telefone: contatoTelefone.trim() || null,
@@ -220,6 +224,7 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
               disabled={!canEdit || !isAdmMaster}
               onChange={(id, company) => {
                 setCompanyId(id);
+                setUnidadeId(null);
                 setEmpresaCliente(company?.razao_social || '');
                 setEmpresaCnpj(company?.cnpj || null);
                 setContatoCliente('');
@@ -233,6 +238,11 @@ export function OSEditDialog({ ordem, open, onOpenChange, onUpdate, canEdit: can
                 ? 'Trocar a empresa de uma OS existente afeta o histórico — altere apenas para corrigir vínculo errado.'
                 : 'A empresa vinculada só pode ser alterada por um ADM Master.'}
             </p>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Unidade</Label>
+            <UnitSelector companyId={companyId} value={unidadeId} onChange={(id) => setUnidadeId(id)} disabled={!canEdit} />
+            <p className="text-xs text-muted-foreground">Digite parte do nome (ex.: "Paineira") para encontrar a unidade.</p>
           </div>
           <div className="space-y-2">
             <Label>Contato do Cliente</Label>
