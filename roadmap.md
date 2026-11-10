@@ -31,4 +31,5 @@
 
 ## E-mails (10/11)
 - [x] Preparar o serviço gerenciado e os seis modelos de autenticação em português com identidade PreverMed.
-- [ ] Implantar o auth-email-hook e conferir a ativação do domínio notify.portal.prevermed.com.br.
+- [x] Implantar o auth-email-hook; conferência confirmou a remoção do bloqueio por função ausente.
+- [ ] Ativação do domínio notify.portal.prevermed.com.br — aguardando verificação DNS automática; envio real ainda não testado.
