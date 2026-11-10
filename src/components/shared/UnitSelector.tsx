@@ -91,7 +91,7 @@ export function UnitSelector({
   const isDisabled = disabled || !companyId;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -127,7 +127,7 @@ export function UnitSelector({
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[380px] p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar por nome, endereço, código ou CNPJ…" value={search} onValueChange={setSearch} />
-          <CommandList>
+          <CommandList onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
             <CommandEmpty>
               {isLoading ? 'Carregando unidades…' : 'Nenhuma unidade encontrada para esta empresa.'}
             </CommandEmpty>
