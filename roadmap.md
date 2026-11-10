@@ -28,3 +28,8 @@
 - [x] 0003 Por Uso na esteira da Engenharia (só 0002/0004/0010 livres)
 - [ ] Primeira carga real — aguardando a Bia clicar em Sincronizar (sem sessão ADM Master no ambiente de teste)
 - [ ] Painel Gestor — plano guardado no histórico, complementar com a Bia
+
+## E-mails (10/11)
+- [x] Preparar o serviço gerenciado e os seis modelos de autenticação em português com identidade PreverMed.
+- [x] Implantar o auth-email-hook; conferência confirmou a remoção do bloqueio por função ausente.
+- [ ] Ativação do domínio notify.portal.prevermed.com.br — aguardando verificação DNS automática; envio real ainda não testado.
