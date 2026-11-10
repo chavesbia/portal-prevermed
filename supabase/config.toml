@@ -11,3 +11,6 @@ project_id = "woqyhugzztdjpkfwkolu"
     verify_jwt = false
   [functions.soc-full-sync-scheduled]
     verify_jwt = false
+
+[functions.preview-transactional-email]
+verify_jwt = false

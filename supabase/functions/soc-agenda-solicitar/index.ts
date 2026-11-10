@@ -4,6 +4,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { incluirAgendamentoSoc, situacaoSoc } from '../_shared/socAgendamento.ts';
 import { salvarArquivo } from '../_shared/arquivos.ts';
+import { emailAgenda } from '../_shared/agendaEmails.ts';
 import { bloqueioExames, bloqueioUnidade, carregarRegras, contarDia, hojeSP, limiteDia } from '../_shared/agendaRegras.ts';
 
 const json = (body: unknown, status = 200) =>
@@ -190,9 +191,15 @@ Deno.serve(async (req) => {
     if (anexos.length) await admin.from('soc_agendamento_anexos').insert(anexos.map((a) => ({ ...a, agendamento_id: data.id })));
 
     // Retorno ao Trabalho só vai para o SOC após aprovação da equipe de saúde
-    if (retorno || eng) return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true, engenharia: eng });
+    if (retorno || eng) {
+      await emailAgenda(admin, data.id, eng ? 'agenda-estrutura-engenharia' : 'agenda-protocolo-aberto', eng ? {} : { motivo: 'A documentação do Retorno ao Trabalho será analisada pela nossa equipe de Saúde antes da confirmação.' });
+      return json({ protocolo: data.protocolo, agendadoSoc: false, aguardandoAprovacao: true, engenharia: eng });
+    }
     // Sem pedido SOCNET não há cadastro no SOC: a equipe confere a guia e lança a reserva
-    if (b.origem === 'externo' || !codigoEmpresa) return json({ protocolo: data.protocolo, agendadoSoc: false, pendenteEquipe: true });
+    if (b.origem === 'externo' || !codigoEmpresa) {
+      await emailAgenda(admin, data.id, 'agenda-protocolo-aberto');
+      return json({ protocolo: data.protocolo, agendadoSoc: false, pendenteEquipe: true });
+    }
 
     const soc = await incluirAgendamentoSoc({
       codigoEmpresa, cpf: b.colaboradorCpf, codigoAgenda: unid!.codigo_agenda,
@@ -213,6 +220,7 @@ Deno.serve(async (req) => {
       soc_retorno: { codigoAgendamento: soc.codigoAgendamento ?? null, resposta: soc.resposta },
       soc_erro: soc.ok ? null : soc.erro,
     }).eq('id', data.id);
+    await emailAgenda(admin, data.id, soc.ok ? 'agenda-confirmado' : 'agenda-protocolo-aberto');
     // SOCNET: se o SOC recusar a reserva na base da PreverMed, a solicitação fica para a equipe confirmar
     return json({ protocolo: data.protocolo, agendadoSoc: soc.ok, pendenteEquipe: !soc.ok && b.origem === 'socnet' });
   } catch (e) {
