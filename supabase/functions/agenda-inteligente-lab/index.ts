@@ -33,51 +33,41 @@ exames = lista de exames solicitados, como escritos. observacoes = algo relevant
 const ROTULO: Record<string, string> = {
   cnpj: 'CNPJ da empresa', cpf: 'CPF do colaborador', nome: 'nome completo do colaborador', data_nascimento: 'data de nascimento',
   sexo: 'sexo', tipo_exame: 'tipo de exame', unidade_empresa: 'unidade da empresa', setor: 'setor', cargo: 'cargo',
-  unidade_atendimento: 'unidade de atendimento (Lapa ou Osasco)', data_preferida: 'dia de preferência',
+  unidade_atendimento: 'unidade de atendimento (Lapa ou Osasco)', data_preferida: 'data de preferência', razao_social: 'razão social',
 };
 
+const gs = { type: 'STRING', nullable: true };
+const gSchema = {
+  type: 'OBJECT',
+  required: [...CAMPOS, 'exames', 'observacoes'],
+  properties: { ...Object.fromEntries(CAMPOS.map((c) => [c, gs])), exames: { type: 'ARRAY', items: { type: 'STRING' } }, observacoes: gs },
+};
+
+// Leitura via Google Gemini (chave própria GOOGLE_API_KEY) — não consome créditos do workspace.
 async function extrair(texto: string, arquivo?: z.infer<typeof Body>['arquivo']) {
-  const content: unknown[] = [{ type: 'input_text', text: texto ? `Mensagem do agendador:\n${texto}` : 'Extraia os dados do documento anexo.' }];
-  if (arquivo) {
-    const url = `data:${arquivo.mime};base64,${arquivo.base64}`;
-    content.push(arquivo.mime === 'application/pdf'
-      ? { type: 'input_file', filename: arquivo.nome, file_data: url }
-      : { type: 'input_image', image_url: url });
-  }
-  const r = await fetch('https://ai.gateway.lovable.dev/v1/responses', {
+  const key = Deno.env.get('GOOGLE_API_KEY');
+  if (!key) throw Object.assign(new Error('Chave do Gemini não configurada.'), { status: 500 });
+  const parts: unknown[] = [{ text: texto ? `Mensagem do agendador:\n${texto}` : 'Extraia os dados do documento anexo (leia todas as páginas).' }];
+  if (arquivo) parts.push({ inline_data: { mime_type: arquivo.mime, data: arquivo.base64 } });
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Lovable-API-Key': Deno.env.get('LOVABLE_API_KEY')!, 'X-Lovable-AIG-SDK': 'fetch' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'openai/gpt-6-astra', stream: true, store: false, instructions: INSTR,
-      reasoning: { effort: 'low' },
-      input: [{ role: 'user', content }],
-      text: { format: { type: 'json_schema', name: 'extracao', strict: true, schema } },
+      systemInstruction: { parts: [{ text: INSTR }] },
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseMimeType: 'application/json', responseSchema: gSchema, temperature: 0 },
     }),
   });
-  if (!r.ok || !r.body) {
-    const t = await r.text().catch(() => '');
+  const t = await r.text();
+  if (!r.ok) {
     let msg = 'Falha na leitura inteligente.';
-    try { msg = JSON.parse(t)?.error?.message ?? JSON.parse(t)?.message ?? msg; } catch { /* */ }
-    if (r.status === 402) msg = 'Créditos de IA esgotados no workspace.';
-    if (r.status === 429) msg = 'Muitas leituras seguidas, aguarde um minuto.';
+    try { msg = JSON.parse(t)?.error?.message ?? msg; } catch { /* */ }
+    if (r.status === 429) msg = 'Limite gratuito do Gemini atingido no momento, aguarde um minuto.';
+    if (r.status === 503) msg = 'O Gemini está sobrecarregado agora, tente de novo em instantes.';
+    if (r.status === 400 || r.status === 403) msg = `Gemini recusou a chamada: ${msg}`;
     throw Object.assign(new Error(msg), { status: r.status });
   }
-  const reader = r.body.getReader(); const dec = new TextDecoder();
-  let buf = '', out = '';
-  for (;;) {
-    const { done, value } = await reader.read(); if (done) break;
-    buf += dec.decode(value, { stream: true });
-    const linhas = buf.split('\n'); buf = linhas.pop() ?? '';
-    for (const l of linhas) {
-      if (!l.startsWith('data:')) continue;
-      const d = l.slice(5).trim(); if (!d || d === '[DONE]') continue;
-      try {
-        const ev = JSON.parse(d);
-        if (ev.type === 'response.output_text.delta') out += ev.delta;
-        if (ev.type === 'response.failed' || ev.type === 'error') throw new Error(ev.response?.error?.message ?? ev.message ?? 'Falha na leitura.');
-      } catch (e) { if (e instanceof Error && !(e instanceof SyntaxError)) throw e; }
-    }
-  }
+  const out = JSON.parse(t)?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
   if (!out.trim()) throw new Error('A leitura não retornou dados (documento recusado ou ilegível).');
   return JSON.parse(out);
 }
@@ -127,13 +117,12 @@ Deno.serve(async (req) => {
     if (dados.tipo_exame === 'Retorno ao Trabalho') alertas.push('Retorno ao Trabalho: primeiro motivo + documentos (protocolo RET-), Saúde aprova, depois escolhe data e horário.');
     if (dados.exames?.length) alertas.push('Exames da guia serão confrontados com o PCMSO: exames a mais são aceitos; exames a menos nunca (o PCMSO é o piso).');
 
-    const lidos = Object.entries(dados).filter(([k, v]) => k !== 'observacoes' && k !== 'exames' && v).map(([k]) => ROTULO[k] ?? k);
-    const pedir = faltando.map((c) => ROTULO[c]);
-    let resposta = '';
-    if (lidos.length) resposta += `Já identifiquei: ${lidos.join(', ')}${dados.exames?.length ? ` e ${dados.exames.length} exame(s)` : ''}.\n\n`;
-    if (pedir.length) resposta += `Para continuar, preciso só de:\n${pedir.map((p, i) => `${i + 1}️⃣ ${p}`).join('\n')}`;
-    else resposta += 'Tenho o necessário. Vou conferir unidade, setor e cargo no SOC e mostrar os horários disponíveis.';
-    if (cadastro.length) resposta += `\n\n(Se o colaborador não existir no SOC, também vou pedir: ${cadastro.map((c) => ROTULO[c]).join(', ')}.)`;
+    const pedir = [...faltando, ...(cadastro.includes('sexo') ? ['sexo'] : [])].map((c) => ROTULO[c]);
+    const lista = (xs: string[]) => xs.length > 1 ? `${xs.slice(0, -1).join(', ')} e ${xs[xs.length - 1]}` : xs[0];
+    let resposta = arquivo ? 'Recebi a guia e alguns dados já foram identificados. ' : 'Alguns dados já foram identificados. ';
+    if (pedir.length) resposta += `Mas não encontrei: ${lista(pedir)}. Poderia me informar, por favor?`;
+    else resposta += 'Já tenho o necessário! Vou conferir no SOC e te mostrar os horários disponíveis.';
+    if (dados.tipo_exame === 'Retorno ao Trabalho') resposta += '\n\nComo é Retorno ao Trabalho, antes da data vou precisar da Alta Médica para análise da nossa equipe de Saúde.';
 
     await admin.from('audit_log').insert({ user_id: uid, action_type: 'agenda_inteligente_teste', object_type: 'agenda_lab', details: { origem: arquivo ? 'arquivo' : 'texto', faltando } }).then(() => null, () => null);
 
