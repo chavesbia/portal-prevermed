@@ -170,11 +170,13 @@ export function ContratualLegadoDialog({ open, onOpenChange, onSuccess }: Props)
         .single();
       if (error) throw error;
 
-      await supabase.from('contract_eventos').insert({
+      const { error: evErr } = await supabase.from('contract_eventos').insert({
+        performed_by: user?.id,
         contrato_id: data.id,
         tipo: 'contrato_legado_registrado',
         descricao: `Contrato legado ${data.numero_contrato} registrado manualmente${form.numero_original ? ` (nº original: ${form.numero_original})` : ''}`,
       } as any);
+      if (evErr) console.error('Falha ao registrar evento de auditoria', evErr);
 
       toast.success(`Contrato legado ${data.numero_contrato} cadastrado`);
       onSuccess?.();
