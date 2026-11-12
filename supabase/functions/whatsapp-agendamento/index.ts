@@ -52,7 +52,7 @@ function cpfValido(c: string) {
 async function chamar(fn: string, body: unknown) {
   const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/${fn}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: Deno.env.get('SUPABASE_ANON_KEY')!, Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}` },
+    headers: { 'Content-Type': 'application/json', apikey: Deno.env.get('SUPABASE_ANON_KEY')!, Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`, 'x-soc-sync-secret': Deno.env.get('SOC_SYNC_INTERNAL_SECRET') ?? '' },
     body: JSON.stringify(body),
   });
   return { ok: r.ok, data: await r.json().catch(() => ({})) as any };

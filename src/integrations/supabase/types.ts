@@ -304,6 +304,24 @@ export type Database = {
           },
         ]
       }
+      agenda_rate_limit: {
+        Row: {
+          ip: string
+          janela: string
+          total: number
+        }
+        Insert: {
+          ip: string
+          janela: string
+          total?: number
+        }
+        Update: {
+          ip?: string
+          janela?: string
+          total?: number
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           content: string
@@ -7081,6 +7099,21 @@ export type Database = {
         }
         Relationships: []
       }
+      soc_sync_cron_token: {
+        Row: {
+          id: number
+          token: string
+        }
+        Insert: {
+          id?: number
+          token?: string
+        }
+        Update: {
+          id?: number
+          token?: string
+        }
+        Relationships: []
+      }
       soc_sync_estado: {
         Row: {
           atualizado_em: string
@@ -7940,6 +7973,10 @@ export type Database = {
       agenda_marcar_kit_impresso: {
         Args: { _agendamento_id: string; _impresso: boolean }
         Returns: undefined
+      }
+      agenda_rate_hit: {
+        Args: { _ip: string; _limite: number }
+        Returns: boolean
       }
       apply_shadow_template: {
         Args: { _notes?: string; _shadow_id: string }

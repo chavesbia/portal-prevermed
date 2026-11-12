@@ -26,3 +26,5 @@
 
 - Agenda: comprovante sob demanda sai só por `agenda-enviar-comprovante` (modelo fixo, exige protocolo + CPF, 1 envio/hora por e-mail); Reply-To por setor é decidido em `_shared/agendaEmails.ts` — evita uso do envio como disparo aberto.
 - Agenda: Retorno ao Trabalho runs in two steps on portal and WhatsApp alike: motivo + documents first (RET- protocol, no date/slot/kit), Health approval sets `documentacao_aprovada` (valid 15 days), then the client books and the server reuses that row — no slot is held while documents await review.
+- SOC syncs: manual runs require `is_adm_master`, automatic runs use `x-soc-sync-secret` (function→function) or `x-cron-token` read from the locked `soc_sync_cron_token` table (pg_cron→`soc-full-sync-scheduled`) — the anon key is public, so it never authorizes a sync.
+- Public Agenda lookup (`soc-agenda-lookup`) is limited per IP via `agenda_rate_hit` (per-minute window); internal calls from the WhatsApp bot send `x-soc-sync-secret` and skip the limit, because all bot traffic shares one server IP.

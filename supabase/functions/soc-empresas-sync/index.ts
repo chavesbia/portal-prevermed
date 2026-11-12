@@ -44,6 +44,10 @@ Deno.serve(async (req) => {
       ? { data: null, error: null }
       : await supabase.auth.getClaims(token);
     if (!isInternal && (claimsErr || !claims?.claims)) return json({ error: 'Unauthorized' }, 401);
+    if (!isInternal) {
+      const { data: isMaster } = await supabase.rpc('is_adm_master');
+      if (!isMaster) return json({ error: 'Forbidden' }, 403);
+    }
     const userId = isInternal ? null : claims?.claims?.sub as string;
 
     const admin = createClient(

@@ -193,6 +193,14 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: 'Dados inválidos' }, 400);
     const b = parsed.data;
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    // Anti-varredura de CPF: 60 consultas/min por IP; robô do WhatsApp (chamada interna) fica fora do limite
+    const interno = Deno.env.get('SOC_SYNC_INTERNAL_SECRET');
+    if (!interno || req.headers.get('x-soc-sync-secret') !== interno) {
+      const ip = (req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0] || 'desconhecido').trim();
+      const { data: liberado, error: rlErr } = await admin.rpc('agenda_rate_hit', { _ip: ip, _limite: 60 });
+      if (rlErr) console.error('rate limit falhou', rlErr.message);
+      else if (liberado === false) return json({ error: 'Muitas consultas em pouco tempo. Aguarde 1 minuto e tente novamente.' }, 429);
+    }
 
     if (b.acao === 'socnet') {
       const pedidos = await pedidosSocnet(b.cpf);

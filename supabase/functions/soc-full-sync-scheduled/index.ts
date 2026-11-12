@@ -47,14 +47,21 @@ Deno.serve(async (req) => {
   }
 
   const token = authHeader?.replace(/^Bearer\s+/i, '') ?? '';
-  let authorized = token === anonKey || jwtRole(token) === 'anon';
-
-  if (!authorized && token) {
-    const client = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: `Bearer ${token}` } },
-    });
+  const admin = createClient(supabaseUrl, serviceRoleKey);
+  let authorized = false;
+  const cronToken = req.headers.get('x-cron-token');
+  if (cronToken) {
+    const { data } = await admin.from('soc_sync_cron_token').select('token').eq('id', 1).maybeSingle();
+    authorized = Boolean(data?.token) && data!.token === cronToken;
+  }
+  // Disparo manual: só ADM Master logado
+  if (!authorized && token && jwtRole(token) !== 'anon' && token !== anonKey) {
+    const client = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
     const { data, error } = await client.auth.getClaims(token);
-    authorized = !error && Boolean(data?.claims);
+    if (!error && data?.claims) {
+      const { data: isMaster } = await client.rpc('is_adm_master');
+      authorized = Boolean(isMaster);
+    }
   }
 
   if (!authorized) return json({ error: 'Unauthorized' }, 401);
