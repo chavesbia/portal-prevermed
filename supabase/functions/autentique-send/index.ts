@@ -20,6 +20,10 @@ Deno.serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
     if (claimsErr || !claims?.claims) return json({ error: 'Unauthorized' }, 401);
+    const userId = claims.claims.sub as string;
+    const { data: isMaster } = await supabase.rpc('is_adm_master');
+    const { data: canEdit } = await supabase.rpc('can_edit_module_route', { _user_id: userId, _route: '/gestao-contratual' });
+    if (!isMaster && !canEdit) return json({ error: 'Você não tem permissão para esta ação em contratos' }, 403);
 
     const { contrato_id } = await req.json();
     if (!contrato_id) return json({ error: 'contrato_id required' }, 400);

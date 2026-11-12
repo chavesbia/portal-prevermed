@@ -14,9 +14,11 @@ Deno.serve(async (req) => {
     const p = Body.safeParse(await req.json());
     if (!p.success) return json({ error: 'Dados inválidos' }, 400);
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    const { data: ag } = await admin.from('soc_agendamentos').select('id, data_agendada, aprovacao_status, fila_aprovacao')
+    const { data: ag } = await admin.from('soc_agendamentos').select('id, data_agendada, aprovacao_status, fila_aprovacao, solicitante')
       .eq('protocolo', p.data.protocolo).eq('colaborador_cpf', p.data.cpf).maybeSingle();
     if (!ag || !ag.data_agendada) return json({ error: 'Protocolo não encontrado' }, 404);
+    const emailOficial = String((ag as any).solicitante?.email ?? '').trim().toLowerCase();
+    if (!emailOficial || emailOficial !== p.data.email.toLowerCase()) return json({ error: 'Informe o mesmo e-mail usado na solicitação.' }, 403);
     const modelo = ag.aprovacao_status === 'pendente' ? 'agenda-protocolo-aberto' : 'agenda-confirmado';
     // Limite: mesmo protocolo + e-mail só envia uma vez por hora
     const hora = new Date().toISOString().slice(0, 13);
