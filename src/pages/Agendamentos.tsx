@@ -38,10 +38,10 @@ const fmtDataHora = (iso: string) => new Date(iso).toLocaleString("pt-BR", { tim
 const nomeUnidade = (a: any) => a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "Sem unidade";
 const canal = (a: any) => {
   const o = String(a.observacoes ?? "").toUpperCase();
-  if (o.includes("VIA WHATSAPP")) return "WhatsApp";
-  if (o.startsWith("SOCNET:") || o.includes("\nSOCNET:")) return "SOCNET";
-  return "Link público";
+  return o.includes("VIA WHATSAPP") ? "WhatsApp" : "Link público";
 };
+const ehSocnet = (a: any) => { const o = String(a.observacoes ?? "").toUpperCase(); return o.startsWith("SOCNET:") || o.includes("\nSOCNET:"); };
+const Selos = ({ a }: { a: any }) => <span className="inline-flex gap-1"><Badge variant="outline" className="whitespace-nowrap">{canal(a)}</Badge>{ehSocnet(a) && <Badge variant="secondary" className="whitespace-nowrap">SOCNET</Badge>}</span>;
 const ehClinico = (e: string) => /CL[IÍ]NIC/i.test(e);
 const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const faixa = (h: string) => { const n = Number(h.slice(0, 2)); return n < 9 ? "07h–09h" : n < 11 ? "09h–11h" : n < 13 ? "11h–13h" : n < 16 ? "13h–16h" : "16h+"; };
@@ -118,7 +118,7 @@ export default function Agendamentos() {
       return m;
     },
   });
-  const subgrupoDe = (a: any) => (a.codigo_empresa_soc && (subgrupos as any)[a.codigo_empresa_soc]) || (canal(a) === "SOCNET" ? "SOCNET (outra assessoria)" : a.codigo_empresa_soc ? "Sem subgrupo" : "Externa / Parceira avulsa");
+  const subgrupoDe = (a: any) => (a.codigo_empresa_soc && (subgrupos as any)[a.codigo_empresa_soc]) || (ehSocnet(a) ? "SOCNET (outra assessoria)" : a.codigo_empresa_soc ? "Sem subgrupo" : "Externa / Parceira avulsa");
 
   // Atualiza ao vivo quando chegam agendamentos ou anexos
   useEffect(() => {
@@ -197,7 +197,7 @@ export default function Agendamentos() {
       topExames: conta(lista, exames).slice(0, 10),
       complementaresRank: conta(lista, (a) => exames(a).filter((e) => !ehClinico(e))).slice(0, 10),
       porSubgrupo: conta(lista, subgrupoDe),
-      porCanal: conta(lista, canal),
+      porCanal: conta(lista, (a) => ehSocnet(a) ? `${canal(a)} · SOCNET` : canal(a)),
       porStatus: conta(lista, (a) => STATUS[a.status]?.label ?? a.status),
       porFaixa: conta(lista, (a) => faixa(a.hora_agendada)).sort((x, y) => x[0].localeCompare(y[0])),
       topEmpresas: conta(lista, (a) => a.empresa_nome ?? "-").slice(0, 10),
@@ -211,11 +211,11 @@ export default function Agendamentos() {
     const q = normalizar(busca.trim());
     return lista.filter((a: any) => {
       const texto = normalizar([a.colaborador_nome, a.colaborador_cpf, fmtCpf(a.colaborador_cpf), a.empresa_nome, a.empresa_cnpj, a.protocolo, a.tipo_exame].join(" "));
-      return (!q || texto.includes(q)) && (filtroCanal === "todos" || canal(a) === filtroCanal) &&
+      return (!q || texto.includes(q)) && (filtroCanal === "todos" || (filtroCanal === "SOCNET" ? ehSocnet(a) : canal(a) === filtroCanal)) &&
         (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
     }).sort((a: any, b: any) => {
       const [campo, dir] = ordem.split(":");
-      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada ?? ""} ${x.hora_agendada ?? ""}`;
+      const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "emitido" ? x.created_at ?? "" : campo === "canal" ? canal(x) + (ehSocnet(x) ? " SOCNET" : "") : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada ?? ""} ${x.hora_agendada ?? ""}`;
       return String(val(a)).localeCompare(String(val(b))) * (dir === "desc" ? -1 : 1);
     });
   }, [lista, busca, filtroCanal, kit, ordem]);
@@ -245,8 +245,8 @@ export default function Agendamentos() {
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
-            <Th c="data">Data</Th><Th c="data">Hora</Th><Th c="colaborador" className="sticky left-0 z-20 bg-background">Colaborador</Th><Th c="empresa">Empresa</Th>
-            <Th c="tipo">Tipo</Th><Th c="unidade">Unidade</Th><Th c="kit">Kit</Th><Th c="status">Status</Th>
+            <Th c="emitido">Emitido em</Th><Th c="data">Data</Th><Th c="data">Hora</Th><Th c="colaborador" className="sticky left-0 z-20 bg-background">Colaborador</Th><Th c="empresa">Empresa</Th>
+            <Th c="tipo">Tipo</Th><Th c="unidade">Unidade</Th><Th c="canal">Canal</Th><Th c="kit">Kit</Th><Th c="status">Status</Th>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -254,12 +254,14 @@ export default function Agendamentos() {
             const st = STATUS[a.status] ?? { label: a.status, variant: "secondary" as const };
             return (
               <TableRow key={a.id} className="cursor-pointer" onClick={() => { setDetalhe(a); setMotivo(""); }}>
+                <TableCell className="whitespace-nowrap text-xs">{a.created_at ? fmtDataHora(a.created_at) : "—"}</TableCell>
                 <TableCell className="whitespace-nowrap">{fmtData(a.data_agendada)}</TableCell>
                 <TableCell>{a.hora_agendada?.slice(0, 5) ?? "—"}</TableCell>
                 <TableCell className="sticky left-0 z-10 max-w-[220px] bg-background"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="whitespace-nowrap text-xs text-muted-foreground">{fmtCpf(a.colaborador_cpf)}</p></TableCell>
                 <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.tipo_exame}</TableCell>
                 <TableCell className="whitespace-nowrap">{a.soc_agenda_unidades?.nome?.replace("PreverMed - ", "") ?? "-"}</TableCell>
+                <TableCell><Selos a={a} /></TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">{temKitAgenda(a) ? <span className="inline-flex items-center gap-1" title={a.kit_impresso_em ? "Kit impresso" : "Kit anexado, não impresso"}><Paperclip className="h-3 w-3" />{a.kit_impresso_em && <Printer className="h-3 w-3 text-primary" />}</span> : "-"}</TableCell>
                 <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge></TableCell>
               </TableRow>
@@ -392,7 +394,7 @@ export default function Agendamentos() {
                           <TableCell className="max-w-[220px]"><p className="truncate whitespace-nowrap font-medium" title={toTitleCase(a.colaborador_nome) ?? ""}>{toTitleCase(a.colaborador_nome)}</p><p className="text-xs text-muted-foreground">{a.tipo_exame}</p></TableCell>
                           <TableCell className="max-w-[220px] truncate">{a.empresa_nome}</TableCell>
                           <TableCell className="whitespace-nowrap">{nomeUnidade(a)}</TableCell>
-                          <TableCell><Badge variant="outline" className="whitespace-nowrap">{canal(a)}</Badge></TableCell>
+                          <TableCell><Selos a={a} /></TableCell>
                           <TableCell>{semKit(a) ? <Badge variant="secondary" className="whitespace-nowrap">Sem kit</Badge> : <Badge variant="outline" className="whitespace-nowrap"><Paperclip className="mr-1 h-3 w-3" />{a.soc_agendamento_anexos.length}</Badge>}</TableCell>
                           <TableCell><Badge variant={st.variant} className="whitespace-nowrap">{st.label}</Badge>{a.soc_erro && <p className="mt-1 max-w-[220px] truncate text-xs text-destructive" title={a.soc_erro}>{a.soc_erro}</p>}</TableCell>
                         </TableRow>
@@ -493,7 +495,7 @@ export default function Agendamentos() {
             {detalhe.fila_aprovacao !== "engenharia" && <div className="mt-2 flex flex-wrap gap-2">
               <Badge className="whitespace-nowrap">{nomeUnidade(detalhe)}</Badge>
               <Badge variant="secondary" className="whitespace-nowrap">{subgrupoDe(detalhe)}</Badge>
-              <Badge variant="outline" className="whitespace-nowrap">{canal(detalhe)}</Badge>
+              <Selos a={detalhe} />
             </div>}
             <dl className="mt-4 grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="text-muted-foreground">Protocolo</dt><dd className="font-mono">{detalhe.protocolo}</dd>
