@@ -505,7 +505,7 @@ export default function AgendamentoPublico() {
                       <div className="space-y-1 pt-2">
                         <p className="text-xs text-muted-foreground">O cargo, o setor e a unidade acima estão corretos? Eles definem os exames do atendimento.</p>
                         {lotConfirmada
-                          ? <p className="flex items-center gap-1 text-xs font-medium text-primary whitespace-nowrap"><Check className="h-3.5 w-3.5" />Dados confirmados</p>
+                          ? <span className="flex items-center gap-3 text-xs"><span className="flex items-center gap-1 font-medium text-primary whitespace-nowrap"><Check className="h-3.5 w-3.5" />Dados confirmados</span><button type="button" className="text-muted-foreground hover:underline whitespace-nowrap" onClick={() => { setLotConfirmada(false); setExames([]); setF((p) => ({ ...p, tipoExame: "" })); }}>Alterar</button></span>
                           : <div className="flex items-center gap-3 text-xs">
                               <button type="button" className="font-medium text-primary hover:underline whitespace-nowrap" onClick={() => setLotConfirmada(true)}>Sim, estão corretos</button>
                               <button type="button" className="text-muted-foreground hover:underline whitespace-nowrap" onClick={abrirLotacao}>Não, corrigir</button>
@@ -539,7 +539,7 @@ export default function AgendamentoPublico() {
                       <div><Label>Admissão *</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>
                     </div>}
                     </>}
-                    {reativ && <div className="sm:w-1/3"><Label>Admissão</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>}
+                    {(reativ || alterandoLot) && <div className="sm:w-1/3"><Label>Admissão</Label><Input type="date" value={cad.admissao} onChange={(e) => setCad({ ...cad, admissao: e.target.value })} /></div>}
                     {!hier && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Carregando unidades, setores e cargos…</p>}
                     {hier?.indisponivel && <p className="text-xs text-destructive">Não foi possível carregar a hierarquia da empresa agora.</p>}
                     {hier && !hier.indisponivel && !livre && (<>

@@ -35,7 +35,7 @@ const Body = z.discriminatedUnion('acao', [
     unidade: Ref, setor: Ref, cargo: Ref,
   }),
   // Confirmação de lotação na tela do CPF: grava no SOC antes de buscar exames (riscos/ASO corretos)
-  z.object({ acao: z.literal('alterarLotacao'), ...Pessoa, unidade: Ref, setor: Ref, cargo: Ref }),
+  z.object({ acao: z.literal('alterarLotacao'), ...Pessoa, unidade: Ref, setor: Ref, cargo: Ref, dataAdmissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')) }),
   z.object({ acao: z.literal('reativar'), ...Pessoa, unidade: Ref.optional(), setor: Ref.optional(), cargo: Ref.optional(), dataAdmissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }),
 ]);
 
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
         if (!st?.cargos.some((x) => x.codigo === b.cargo.codigo)) return json({ error: 'Selecione unidade, setor e cargo existentes na hierarquia da empresa.' }, 400);
       }
       const nome = pick(existente.row, ['NOME', 'NOMEFUNCIONARIO']) ?? '';
-      const r = await alterarLotacaoSoc({ codigoEmpresa: b.socCode, cpf: b.cpf, nome, unidade: b.unidade, setor: b.setor, cargo: b.cargo, podeCriar: livre });
+      const r = await alterarLotacaoSoc({ codigoEmpresa: b.socCode, cpf: b.cpf, nome, unidade: b.unidade, setor: b.setor, cargo: b.cargo, podeCriar: livre, dataAdmissao: b.dataAdmissao || undefined });
       if (!r.ok) return json({ error: `O SOC recusou a alteração: ${r.erro ?? 'erro desconhecido'}` }, 422);
       // Read-back: não libera a próxima etapa com uma lotação apenas presumida.
       const conferir = await buscarFuncionario(b.socCode, b.cpf);
