@@ -19,6 +19,7 @@ import { periodoAgenda, temKitAgenda } from "@/lib/agendaPainel";
 import { toTitleCase } from "@/lib/guias/blocklist";
 import { CalendarioOperacional } from "@/components/agenda/CalendarioOperacional";
 import { AgendaGraficos } from "@/components/agenda/AgendaGraficos";
+import { BottomScrollContainer } from "@/components/ui/bottom-scroll-bar";
 
 const db = supabase as any;
 const fmtData = (d?: string | null) => (d ? d.split("-").reverse().join("/") : "—");
@@ -243,7 +244,7 @@ export default function Agendamentos() {
   };
 
   const Linhas = ({ itens }: { itens: any[] }) => (
-    <div className="max-h-[calc(100dvh-9rem)] min-h-[240px] overflow-auto overscroll-contain">
+    <BottomScrollContainer className="max-h-[calc(100dvh-9rem)] min-h-[240px] overflow-auto overscroll-contain">
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
@@ -271,7 +272,7 @@ export default function Agendamentos() {
           })}
         </TableBody>
       </Table>
-    </div>
+    </BottomScrollContainer>
   );
 
   const fmtEmissao = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—");
