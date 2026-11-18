@@ -68,6 +68,7 @@ export default function Agendamentos() {
   const busca = sp.get("busca") ?? "";
   const kit = sp.get("kit") ?? "todos";
   const filtroCanal = sp.get("canal") ?? "todos";
+  const filtroStatus = sp.get("status") ?? "todos";
   const ordem = sp.get("ordem") ?? "data:asc";
   const podeEditar = isAdmMaster || hasPermission("/agendamentos", "edit");
   const unidade = sp.get("unidade") ?? salvo.unidade ?? "";
@@ -212,13 +213,14 @@ export default function Agendamentos() {
     return lista.filter((a: any) => {
       const texto = normalizar([a.colaborador_nome, a.colaborador_cpf, fmtCpf(a.colaborador_cpf), a.empresa_nome, a.empresa_cnpj, a.protocolo, a.tipo_exame].join(" "));
       return (!q || texto.includes(q)) && (filtroCanal === "todos" || (filtroCanal === "SOCNET" ? ehSocnet(a) : canal(a) === filtroCanal)) &&
+        (filtroStatus === "todos" || a.status === filtroStatus) &&
         (kit === "todos" || (kit === "sem" ? !temKitAgenda(a) : kit === "impresso" ? !!a.kit_impresso_em : kit === "imprimir" ? temKitAgenda(a) && !a.kit_impresso_em : temKitAgenda(a)));
     }).sort((a: any, b: any) => {
       const [campo, dir] = ordem.split(":");
       const val = (x: any) => campo === "colaborador" ? x.colaborador_nome : campo === "empresa" ? x.empresa_nome ?? "" : campo === "tipo" ? x.tipo_exame : campo === "unidade" ? nomeUnidade(x) : campo === "status" ? STATUS[x.status]?.label ?? x.status : campo === "emitido" ? x.created_at ?? "" : campo === "canal" ? canal(x) + (ehSocnet(x) ? " SOCNET" : "") : campo === "kit" ? (x.kit_impresso_em ? "2" : temKitAgenda(x) ? "1" : "0") : `${x.data_agendada ?? ""} ${x.hora_agendada ?? ""}`;
       return String(val(a)).localeCompare(String(val(b))) * (dir === "desc" ? -1 : 1);
     });
-  }, [lista, busca, filtroCanal, kit, ordem]);
+  }, [lista, busca, filtroCanal, filtroStatus, kit, ordem]);
   const marcarKit = async () => {
     if (!detalhe || !podeEditar) return;
     setEnviando(true);
@@ -241,7 +243,7 @@ export default function Agendamentos() {
   };
 
   const Linhas = ({ itens }: { itens: any[] }) => (
-    <div className="max-h-[60vh] overflow-auto">
+    <div className="max-h-[calc(100dvh-9rem)] min-h-[240px] overflow-auto overscroll-contain">
       <Table>
         <TableHeader className="sticky top-0 bg-background">
           <TableRow>
@@ -342,6 +344,7 @@ export default function Agendamentos() {
               <div className="min-w-[200px] flex-1 space-y-2"><Label htmlFor="busca-agenda" className="block">Busca</Label><div className="relative"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="busca-agenda" className="pl-9" placeholder="Colaborador, CPF, empresa ou protocolo" value={busca} onChange={(e) => setFiltro({ busca: e.target.value })} /></div></div>
               <div className="space-y-2"><Label className="block">Canal</Label><select aria-label="Canal" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroCanal} onChange={(e) => setFiltro({ canal: e.target.value })}><option value="todos">Todos</option>{["Link público", "WhatsApp", "SOCNET"].map((c) => <option key={c}>{c}</option>)}</select></div>
               <div className="space-y-2"><Label className="block">Kit</Label><select aria-label="Kit" className="h-10 rounded-md border bg-background px-3 text-sm" value={kit} onChange={(e) => setFiltro({ kit: e.target.value })}><option value="todos">Todos</option><option value="sem">Sem kit</option><option value="enviado">Com kit</option><option value="imprimir">Kit não impresso</option><option value="impresso">Kit impresso</option></select></div>
+              <div className="space-y-2"><Label className="block">Status</Label><select aria-label="Status" className="h-10 rounded-md border bg-background px-3 text-sm" value={filtroStatus} onChange={(e) => setFiltro({ status: e.target.value })}><option value="todos">Todos</option>{Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></div>
             </>}
             <div className="space-y-2"><Label className="block">Unidade</Label>
               <select aria-label="Unidade" className="flex h-10 rounded-md border border-input bg-background px-3 text-sm" value={unidade} onChange={(e) => setFiltro({ unidade: e.target.value })}>
@@ -408,7 +411,7 @@ export default function Agendamentos() {
         </TabsContent>
         <TabsContent value="lista" className="space-y-3">
           <Card><CardContent className="pt-4">
-            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">Nenhum agendamento no período.</p>}
+            {isLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : visiveis.length ? <Linhas itens={visiveis} /> : <p className="text-sm text-muted-foreground">{lista.length ? "Nenhum agendamento com esses filtros." : "Nenhum agendamento no período."}</p>}
           </CardContent></Card>
         </TabsContent>
         <TabsContent value="aprovacao">
